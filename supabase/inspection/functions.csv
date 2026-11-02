@@ -1,0 +1,7 @@
+schema_name,function_name,arguments,security_mode,config
+public,calculate_portfolio_completeness,,SECURITY DEFINER,
+public,generate_daily_portfolio_metrics,,SECURITY DEFINER,
+public,get_public_url,"bucket_name text, file_path text",SECURITY INVOKER,
+public,increment_content_performance,"p_content_type text, p_content_id text, p_performance_date date, p_engagement_score integer DEFAULT 1",SECURITY INVOKER,
+public,update_updated_at_column,,SECURITY INVOKER,
+public,validate_file_upload,"bucket_name text, file_size bigint, mime_type text",SECURITY INVOKER,

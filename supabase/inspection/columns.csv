@@ -1,0 +1,327 @@
+table_schema,table_name,column_name,data_type,is_nullable,column_default
+public,about_content,id,uuid,NO,gen_random_uuid()
+public,about_content,about_me_title,text,YES,'About Me'::text
+public,about_content,about_me_content,text,YES,NULL
+public,about_content,basic_info_title,text,YES,'Basic Info'::text
+public,about_content,basic_info,jsonb,YES,NULL
+public,about_content,profile_image_url,text,YES,NULL
+public,about_content,is_active,boolean,YES,true
+public,about_content,created_at,timestamp without time zone,YES,now()
+public,about_content,updated_at,timestamp without time zone,YES,now()
+public,about_content,profile_image_about,text,YES,NULL
+public,about_content,profile_image_info,text,YES,NULL
+public,achievements,id,uuid,NO,gen_random_uuid()
+public,achievements,achievement_number,integer,YES,NULL
+public,achievements,title,character varying,NO,NULL
+public,achievements,description,text,YES,NULL
+public,achievements,date_achieved,date,YES,NULL
+public,achievements,category,character varying,YES,NULL
+public,achievements,issuing_organization,character varying,YES,NULL
+public,achievements,competition_name,character varying,YES,NULL
+public,achievements,position,character varying,YES,NULL
+public,achievements,participants_count,integer,YES,NULL
+public,achievements,certificate_url,text,YES,NULL
+public,achievements,impact,text,YES,NULL
+public,achievements,verification_url,text,YES,NULL
+public,achievements,is_featured,boolean,YES,false
+public,achievements,order_index,integer,YES,NULL
+public,achievements,status,character varying,YES,'active'::character varying
+public,achievements,created_at,timestamp without time zone,YES,now()
+public,achievements,updated_at,timestamp without time zone,YES,now()
+public,admin_activity_analytics,id,uuid,NO,gen_random_uuid()
+public,admin_activity_analytics,activity_date,date,NO,NULL
+public,admin_activity_analytics,total_sessions,integer,YES,0
+public,admin_activity_analytics,total_active_time_minutes,integer,YES,0
+public,admin_activity_analytics,sections_visited,integer,YES,0
+public,admin_activity_analytics,content_updates,integer,YES,0
+public,admin_activity_analytics,files_uploaded,integer,YES,0
+public,admin_activity_analytics,most_used_section,character varying,YES,NULL
+public,admin_activity_analytics,productivity_score,integer,YES,0
+public,admin_activity_analytics,created_at,timestamp without time zone,YES,now()
+public,admin_sessions,id,uuid,NO,gen_random_uuid()
+public,admin_sessions,session_id,character varying,NO,NULL
+public,admin_sessions,start_time,timestamp without time zone,YES,now()
+public,admin_sessions,end_time,timestamp without time zone,YES,NULL
+public,admin_sessions,duration_minutes,integer,YES,NULL
+public,admin_sessions,sections_visited,ARRAY,YES,NULL
+public,admin_sessions,actions_performed,integer,YES,0
+public,admin_sessions,last_activity,timestamp without time zone,YES,now()
+public,admin_sessions,created_at,timestamp without time zone,YES,now()
+public,admin_users,id,uuid,NO,gen_random_uuid()
+public,admin_users,username,character varying,NO,NULL
+public,admin_users,password_hash,text,NO,NULL
+public,admin_users,email,character varying,YES,NULL
+public,admin_users,created_at,timestamp without time zone,YES,now()
+public,admin_users,updated_at,timestamp without time zone,YES,now()
+public,admin_users,last_login,timestamp without time zone,YES,NULL
+public,admin_users,is_active,boolean,YES,true
+public,admin_users,otp_code,character varying,YES,NULL::character varying
+public,admin_users,otp_expires_at,timestamp without time zone,YES,NULL
+public,admin_users,otp_attempts,integer,YES,0
+public,admin_users,otp_last_sent,timestamp without time zone,YES,NULL
+public,admin_users,two_fa_enabled,boolean,YES,true
+public,admin_users,login_attempts,integer,YES,0
+public,admin_users,locked_until,timestamp without time zone,YES,NULL
+public,analytics_events,id,uuid,NO,gen_random_uuid()
+public,analytics_events,event_type,character varying,NO,NULL
+public,analytics_events,event_category,character varying,NO,NULL
+public,analytics_events,event_action,character varying,NO,NULL
+public,analytics_events,event_label,character varying,YES,NULL
+public,analytics_events,event_value,integer,YES,NULL
+public,analytics_events,user_type,character varying,YES,'visitor'::character varying
+public,analytics_events,session_id,character varying,YES,NULL
+public,analytics_events,timestamp,timestamp without time zone,YES,now()
+public,analytics_events,metadata,jsonb,YES,NULL
+public,analytics_events,created_at,timestamp without time zone,YES,now()
+public,certifications,id,uuid,NO,gen_random_uuid()
+public,certifications,certification_number,integer,YES,NULL
+public,certifications,title,character varying,NO,NULL
+public,certifications,issuer,character varying,NO,NULL
+public,certifications,issuer_logo_url,text,YES,NULL
+public,certifications,issue_date,date,YES,NULL
+public,certifications,expiry_date,date,YES,NULL
+public,certifications,credential_id,character varying,YES,NULL
+public,certifications,credential_url,text,YES,NULL
+public,certifications,badge_image_url,text,YES,NULL
+public,certifications,certificate_pdf_url,text,YES,NULL
+public,certifications,description,text,YES,NULL
+public,certifications,skills_covered,jsonb,YES,NULL
+public,certifications,certification_type,character varying,YES,NULL
+public,certifications,difficulty_level,character varying,YES,NULL
+public,certifications,is_featured,boolean,YES,false
+public,certifications,verification_status,character varying,YES,'verified'::character varying
+public,certifications,order_index,integer,YES,NULL
+public,certifications,status,character varying,YES,'active'::character varying
+public,certifications,created_at,timestamp without time zone,YES,now()
+public,certifications,updated_at,timestamp without time zone,YES,now()
+public,contact_analytics,id,uuid,NO,gen_random_uuid()
+public,contact_analytics,analysis_date,date,NO,NULL
+public,contact_analytics,total_messages,integer,YES,0
+public,contact_analytics,hr_messages,integer,YES,0
+public,contact_analytics,recruiter_messages,integer,YES,0
+public,contact_analytics,manager_messages,integer,YES,0
+public,contact_analytics,other_messages,integer,YES,0
+public,contact_analytics,avg_response_time_hours,numeric,YES,NULL
+public,contact_analytics,peak_contact_hour,integer,YES,NULL
+public,contact_analytics,popular_subjects,ARRAY,YES,NULL
+public,contact_analytics,created_at,timestamp without time zone,YES,now()
+public,contact_messages,id,uuid,NO,gen_random_uuid()
+public,contact_messages,message_number,integer,NO,nextval('contact_messages_message_number_seq'::regclass)
+public,contact_messages,name,character varying,NO,NULL
+public,contact_messages,email,character varying,NO,NULL
+public,contact_messages,organization,character varying,YES,NULL
+public,contact_messages,role_position,character varying,NO,NULL
+public,contact_messages,inquiry_type,character varying,NO,NULL
+public,contact_messages,subject,character varying,NO,NULL
+public,contact_messages,message,text,NO,NULL
+public,contact_messages,attachment_url,text,YES,NULL
+public,contact_messages,attachment_name,character varying,YES,NULL
+public,contact_messages,attachment_size,integer,YES,NULL
+public,contact_messages,sender_ip,character varying,YES,NULL
+public,contact_messages,user_agent,text,YES,NULL
+public,contact_messages,referrer_url,text,YES,NULL
+public,contact_messages,utm_source,character varying,YES,NULL
+public,contact_messages,utm_medium,character varying,YES,NULL
+public,contact_messages,utm_campaign,character varying,YES,NULL
+public,contact_messages,priority,character varying,YES,'normal'::character varying
+public,contact_messages,status,character varying,YES,'unread'::character varying
+public,contact_messages,admin_notes,text,YES,NULL
+public,contact_messages,response_sent,boolean,YES,false
+public,contact_messages,response_date,timestamp without time zone,YES,NULL
+public,contact_messages,follow_up_required,boolean,YES,false
+public,contact_messages,follow_up_date,date,YES,NULL
+public,contact_messages,created_at,timestamp without time zone,YES,now()
+public,contact_messages,updated_at,timestamp without time zone,YES,now()
+public,contact_messages,attachment_urls,jsonb,YES,'[]'::jsonb
+public,contact_messages,attachment_names,jsonb,YES,NULL
+public,contact_messages,is_starred,boolean,YES,false
+public,contact_messages,is_archived,boolean,YES,false
+public,contact_messages,is_spam,boolean,YES,false
+public,contact_messages,read_at,timestamp without time zone,YES,NULL
+public,contact_messages,archived_at,timestamp without time zone,YES,NULL
+public,contact_messages,marked_spam_at,timestamp without time zone,YES,NULL
+public,content_performance,id,uuid,NO,gen_random_uuid()
+public,content_performance,content_type,character varying,NO,NULL
+public,content_performance,content_id,text,NO,NULL
+public,content_performance,performance_date,date,NO,NULL
+public,content_performance,view_count,integer,YES,0
+public,content_performance,engagement_score,integer,YES,0
+public,content_performance,last_updated,timestamp without time zone,YES,NULL
+public,content_performance,is_featured,boolean,YES,false
+public,content_performance,created_at,timestamp without time zone,YES,now()
+public,education,id,uuid,NO,gen_random_uuid()
+public,education,education_level,character varying,YES,NULL
+public,education,degree,character varying,NO,NULL
+public,education,institution,character varying,YES,NULL
+public,education,institution_logo_url,text,YES,NULL
+public,education,start_date,date,YES,NULL
+public,education,end_date,date,YES,NULL
+public,education,gpa_received,character varying,YES,NULL
+public,education,max_gpa_scale,character varying,YES,NULL
+public,education,location,character varying,YES,NULL
+public,education,description,text,YES,NULL
+public,education,major,character varying,YES,NULL
+public,education,minor,character varying,YES,NULL
+public,education,coursework,jsonb,YES,NULL
+public,education,achievements,jsonb,YES,NULL
+public,education,activities,jsonb,YES,NULL
+public,education,thesis_title,text,YES,NULL
+public,education,degree_type,character varying,YES,NULL
+public,education,education_status,character varying,YES,NULL
+public,education,order_index,integer,YES,NULL
+public,education,status,character varying,YES,'active'::character varying
+public,education,created_at,timestamp without time zone,YES,now()
+public,education,updated_at,timestamp without time zone,YES,now()
+public,education,college,character varying,NO,NULL
+public,hero_content,id,uuid,NO,gen_random_uuid()
+public,hero_content,title,text,NO,NULL
+public,hero_content,subtitle,text,YES,NULL
+public,hero_content,description,text,YES,NULL
+public,hero_content,highlights,jsonb,YES,NULL
+public,hero_content,cta_text,character varying,YES,NULL
+public,hero_content,cta_link,text,YES,NULL
+public,hero_content,is_active,boolean,YES,true
+public,hero_content,created_at,timestamp without time zone,YES,now()
+public,hero_content,updated_at,timestamp without time zone,YES,now()
+public,internships,id,uuid,NO,gen_random_uuid()
+public,internships,internship_number,integer,YES,NULL
+public,internships,title,character varying,NO,NULL
+public,internships,company,character varying,NO,NULL
+public,internships,company_logo_url,text,YES,NULL
+public,internships,start_date,date,YES,NULL
+public,internships,end_date,date,YES,NULL
+public,internships,duration,character varying,YES,NULL
+public,internships,location,character varying,YES,NULL
+public,internships,description,text,YES,NULL
+public,internships,key_responsibilities,jsonb,YES,NULL
+public,internships,technologies,jsonb,YES,NULL
+public,internships,achievements,jsonb,YES,NULL
+public,internships,skills_gained,jsonb,YES,NULL
+public,internships,internship_type,character varying,YES,NULL
+public,internships,order_index,integer,YES,NULL
+public,internships,status,character varying,YES,'active'::character varying
+public,internships,created_at,timestamp without time zone,YES,now()
+public,internships,updated_at,timestamp without time zone,YES,now()
+public,internships,certificate_urls,jsonb,YES,'[]'::jsonb
+public,leadership,id,uuid,NO,gen_random_uuid()
+public,leadership,position_number,integer,YES,NULL
+public,leadership,title,character varying,NO,NULL
+public,leadership,organization,character varying,NO,NULL
+public,leadership,organization_type,character varying,YES,NULL
+public,leadership,start_date,date,YES,NULL
+public,leadership,end_date,date,YES,NULL
+public,leadership,is_current,boolean,YES,false
+public,leadership,location,character varying,YES,NULL
+public,leadership,description,text,YES,NULL
+public,leadership,team_size,integer,YES,NULL
+public,leadership,budget_managed,character varying,YES,NULL
+public,leadership,key_responsibilities,jsonb,YES,NULL
+public,leadership,achievements,jsonb,YES,NULL
+public,leadership,skills_developed,jsonb,YES,NULL
+public,leadership,challenges_overcome,text,YES,NULL
+public,leadership,impact,text,YES,NULL
+public,leadership,volunteer_hours,integer,YES,NULL
+public,leadership,initiative_type,character varying,YES,NULL
+public,leadership,recognition_received,jsonb,YES,NULL
+public,leadership,mentees_count,integer,YES,NULL
+public,leadership,training_provided,jsonb,YES,NULL
+public,leadership,is_featured,boolean,YES,false
+public,leadership,order_index,integer,YES,NULL
+public,leadership,status,character varying,YES,'active'::character varying
+public,leadership,created_at,timestamp without time zone,YES,now()
+public,leadership,updated_at,timestamp without time zone,YES,now()
+public,portfolio_metrics,id,uuid,NO,gen_random_uuid()
+public,portfolio_metrics,metric_date,date,NO,NULL
+public,portfolio_metrics,total_projects,integer,YES,0
+public,portfolio_metrics,total_skills,integer,YES,0
+public,portfolio_metrics,total_certifications,integer,YES,0
+public,portfolio_metrics,total_internships,integer,YES,0
+public,portfolio_metrics,total_education,integer,YES,0
+public,portfolio_metrics,total_work_experience,integer,YES,0
+public,portfolio_metrics,total_recommendations,integer,YES,0
+public,portfolio_metrics,total_achievements,integer,YES,0
+public,portfolio_metrics,total_leadership,integer,YES,0
+public,portfolio_metrics,total_experience_years,numeric,YES,0
+public,portfolio_metrics,content_completeness_score,integer,YES,0
+public,portfolio_metrics,last_updated_days_ago,integer,YES,0
+public,portfolio_metrics,active_sections,integer,YES,0
+public,portfolio_metrics,created_at,timestamp without time zone,YES,now()
+public,projects,id,uuid,NO,gen_random_uuid()
+public,projects,project_number,integer,YES,NULL
+public,projects,title,character varying,NO,NULL
+public,projects,short_description,text,YES,NULL
+public,projects,detailed_description,text,YES,NULL
+public,projects,technologies,jsonb,YES,NULL
+public,projects,live_url,text,YES,NULL
+public,projects,github_urls,jsonb,YES,NULL
+public,projects,featured,boolean,YES,false
+public,projects,project_type,character varying,YES,NULL
+public,projects,duration,character varying,YES,NULL
+public,projects,team_size,integer,YES,NULL
+public,projects,key_features,jsonb,YES,NULL
+public,projects,challenges,text,YES,NULL
+public,projects,learnings,text,YES,NULL
+public,projects,order_index,integer,YES,NULL
+public,projects,status,character varying,YES,'active'::character varying
+public,projects,created_at,timestamp without time zone,YES,now()
+public,projects,updated_at,timestamp without time zone,YES,now()
+public,projects,image_urls,jsonb,YES,'[]'::jsonb
+public,recommendations,id,uuid,NO,gen_random_uuid()
+public,recommendations,recommendation_number,integer,YES,NULL
+public,recommendations,recommender_name,character varying,NO,NULL
+public,recommendations,recommender_title,character varying,YES,NULL
+public,recommendations,organization,character varying,YES,NULL
+public,recommendations,relationship,character varying,YES,NULL
+public,recommendations,content,text,NO,NULL
+public,recommendations,linkedin_profile_url,text,YES,NULL
+public,recommendations,profile_image_url,text,YES,NULL
+public,recommendations,date_received,date,YES,NULL
+public,recommendations,recommendation_type,character varying,YES,NULL
+public,recommendations,rating,integer,YES,NULL
+public,recommendations,is_featured,boolean,YES,false
+public,recommendations,is_public,boolean,YES,true
+public,recommendations,word_count,integer,YES,NULL
+public,recommendations,order_index,integer,YES,NULL
+public,recommendations,status,character varying,YES,'active'::character varying
+public,recommendations,created_at,timestamp without time zone,YES,now()
+public,recommendations,updated_at,timestamp without time zone,YES,now()
+public,skills,id,uuid,NO,gen_random_uuid()
+public,skills,skill_name,character varying,NO,NULL
+public,skills,category,character varying,NO,NULL
+public,skills,proficiency_level,integer,YES,NULL
+public,skills,icon_url,text,YES,NULL
+public,skills,description,text,YES,NULL
+public,skills,certifications,jsonb,YES,NULL
+public,skills,projects_used,jsonb,YES,NULL
+public,skills,learning_source,character varying,YES,NULL
+public,skills,is_featured,boolean,YES,false
+public,skills,skill_type,character varying,YES,NULL
+public,skills,order_index,integer,YES,NULL
+public,skills,status,character varying,YES,'active'::character varying
+public,skills,created_at,timestamp without time zone,YES,now()
+public,skills,updated_at,timestamp without time zone,YES,now()
+public,skills,skill_type_priority,integer,YES,50
+public,work_experience,id,uuid,NO,gen_random_uuid()
+public,work_experience,job_number,integer,YES,NULL
+public,work_experience,title,character varying,NO,NULL
+public,work_experience,company,character varying,NO,NULL
+public,work_experience,company_logo_url,text,YES,NULL
+public,work_experience,employment_type,character varying,YES,NULL
+public,work_experience,start_date,date,YES,NULL
+public,work_experience,end_date,date,YES,NULL
+public,work_experience,location,character varying,YES,NULL
+public,work_experience,is_current,boolean,YES,false
+public,work_experience,description,text,YES,NULL
+public,work_experience,key_responsibilities,jsonb,YES,NULL
+public,work_experience,technologies,jsonb,YES,NULL
+public,work_experience,achievements,jsonb,YES,NULL
+public,work_experience,team_size,integer,YES,NULL
+public,work_experience,clients_served,jsonb,YES,NULL
+public,work_experience,salary_range,character varying,YES,NULL
+public,work_experience,department,character varying,YES,NULL
+public,work_experience,performance_rating,character varying,YES,NULL
+public,work_experience,reason_for_leaving,text,YES,NULL
+public,work_experience,order_index,integer,YES,NULL
+public,work_experience,status,character varying,YES,'active'::character varying
+public,work_experience,created_at,timestamp without time zone,YES,now()
+public,work_experience,updated_at,timestamp without time zone,YES,now()

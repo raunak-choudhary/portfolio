@@ -1,0 +1,19 @@
+schema_name,function_name,arguments,grantee,can_execute
+public,calculate_portfolio_completeness,,anon,true
+public,calculate_portfolio_completeness,,authenticated,true
+public,calculate_portfolio_completeness,,service_role,true
+public,generate_daily_portfolio_metrics,,anon,true
+public,generate_daily_portfolio_metrics,,authenticated,true
+public,generate_daily_portfolio_metrics,,service_role,true
+public,get_public_url,"bucket_name text, file_path text",anon,true
+public,get_public_url,"bucket_name text, file_path text",authenticated,true
+public,get_public_url,"bucket_name text, file_path text",service_role,true
+public,increment_content_performance,"p_content_type text, p_content_id text, p_performance_date date, p_engagement_score integer",anon,true
+public,increment_content_performance,"p_content_type text, p_content_id text, p_performance_date date, p_engagement_score integer",authenticated,true
+public,increment_content_performance,"p_content_type text, p_content_id text, p_performance_date date, p_engagement_score integer",service_role,true
+public,update_updated_at_column,,anon,true
+public,update_updated_at_column,,authenticated,true
+public,update_updated_at_column,,service_role,true
+public,validate_file_upload,"bucket_name text, file_size bigint, mime_type text",anon,true
+public,validate_file_upload,"bucket_name text, file_size bigint, mime_type text",authenticated,true
+public,validate_file_upload,"bucket_name text, file_size bigint, mime_type text",service_role,true

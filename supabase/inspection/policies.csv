@@ -1,0 +1,125 @@
+schemaname,tablename,policyname,permissive,roles,cmd,qual,with_check
+public,about_content,Allow service role full access to about content,PERMISSIVE,{service_role},ALL,true,true
+public,about_content,authenticated_admin_about_content,PERMISSIVE,{authenticated},ALL,"(EXISTS ( SELECT 1
+   FROM admin_users
+  WHERE ((admin_users.id = auth.uid()) AND (admin_users.is_active = true))))","(EXISTS ( SELECT 1
+   FROM admin_users
+  WHERE ((admin_users.id = auth.uid()) AND (admin_users.is_active = true))))"
+public,about_content,public_read_active_about_content,PERMISSIVE,{public},SELECT,(is_active = true),NULL
+public,about_content,service_role_full_access_about_content,PERMISSIVE,{service_role},ALL,true,true
+public,achievements,Admin can manage achievements,PERMISSIVE,{public},ALL,"(EXISTS ( SELECT 1
+   FROM admin_users
+  WHERE ((admin_users.id = auth.uid()) AND (admin_users.is_active = true))))",NULL
+public,achievements,Public achievements are viewable by everyone,PERMISSIVE,{public},SELECT,((status)::text = 'active'::text),NULL
+public,admin_activity_analytics,Enable insert for authenticated users,PERMISSIVE,{public},INSERT,NULL,true
+public,admin_activity_analytics,Enable read access for all users,PERMISSIVE,{public},SELECT,true,NULL
+public,admin_activity_analytics,Enable update for authenticated users,PERMISSIVE,{public},UPDATE,true,NULL
+public,admin_sessions,Enable insert for authenticated users,PERMISSIVE,{public},INSERT,NULL,true
+public,admin_sessions,Enable read access for all users,PERMISSIVE,{public},SELECT,true,NULL
+public,admin_sessions,Enable update for authenticated users,PERMISSIVE,{public},UPDATE,true,NULL
+public,admin_users,Admin can manage admin users,PERMISSIVE,{public},ALL,((auth.jwt() ->> 'role'::text) = 'admin'::text),NULL
+public,admin_users,Allow admin authentication,PERMISSIVE,{public},SELECT,true,NULL
+public,admin_users,Allow admin users to read own data,PERMISSIVE,{authenticated},SELECT,((auth.uid())::text = (id)::text),NULL
+public,admin_users,Allow service role full access to admin users,PERMISSIVE,{service_role},ALL,true,true
+public,admin_users,Anon can read admin users for auth,PERMISSIVE,{anon},SELECT,(is_active = true),NULL
+public,admin_users,Enable anon OTP updates,PERMISSIVE,{anon},UPDATE,true,true
+public,admin_users,Service role can manage admin users,PERMISSIVE,{service_role},ALL,true,true
+public,admin_users,admin_auth_full_access,PERMISSIVE,{public},ALL,true,true
+public,analytics_events,Enable insert for authenticated users,PERMISSIVE,{public},INSERT,NULL,true
+public,analytics_events,Enable read access for all users,PERMISSIVE,{public},SELECT,true,NULL
+public,certifications,Admin can manage certifications,PERMISSIVE,{public},ALL,"(EXISTS ( SELECT 1
+   FROM admin_users
+  WHERE (((admin_users.username)::text = ((current_setting('request.jwt.claims'::text, true))::json ->> 'username'::text)) AND (admin_users.is_active = true))))",NULL
+public,certifications,Public certifications are viewable by everyone,PERMISSIVE,{public},SELECT,((status)::text = 'active'::text),NULL
+public,contact_analytics,Enable insert for authenticated users,PERMISSIVE,{public},INSERT,NULL,true
+public,contact_analytics,Enable read access for all users,PERMISSIVE,{public},SELECT,true,NULL
+public,contact_analytics,Enable update for authenticated users,PERMISSIVE,{public},UPDATE,true,NULL
+public,contact_messages,Allow admin read access to contact messages,PERMISSIVE,{authenticated},SELECT,true,NULL
+public,contact_messages,Allow admin update contact message status,PERMISSIVE,{authenticated},UPDATE,true,true
+public,contact_messages,Allow public insert for contact messages,PERMISSIVE,{public},INSERT,NULL,true
+public,contact_messages,Allow service role full access to contact messages,PERMISSIVE,{service_role},ALL,true,true
+public,contact_messages,admin_full_access,PERMISSIVE,{public},ALL,true,NULL
+public,contact_messages,contact_messages_public_insert,PERMISSIVE,{public},INSERT,NULL,true
+public,content_performance,content_performance_anon_all,PERMISSIVE,{anon},ALL,true,true
+public,content_performance,content_performance_auth_all,PERMISSIVE,{authenticated},ALL,true,true
+public,education,Admin can manage education,PERMISSIVE,{public},ALL,"((EXISTS ( SELECT 1
+   FROM admin_users au
+  WHERE (((au.username)::text = ((current_setting('request.jwt.claims'::text, true))::json ->> 'username'::text)) AND (au.is_active = true)))) OR (current_setting('role'::text) = 'service_role'::text) OR (auth.role() = 'service_role'::text))",NULL
+public,education,Public education are viewable by everyone,PERMISSIVE,{public},SELECT,((status)::text = 'active'::text),NULL
+public,education,Public education is viewable by everyone,PERMISSIVE,{public},SELECT,((status)::text = 'active'::text),NULL
+public,hero_content,Admin can manage hero content,PERMISSIVE,{public},ALL,"(EXISTS ( SELECT 1
+   FROM admin_users
+  WHERE (((admin_users.username)::text = ((current_setting('request.jwt.claims'::text, true))::json ->> 'username'::text)) AND (admin_users.is_active = true))))",NULL
+public,hero_content,Allow admin full access to hero content,PERMISSIVE,{authenticated},ALL,true,true
+public,hero_content,Allow deletes only for admins,PERMISSIVE,{authenticated},DELETE,(auth.role() = 'admin'::text),NULL
+public,hero_content,Allow public read access for active hero content,PERMISSIVE,{public},SELECT,(is_active = true),NULL
+public,hero_content,Allow service role full access to hero content,PERMISSIVE,{service_role},ALL,true,true
+public,hero_content,Public can view active hero content,PERMISSIVE,{public},SELECT,(is_active = true),NULL
+public,hero_content,Public hero content is viewable by everyone,PERMISSIVE,{public},SELECT,(is_active = true),NULL
+public,internships,Admin can manage internships,PERMISSIVE,{public},ALL,(auth.role() = 'admin'::text),NULL
+public,internships,Public internships are viewable by everyone,PERMISSIVE,{public},SELECT,((status)::text = 'active'::text),NULL
+public,leadership,Admin can manage leadership,PERMISSIVE,{public},ALL,(auth.role() = 'admin'::text),NULL
+public,leadership,Public leadership are viewable by everyone,PERMISSIVE,{public},SELECT,((status)::text = 'active'::text),NULL
+public,portfolio_metrics,Enable insert for authenticated users,PERMISSIVE,{public},INSERT,NULL,true
+public,portfolio_metrics,Enable read access for all users,PERMISSIVE,{public},SELECT,true,NULL
+public,portfolio_metrics,Enable update for authenticated users,PERMISSIVE,{public},UPDATE,true,NULL
+public,projects,Projects admin full access,PERMISSIVE,{public},ALL,"(EXISTS ( SELECT 1
+   FROM admin_users
+  WHERE ((admin_users.id = auth.uid()) AND (admin_users.is_active = true))))",NULL
+public,projects,Projects public read access,PERMISSIVE,{public},SELECT,((status)::text = 'active'::text),NULL
+public,recommendations,Admin full access to recommendations,PERMISSIVE,{public},ALL,"(((auth.jwt() ->> 'role'::text) = 'admin'::text) OR ((auth.uid())::text IN ( SELECT (admin_users.id)::text AS id
+   FROM admin_users
+  WHERE (admin_users.is_active = true))))",NULL
+public,recommendations,Public can view active public recommendations,PERMISSIVE,{public},SELECT,(((status)::text = 'active'::text) AND (is_public = true)),NULL
+public,skills,Admin can manage skills,PERMISSIVE,{public},ALL,(((auth.jwt() ->> 'role'::text) = 'admin'::text) OR ((auth.uid())::text = 'admin'::text) OR (CURRENT_USER = 'admin'::name)),NULL
+public,skills,Public skills are viewable by everyone,PERMISSIVE,{public},SELECT,((status)::text = 'active'::text),NULL
+public,work_experience,Admin can manage work experience,PERMISSIVE,{public},ALL,(auth.role() = 'admin'::text),NULL
+public,work_experience,Public work experience are viewable by everyone,PERMISSIVE,{public},SELECT,((status)::text = 'active'::text),NULL
+public,work_experience,Public work experience is viewable by everyone,PERMISSIVE,{public},SELECT,((status)::text = 'active'::text),NULL
+storage,objects,Admin can delete achievement files,PERMISSIVE,{public},DELETE,"((bucket_id = 'achievement-images'::text) AND (EXISTS ( SELECT 1
+   FROM admin_users
+  WHERE ((admin_users.id = auth.uid()) AND (admin_users.is_active = true)))))",NULL
+storage,objects,Admin can delete profile images,PERMISSIVE,{public},DELETE,"((bucket_id = 'profile-images'::text) AND (EXISTS ( SELECT 1
+   FROM admin_users
+  WHERE (((admin_users.username)::text = ((current_setting('request.jwt.claims'::text, true))::json ->> 'username'::text)) AND (admin_users.is_active = true)))))",NULL
+storage,objects,Admin can manage achievement images,PERMISSIVE,{public},ALL,((bucket_id = 'achievement-images'::text) AND ((auth.jwt() ->> 'role'::text) = 'admin'::text)),NULL
+storage,objects,Admin can manage certification badges,PERMISSIVE,{public},ALL,((bucket_id = 'certification-badges'::text) AND ((auth.jwt() ->> 'role'::text) = 'admin'::text)),NULL
+storage,objects,Admin can manage contact attachments,PERMISSIVE,{public},ALL,((bucket_id = 'contact-attachments'::text) AND ((auth.jwt() ->> 'role'::text) = 'admin'::text)),NULL
+storage,objects,Admin can manage documents,PERMISSIVE,{public},ALL,((bucket_id = 'documents'::text) AND ((auth.jwt() ->> 'role'::text) = 'admin'::text)),NULL
+storage,objects,Admin can manage organization logos,PERMISSIVE,{public},ALL,((bucket_id = 'organization-logos'::text) AND ((auth.jwt() ->> 'role'::text) = 'admin'::text)),NULL
+storage,objects,Admin can manage profile images,PERMISSIVE,{public},ALL,((bucket_id = 'profile-images'::text) AND ((auth.jwt() ->> 'role'::text) = 'admin'::text)),NULL
+storage,objects,Admin can manage project images,PERMISSIVE,{public},ALL,((bucket_id = 'project-images'::text) AND ((auth.jwt() ->> 'role'::text) = 'admin'::text)),NULL
+storage,objects,Admin can manage skill icons,PERMISSIVE,{public},ALL,((bucket_id = 'skill-icons'::text) AND ((auth.jwt() ->> 'role'::text) = 'admin'::text)),NULL
+storage,objects,Admin can update achievement files,PERMISSIVE,{public},UPDATE,"((bucket_id = 'achievement-images'::text) AND (EXISTS ( SELECT 1
+   FROM admin_users
+  WHERE ((admin_users.id = auth.uid()) AND (admin_users.is_active = true)))))",NULL
+storage,objects,Admin can update profile images,PERMISSIVE,{public},UPDATE,"((bucket_id = 'profile-images'::text) AND (EXISTS ( SELECT 1
+   FROM admin_users
+  WHERE (((admin_users.username)::text = ((current_setting('request.jwt.claims'::text, true))::json ->> 'username'::text)) AND (admin_users.is_active = true)))))",NULL
+storage,objects,Admin can upload achievement files,PERMISSIVE,{public},INSERT,NULL,"((bucket_id = 'achievement-images'::text) AND (EXISTS ( SELECT 1
+   FROM admin_users
+  WHERE ((admin_users.id = auth.uid()) AND (admin_users.is_active = true)))))"
+storage,objects,Admin can upload contact attachments,PERMISSIVE,{public},INSERT,NULL,(bucket_id = 'contact-attachments'::text)
+storage,objects,Admin can upload profile images,PERMISSIVE,{public},INSERT,NULL,"((bucket_id = 'profile-images'::text) AND (EXISTS ( SELECT 1
+   FROM admin_users
+  WHERE (((admin_users.username)::text = ((current_setting('request.jwt.claims'::text, true))::json ->> 'username'::text)) AND (admin_users.is_active = true)))))"
+storage,objects,Admin delete certification files,PERMISSIVE,{public},DELETE,((bucket_id = 'certification-badges'::text) AND (auth.role() = 'authenticated'::text)),NULL
+storage,objects,Admin update certification files,PERMISSIVE,{public},UPDATE,((bucket_id = 'certification-badges'::text) AND (auth.role() = 'authenticated'::text)),NULL
+storage,objects,Admin upload access for certification files,PERMISSIVE,{public},INSERT,NULL,"((bucket_id = 'certification-badges'::text) AND (auth.role() = 'authenticated'::text) AND (((storage.foldername(name))::text = ANY (ARRAY['issuer_logos'::text, 'badges'::text, 'certifications'::text])) OR (storage.foldername(name) IS NULL)))"
+storage,objects,Admin upload access for document files,PERMISSIVE,{authenticated},INSERT,NULL,((bucket_id = 'documents'::text) AND (auth.role() = 'authenticated'::text))
+storage,objects,Anyone can download contact attachments,PERMISSIVE,{public},SELECT,(bucket_id = 'contact-attachments'::text),NULL
+storage,objects,Anyone can upload contact attachments,PERMISSIVE,{public},INSERT,NULL,(bucket_id = 'contact-attachments'::text)
+storage,objects,Public can view achievement files,PERMISSIVE,{public},SELECT,(bucket_id = 'achievement-images'::text),NULL
+storage,objects,Public can view profile images,PERMISSIVE,{public},SELECT,(bucket_id = 'profile-images'::text),NULL
+storage,objects,Public read access for achievement images,PERMISSIVE,{public},SELECT,(bucket_id = 'achievement-images'::text),NULL
+storage,objects,Public read access for certification badges,PERMISSIVE,{public},SELECT,(bucket_id = 'certification-badges'::text),NULL
+storage,objects,Public read access for certification files,PERMISSIVE,{public},SELECT,(bucket_id = 'certification-badges'::text),NULL
+storage,objects,Public read access for documents,PERMISSIVE,{public},SELECT,(bucket_id = 'documents'::text),NULL
+storage,objects,Public read access for organization logos,PERMISSIVE,{public},SELECT,(bucket_id = 'organization-logos'::text),NULL
+storage,objects,Public read access for profile images,PERMISSIVE,{public},SELECT,(bucket_id = 'profile-images'::text),NULL
+storage,objects,Public read access for project images,PERMISSIVE,{public},SELECT,(bucket_id = 'project-images'::text),NULL
+storage,objects,Public read access for skill icons,PERMISSIVE,{public},SELECT,(bucket_id = 'skill-icons'::text),NULL
+storage,objects,Public read certification files,PERMISSIVE,{public},SELECT,(bucket_id = 'certification-badges'::text),NULL
+storage,objects,skill-icons-admin-delete,PERMISSIVE,{public},DELETE,((bucket_id = 'skill-icons'::text) AND (((auth.jwt() ->> 'role'::text) = 'admin'::text) OR ((auth.uid())::text = 'admin'::text))),NULL
+storage,objects,skill-icons-admin-upload,PERMISSIVE,{public},INSERT,NULL,((bucket_id = 'skill-icons'::text) AND (((auth.jwt() ->> 'role'::text) = 'admin'::text) OR ((auth.uid())::text = 'admin'::text)))
+storage,objects,skill-icons-public-read,PERMISSIVE,{public},SELECT,(bucket_id = 'skill-icons'::text),NULL
