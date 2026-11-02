@@ -12,8 +12,8 @@ yarn-error.log*
 /coverage
 .nyc_output
 
-# Production build folder - REMOVED FROM IGNORE for deployment
-# /build  <- COMMENTED OUT so we can commit build files
+# Production build output is kept locally for Hostinger uploads.
+# It is ignored by git because it can be regenerated with `npm run build`.
 
 # Environment Variables - Keep these secret!
 .env
@@ -25,6 +25,9 @@ yarn-error.log*
 
 # Supabase
 .supabase/
+
+# Superpowers local runtime scratch space
+.superpowers/
 
 # Database files
 *.db
@@ -69,3 +72,14 @@ dist/
 # Temporary folders
 tmp/
 temp/
+
+# Agent and tooling local files
+.claude/
+.codex/
+AGENTS.md
+graphify-out/
+.superpowers/
+
+# Secrets (baseline): every env file except the example
+.env.*
+!.env.example
