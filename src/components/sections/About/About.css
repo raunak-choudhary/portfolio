@@ -1,0 +1,497 @@
+/* About Section Styles - FIXED CSS CONFLICTS */
+
+.about-section {
+  position: relative;
+  background: linear-gradient(135deg, 
+    var(--bg-primary) 0%, 
+    var(--bg-secondary) 100%);
+  overflow: hidden;
+  min-height: 100vh;
+}
+
+.about-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(
+    ellipse at 70% 30%,
+    rgba(139, 0, 255, 0.1) 0%,
+    rgba(255, 0, 128, 0.05) 25%,
+    transparent 70%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Light theme gradient overlay */
+[data-theme="light"] .about-section::before {
+  background: radial-gradient(
+    ellipse at 70% 30%,
+    rgba(139, 0, 255, 0.06) 0%,
+    rgba(255, 0, 128, 0.03) 25%,
+    transparent 70%
+  );
+}
+
+/* Centered Tab Navigation Header */
+.about-tabs-header {
+  display: flex !important;
+  justify-content: center !important;
+  gap: var(--spacing-md) !important;
+  margin-bottom: var(--spacing-3xl) !important;
+  position: relative !important;
+  z-index: 3 !important;
+}
+
+.about-content {
+  display: flex !important;
+  align-items: center !important;
+  position: relative !important;
+  z-index: 2 !important;
+  min-height: 60vh !important;
+}
+
+/* Left Side: Tab Content - PROTECTED FROM ADMIN STYLES */
+.about-text {
+  flex: 1 !important;
+  max-width: calc(100% - 400px) !important;
+  padding-right: var(--spacing-xl) !important;
+}
+
+/* Tab Navigation Buttons - PROTECTED */
+.about-section .tab-button {
+  background: var(--glass-bg) !important;
+  border: 1px solid var(--glass-border-color) !important;
+  border-radius: var(--radius-lg) !important;
+  padding: var(--spacing-md) var(--spacing-2xl) !important;
+  color: var(--text-secondary) !important;
+  font-weight: 600 !important;
+  font-size: var(--text-lg) !important;
+  cursor: pointer !important;
+  transition: all var(--duration-normal) var(--ease-in-out) !important;
+  backdrop-filter: var(--glass-backdrop) !important;
+  position: relative !important;
+  overflow: hidden !important;
+  min-width: 140px !important;
+}
+
+.about-section .tab-button::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: -100% !important;
+  width: 100% !important;
+  height: 100% !important;
+  background: var(--gradient-primary) !important;
+  opacity: 0.1 !important;
+  transition: left var(--duration-normal) !important;
+  z-index: -1 !important;
+}
+
+.about-section .tab-button:hover::before {
+  left: 0 !important;
+}
+
+.about-section .tab-button:hover {
+  border-color: var(--neon-cyan) !important;
+  color: var(--text-primary) !important;
+  transform: translateY(-3px) !important;
+  box-shadow: 0 15px 35px rgba(0, 255, 255, 0.3) !important;
+}
+
+[data-theme="light"] .about-section .tab-button:hover {
+  border-color: var(--neon-purple) !important;
+  box-shadow: 0 15px 35px rgba(139, 0, 255, 0.2) !important;
+}
+
+.about-section .tab-button.active {
+  background: var(--gradient-primary) !important;
+  border-color: transparent !important;
+  color: var(--color-black) !important;
+  box-shadow: 0 15px 40px rgba(0, 255, 255, 0.4) !important;
+  transform: translateY(-3px) !important;
+}
+
+[data-theme="light"] .about-section .tab-button.active {
+  background: linear-gradient(135deg, var(--neon-purple), var(--neon-pink)) !important;
+  color: var(--color-white) !important;
+  box-shadow: 0 15px 40px rgba(139, 0, 255, 0.3) !important;
+}
+
+.about-section .tab-button.active::before {
+  display: none !important;
+}
+
+/* Tab Content - PROTECTED */
+.about-section .tab-content {
+  position: relative !important;
+}
+
+.about-section .tab-panel {
+  background: var(--glass-bg) !important;
+  border: 1px solid var(--glass-border-color) !important;
+  border-radius: var(--radius-xl) !important;
+  padding: var(--spacing-2xl) !important;
+  backdrop-filter: var(--glass-backdrop) !important;
+  box-shadow: var(--glass-shadow) !important;
+}
+
+.about-section .tab-title {
+  font-size: var(--text-2xl) !important;
+  font-weight: 700 !important;
+  margin-bottom: var(--spacing-xl) !important;
+  background: var(--gradient-secondary) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+.about-text-content {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: var(--spacing-lg) !important;
+}
+
+.about-paragraph {
+  font-size: var(--text-base) !important;
+  line-height: 1.8 !important;
+  color: var(--text-tertiary) !important;
+  text-align: justify !important;
+}
+
+/* 🔧 FIXED: Basic Info Grid - COMPLETELY PROTECTED FROM ADMIN CONFLICTS */
+.about-section .basic-info-grid {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important; /* Force exactly 2 columns */
+  grid-auto-rows: minmax(120px, auto) !important; /* Ensure proper row height */
+  gap: var(--spacing-md) var(--spacing-lg) !important; /* Row gap, Column gap */
+  max-width: 100% !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.about-section .info-item {
+  padding: var(--spacing-lg) var(--spacing-xl) !important;
+  border-radius: var(--radius-lg) !important;
+  transition: all var(--duration-normal) var(--ease-in-out) !important;
+  min-height: 120px !important;
+  height: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-start !important;
+  align-items: stretch !important;
+  background: var(--glass-bg) !important;
+  border: 1px solid var(--glass-border-color) !important;
+  backdrop-filter: var(--glass-backdrop) !important;
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
+  box-sizing: border-box !important;
+  margin: 0 !important;
+  position: relative !important;
+}
+
+.about-section .info-item:hover {
+  transform: translateY(-4px) !important;
+  border-color: var(--neon-purple) !important;
+  box-shadow: 0 15px 30px rgba(139, 0, 255, 0.2) !important;
+}
+
+[data-theme="light"] .about-section .info-item:hover {
+  border-color: var(--neon-orange) !important;
+  box-shadow: 0 15px 30px rgba(255, 102, 0, 0.15) !important;
+}
+
+.about-section .info-label {
+  font-size: var(--text-sm) !important;
+  font-weight: 600 !important;
+  color: var(--neon-cyan) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  margin-bottom: var(--spacing-sm) !important;
+  line-height: 1.2 !important;
+  flex-shrink: 0 !important;
+}
+
+[data-theme="light"] .about-section .info-label {
+  color: var(--neon-purple) !important;
+}
+
+.about-section .info-value {
+  font-size: var(--text-base) !important;
+  font-weight: 500 !important;
+  color: var(--text-primary) !important;
+  line-height: 1.5 !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  flex: 1 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Right Side: Profile Picture - PROTECTED */
+.about-section .about-image {
+  position: absolute !important;
+  right: var(--spacing-2xl) !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  z-index: 3 !important;
+}
+
+.about-section .profile-picture-container {
+  position: relative !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+}
+
+.about-section .profile-picture {
+  width: 280px !important;
+  height: 280px !important;
+  border-radius: 50% !important;
+  overflow: hidden !important;
+  position: relative !important;
+  z-index: 2 !important;
+}
+
+.about-section .profile-img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  transition: transform var(--duration-slow) var(--ease-in-out), opacity var(--duration-normal) var(--ease-in-out) !important;
+}
+
+.about-section .profile-picture:hover .profile-img {
+  transform: scale(1.05) !important;
+}
+
+/* Profile Background Glow - PROTECTED */
+.about-section .profile-background-glow {
+  position: absolute !important;
+  top: -35px !important;
+  left: -35px !important;
+  right: -35px !important;
+  bottom: -35px !important;
+  background: radial-gradient(
+    circle,
+    rgba(139, 0, 255, 0.2) 0%,
+    rgba(255, 0, 128, 0.12) 25%,
+    rgba(255, 102, 0, 0.06) 50%,
+    transparent 70%
+  ) !important;
+  border-radius: 50% !important;
+  animation: neonPulse 4s ease-in-out infinite !important;
+  z-index: -1 !important;
+}
+
+/* Profile Floating Elements - PROTECTED */
+.about-section .profile-floating-elements {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  pointer-events: none !important;
+  z-index: 1 !important;
+}
+
+.about-section .profile-floating-elements .floating-particle {
+  position: absolute !important;
+  width: 10px !important;
+  height: 10px !important;
+  border-radius: 50% !important;
+}
+
+.about-section .profile-floating-elements .floating-particle:nth-child(1) {
+  top: 20% !important;
+  left: 15% !important;
+  background: var(--neon-cyan) !important;
+  animation: floatingParticles 6s ease-in-out infinite !important;
+}
+
+.about-section .profile-floating-elements .floating-particle:nth-child(2) {
+  top: 60% !important;
+  right: 20% !important;
+  background: var(--neon-purple) !important;
+  animation: floatingParticles 8s ease-in-out infinite !important;
+  animation-delay: 2s !important;
+}
+
+.about-section .profile-floating-elements .floating-particle:nth-child(3) {
+  bottom: 25% !important;
+  left: 25% !important;
+  background: var(--neon-pink) !important;
+  animation: floatingParticles 7s ease-in-out infinite !important;
+  animation-delay: 4s !important;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .about-section .about-image {
+    right: var(--spacing-lg) !important;
+  }
+  
+  .about-section .profile-picture {
+    width: 240px !important;
+    height: 240px !important;
+  }
+  
+  .about-text {
+    max-width: calc(100% - 320px) !important;
+  }
+}
+
+@media (max-width: 1024px) {
+  .about-section .about-image {
+    position: relative !important;
+    right: auto !important;
+    top: auto !important;
+    transform: none !important;
+    order: -1 !important;
+    margin-bottom: var(--spacing-xl) !important;
+    display: flex !important;
+    justify-content: center !important;
+  }
+  
+  .about-content {
+    flex-direction: column !important;
+    text-align: center !important;
+  }
+  
+  .about-text {
+    max-width: 100% !important;
+    padding-right: 0 !important;
+  }
+
+  .about-section .profile-picture {
+    width: 250px !important;
+    height: 250px !important;
+  }
+
+  /* Keep 2 columns on tablets with better spacing */
+  .about-section .basic-info-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: var(--spacing-sm) var(--spacing-md) !important;
+  }
+
+  .about-section .info-item {
+    padding: var(--spacing-md) var(--spacing-lg) !important;
+    min-height: 100px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .about-tabs-header {
+    justify-content: center !important;
+    flex-wrap: wrap !important;
+    gap: var(--spacing-sm) !important;
+  }
+
+  .about-section .tab-button {
+    padding: var(--spacing-sm) var(--spacing-lg) !important;
+    font-size: var(--text-base) !important;
+    min-width: 120px !important;
+  }
+
+  .about-section .profile-picture {
+    width: 200px !important;
+    height: 200px !important;
+  }
+
+  .about-section .tab-panel {
+    padding: var(--spacing-xl) !important;
+  }
+
+  /* Switch to single column on mobile */
+  .about-section .basic-info-grid {
+    grid-template-columns: 1fr !important;
+    gap: var(--spacing-md) !important;
+  }
+
+  .about-paragraph {
+    text-align: left !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .about-tabs-header {
+    gap: var(--spacing-xs) !important;
+  }
+  
+  .about-section .tab-button {
+    padding: var(--spacing-xs) var(--spacing-md) !important;
+    font-size: var(--text-sm) !important;
+    min-width: 100px !important;
+  }
+
+  .about-section .profile-picture {
+    width: 160px !important;
+    height: 160px !important;
+  }
+
+  .about-section .tab-panel {
+    padding: var(--spacing-lg) !important;
+  }
+
+  .about-section .tab-title {
+    font-size: var(--text-xl) !important;
+  }
+
+  .about-paragraph {
+    font-size: var(--text-sm) !important;
+  }
+
+  .about-section .info-item {
+    padding: var(--spacing-md) var(--spacing-lg) !important;
+    min-height: 90px !important;
+  }
+
+  /* Single column on small mobile */
+  .about-section .basic-info-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Animation Enhancements */
+.about-text {
+  animation: fadeInLeft 0.8s ease-out !important;
+}
+
+.about-section .about-image {
+  animation: fadeInRight 0.8s ease-out !important;
+  animation-delay: 0.2s !important;
+}
+
+.about-section .tab-panel {
+  animation: fadeIn 0.5s ease-out !important;
+}
+
+.about-tabs-header {
+  animation: fadeInDown 0.6s ease-out !important;
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .about-section .profile-background-glow {
+    animation: none !important;
+  }
+  
+  .about-section .profile-floating-elements .floating-particle {
+    animation: none !important;
+  }
+  
+  .about-section .profile-img {
+    transition: none !important;
+  }
+  
+  .about-text,
+  .about-section .about-image,
+  .about-section .tab-panel,
+  .about-tabs-header {
+    animation: none !important;
+  }
+}

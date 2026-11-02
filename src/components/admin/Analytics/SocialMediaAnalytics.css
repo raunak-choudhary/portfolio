@@ -1,0 +1,233 @@
+/* Social Media Analytics Styles */
+.social-media-analytics {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.social-media-analytics .section-header {
+  margin-bottom: 24px;
+}
+
+.social-media-analytics .section-header h3 {
+  color: var(--neon-cyan);
+  margin-bottom: 8px;
+  font-size: 1.5rem;
+}
+
+.social-media-analytics .section-header p {
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+}
+
+/* Platform Breakdown */
+.platform-breakdown {
+  margin: 24px 0;
+}
+
+.platform-breakdown h4 {
+  color: var(--neon-purple);
+  margin-bottom: 16px;
+  font-size: 1.2rem;
+}
+
+.platform-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.platform-stat {
+  background: rgba(255, 255, 255, 0.03);
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.platform-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.platform-icon {
+  font-size: 1.5rem;
+}
+
+.platform-name {
+  font-weight: 600;
+  color: white;
+  font-size: 1.1rem;
+}
+
+.platform-metrics {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.clicks-count {
+  color: var(--neon-cyan);
+  font-weight: 600;
+}
+
+.percentage {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--neon-cyan), var(--neon-purple));
+  transition: width 0.3s ease;
+}
+
+/* Social Insights */
+.social-insights {
+  margin-top: 24px;
+}
+
+.social-insights h4 {
+  color: var(--neon-orange);
+  margin-bottom: 16px;
+  font-size: 1.2rem;
+}
+
+.insights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.insight-card {
+  background: rgba(255, 255, 255, 0.03);
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.insight-card h5 {
+  color: var(--neon-pink);
+  margin-bottom: 8px;
+  font-size: 1rem;
+}
+
+.insight-card p {
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.5;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+/* No Data State */
+.no-data-state {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.no-data-icon {
+  font-size: 4rem;
+  margin-bottom: 16px;
+}
+
+.no-data-state h4 {
+  color: white;
+  margin-bottom: 8px;
+}
+
+.no-data-state p {
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 24px;
+}
+
+.no-data-tips {
+  background: rgba(255, 255, 255, 0.03);
+  padding: 20px;
+  border-radius: 8px;
+  text-align: left;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.no-data-tips h5 {
+  color: var(--neon-cyan);
+  margin-bottom: 12px;
+}
+
+.no-data-tips ul {
+  list-style: none;
+  padding: 0;
+}
+
+.no-data-tips li {
+  color: rgba(255, 255, 255, 0.8);
+  padding: 4px 0;
+  padding-left: 20px;
+  position: relative;
+}
+
+.no-data-tips li:before {
+  content: "→";
+  position: absolute;
+  left: 0;
+  color: var(--neon-purple);
+}
+
+/* Loading and Error States */
+.social-media-analytics.loading,
+.social-media-analytics.error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top: 3px solid var(--neon-cyan);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.error-message {
+  color: #ff6b6b;
+  text-align: center;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .social-media-analytics {
+    padding: 16px;
+  }
+  
+  .insights-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .platform-metrics {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+}

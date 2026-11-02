@@ -1,0 +1,3046 @@
+/* ContactMessagesManager-Part1.css - Variables & Base Styles */
+
+.contactmgr-messages-manager {
+  --contactmgr-space-xs: 4px;
+  --contactmgr-space-sm: 8px;
+  --contactmgr-space-md: 12px;
+  --contactmgr-space-lg: 16px;
+  --contactmgr-space-xl: 24px;
+  --contactmgr-space-2xl: 32px;
+  --contactmgr-space-3xl: 48px;
+  
+  --contactmgr-radius-xs: 4px;
+  --contactmgr-radius-sm: 6px;
+  --contactmgr-radius-md: 8px;
+  --contactmgr-radius-lg: 12px;
+  --contactmgr-radius-xl: 16px;
+  --contactmgr-radius-2xl: 20px;
+  
+  --contactmgr-transition-fast: 0.15s ease;
+  --contactmgr-transition-normal: 0.25s ease;
+  --contactmgr-transition-slow: 0.4s ease;
+  
+  --contactmgr-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --contactmgr-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.15);
+  --contactmgr-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.2);
+  
+  --contactmgr-glow-rose: 0 0 15px rgba(244, 63, 94, 0.3);
+  --contactmgr-glow-pink: 0 0 15px rgba(236, 72, 153, 0.25);
+  --contactmgr-glow-red: 0 0 15px rgba(239, 68, 68, 0.2);
+  --contactmgr-glow-orange: 0 0 15px rgba(251, 146, 60, 0.25);
+  --contactmgr-glow-purple: 0 0 15px rgba(168, 85, 247, 0.25);
+  
+  --contactmgr-grad-primary: linear-gradient(135deg, #f43f5e, #ec4899);
+  --contactmgr-grad-secondary: linear-gradient(135deg, #be185d, #f43f5e);
+  --contactmgr-grad-success: linear-gradient(135deg, #10b981, #34d399);
+  --contactmgr-grad-error: linear-gradient(135deg, #ef4444, #f87171);
+  
+  --contactmgr-glass-bg: rgba(255, 255, 255, 0.05);
+  --contactmgr-glass-border: rgba(255, 255, 255, 0.1);
+  --contactmgr-glass-backdrop: blur(20px);
+  --contactmgr-glass-hover: rgba(255, 255, 255, 0.08);
+  
+  --contactmgr-rose-bg: rgba(244, 63, 94, 0.1);
+  --contactmgr-rose-border: rgba(244, 63, 94, 0.3);
+  --contactmgr-rose-text: #f43f5e;
+  
+  --contactmgr-pink-bg: rgba(236, 72, 153, 0.1);
+  --contactmgr-pink-border: rgba(236, 72, 153, 0.3);
+  --contactmgr-pink-text: #ec4899;
+  
+  --contactmgr-red-bg: rgba(239, 68, 68, 0.1);
+  --contactmgr-red-border: rgba(239, 68, 68, 0.3);
+  --contactmgr-red-text: #ef4444;
+  
+  --contactmgr-orange-bg: rgba(251, 146, 60, 0.1);
+  --contactmgr-orange-border: rgba(251, 146, 60, 0.3);
+  --contactmgr-orange-text: #fb923c;
+  
+  --contactmgr-purple-bg: rgba(168, 85, 247, 0.1);
+  --contactmgr-purple-border: rgba(168, 85, 247, 0.3);
+  --contactmgr-purple-text: #a855f7;
+  
+  --contactmgr-text-primary: #ffffff;
+  --contactmgr-text-secondary: #cccccc;
+  --contactmgr-text-muted: #888888;
+  --contactmgr-text-accent: #f43f5e;
+  
+  --contactmgr-bg-primary: #0a0a0a;
+  --contactmgr-bg-secondary: #111111;
+  --contactmgr-bg-tertiary: #1a1a1a;
+  
+  --contactmgr-priority-urgent: #dc2626;
+  --contactmgr-priority-high: #ea580c;
+  --contactmgr-priority-normal: #6b7280;
+  --contactmgr-priority-low: #059669;
+}
+
+[data-theme="light"] .contactmgr-messages-manager {
+  --contactmgr-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --contactmgr-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.1);
+  --contactmgr-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
+  
+  --contactmgr-glow-rose: 0 0 15px rgba(244, 63, 94, 0.15);
+  --contactmgr-glow-pink: 0 0 15px rgba(236, 72, 153, 0.15);
+  --contactmgr-glow-red: 0 0 15px rgba(239, 68, 68, 0.15);
+  --contactmgr-glow-orange: 0 0 15px rgba(251, 146, 60, 0.15);
+  --contactmgr-glow-purple: 0 0 15px rgba(168, 85, 247, 0.15);
+  
+  --contactmgr-grad-primary: linear-gradient(135deg, #be185d, #f43f5e);
+  --contactmgr-grad-secondary: linear-gradient(135deg, #9f1239, #be185d);
+  --contactmgr-grad-success: linear-gradient(135deg, #059669, #10b981);
+  --contactmgr-grad-error: linear-gradient(135deg, #dc2626, #ef4444);
+  
+  --contactmgr-glass-bg: rgba(255, 255, 255, 0.8);
+  --contactmgr-glass-border: rgba(0, 0, 0, 0.1);
+  --contactmgr-glass-hover: rgba(240, 240, 240, 0.95);
+  
+  --contactmgr-rose-bg: rgba(244, 63, 94, 0.08);
+  --contactmgr-rose-border: rgba(244, 63, 94, 0.2);
+  --contactmgr-rose-text: #be185d;
+  
+  --contactmgr-pink-bg: rgba(236, 72, 153, 0.08);
+  --contactmgr-pink-border: rgba(236, 72, 153, 0.2);
+  --contactmgr-pink-text: #be1558;
+  
+  --contactmgr-red-bg: rgba(239, 68, 68, 0.08);
+  --contactmgr-red-border: rgba(239, 68, 68, 0.2);
+  --contactmgr-red-text: #dc2626;
+  
+  --contactmgr-orange-bg: rgba(251, 146, 60, 0.08);
+  --contactmgr-orange-border: rgba(251, 146, 60, 0.2);
+  --contactmgr-orange-text: #ea580c;
+  
+  --contactmgr-purple-bg: rgba(168, 85, 247, 0.08);
+  --contactmgr-purple-border: rgba(168, 85, 247, 0.2);
+  --contactmgr-purple-text: #7c3aed;
+  
+  --contactmgr-text-primary: #1a1a1a;
+  --contactmgr-text-secondary: #444444;
+  --contactmgr-text-muted: #666666;
+  --contactmgr-text-accent: #be185d;
+  
+  --contactmgr-bg-primary: #fafafa;
+  --contactmgr-bg-secondary: #ffffff;
+  --contactmgr-bg-tertiary: #f5f5f5;
+  
+  --contactmgr-priority-urgent: #dc2626;
+  --contactmgr-priority-high: #ea580c;
+  --contactmgr-priority-normal: #6b7280;
+  --contactmgr-priority-low: #059669;
+}
+
+.contactmgr-messages-manager {
+  padding: var(--contactmgr-space-xl);
+  max-width: 1600px;
+  margin: 0 auto;
+  animation: contactmgrManagerFadeIn 0.6s ease-out;
+  position: relative;
+  min-height: 100vh;
+  background: transparent;
+}
+
+.contactmgr-messages-manager::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 200px;
+  background: radial-gradient(ellipse at top center, rgba(244, 63, 94, 0.05) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+[data-theme="light"] .contactmgr-messages-manager::before {
+  background: radial-gradient(ellipse at top center, rgba(244, 63, 94, 0.03) 0%, transparent 70%);
+}
+
+.contactmgr-messages-manager::after {
+  content: '';
+  position: fixed;
+  top: 80px;
+  left: 0;
+  width: 100vw;
+  height: calc(100vh - 80px);
+  background-image:
+    radial-gradient(circle at 15% 25%, var(--contactmgr-rose-text) 1px, transparent 1px),
+    radial-gradient(circle at 85% 35%, var(--contactmgr-pink-text) 1.5px, transparent 1.5px),
+    radial-gradient(circle at 35% 75%, var(--contactmgr-orange-text) 1px, transparent 1px),
+    radial-gradient(circle at 65% 45%, var(--contactmgr-purple-text) 1.2px, transparent 1.2px);
+  background-size: 400px 400px, 350px 350px, 300px 300px, 450px 450px;
+  animation: contactmgrParticlesFloat 25s linear infinite;
+  opacity: 0.3;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.contactmgr-manager-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--contactmgr-space-2xl);
+  gap: var(--contactmgr-space-xl);
+  padding: var(--contactmgr-space-xl);
+  background: var(--contactmgr-glass-bg);
+  border: 1px solid var(--contactmgr-glass-border);
+  border-radius: var(--contactmgr-radius-xl);
+  backdrop-filter: var(--contactmgr-glass-backdrop);
+  box-shadow: var(--contactmgr-shadow-md);
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.contactmgr-manager-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--contactmgr-grad-primary);
+  opacity: 0.05;
+  border-radius: var(--contactmgr-radius-xl);
+  z-index: -1;
+  transition: opacity var(--contactmgr-transition-normal);
+}
+
+.contactmgr-manager-header:hover::before {
+  opacity: 0.08;
+}
+
+.contactmgr-header-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.contactmgr-manager-title {
+  font-size: 2.2rem;
+  font-weight: 800;
+  margin: 0 0 var(--contactmgr-space-md);
+  display: flex;
+  align-items: center;
+  gap: var(--contactmgr-space-md);
+  background: var(--contactmgr-grad-primary);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: contactmgrTitleShimmer 3s ease-in-out infinite;
+  line-height: 1.2;
+  word-break: break-word;
+  position: relative;
+}
+
+.contactmgr-title-icon {
+  font-size: 2.5rem;
+  filter: drop-shadow(0 0 10px var(--contactmgr-rose-text));
+  animation: contactmgrIconFloat 2s ease-in-out infinite;
+  flex-shrink: 0;
+  background: var(--contactmgr-grad-primary);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.contactmgr-manager-subtitle {
+  font-size: 1.1rem;
+  color: var(--contactmgr-text-secondary);
+  margin: 0;
+  font-weight: 500;
+  line-height: 1.6;
+  opacity: 0.9;
+}
+
+.contactmgr-header-stats {
+  display: flex;
+  gap: var(--contactmgr-space-lg);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.contactmgr-stat-item {
+  display: flex;
+  align-items: center;
+  gap: var(--contactmgr-space-md);
+  padding: var(--contactmgr-space-md) var(--contactmgr-space-lg);
+  background: var(--contactmgr-glass-bg);
+  border: 1px solid var(--contactmgr-glass-border);
+  border-radius: var(--contactmgr-radius-lg);
+  backdrop-filter: var(--contactmgr-glass-backdrop);
+  transition: all var(--contactmgr-transition-normal);
+  position: relative;
+  overflow: hidden;
+  min-width: 120px;
+}
+
+.contactmgr-stat-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, var(--contactmgr-rose-text), var(--contactmgr-pink-text));
+  opacity: 0;
+  transition: opacity var(--contactmgr-transition-normal);
+  z-index: -1;
+}
+
+.contactmgr-stat-item:hover::before {
+  opacity: 0.1;
+}
+
+.contactmgr-stat-item:hover {
+  transform: translateY(-2px);
+  border-color: var(--contactmgr-rose-text);
+  box-shadow: var(--contactmgr-glow-rose);
+}
+
+.contactmgr-stat-item.contactmgr-stat-unread {
+  border-color: var(--contactmgr-rose-border);
+}
+
+.contactmgr-stat-item.contactmgr-stat-unread:hover {
+  border-color: var(--contactmgr-rose-text);
+  box-shadow: var(--contactmgr-glow-rose);
+}
+
+.contactmgr-stat-item.contactmgr-stat-total {
+  border-color: var(--contactmgr-purple-border);
+}
+
+.contactmgr-stat-item.contactmgr-stat-total:hover {
+  border-color: var(--contactmgr-purple-text);
+  box-shadow: var(--contactmgr-glow-purple);
+}
+
+.contactmgr-stat-item.contactmgr-stat-starred {
+  border-color: var(--contactmgr-orange-border);
+}
+
+.contactmgr-stat-item.contactmgr-stat-starred:hover {
+  border-color: var(--contactmgr-orange-text);
+  box-shadow: var(--contactmgr-glow-orange);
+}
+
+.contactmgr-stat-icon {
+  font-size: 1.5rem;
+  color: var(--contactmgr-rose-text);
+}
+
+.contactmgr-stat-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--contactmgr-space-xs);
+}
+
+.contactmgr-stat-number {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--contactmgr-text-primary);
+  line-height: 1;
+}
+
+.contactmgr-stat-label {
+  font-size: 0.85rem;
+  color: var(--contactmgr-text-secondary);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.contactmgr-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--contactmgr-space-3xl);
+  gap: var(--contactmgr-space-lg);
+  color: var(--contactmgr-text-secondary);
+  min-height: 400px;
+  position: relative;
+}
+
+.contactmgr-loading p {
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin: 0;
+  background: var(--contactmgr-grad-primary);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+@keyframes contactmgrManagerFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes contactmgrTitleShimmer {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes contactmgrIconFloat {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(5deg);
+  }
+}
+
+@keyframes contactmgrParticlesFloat {
+  0% {
+    transform: translateY(0px) translateX(0px) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-20px) translateX(15px) rotate(90deg);
+  }
+  50% {
+    transform: translateY(-10px) translateX(-8px) rotate(180deg);
+  }
+  75% {
+    transform: translateY(-25px) translateX(-20px) rotate(270deg);
+  }
+  100% {
+    transform: translateY(0px) translateX(0px) rotate(360deg);
+  }
+}
+
+@media (max-width: 1024px) {
+  .contactmgr-messages-manager {
+    padding: var(--contactmgr-space-lg);
+  }
+  
+  .contactmgr-manager-header {
+    flex-direction: column;
+    gap: var(--contactmgr-space-lg);
+    align-items: flex-start;
+    padding: var(--contactmgr-space-lg);
+  }
+  
+  .contactmgr-header-stats {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+  
+  .contactmgr-manager-title {
+    font-size: 1.8rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .contactmgr-messages-manager {
+    padding: var(--contactmgr-space-md);
+  }
+  
+  .contactmgr-manager-header {
+    padding: var(--contactmgr-space-md);
+  }
+  
+  .contactmgr-manager-title {
+    font-size: 1.5rem;
+    flex-direction: column;
+    gap: var(--contactmgr-space-sm);
+    text-align: center;
+  }
+  
+  .contactmgr-title-icon {
+    font-size: 2rem;
+  }
+  
+  .contactmgr-header-stats {
+    flex-direction: column;
+    align-items: center;
+    gap: var(--contactmgr-space-md);
+  }
+  
+  .contactmgr-stat-item {
+    width: 100%;
+    max-width: 200px;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .contactmgr-messages-manager {
+    padding: var(--contactmgr-space-sm);
+  }
+  
+  .contactmgr-manager-header {
+    padding: var(--contactmgr-space-sm);
+  }
+  
+  .contactmgr-manager-title {
+    font-size: 1.3rem;
+  }
+  
+  .contactmgr-title-icon {
+    font-size: 1.8rem;
+  }
+  
+  .contactmgr-stat-item {
+    padding: var(--contactmgr-space-sm) var(--contactmgr-space-md);
+    min-width: auto;
+  }
+  
+  .contactmgr-stat-number {
+    font-size: 1.2rem;
+  }
+  
+  .contactmgr-stat-label {
+    font-size: 0.75rem;
+  }
+}
+
+/* ContactMessagesManager-Part2.css - Action Buttons & Status Messages */
+
+.contactmgr-messages-manager .contactmgr-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--contactmgr-space-sm);
+  padding: var(--contactmgr-space-md) var(--contactmgr-space-lg);
+  background: var(--contactmgr-glass-bg);
+  border: 1px solid var(--contactmgr-glass-border);
+  border-radius: var(--contactmgr-radius-md);
+  color: var(--contactmgr-text-primary);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--contactmgr-transition-normal);
+  backdrop-filter: var(--contactmgr-glass-backdrop);
+  position: relative;
+  overflow: hidden;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  min-width: 140px;
+  white-space: nowrap;
+  z-index: 1;
+}
+
+.contactmgr-messages-manager .contactmgr-action-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left var(--contactmgr-transition-slow);
+  z-index: -1;
+}
+
+.contactmgr-messages-manager .contactmgr-action-btn:hover:not(:disabled)::before {
+  left: 100%;
+}
+
+.contactmgr-messages-manager .contactmgr-action-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--contactmgr-shadow-lg);
+}
+
+.contactmgr-messages-manager .contactmgr-action-btn:active:not(:disabled) {
+  transform: translateY(0);
+  transition: transform var(--contactmgr-transition-fast);
+}
+
+.contactmgr-messages-manager .contactmgr-action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.contactmgr-messages-manager .contactmgr-action-btn.contactmgr-primary {
+  background: var(--contactmgr-grad-primary);
+  border-color: transparent;
+  color: var(--contactmgr-bg-primary);
+  font-weight: 700;
+  box-shadow: var(--contactmgr-glow-rose);
+}
+
+.contactmgr-messages-manager .contactmgr-action-btn.contactmgr-primary:hover:not(:disabled) {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: var(--contactmgr-shadow-lg), var(--contactmgr-glow-rose);
+}
+
+[data-theme="light"] .contactmgr-messages-manager .contactmgr-action-btn.contactmgr-primary {
+  color: #ffffff;
+  box-shadow: var(--contactmgr-glow-rose);
+}
+
+.contactmgr-messages-manager .contactmgr-action-btn:hover:not(:disabled) {
+  border-color: var(--contactmgr-rose-text);
+  color: var(--contactmgr-text-secondary); 
+  box-shadow: var(--contactmgr-glow-rose);
+}
+
+.contactmgr-messages-manager .contactmgr-action-icon {
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.contactmgr-messages-manager .contactmgr-action-btn-mini {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: var(--contactmgr-glass-bg);
+  border: 1px solid var(--contactmgr-glass-border);
+  border-radius: var(--contactmgr-radius-sm);
+  cursor: pointer;
+  transition: all var(--contactmgr-transition-fast);
+  font-size: 0.9rem;
+  backdrop-filter: var(--contactmgr-glass-backdrop);
+}
+
+.contactmgr-messages-manager .contactmgr-action-btn-mini:hover {
+  background: var(--contactmgr-rose-bg);
+  border-color: var(--contactmgr-rose-border);
+  transform: scale(1.1);
+  box-shadow: var(--contactmgr-glow-rose);
+}
+
+.contactmgr-messages-manager .contactmgr-status-message {
+  display: flex;
+  align-items: center;
+  gap: var(--contactmgr-space-md);
+  padding: var(--contactmgr-space-lg) var(--contactmgr-space-xl);
+  border-radius: var(--contactmgr-radius-lg);
+  margin-bottom: var(--contactmgr-space-xl);
+  font-weight: 600;
+  backdrop-filter: var(--contactmgr-glass-backdrop);
+  animation: contactmgrStatusSlideIn 0.3s ease-out;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid transparent;
+}
+
+.contactmgr-messages-manager .contactmgr-status-message::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  animation: contactmgrStatusShimmer 2s ease-in-out infinite;
+}
+
+.contactmgr-messages-manager .contactmgr-status-message::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: currentColor;
+  opacity: 0.6;
+}
+
+.contactmgr-messages-manager .contactmgr-status-message.success {
+  background: var(--contactmgr-glass-bg);
+  border-color: var(--contactmgr-rose-border);
+  color: var(--contactmgr-rose-text);
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.25);
+}
+
+.contactmgr-messages-manager .contactmgr-status-message.success::after {
+  background: var(--contactmgr-rose-text);
+}
+
+.contactmgr-messages-manager .contactmgr-status-message.error {
+  background: var(--contactmgr-glass-bg);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+  box-shadow: var(--contactmgr-glow-red);
+}
+
+.contactmgr-messages-manager .contactmgr-status-message.error::after {
+  background: #ef4444;
+}
+
+.contactmgr-messages-manager .contactmgr-status-icon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+  animation: contactmgrStatusIconPulse 1.5s ease-in-out infinite;
+}
+
+.contactmgr-messages-manager .contactmgr-status-content {
+  flex: 1;
+  line-height: 1.4;
+}
+
+.contactmgr-messages-manager .contactmgr-status-content strong {
+  font-weight: 700;
+  margin-right: var(--contactmgr-space-sm);
+}
+
+.contactmgr-messages-manager .contactmgr-filter-tabs {
+  display: flex;
+  gap: var(--contactmgr-space-md);
+  margin-bottom: var(--contactmgr-space-xl);
+  overflow-x: auto;
+  padding: var(--contactmgr-space-sm) 0;
+}
+
+.contactmgr-messages-manager .contactmgr-filter-tab {
+  display: flex;
+  align-items: center;
+  gap: var(--contactmgr-space-sm);
+  padding: var(--contactmgr-space-md) var(--contactmgr-space-lg);
+  background: var(--contactmgr-glass-bg);
+  border: 1px solid var(--contactmgr-glass-border);
+  border-radius: var(--contactmgr-radius-lg);
+  color: var(--contactmgr-text-secondary);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--contactmgr-transition-normal);
+  backdrop-filter: var(--contactmgr-glass-backdrop);
+  white-space: nowrap;
+  position: relative;
+  overflow: hidden;
+}
+
+.contactmgr-messages-manager .contactmgr-filter-tab::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--contactmgr-grad-primary);
+  opacity: 0;
+  transition: opacity var(--contactmgr-transition-normal);
+  z-index: -1;
+}
+
+.contactmgr-messages-manager .contactmgr-filter-tab:hover::before {
+  opacity: 0.1;
+}
+
+.contactmgr-messages-manager .contactmgr-filter-tab:hover {
+  border-color: var(--contactmgr-rose-border);
+  color: var(--contactmgr-text-primary);
+  transform: translateY(-2px);
+  box-shadow: var(--contactmgr-glow-rose);
+}
+
+.contactmgr-messages-manager .contactmgr-filter-tab.active {
+  background: var(--contactmgr-rose-bg);
+  border-color: var(--contactmgr-rose-border);
+  color: var(--contactmgr-rose-text);
+  box-shadow: var(--contactmgr-glow-rose);
+  font-weight: 700;
+  transform: translateY(-2px);
+}
+
+.contactmgr-messages-manager .contactmgr-filter-tab.active::before {
+  opacity: 0.15;
+}
+
+.contactmgr-messages-manager .contactmgr-tab-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.contactmgr-messages-manager .contactmgr-tab-text {
+  font-weight: inherit;
+}
+
+.contactmgr-messages-manager .contactmgr-tab-count {
+  background: var(--contactmgr-rose-text);
+  color: var(--contactmgr-bg-primary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 10px;
+  min-width: 18px;
+  text-align: center;
+  animation: contactmgrCountPulse 2s ease-in-out infinite;
+}
+
+[data-theme="light"] .contactmgr-messages-manager .contactmgr-tab-count {
+  color: #ffffff;
+}
+
+.contactmgr-messages-manager .contactmgr-bulk-actions-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--contactmgr-space-lg) var(--contactmgr-space-xl);
+  background: var(--contactmgr-glass-bg);
+  border: 1px solid var(--contactmgr-rose-border);
+  border-radius: var(--contactmgr-radius-lg);
+  margin-bottom: var(--contactmgr-space-xl);
+  backdrop-filter: var(--contactmgr-glass-backdrop);
+  animation: contactmgrBulkSlideIn 0.3s ease-out;
+  box-shadow: var(--contactmgr-glow-rose);
+}
+
+.contactmgr-messages-manager .contactmgr-bulk-info {
+  display: flex;
+  align-items: center;
+  gap: var(--contactmgr-space-md);
+}
+
+.contactmgr-messages-manager .contactmgr-select-all-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--contactmgr-space-xs);
+  border-radius: var(--contactmgr-radius-sm);
+  transition: all var(--contactmgr-transition-fast);
+}
+
+.contactmgr-messages-manager .contactmgr-select-all-btn:hover {
+  background: var(--contactmgr-rose-bg);
+}
+
+.contactmgr-messages-manager .contactmgr-checkbox-icon {
+  font-size: 1.1rem;
+  color: var(--contactmgr-rose-text);
+}
+
+.contactmgr-messages-manager .contactmgr-bulk-count {
+  color: var(--contactmgr-text-primary);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.contactmgr-messages-manager .contactmgr-clear-selection-btn {
+  background: none;
+  border: 1px solid var(--contactmgr-glass-border);
+  color: var(--contactmgr-text-muted);
+  padding: var(--contactmgr-space-xs) var(--contactmgr-space-sm);
+  border-radius: var(--contactmgr-radius-sm);
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all var(--contactmgr-transition-fast);
+}
+
+.contactmgr-messages-manager .contactmgr-clear-selection-btn:hover {
+  border-color: var(--contactmgr-rose-border);
+  color: var(--contactmgr-rose-text);
+}
+
+.contactmgr-messages-manager .contactmgr-bulk-actions {
+  display: flex;
+  gap: var(--contactmgr-space-sm);
+  flex-wrap: wrap;
+}
+
+.contactmgr-messages-manager .contactmgr-bulk-action-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--contactmgr-space-xs);
+  padding: var(--contactmgr-space-sm) var(--contactmgr-space-md);
+  background: var(--contactmgr-glass-bg);
+  border: 1px solid var(--contactmgr-glass-border);
+  border-radius: var(--contactmgr-radius-md);
+  color: var(--contactmgr-text-secondary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--contactmgr-transition-fast);
+  backdrop-filter: var(--contactmgr-glass-backdrop);
+  white-space: nowrap;
+}
+
+.contactmgr-messages-manager .contactmgr-bulk-action-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--contactmgr-shadow-sm);
+}
+
+.contactmgr-messages-manager .contactmgr-bulk-read:hover {
+  background: var(--contactmgr-rose-bg);
+  border-color: var(--contactmgr-rose-border);
+  color: var(--contactmgr-rose-text);
+}
+
+.contactmgr-messages-manager .contactmgr-bulk-unread:hover {
+  background: var(--contactmgr-pink-bg);
+  border-color: var(--contactmgr-pink-border);
+  color: var(--contactmgr-pink-text);
+}
+
+.contactmgr-messages-manager .contactmgr-bulk-star:hover {
+  background: var(--contactmgr-orange-bg);
+  border-color: var(--contactmgr-orange-border);
+  color: var(--contactmgr-orange-text);
+}
+
+.contactmgr-messages-manager .contactmgr-bulk-archive:hover {
+  background: var(--contactmgr-purple-bg);
+  border-color: var(--contactmgr-purple-border);
+  color: var(--contactmgr-purple-text);
+}
+
+.contactmgr-messages-manager .contactmgr-bulk-spam:hover {
+  background: rgba(156, 163, 175, 0.1);
+  border-color: rgba(156, 163, 175, 0.3);
+  color: #9ca3af;
+}
+
+.contactmgr-messages-manager .contactmgr-bulk-delete:hover {
+  background: var(--contactmgr-red-bg);
+  border-color: var(--contactmgr-red-border);
+  color: var(--contactmgr-red-text);
+}
+
+@keyframes contactmgrStatusSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes contactmgrStatusShimmer {
+  0%, 100% {
+    left: -100%;
+  }
+  50% {
+    left: 100%;
+  }
+}
+
+@keyframes contactmgrStatusIconPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+@keyframes contactmgrCountPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 5px var(--contactmgr-rose-text);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 10px var(--contactmgr-rose-text);
+  }
+}
+
+@keyframes contactmgrBulkSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 1024px) {
+  .contactmgr-messages-manager .contactmgr-filter-tabs {
+    flex-wrap: wrap;
+    gap: var(--contactmgr-space-sm);
+  }
+  
+  .contactmgr-messages-manager .contactmgr-filter-tab {
+    padding: var(--contactmgr-space-sm) var(--contactmgr-space-md);
+    font-size: 0.85rem;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-bulk-actions-bar {
+    flex-direction: column;
+    gap: var(--contactmgr-space-lg);
+    align-items: stretch;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-bulk-actions {
+    justify-content: center;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-action-btn {
+    min-width: 120px;
+    padding: var(--contactmgr-space-sm) var(--contactmgr-space-md);
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .contactmgr-messages-manager .contactmgr-filter-tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding: var(--contactmgr-space-sm);
+    gap: var(--contactmgr-space-xs);
+  }
+  
+  .contactmgr-messages-manager .contactmgr-filter-tab {
+    padding: var(--contactmgr-space-xs) var(--contactmgr-space-sm);
+    font-size: 0.8rem;
+    min-width: max-content;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-tab-text {
+    display: none;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-bulk-actions {
+    flex-direction: column;
+    gap: var(--contactmgr-space-xs);
+  }
+  
+  .contactmgr-messages-manager .contactmgr-bulk-action-btn {
+    width: 100%;
+    justify-content: center;
+    padding: var(--contactmgr-space-sm);
+  }
+  
+  .contactmgr-messages-manager .contactmgr-action-btn {
+    min-width: auto;
+    padding: var(--contactmgr-space-sm);
+    font-size: 0.85rem;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-status-message {
+    padding: var(--contactmgr-space-md);
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .contactmgr-messages-manager .contactmgr-filter-tabs {
+    margin: 0 -var(--contactmgr-space-sm);
+    padding: var(--contactmgr-space-sm);
+  }
+  
+  .contactmgr-messages-manager .contactmgr-filter-tab {
+    padding: var(--contactmgr-space-xs);
+    min-width: 44px;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-tab-count {
+    font-size: 0.7rem;
+    padding: 1px 4px;
+    min-width: 16px;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-bulk-actions-bar {
+    padding: var(--contactmgr-space-sm);
+  }
+  
+  .contactmgr-messages-manager .contactmgr-bulk-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--contactmgr-space-sm);
+  }
+  
+  .contactmgr-messages-manager .contactmgr-bulk-action-btn {
+    padding: var(--contactmgr-space-xs) var(--contactmgr-space-sm);
+    font-size: 0.8rem;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-action-btn {
+    padding: var(--contactmgr-space-xs) var(--contactmgr-space-sm);
+    font-size: 0.8rem;
+    min-width: auto;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-action-btn-mini {
+    width: 28px;
+    height: 28px;
+    font-size: 0.8rem;
+  }
+}
+
+/* ContactMessagesManager-Part3.css - Message Cards & List Styling */
+
+.contactmgr-messages-manager .contactmgr-search-controls {
+  display: flex;
+  gap: var(--contactmgr-space-lg);
+  margin-bottom: var(--contactmgr-space-xl);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.contactmgr-messages-manager .contactmgr-search-wrapper {
+  position: relative;
+  flex: 1;
+  min-width: 300px;
+}
+
+.contactmgr-messages-manager .contactmgr-search-icon {
+  position: absolute;
+  left: var(--contactmgr-space-md);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--contactmgr-text-muted);
+  font-size: 1.1rem;
+  z-index: 2;
+}
+
+.contactmgr-messages-manager .contactmgr-search-input {
+  width: 100%;
+  padding: var(--contactmgr-space-md) var(--contactmgr-space-md) var(--contactmgr-space-md) 40px;
+  background: var(--contactmgr-glass-bg);
+  border: 1px solid var(--contactmgr-glass-border);
+  border-radius: var(--contactmgr-radius-md);
+  color: var(--contactmgr-text-primary);
+  font-size: 1rem;
+  transition: all var(--contactmgr-transition-normal);
+  backdrop-filter: var(--contactmgr-glass-backdrop);
+}
+
+.contactmgr-messages-manager .contactmgr-search-input:focus {
+  outline: none;
+  border-color: var(--contactmgr-rose-text);
+  box-shadow: 0 0 0 3px var(--contactmgr-rose-bg), 0 0 20px var(--contactmgr-glow-rose);
+  background: var(--contactmgr-glass-hover);
+}
+
+.contactmgr-messages-manager .contactmgr-search-input::placeholder {
+  color: var(--contactmgr-text-muted);
+  opacity: 0.7;
+}
+
+.contactmgr-messages-manager .contactmgr-search-clear {
+  position: absolute;
+  right: var(--contactmgr-space-md);
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--contactmgr-text-muted);
+  cursor: pointer;
+  padding: var(--contactmgr-space-xs);
+  border-radius: var(--contactmgr-radius-xs);
+  transition: all var(--contactmgr-transition-fast);
+}
+
+.contactmgr-messages-manager .contactmgr-search-clear:hover {
+  background: var(--contactmgr-rose-bg);
+  color: var(--contactmgr-rose-text);
+}
+
+.contactmgr-messages-manager .contactmgr-sort-controls {
+  display: flex;
+  gap: var(--contactmgr-space-sm);
+  flex-wrap: wrap;
+}
+
+.contactmgr-messages-manager .contactmgr-sort-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--contactmgr-space-xs);
+  padding: var(--contactmgr-space-sm) var(--contactmgr-space-md);
+  background: var(--contactmgr-glass-bg);
+  border: 1px solid var(--contactmgr-glass-border);
+  border-radius: var(--contactmgr-radius-md);
+  color: var(--contactmgr-text-secondary);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--contactmgr-transition-normal);
+  backdrop-filter: var(--contactmgr-glass-backdrop);
+  white-space: nowrap;
+}
+
+.contactmgr-messages-manager .contactmgr-sort-btn:hover {
+  border-color: var(--contactmgr-rose-border);
+  color: var(--contactmgr-text-primary);
+  transform: translateY(-1px);
+}
+
+.contactmgr-messages-manager .contactmgr-sort-btn.active {
+  background: var(--contactmgr-rose-bg);
+  border-color: var(--contactmgr-rose-border);
+  color: var(--contactmgr-rose-text);
+  box-shadow: var(--contactmgr-glow-rose);
+}
+
+.contactmgr-messages-manager .contactmgr-sort-icon {
+  font-size: 1rem;
+}
+
+.contactmgr-messages-manager .contactmgr-sort-order {
+  font-size: 0.8rem;
+  color: var(--contactmgr-rose-text);
+}
+
+.contactmgr-messages-manager .contactmgr-messages-content {
+  position: relative;
+}
+
+.contactmgr-messages-manager .contactmgr-messages-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--contactmgr-space-lg);
+}
+
+.contactmgr-messages-manager .contactmgr-message-card {
+  background: var(--contactmgr-glass-bg);
+  border: 1px solid var(--contactmgr-glass-border);
+  border-radius: var(--contactmgr-radius-xl);
+  backdrop-filter: var(--contactmgr-glass-backdrop);
+  box-shadow: var(--contactmgr-shadow-sm);
+  transition: all var(--contactmgr-transition-normal);
+  position: relative;
+  overflow: hidden;
+}
+
+.contactmgr-messages-manager .contactmgr-message-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--contactmgr-grad-primary);
+  opacity: 0;
+  transition: opacity var(--contactmgr-transition-normal);
+  z-index: 0;
+}
+
+.contactmgr-messages-manager .contactmgr-message-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--contactmgr-shadow-lg);
+  border-color: var(--contactmgr-rose-border);
+}
+
+.contactmgr-messages-manager .contactmgr-message-card:hover::before {
+  opacity: 0.03;
+}
+
+.contactmgr-messages-manager .contactmgr-message-card.contactmgr-selected {
+  border-color: var(--contactmgr-rose-text);
+  box-shadow: var(--contactmgr-glow-rose);
+  transform: translateY(-3px);
+}
+
+.contactmgr-messages-manager .contactmgr-message-card.contactmgr-selected::before {
+  opacity: 0.05;
+}
+
+.contactmgr-messages-manager .contactmgr-message-card.contactmgr-unread {
+  border-left: 4px solid var(--contactmgr-rose-text);
+}
+
+.contactmgr-messages-manager .contactmgr-message-card.contactmgr-starred::after {
+  content: '⭐';
+  position: absolute;
+  top: var(--contactmgr-space-md);
+  right: var(--contactmgr-space-md);
+  font-size: 1.2rem;
+  z-index: 3;
+  animation: contactmgrStarGlow 2s ease-in-out infinite;
+}
+
+.contactmgr-messages-manager .contactmgr-message-card.contactmgr-archived {
+  opacity: 0.7;
+  border-style: dashed;
+}
+
+.contactmgr-messages-manager .contactmgr-message-card.contactmgr-spam {
+  border-color: var(--contactmgr-red-border);
+  background: var(--contactmgr-red-bg);
+}
+
+.contactmgr-messages-manager .contactmgr-message-card.contactmgr-expanded {
+  border-color: var(--contactmgr-rose-text);
+  box-shadow: var(--contactmgr-glow-rose);
+}
+
+.contactmgr-messages-manager .contactmgr-message-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.contactmgr-messages-manager .contactmgr-message-header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--contactmgr-space-md);
+  padding: var(--contactmgr-space-lg) var(--contactmgr-space-xl);
+  border-bottom: 1px solid var(--contactmgr-glass-border);
+}
+
+.contactmgr-messages-manager .contactmgr-message-select {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.contactmgr-messages-manager .contactmgr-select-checkbox {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--contactmgr-space-xs);
+  border-radius: var(--contactmgr-radius-sm);
+  transition: all var(--contactmgr-transition-fast);
+}
+
+.contactmgr-messages-manager .contactmgr-select-checkbox:hover {
+  background: var(--contactmgr-rose-bg);
+}
+
+.contactmgr-messages-manager .contactmgr-message-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.contactmgr-messages-manager .contactmgr-message-sender {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--contactmgr-space-sm);
+  margin-bottom: var(--contactmgr-space-sm);
+}
+
+.contactmgr-messages-manager .contactmgr-sender-name {
+  font-weight: 700;
+  color: var(--contactmgr-text-primary);
+  font-size: 1.1rem;
+}
+
+.contactmgr-messages-manager .contactmgr-sender-email {
+  color: var(--contactmgr-text-secondary);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.contactmgr-messages-manager .contactmgr-sender-org {
+  color: var(--contactmgr-rose-text);
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: var(--contactmgr-rose-bg);
+  padding: 2px 6px;
+  border-radius: var(--contactmgr-radius-xs);
+}
+
+.contactmgr-messages-manager .contactmgr-message-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--contactmgr-space-md);
+}
+
+.contactmgr-messages-manager .contactmgr-message-date {
+  color: var(--contactmgr-text-muted);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.contactmgr-messages-manager .contactmgr-message-number {
+  color: var(--contactmgr-text-muted);
+  font-size: 0.8rem;
+  font-family: monospace;
+  background: var(--contactmgr-glass-bg);
+  padding: 2px 6px;
+  border-radius: var(--contactmgr-radius-xs);
+}
+
+.contactmgr-messages-manager .contactmgr-priority-badge {
+  display: flex;
+  align-items: center;
+  gap: var(--contactmgr-space-xs);
+  padding: 2px 8px;
+  border-radius: var(--contactmgr-radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.contactmgr-messages-manager .contactmgr-priority-urgent {
+  background: rgba(220, 38, 38, 0.1);
+  border: 1px solid rgba(220, 38, 38, 0.3);
+  color: var(--contactmgr-priority-urgent);
+  animation: contactmgrUrgentPulse 1.5s ease-in-out infinite;
+}
+
+.contactmgr-messages-manager .contactmgr-priority-high {
+  background: rgba(234, 88, 12, 0.1);
+  border: 1px solid rgba(234, 88, 12, 0.3);
+  color: var(--contactmgr-priority-high);
+}
+
+.contactmgr-messages-manager .contactmgr-priority-normal {
+  background: rgba(107, 114, 128, 0.1);
+  border: 1px solid rgba(107, 114, 128, 0.3);
+  color: var(--contactmgr-priority-normal);
+}
+
+.contactmgr-messages-manager .contactmgr-priority-low {
+  background: rgba(5, 150, 105, 0.1);
+  border: 1px solid rgba(5, 150, 105, 0.3);
+  color: var(--contactmgr-priority-low);
+}
+
+.contactmgr-messages-manager .contactmgr-priority-icon {
+  font-size: 0.8rem;
+}
+
+.contactmgr-messages-manager .contactmgr-inquiry-type {
+  display: flex;
+  align-items: center;
+  gap: var(--contactmgr-space-xs);
+  color: var(--contactmgr-text-secondary);
+  font-size: 0.8rem;
+  font-weight: 500;
+  background: var(--contactmgr-purple-bg);
+  border: 1px solid var(--contactmgr-purple-border);
+  padding: 2px 8px;
+  border-radius: var(--contactmgr-radius-sm);
+}
+
+.contactmgr-messages-manager .contactmgr-inquiry-icon {
+  font-size: 0.9rem;
+}
+
+.contactmgr-messages-manager .contactmgr-message-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--contactmgr-space-md);
+  flex-shrink: 0;
+}
+
+.contactmgr-messages-manager .contactmgr-status-indicators {
+  display: flex;
+  gap: var(--contactmgr-space-xs);
+  justify-content: flex-end;
+}
+
+.contactmgr-messages-manager .contactmgr-status-indicator {
+  font-size: 1rem;
+  animation: contactmgrIndicatorFloat 2s ease-in-out infinite;
+}
+
+.contactmgr-messages-manager .contactmgr-starred-indicator {
+  color: var(--contactmgr-orange-text);
+}
+
+.contactmgr-messages-manager .contactmgr-archived-indicator {
+  color: var(--contactmgr-purple-text);
+}
+
+.contactmgr-messages-manager .contactmgr-spam-indicator {
+  color: var(--contactmgr-red-text);
+}
+
+.contactmgr-messages-manager .contactmgr-attachment-indicator {
+  color: var(--contactmgr-rose-text);
+}
+
+.contactmgr-messages-manager .contactmgr-quick-actions {
+  display: flex;
+  gap: var(--contactmgr-space-xs);
+  justify-content: flex-end;
+}
+
+.contactmgr-messages-manager .contactmgr-read-toggle:hover {
+  background: var(--contactmgr-rose-bg);
+  border-color: var(--contactmgr-rose-border);
+  color: var(--contactmgr-rose-text);
+}
+
+.contactmgr-messages-manager .contactmgr-star-toggle:hover {
+  background: var(--contactmgr-orange-bg);
+  border-color: var(--contactmgr-orange-border);
+  color: var(--contactmgr-orange-text);
+}
+
+.contactmgr-messages-manager .contactmgr-expand-toggle:hover {
+  background: var(--contactmgr-purple-bg);
+  border-color: var(--contactmgr-purple-border);
+  color: var(--contactmgr-purple-text);
+}
+
+.contactmgr-messages-manager .contactmgr-message-preview {
+  padding: var(--contactmgr-space-lg) var(--contactmgr-space-xl);
+  border-bottom: 1px solid var(--contactmgr-glass-border);
+}
+
+.contactmgr-messages-manager .contactmgr-message-subject {
+  margin-bottom: var(--contactmgr-space-sm);
+}
+
+.contactmgr-messages-manager .contactmgr-message-subject strong {
+  color: var(--contactmgr-text-primary);
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.contactmgr-messages-manager .contactmgr-message-snippet {
+  color: var(--contactmgr-text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.contactmgr-messages-manager .contactmgr-no-messages {
+  text-align: center;
+  padding: var(--contactmgr-space-3xl);
+  background: var(--contactmgr-glass-bg);
+  border: 2px dashed var(--contactmgr-glass-border);
+  border-radius: var(--contactmgr-radius-xl);
+  margin: var(--contactmgr-space-xl) 0;
+}
+
+.contactmgr-messages-manager .contactmgr-no-messages-content {
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.contactmgr-messages-manager .contactmgr-no-messages-icon {
+  font-size: 4rem;
+  margin-bottom: var(--contactmgr-space-lg);
+  opacity: 0.6;
+  animation: contactmgrNoMessagesFloat 3s ease-in-out infinite;
+}
+
+.contactmgr-messages-manager .contactmgr-no-messages-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 var(--contactmgr-space-md);
+  color: var(--contactmgr-text-primary);
+}
+
+.contactmgr-messages-manager .contactmgr-no-messages-subtitle {
+  font-size: 1rem;
+  color: var(--contactmgr-text-secondary);
+  margin: 0 0 var(--contactmgr-space-lg);
+  line-height: 1.6;
+}
+
+.contactmgr-messages-manager .contactmgr-clear-search-btn {
+  background: var(--contactmgr-grad-primary);
+  border: none;
+  border-radius: var(--contactmgr-radius-md);
+  padding: var(--contactmgr-space-md) var(--contactmgr-space-lg);
+  color: var(--contactmgr-bg-primary);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--contactmgr-transition-normal);
+}
+
+.contactmgr-messages-manager .contactmgr-clear-search-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--contactmgr-glow-rose);
+}
+
+[data-theme="light"] .contactmgr-messages-manager .contactmgr-clear-search-btn {
+  color: #ffffff;
+}
+
+@keyframes contactmgrStarGlow {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 5px currentColor);
+  }
+  50% {
+    transform: scale(1.1);
+    filter: drop-shadow(0 0 10px currentColor);
+  }
+}
+
+@keyframes contactmgrUrgentPulse {
+  0%, 100% {
+    box-shadow: 0 0 5px var(--contactmgr-priority-urgent);
+  }
+  50% {
+    box-shadow: 0 0 15px var(--contactmgr-priority-urgent);
+  }
+}
+
+@keyframes contactmgrIndicatorFloat {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes contactmgrNoMessagesFloat {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@media (max-width: 1024px) {
+  .contactmgr-messages-manager .contactmgr-search-controls {
+    flex-direction: column;
+    gap: var(--contactmgr-space-md);
+  }
+  
+  .contactmgr-messages-manager .contactmgr-search-wrapper {
+    min-width: auto;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-sort-controls {
+    justify-content: flex-start;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-message-header {
+    padding: var(--contactmgr-space-md) var(--contactmgr-space-lg);
+  }
+  
+  .contactmgr-messages-manager .contactmgr-message-preview {
+    padding: var(--contactmgr-space-md) var(--contactmgr-space-lg);
+  }
+  
+  .contactmgr-messages-manager .contactmgr-message-meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--contactmgr-space-sm);
+  }
+  
+  .contactmgr-messages-manager .contactmgr-message-actions {
+    align-items: flex-end;
+  }
+}
+
+@media (max-width: 768px) {
+  .contactmgr-messages-manager .contactmgr-message-header {
+    flex-direction: column;
+    gap: var(--contactmgr-space-sm);
+    padding: var(--contactmgr-space-sm) var(--contactmgr-space-md);
+  }
+  
+  .contactmgr-messages-manager .contactmgr-message-select {
+    order: -1;
+    align-self: flex-end;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-message-sender {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--contactmgr-space-xs);
+  }
+  
+  .contactmgr-messages-manager .contactmgr-sender-name {
+    font-size: 1rem;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-message-actions {
+    flex-direction: row;
+    justify-content: space-between;
+    width: 100%;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-status-indicators {
+    justify-content: flex-start;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-sort-controls {
+    overflow-x: auto;
+    padding: var(--contactmgr-space-sm) 0;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-sort-btn {
+    white-space: nowrap;
+    min-width: max-content;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-message-preview {
+    padding: var(--contactmgr-space-sm) var(--contactmgr-space-md);
+  }
+}
+
+@media (max-width: 480px) {
+  .contactmgr-messages-manager .contactmgr-search-input {
+    padding: var(--contactmgr-space-sm) var(--contactmgr-space-sm) var(--contactmgr-space-sm) 36px;
+    font-size: 0.9rem;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-search-icon {
+    left: var(--contactmgr-space-sm);
+    font-size: 1rem;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-message-header {
+    padding: var(--contactmgr-space-xs) var(--contactmgr-space-sm);
+  }
+  
+  .contactmgr-messages-manager .contactmgr-message-preview {
+    padding: var(--contactmgr-space-xs) var(--contactmgr-space-sm);
+  }
+  
+  .contactmgr-messages-manager .contactmgr-sender-name {
+    font-size: 0.95rem;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-sender-email {
+    font-size: 0.85rem;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-message-subject strong {
+    font-size: 1rem;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-message-snippet {
+    font-size: 0.9rem;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-priority-badge,
+  .contactmgr-messages-manager .contactmgr-inquiry-type {
+    font-size: 0.7rem;
+    padding: 1px 6px;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-quick-actions {
+    gap: 2px;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-action-btn-mini {
+    width: 28px;
+    height: 28px;
+    font-size: 0.8rem;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-no-messages-icon {
+    font-size: 3rem;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-no-messages-title {
+    font-size: 1.2rem;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-no-messages-subtitle {
+    font-size: 0.9rem;
+  }
+}
+
+/* ContactMessagesManager-Part4.css - Expanded Content & Details */
+
+.contactmgr-messages-manager .contactmgr-message-expanded {
+  padding: var(--contactmgr-space-xl);
+  background: var(--contactmgr-glass-bg);
+  border-top: 1px solid var(--contactmgr-glass-border);
+  animation: contactmgrExpandSlideIn 0.3s ease-out;
+}
+
+.contactmgr-messages-manager .contactmgr-expanded-content {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--contactmgr-space-2xl);
+}
+
+.contactmgr-messages-manager .contactmgr-full-message {
+  background: var(--contactmgr-glass-bg);
+  border: 1px solid var(--contactmgr-glass-border);
+  border-radius: var(--contactmgr-radius-lg);
+  padding: var(--contactmgr-space-xl);
+  backdrop-filter: var(--contactmgr-glass-backdrop);
+}
+
+.contactmgr-messages-manager .contactmgr-expanded-subject {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin: 0 0 var(--contactmgr-space-lg);
+  color: var(--contactmgr-text-primary);
+  background: var(--contactmgr-grad-primary);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.contactmgr-messages-manager .contactmgr-message-body {
+  line-height: 1.7;
+  color: var(--contactmgr-text-secondary);
+}
+
+.contactmgr-messages-manager .contactmgr-message-paragraph {
+  margin: 0 0 var(--contactmgr-space-lg);
+  font-size: 1rem;
+}
+
+.contactmgr-messages-manager .contactmgr-contact-details {
+  background: var(--contactmgr-rose-bg);
+  border: 1px solid var(--contactmgr-rose-border);
+  border-radius: var(--contactmgr-radius-lg);
+  padding: var(--contactmgr-space-xl);
+  backdrop-filter: var(--contactmgr-glass-backdrop);
+}
+
+.contactmgr-messages-manager .contactmgr-details-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0 0 var(--contactmgr-space-lg);
+  color: var(--contactmgr-rose-text);
+  display: flex;
+  align-items: center;
+  gap: var(--contactmgr-space-sm);
+}
+
+.contactmgr-messages-manager .contactmgr-details-title::before {
+  content: '👤';
+  font-size: 1.2rem;
+}
+
+.contactmgr-messages-manager .contactmgr-details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--contactmgr-space-lg);
+}
+
+.contactmgr-messages-manager .contactmgr-detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--contactmgr-space-xs);
+}
+
+.contactmgr-messages-manager .contactmgr-detail-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--contactmgr-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.contactmgr-messages-manager .contactmgr-detail-value {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--contactmgr-text-primary);
+  word-break: break-word;
+}
+
+.contactmgr-messages-manager .contactmgr-email-link {
+  color: var(--contactmgr-rose-text);
+  text-decoration: none;
+  font-weight: 600;
+  transition: all var(--contactmgr-transition-fast);
+}
+
+.contactmgr-messages-manager .contactmgr-email-link:hover {
+  color: var(--contactmgr-pink-text);
+  text-shadow: 0 0 5px currentColor;
+}
+
+.contactmgr-messages-manager .contactmgr-attachments {
+  background: var(--contactmgr-purple-bg);
+  border: 1px solid var(--contactmgr-purple-border);
+  border-radius: var(--contactmgr-radius-lg);
+  padding: var(--contactmgr-space-xl);
+  backdrop-filter: var(--contactmgr-glass-backdrop);
+}
+
+.contactmgr-messages-manager .contactmgr-attachments-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0 0 var(--contactmgr-space-lg);
+  color: var(--contactmgr-purple-text);
+  display: flex;
+  align-items: center;
+  gap: var(--contactmgr-space-sm);
+}
+
+.contactmgr-messages-manager .contactmgr-attachments-title::before {
+  content: '📎';
+  font-size: 1.2rem;
+}
+
+.contactmgr-messages-manager .contactmgr-attachment-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--contactmgr-space-md);
+  background: var(--contactmgr-glass-bg);
+  border: 1px solid var(--contactmgr-glass-border);
+  border-radius: var(--contactmgr-radius-md);
+  gap: var(--contactmgr-space-lg);
+  transition: all var(--contactmgr-transition-normal);
+}
+
+.contactmgr-messages-manager .contactmgr-attachment-item:hover {
+  border-color: var(--contactmgr-purple-border);
+  background: var(--contactmgr-purple-bg);
+  transform: translateY(-1px);
+}
+
+.contactmgr-messages-manager .contactmgr-attachment-info {
+  display: flex;
+  align-items: center;
+  gap: var(--contactmgr-space-md);
+  flex: 1;
+  min-width: 0;
+}
+
+.contactmgr-messages-manager .contactmgr-attachment-icon {
+  font-size: 1.5rem;
+  color: var(--contactmgr-purple-text);
+  flex-shrink: 0;
+}
+
+.contactmgr-messages-manager .contactmgr-attachment-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.contactmgr-messages-manager .contactmgr-attachment-name {
+  font-weight: 600;
+  color: var(--contactmgr-text-primary);
+  font-size: 0.95rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.contactmgr-messages-manager .contactmgr-attachment-size {
+  color: var(--contactmgr-text-muted);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.contactmgr-messages-manager .contactmgr-download-btn {
+  background: var(--contactmgr-grad-secondary);
+  border: none;
+  border-radius: var(--contactmgr-radius-md);
+  padding: var(--contactmgr-space-sm) var(--contactmgr-space-lg);
+  color: var(--contactmgr-bg-primary);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--contactmgr-transition-normal);
+  display: flex;
+  align-items: center;
+  gap: var(--contactmgr-space-sm);
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.contactmgr-messages-manager .contactmgr-download-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--contactmgr-glow-purple);
+}
+
+[data-theme="light"] .contactmgr-messages-manager .contactmgr-download-btn {
+  color: #ffffff;
+}
+
+.contactmgr-messages-manager .contactmgr-download-icon {
+  font-size: 1rem;
+}
+
+.contactmgr-messages-manager .contactmgr-admin-notes {
+  background: var(--contactmgr-orange-bg);
+  border: 1px solid var(--contactmgr-orange-border);
+  border-radius: var(--contactmgr-radius-lg);
+  padding: var(--contactmgr-space-xl);
+  backdrop-filter: var(--contactmgr-glass-backdrop);
+}
+
+.contactmgr-messages-manager .contactmgr-notes-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0 0 var(--contactmgr-space-lg);
+  color: var(--contactmgr-orange-text);
+  display: flex;
+  align-items: center;
+  gap: var(--contactmgr-space-sm);
+}
+
+.contactmgr-messages-manager .contactmgr-notes-title::before {
+  content: '📝';
+  font-size: 1.2rem;
+}
+
+.contactmgr-messages-manager .contactmgr-notes-content {
+  color: var(--contactmgr-text-secondary);
+  font-size: 1rem;
+  line-height: 1.6;
+  background: var(--contactmgr-glass-bg);
+  padding: var(--contactmgr-space-lg);
+  border-radius: var(--contactmgr-radius-md);
+  border: 1px solid var(--contactmgr-glass-border);
+}
+
+.contactmgr-messages-manager .contactmgr-technical-details {
+  background: var(--contactmgr-glass-bg);
+  border: 1px solid var(--contactmgr-glass-border);
+  border-radius: var(--contactmgr-radius-lg);
+  padding: var(--contactmgr-space-xl);
+  backdrop-filter: var(--contactmgr-glass-backdrop);
+}
+
+.contactmgr-messages-manager .contactmgr-tech-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0 0 var(--contactmgr-space-lg);
+  color: var(--contactmgr-text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--contactmgr-space-sm);
+}
+
+.contactmgr-messages-manager .contactmgr-tech-title::before {
+  content: '⚙️';
+  font-size: 1.2rem;
+}
+
+.contactmgr-messages-manager .contactmgr-tech-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--contactmgr-space-md);
+}
+
+.contactmgr-messages-manager .contactmgr-tech-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--contactmgr-space-xs);
+  padding: var(--contactmgr-space-md);
+  background: var(--contactmgr-glass-bg);
+  border: 1px solid var(--contactmgr-glass-border);
+  border-radius: var(--contactmgr-radius-md);
+}
+
+.contactmgr-messages-manager .contactmgr-tech-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--contactmgr-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.contactmgr-messages-manager .contactmgr-tech-value {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--contactmgr-text-secondary);
+  word-break: break-all;
+  font-family: monospace;
+}
+
+.contactmgr-messages-manager .contactmgr-user-agent {
+  font-size: 0.85rem;
+  color: var(--contactmgr-text-muted);
+}
+
+.contactmgr-messages-manager .contactmgr-tech-link {
+  color: var(--contactmgr-rose-text);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color var(--contactmgr-transition-fast);
+}
+
+.contactmgr-messages-manager .contactmgr-tech-link:hover {
+  color: var(--contactmgr-pink-text);
+}
+
+.contactmgr-messages-manager .contactmgr-utm-params {
+  grid-column: 1 / -1;
+}
+
+.contactmgr-messages-manager .contactmgr-utm-values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--contactmgr-space-sm);
+  margin-top: var(--contactmgr-space-sm);
+}
+
+.contactmgr-messages-manager .contactmgr-utm-values span {
+  background: var(--contactmgr-rose-bg);
+  border: 1px solid var(--contactmgr-rose-border);
+  color: var(--contactmgr-rose-text);
+  padding: var(--contactmgr-space-xs) var(--contactmgr-space-sm);
+  border-radius: var(--contactmgr-radius-sm);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.contactmgr-messages-manager .contactmgr-expanded-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: var(--contactmgr-space-xl);
+  border-top: 1px solid var(--contactmgr-glass-border);
+  gap: var(--contactmgr-space-lg);
+  flex-wrap: wrap;
+}
+
+.contactmgr-messages-manager .contactmgr-primary-actions {
+  display: flex;
+  gap: var(--contactmgr-space-md);
+  flex-wrap: wrap;
+}
+
+.contactmgr-messages-manager .contactmgr-archive-btn:hover {
+  background: var(--contactmgr-purple-bg);
+  border-color: var(--contactmgr-purple-border);
+  color: var(--contactmgr-purple-text);
+  box-shadow: var(--contactmgr-glow-purple);
+}
+
+.contactmgr-messages-manager .contactmgr-spam-btn:hover {
+  background: var(--contactmgr-red-bg);
+  border-color: var(--contactmgr-red-border);
+  color: var(--contactmgr-red-text);
+  box-shadow: var(--contactmgr-glow-red);
+}
+
+.contactmgr-messages-manager .contactmgr-delete-btn:hover {
+  background: var(--contactmgr-red-bg);
+  border-color: var(--contactmgr-red-border);
+  color: var(--contactmgr-red-text);
+  box-shadow: var(--contactmgr-glow-red);
+}
+
+.contactmgr-messages-manager .contactmgr-secondary-actions {
+  display: flex;
+  gap: var(--contactmgr-space-md);
+  flex-wrap: wrap;
+}
+
+.contactmgr-messages-manager .contactmgr-reply-btn:hover {
+  background: var(--contactmgr-rose-bg);
+  border-color: var(--contactmgr-rose-border);
+  color: var(--contactmgr-rose-text);
+  box-shadow: var(--contactmgr-glow-rose);
+}
+
+@keyframes contactmgrExpandSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    max-height: none;
+  }
+}
+
+@media (max-width: 1024px) {
+  .contactmgr-messages-manager .contactmgr-expanded-content {
+    gap: var(--contactmgr-space-xl);
+  }
+  
+  .contactmgr-messages-manager .contactmgr-details-grid {
+    grid-template-columns: 1fr;
+    gap: var(--contactmgr-space-md);
+  }
+  
+  .contactmgr-messages-manager .contactmgr-expanded-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--contactmgr-space-md);
+  }
+  
+  .contactmgr-messages-manager .contactmgr-primary-actions,
+  .contactmgr-messages-manager .contactmgr-secondary-actions {
+    justify-content: center;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-attachment-item {
+    flex-direction: column;
+    gap: var(--contactmgr-space-md);
+    align-items: stretch;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-download-btn {
+    align-self: center;
+  }
+}
+
+@media (max-width: 768px) {
+  .contactmgr-messages-manager .contactmgr-message-expanded {
+    padding: var(--contactmgr-space-md);
+  }
+  
+  .contactmgr-messages-manager .contactmgr-full-message,
+  .contactmgr-messages-manager .contactmgr-contact-details,
+  .contactmgr-messages-manager .contactmgr-attachments,
+  .contactmgr-messages-manager .contactmgr-admin-notes,
+  .contactmgr-messages-manager .contactmgr-technical-details {
+    padding: var(--contactmgr-space-md);
+  }
+  
+  .contactmgr-messages-manager .contactmgr-expanded-subject {
+    font-size: 1.1rem;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-message-paragraph {
+    font-size: 0.95rem;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-primary-actions,
+  .contactmgr-messages-manager .contactmgr-secondary-actions {
+    flex-direction: column;
+    gap: var(--contactmgr-space-sm);
+  }
+  
+  .contactmgr-messages-manager .contactmgr-action-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-tech-grid {
+    gap: var(--contactmgr-space-sm);
+  }
+  
+  .contactmgr-messages-manager .contactmgr-utm-values {
+    flex-direction: column;
+    gap: var(--contactmgr-space-xs);
+  }
+  
+  .contactmgr-messages-manager .contactmgr-attachment-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--contactmgr-space-sm);
+  }
+}
+
+@media (max-width: 480px) {
+  .contactmgr-messages-manager .contactmgr-message-expanded {
+    padding: var(--contactmgr-space-sm);
+  }
+  
+  .contactmgr-messages-manager .contactmgr-expanded-content {
+    gap: var(--contactmgr-space-md);
+  }
+  
+  .contactmgr-messages-manager .contactmgr-full-message,
+  .contactmgr-messages-manager .contactmgr-contact-details,
+  .contactmgr-messages-manager .contactmgr-attachments,
+  .contactmgr-messages-manager .contactmgr-admin-notes,
+  .contactmgr-messages-manager .contactmgr-technical-details {
+    padding: var(--contactmgr-space-sm);
+  }
+  
+  .contactmgr-messages-manager .contactmgr-details-title,
+  .contactmgr-messages-manager .contactmgr-attachments-title,
+  .contactmgr-messages-manager .contactmgr-notes-title,
+  .contactmgr-messages-manager .contactmgr-tech-title {
+    font-size: 1rem;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-expanded-subject {
+    font-size: 1rem;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-message-paragraph {
+    font-size: 0.9rem;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-detail-value {
+    font-size: 0.9rem;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-tech-value {
+    font-size: 0.8rem;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-download-btn {
+    padding: var(--contactmgr-space-xs) var(--contactmgr-space-sm);
+    font-size: 0.85rem;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-action-btn {
+    padding: var(--contactmgr-space-sm);
+    font-size: 0.85rem;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-attachment-name {
+    font-size: 0.9rem;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-attachment-size {
+    font-size: 0.8rem;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-utm-values span {
+    font-size: 0.75rem;
+    padding: 2px 6px;
+  }
+}
+
+/* ContactMessagesManager-Part5.css - Modals & Responsive Design */
+
+.contactmgr-messages-manager .contactmgr-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(5px);
+  animation: contactmgrModalFadeIn 0.3s ease-out;
+}
+
+.contactmgr-messages-manager .contactmgr-modal {
+  background: var(--contactmgr-glass-bg);
+  border: 1px solid var(--contactmgr-glass-border);
+  border-radius: var(--contactmgr-radius-xl);
+  backdrop-filter: var(--contactmgr-glass-backdrop);
+  box-shadow: var(--contactmgr-shadow-lg);
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow: hidden;
+  animation: contactmgrModalSlideIn 0.3s ease-out;
+  position: relative;
+}
+
+.contactmgr-messages-manager .contactmgr-modal::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--contactmgr-grad-primary);
+  opacity: 0.05;
+  border-radius: var(--contactmgr-radius-xl);
+  z-index: 0;
+}
+
+.contactmgr-messages-manager .contactmgr-modal > * {
+  position: relative;
+  z-index: 1;
+}
+
+.contactmgr-messages-manager .contactmgr-modal-header {
+  padding: var(--contactmgr-space-xl);
+  border-bottom: 1px solid var(--contactmgr-glass-border);
+  text-align: center;
+}
+
+.contactmgr-messages-manager .contactmgr-modal-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--contactmgr-text-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--contactmgr-space-sm);
+}
+
+.contactmgr-messages-manager .contactmgr-modal-icon {
+  font-size: 1.4rem;
+  color: var(--contactmgr-rose-text);
+}
+
+.contactmgr-messages-manager .contactmgr-delete-modal .contactmgr-modal-icon {
+  color: var(--contactmgr-red-text);
+  animation: contactmgrDeleteIconPulse 1.5s ease-in-out infinite;
+}
+
+.contactmgr-messages-manager .contactmgr-modal-content {
+  padding: var(--contactmgr-space-xl);
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.contactmgr-messages-manager .contactmgr-modal-text {
+  font-size: 1rem;
+  color: var(--contactmgr-text-secondary);
+  margin-bottom: var(--contactmgr-space-lg);
+  line-height: 1.6;
+  text-align: center;
+}
+
+.contactmgr-messages-manager .contactmgr-modal-text strong {
+  color: var(--contactmgr-text-primary);
+  font-weight: 700;
+}
+
+.contactmgr-messages-manager .contactmgr-warning-text {
+  color: var(--contactmgr-red-text);
+  font-weight: 600;
+  margin-top: var(--contactmgr-space-sm);
+}
+
+.contactmgr-messages-manager .contactmgr-delete-preview {
+  background: var(--contactmgr-glass-bg);
+  border: 1px solid var(--contactmgr-glass-border);
+  border-radius: var(--contactmgr-radius-md);
+  padding: var(--contactmgr-space-lg);
+  margin-top: var(--contactmgr-space-lg);
+}
+
+.contactmgr-messages-manager .contactmgr-preview-card {
+  text-align: left;
+}
+
+.contactmgr-messages-manager .contactmgr-preview-sender {
+  font-weight: 600;
+  color: var(--contactmgr-text-primary);
+  margin-bottom: var(--contactmgr-space-sm);
+  font-size: 0.95rem;
+}
+
+.contactmgr-messages-manager .contactmgr-preview-subject {
+  color: var(--contactmgr-text-secondary);
+  font-weight: 500;
+  margin-bottom: var(--contactmgr-space-sm);
+  font-size: 0.9rem;
+}
+
+.contactmgr-messages-manager .contactmgr-preview-date {
+  color: var(--contactmgr-text-muted);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.contactmgr-messages-manager .contactmgr-modal-actions {
+  display: flex;
+  justify-content: center;
+  gap: var(--contactmgr-space-lg);
+  padding: var(--contactmgr-space-xl);
+  border-top: 1px solid var(--contactmgr-glass-border);
+}
+
+.contactmgr-messages-manager .contactmgr-modal-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--contactmgr-space-sm);
+  padding: var(--contactmgr-space-md) var(--contactmgr-space-xl);
+  border-radius: var(--contactmgr-radius-md);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--contactmgr-transition-normal);
+  min-width: 120px;
+  justify-content: center;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.contactmgr-messages-manager .contactmgr-cancel-btn {
+  background: var(--contactmgr-glass-bg);
+  border: 1px solid var(--contactmgr-glass-border);
+  color: var(--contactmgr-text-secondary);
+}
+
+.contactmgr-messages-manager .contactmgr-cancel-btn:hover {
+  border-color: var(--contactmgr-rose-border);
+  color: var(--contactmgr-text-primary);
+  transform: translateY(-2px);
+  box-shadow: var(--contactmgr-shadow-md);
+}
+
+.contactmgr-messages-manager .contactmgr-confirm-delete-btn {
+  background: var(--contactmgr-grad-error);
+  border: none;
+  color: #ffffff;
+  box-shadow: var(--contactmgr-glow-red);
+}
+
+.contactmgr-messages-manager .contactmgr-confirm-delete-btn:hover:not(:disabled) {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: var(--contactmgr-shadow-lg), var(--contactmgr-glow-red);
+}
+
+.contactmgr-messages-manager .contactmgr-confirm-bulk-btn {
+  background: var(--contactmgr-grad-primary);
+  border: none;
+  color: var(--contactmgr-bg-primary);
+  box-shadow: var(--contactmgr-glow-rose);
+}
+
+.contactmgr-messages-manager .contactmgr-confirm-bulk-btn:hover:not(:disabled) {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: var(--contactmgr-shadow-lg), var(--contactmgr-glow-rose);
+}
+
+[data-theme="light"] .contactmgr-messages-manager .contactmgr-confirm-bulk-btn {
+  color: #ffffff;
+}
+
+.contactmgr-messages-manager .contactmgr-modal-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.contactmgr-messages-manager .contactmgr-btn-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+@keyframes contactmgrModalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes contactmgrModalSlideIn {
+  from { 
+    opacity: 0; 
+    transform: translateY(-30px) scale(0.95); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0) scale(1); 
+  }
+}
+
+@keyframes contactmgrDeleteIconPulse {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 5px currentColor);
+  }
+  50% {
+    transform: scale(1.1);
+    filter: drop-shadow(0 0 15px currentColor);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .contactmgr-messages-manager,
+  .contactmgr-messages-manager .contactmgr-status-message,
+  .contactmgr-messages-manager .contactmgr-action-btn,
+  .contactmgr-messages-manager .contactmgr-message-card,
+  .contactmgr-messages-manager .contactmgr-filter-tab,
+  .contactmgr-messages-manager .contactmgr-bulk-actions-bar,
+  .contactmgr-messages-manager .contactmgr-message-expanded,
+  .contactmgr-messages-manager .contactmgr-modal,
+  .contactmgr-messages-manager .contactmgr-modal-overlay,
+  .contactmgr-messages-manager .contactmgr-manager-title,
+  .contactmgr-messages-manager .contactmgr-title-icon,
+  .contactmgr-messages-manager .contactmgr-status-icon,
+  .contactmgr-messages-manager .contactmgr-status-indicator,
+  .contactmgr-messages-manager .contactmgr-priority-badge,
+  .contactmgr-messages-manager .contactmgr-tab-count,
+  .contactmgr-messages-manager .contactmgr-no-messages-icon,
+  .contactmgr-messages-manager .contactmgr-modal-icon {
+    animation: none;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-action-btn:hover,
+  .contactmgr-messages-manager .contactmgr-message-card:hover,
+  .contactmgr-messages-manager .contactmgr-filter-tab:hover,
+  .contactmgr-messages-manager .contactmgr-modal-btn:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .contactmgr-messages-manager .contactmgr-search-input:focus {
+    transform: none;
+    box-shadow: 0 0 0 3px var(--contactmgr-rose-bg);
+  }
+}
+
+@media (prefers-contrast: high) {
+  .contactmgr-messages-manager .contactmgr-action-btn,
+  .contactmgr-messages-manager .contactmgr-filter-tab,
+  .contactmgr-messages-manager .contactmgr-message-card,
+  .contactmgr-messages-manager .contactmgr-bulk-actions-bar,
+  .contactmgr-messages-manager .contactmgr-modal,
+  .contactmgr-messages-manager .contactmgr-priority-badge,
+  .contactmgr-messages-manager .contactmgr-inquiry-type,
+  .contactmgr-messages-manager .contactmgr-attachment-item {
+    border-width: 2px;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-action-btn.contactmgr-primary {
+    border: 2px solid var(--contactmgr-rose-text);
+  }
+  
+  .contactmgr-messages-manager .contactmgr-status-message {
+    border-width: 2px;
+  }
+
+  .contactmgr-messages-manager .contactmgr-modal-btn {
+    border-width: 2px;
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .contactmgr-messages-manager .contactmgr-action-btn,
+  .contactmgr-messages-manager .contactmgr-filter-tab,
+  .contactmgr-messages-manager .contactmgr-bulk-action-btn,
+  .contactmgr-messages-manager .contactmgr-sort-btn,
+  .contactmgr-messages-manager .contactmgr-modal-btn,
+  .contactmgr-messages-manager .contactmgr-download-btn,
+  .contactmgr-messages-manager .contactmgr-search-input {
+    min-height: 44px;
+    padding: var(--contactmgr-space-md) var(--contactmgr-space-lg);
+  }
+
+  .contactmgr-messages-manager .contactmgr-action-btn-mini,
+  .contactmgr-messages-manager .contactmgr-select-checkbox,
+  .contactmgr-messages-manager .contactmgr-select-all-btn,
+  .contactmgr-messages-manager .contactmgr-search-clear {
+    width: 44px;
+    height: 44px;
+    font-size: 1.1rem;
+  }
+
+  .contactmgr-messages-manager .contactmgr-action-btn:hover,
+  .contactmgr-messages-manager .contactmgr-message-card:hover,
+  .contactmgr-messages-manager .contactmgr-filter-tab:hover,
+  .contactmgr-messages-manager .contactmgr-bulk-action-btn:hover,
+  .contactmgr-messages-manager .contactmgr-modal-btn:hover {
+    transform: none;
+    box-shadow: none;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-message-card:hover {
+    border-color: var(--contactmgr-rose-border);
+  }
+
+  .contactmgr-messages-manager .contactmgr-search-input:focus {
+    transform: none;
+    box-shadow: 0 0 0 3px var(--contactmgr-rose-bg);
+  }
+
+  .contactmgr-messages-manager .contactmgr-attachment-item,
+  .contactmgr-messages-manager .contactmgr-detail-item {
+    min-height: 44px;
+    padding: var(--contactmgr-space-md);
+  }
+}
+
+.contactmgr-messages-manager .contactmgr-action-btn:focus-visible,
+.contactmgr-messages-manager .contactmgr-filter-tab:focus-visible,
+.contactmgr-messages-manager .contactmgr-bulk-action-btn:focus-visible,
+.contactmgr-messages-manager .contactmgr-sort-btn:focus-visible,
+.contactmgr-messages-manager .contactmgr-modal-btn:focus-visible,
+.contactmgr-messages-manager .contactmgr-download-btn:focus-visible,
+.contactmgr-messages-manager .contactmgr-search-input:focus-visible,
+.contactmgr-messages-manager .contactmgr-select-checkbox:focus-visible,
+.contactmgr-messages-manager .contactmgr-select-all-btn:focus-visible,
+.contactmgr-messages-manager .contactmgr-search-clear:focus-visible,
+.contactmgr-messages-manager .contactmgr-clear-selection-btn:focus-visible {
+  outline: 3px solid var(--contactmgr-rose-text);
+  outline-offset: 2px;
+}
+
+[data-theme="light"] .contactmgr-messages-manager .contactmgr-action-btn:focus-visible,
+[data-theme="light"] .contactmgr-messages-manager .contactmgr-filter-tab:focus-visible,
+[data-theme="light"] .contactmgr-messages-manager .contactmgr-bulk-action-btn:focus-visible,
+[data-theme="light"] .contactmgr-messages-manager .contactmgr-sort-btn:focus-visible,
+[data-theme="light"] .contactmgr-messages-manager .contactmgr-modal-btn:focus-visible,
+[data-theme="light"] .contactmgr-messages-manager .contactmgr-download-btn:focus-visible,
+[data-theme="light"] .contactmgr-messages-manager .contactmgr-search-input:focus-visible,
+[data-theme="light"] .contactmgr-messages-manager .contactmgr-select-checkbox:focus-visible,
+[data-theme="light"] .contactmgr-messages-manager .contactmgr-select-all-btn:focus-visible,
+[data-theme="light"] .contactmgr-messages-manager .contactmgr-search-clear:focus-visible,
+[data-theme="light"] .contactmgr-messages-manager .contactmgr-clear-selection-btn:focus-visible {
+  outline-color: var(--contactmgr-text-accent);
+}
+
+.contactmgr-messages-manager * {
+  box-sizing: border-box;
+}
+
+.contactmgr-messages-manager .contactmgr-manager-header,
+.contactmgr-messages-manager .contactmgr-message-card,
+.contactmgr-messages-manager .contactmgr-bulk-actions-bar,
+.contactmgr-messages-manager .contactmgr-modal {
+  contain: layout style;
+}
+
+.contactmgr-messages-manager .contactmgr-message-expanded {
+  contain: layout;
+}
+
+.contactmgr-messages-manager .contactmgr-action-btn,
+.contactmgr-messages-manager .contactmgr-message-card,
+.contactmgr-messages-manager .contactmgr-filter-tab,
+.contactmgr-messages-manager .contactmgr-modal-btn {
+  will-change: transform;
+}
+
+.contactmgr-messages-manager .contactmgr-action-btn::before,
+.contactmgr-messages-manager .contactmgr-status-message::before {
+  will-change: transform, left;
+}
+
+.contactmgr-messages-manager .contactmgr-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-contrast: more) {
+  .contactmgr-messages-manager .contactmgr-manager-title,
+  .contactmgr-messages-manager .contactmgr-expanded-subject {
+    color: var(--contactmgr-text-primary);
+    -webkit-text-fill-color: var(--contactmgr-text-primary);
+    background: none;
+  }
+
+  .contactmgr-messages-manager .contactmgr-action-btn.contactmgr-primary,
+  .contactmgr-messages-manager .contactmgr-confirm-delete-btn,
+  .contactmgr-messages-manager .contactmgr-confirm-bulk-btn,
+  .contactmgr-messages-manager .contactmgr-download-btn,
+  .contactmgr-messages-manager .contactmgr-clear-search-btn {
+    color: white;
+    background: #be185d;
+  }
+
+  .contactmgr-messages-manager .contactmgr-confirm-delete-btn {
+    background: #dc2626;
+  }
+
+  .contactmgr-messages-manager .contactmgr-priority-urgent {
+    background: #dc2626;
+    color: white;
+  }
+
+  .contactmgr-messages-manager .contactmgr-priority-high {
+    background: #ea580c;
+    color: white;
+  }
+
+  .contactmgr-messages-manager .contactmgr-priority-normal {
+    background: #6b7280;
+    color: white;
+  }
+
+  .contactmgr-messages-manager .contactmgr-priority-low {
+    background: #059669;
+    color: white;
+  }
+}
+
+@media (max-width: 1024px) {
+  .contactmgr-messages-manager .contactmgr-modal {
+    max-width: 90%;
+    width: 95%;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-modal-actions {
+    flex-direction: column;
+    gap: var(--contactmgr-space-md);
+  }
+  
+  .contactmgr-messages-manager .contactmgr-modal-btn {
+    width: 100%;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-delete-preview {
+    margin-top: var(--contactmgr-space-md);
+  }
+}
+
+@media (max-width: 768px) {
+  .contactmgr-messages-manager .contactmgr-modal-header {
+    padding: var(--contactmgr-space-md);
+  }
+  
+  .contactmgr-messages-manager .contactmgr-modal-content {
+    padding: var(--contactmgr-space-md);
+    max-height: 50vh;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-modal-actions {
+    padding: var(--contactmgr-space-md);
+  }
+  
+  .contactmgr-messages-manager .contactmgr-modal-title {
+    font-size: 1.1rem;
+    flex-direction: column;
+    gap: var(--contactmgr-space-sm);
+  }
+  
+  .contactmgr-messages-manager .contactmgr-modal-text {
+    font-size: 0.95rem;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-modal-btn {
+    padding: var(--contactmgr-space-sm) var(--contactmgr-space-md);
+    font-size: 0.9rem;
+    min-width: auto;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-delete-preview {
+    padding: var(--contactmgr-space-md);
+  }
+  
+  .contactmgr-messages-manager .contactmgr-preview-sender {
+    font-size: 0.9rem;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-preview-subject {
+    font-size: 0.85rem;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-preview-date {
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .contactmgr-messages-manager .contactmgr-modal {
+    width: 98%;
+    max-height: 90vh;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-modal-header {
+    padding: var(--contactmgr-space-sm);
+  }
+  
+  .contactmgr-messages-manager .contactmgr-modal-content {
+    padding: var(--contactmgr-space-sm);
+    max-height: 60vh;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-modal-actions {
+    padding: var(--contactmgr-space-sm);
+    gap: var(--contactmgr-space-sm);
+  }
+  
+  .contactmgr-messages-manager .contactmgr-modal-title {
+    font-size: 1rem;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-modal-text {
+    font-size: 0.9rem;
+    margin-bottom: var(--contactmgr-space-md);
+  }
+  
+  .contactmgr-messages-manager .contactmgr-modal-btn {
+    padding: var(--contactmgr-space-xs) var(--contactmgr-space-sm);
+    font-size: 0.85rem;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-delete-preview {
+    padding: var(--contactmgr-space-sm);
+    margin-top: var(--contactmgr-space-sm);
+  }
+  
+  .contactmgr-messages-manager .contactmgr-preview-sender {
+    font-size: 0.85rem;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-preview-subject {
+    font-size: 0.8rem;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-preview-date {
+    font-size: 0.7rem;
+  }
+}
+
+/* Priority Dropdown Styles - Add to ContactMessagesManager.css */
+
+.contactmgr-messages-manager .contactmgr-priority-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--contactmgr-space-xs);
+  min-width: 140px;
+  align-items: flex-start;
+  background: var(--contactmgr-glass-bg);
+  border: 1px solid var(--contactmgr-glass-border);
+  border-radius: var(--contactmgr-radius-md);
+  padding: var(--contactmgr-space-md);
+  backdrop-filter: var(--contactmgr-glass-backdrop);
+  transition: all var(--contactmgr-transition-normal);
+  position: relative;
+  overflow: hidden;
+}
+
+.contactmgr-messages-manager .contactmgr-priority-editor::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--contactmgr-grad-primary);
+  opacity: 0;
+  transition: opacity var(--contactmgr-transition-normal);
+  z-index: 0;
+}
+
+.contactmgr-messages-manager .contactmgr-priority-editor:hover::before {
+  opacity: 0.05;
+}
+
+.contactmgr-messages-manager .contactmgr-priority-editor:focus-within {
+  border-color: var(--contactmgr-rose-text);
+  box-shadow: 0 0 0 3px var(--contactmgr-rose-bg), var(--contactmgr-glow-rose);
+  transform: translateY(-2px);
+}
+
+.contactmgr-messages-manager .contactmgr-priority-editor:focus-within::before {
+  opacity: 0.08;
+}
+
+.contactmgr-messages-manager .contactmgr-priority-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--contactmgr-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--contactmgr-space-xs);
+}
+
+.contactmgr-messages-manager .contactmgr-priority-label::before {
+  content: '⭐';
+  font-size: 0.9rem;
+  color: var(--contactmgr-rose-text);
+}
+
+.contactmgr-messages-manager .contactmgr-priority-select {
+  width: 100%;
+  background: var(--contactmgr-glass-bg);
+  border: 1px solid var(--contactmgr-glass-border);
+  border-radius: var(--contactmgr-radius-sm);
+  color: var(--contactmgr-text-primary);
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: var(--contactmgr-space-sm);
+  cursor: pointer;
+  transition: all var(--contactmgr-transition-normal);
+  backdrop-filter: var(--contactmgr-glass-backdrop);
+  position: relative;
+  z-index: 1;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f43f5e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 16px;
+  padding-right: 32px;
+}
+
+[data-theme="light"] .contactmgr-messages-manager .contactmgr-priority-select {
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23be185d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+}
+
+.contactmgr-messages-manager .contactmgr-priority-select:hover {
+  border-color: var(--contactmgr-rose-border);
+  background: var(--contactmgr-glass-hover);
+  transform: translateY(-1px);
+}
+
+.contactmgr-messages-manager .contactmgr-priority-select:focus {
+  outline: none;
+  border-color: var(--contactmgr-rose-text);
+  box-shadow: 0 0 0 2px var(--contactmgr-rose-bg);
+  background: var(--contactmgr-glass-hover);
+}
+
+.contactmgr-messages-manager .contactmgr-priority-select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.contactmgr-messages-manager .contactmgr-priority-select:disabled:hover {
+  border-color: var(--contactmgr-glass-border);
+  background: var(--contactmgr-glass-bg);
+  transform: none;
+}
+
+.contactmgr-messages-manager .contactmgr-priority-select option {
+  background: var(--contactmgr-bg-secondary);
+  color: var(--contactmgr-text-primary);
+  padding: var(--contactmgr-space-sm);
+  font-weight: 600;
+  border: none;
+}
+
+[data-theme="light"] .contactmgr-messages-manager .contactmgr-priority-select option {
+  background: var(--contactmgr-bg-primary);
+  color: var(--contactmgr-text-primary);
+}
+
+/* Responsive adjustments for priority editor */
+@media (max-width: 768px) {
+  .contactmgr-messages-manager .contactmgr-priority-editor {
+    min-width: 120px;
+    padding: var(--contactmgr-space-sm);
+  }
+  
+  .contactmgr-messages-manager .contactmgr-priority-label {
+    font-size: 0.75rem;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-priority-select {
+    font-size: 0.85rem;
+    padding: var(--contactmgr-space-xs) var(--contactmgr-space-sm);
+    padding-right: 28px;
+    background-size: 14px;
+    background-position: right 6px center;
+  }
+}
+
+@media (max-width: 480px) {
+  .contactmgr-messages-manager .contactmgr-priority-editor {
+    min-width: 100px;
+    padding: var(--contactmgr-space-xs);
+  }
+  
+  .contactmgr-messages-manager .contactmgr-priority-label {
+    font-size: 0.7rem;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-priority-select {
+    font-size: 0.8rem;
+    padding: var(--contactmgr-space-xs);
+    padding-right: 24px;
+    background-size: 12px;
+    background-position: right 4px center;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .contactmgr-messages-manager .contactmgr-priority-editor,
+  .contactmgr-messages-manager .contactmgr-priority-select {
+    border-width: 2px;
+  }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+  .contactmgr-messages-manager .contactmgr-priority-select {
+    min-height: 44px;
+    padding: var(--contactmgr-space-md);
+    padding-right: 44px;
+    background-size: 18px;
+    background-position: right 12px center;
+    font-size: 1rem;
+  }
+  
+  .contactmgr-messages-manager .contactmgr-priority-editor {
+    min-width: 160px;
+  }
+}
+
+/* Focus styles for accessibility */
+.contactmgr-messages-manager .contactmgr-priority-select:focus-visible {
+  outline: 3px solid var(--contactmgr-rose-text);
+  outline-offset: 2px;
+}
+
+[data-theme="light"] .contactmgr-messages-manager .contactmgr-priority-select:focus-visible {
+  outline-color: var(--contactmgr-text-accent);
+}

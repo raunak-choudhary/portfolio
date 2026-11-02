@@ -1,0 +1,619 @@
+/* src/components/admin/Analytics/PortfolioMetrics.css - ADMIN SCOPED VERSION */
+/* 🔒 ADMIN SCOPED - NO CONFLICTS WITH PUBLIC PORTFOLIO */
+
+.admin-dashboard .portfolio-metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  width: 100%;
+  animation: fadeInUp 0.6s ease-out;
+}
+
+/* Header */
+.admin-dashboard .portfolio-metrics-header {
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.admin-dashboard .portfolio-metrics-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 0 0 12px 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-shadow: 0 0 20px var(--neon-purple);
+}
+
+.admin-dashboard .metrics-icon {
+  font-size: 32px;
+  filter: drop-shadow(0 0 12px var(--neon-purple));
+  animation: bounce-glow 2s ease-in-out infinite;
+}
+
+.admin-dashboard .portfolio-metrics-subtitle {
+  margin: 0;
+  font-size: 16px;
+  color: var(--text-secondary);
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+
+/* Completeness Overview */
+.admin-dashboard .completeness-overview {
+  margin-bottom: 16px;
+}
+
+.admin-dashboard .completeness-card {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 32px;
+  align-items: center;
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  padding: 32px;
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-dashboard .completeness-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, 
+    var(--neon-cyan) 0%, 
+    var(--neon-purple) 50%, 
+    var(--neon-pink) 100%);
+  animation: rainbow-flow 3s ease-in-out infinite;
+}
+
+.admin-dashboard .completeness-content {
+  flex: 1;
+}
+
+.admin-dashboard .completeness-title {
+  margin: 0 0 16px 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.admin-dashboard .completeness-score {
+  margin-bottom: 16px;
+}
+
+.admin-dashboard .score-value {
+  display: block;
+  font-size: 48px;
+  font-weight: 800;
+  color: var(--neon-cyan);
+  text-shadow: 0 0 30px var(--neon-cyan);
+  margin-bottom: 12px;
+  line-height: 1;
+}
+
+.admin-dashboard .score-progress {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.admin-dashboard .score-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, 
+    var(--neon-cyan) 0%, 
+    var(--neon-purple) 50%, 
+    var(--neon-pink) 100%);
+  border-radius: 4px;
+  transition: width 1s ease-out;
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+}
+
+.admin-dashboard .completeness-description {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-tertiary);
+  line-height: 1.4;
+}
+
+/* Circular Progress */
+.admin-dashboard .completeness-visual {
+  display: flex;
+  justify-content: center;
+}
+
+.admin-dashboard .circular-progress {
+  position: relative;
+  width: 160px;
+  height: 160px;
+}
+
+.admin-dashboard .circular-progress svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.admin-dashboard .circular-progress circle {
+  transition: stroke-dashoffset 1s ease-out;
+}
+
+.admin-dashboard .progress-percentage {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-shadow: 0 0 15px var(--neon-cyan);
+}
+
+/* Metrics Grid */
+.admin-dashboard .portfolio-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+}
+
+/* Section Progress */
+.admin-dashboard .section-progress {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.admin-dashboard .section-progress-title {
+  margin: 0 0 24px 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-dashboard .section-progress-title::before {
+  content: '📋';
+  font-size: 20px;
+  filter: drop-shadow(0 0 8px var(--neon-emerald));
+}
+
+.admin-dashboard .section-progress-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.admin-dashboard .section-item {
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.admin-dashboard .section-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(0, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.admin-dashboard .section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.admin-dashboard .section-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.admin-dashboard .section-percentage {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--neon-cyan);
+}
+
+.admin-dashboard .section-progress-bar {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.admin-dashboard .section-progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.8s ease-out;
+}
+
+.admin-dashboard .section-progress-fill.complete {
+  background: linear-gradient(90deg, var(--neon-emerald), var(--neon-cyan));
+  box-shadow: 0 0 12px rgba(50, 205, 50, 0.5);
+}
+
+.admin-dashboard .section-progress-fill.partial {
+  background: linear-gradient(90deg, var(--neon-orange), var(--neon-yellow));
+  box-shadow: 0 0 12px rgba(255, 165, 0, 0.5);
+}
+
+.admin-dashboard .section-progress-fill.empty {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.admin-dashboard .section-weight {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+/* Engagement Summary */
+.admin-dashboard .engagement-summary {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.admin-dashboard .engagement-title {
+  margin: 0 0 20px 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-dashboard .engagement-title::before {
+  content: '👀';
+  font-size: 20px;
+  filter: drop-shadow(0 0 8px var(--neon-pink));
+}
+
+.admin-dashboard .engagement-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.admin-dashboard .engagement-item {
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.admin-dashboard .engagement-item:hover {
+  background: rgba(255, 20, 147, 0.1);
+  border-color: rgba(255, 20, 147, 0.3);
+  transform: translateY(-2px);
+}
+
+.admin-dashboard .engagement-type {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  text-transform: capitalize;
+}
+
+.admin-dashboard .engagement-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-dashboard .stat-views,
+.admin-dashboard .stat-score {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.admin-dashboard .stat-views {
+  color: var(--neon-cyan);
+}
+
+.admin-dashboard .stat-score {
+  color: var(--neon-pink);
+}
+
+/* Growth Timeline */
+.admin-dashboard .growth-timeline {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 24px;
+  text-align: center;
+}
+
+.admin-dashboard .timeline-title {
+  margin: 0 0 16px 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.admin-dashboard .timeline-title::before {
+  content: '📅';
+  font-size: 20px;
+  filter: drop-shadow(0 0 8px var(--neon-orange));
+}
+
+.admin-dashboard .timeline-content {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.admin-dashboard .timeline-description {
+  font-size: 16px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin: 0 0 12px 0;
+}
+
+.admin-dashboard .timeline-updated {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  font-style: italic;
+  margin: 0;
+}
+
+/* Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes bounce-glow {
+  0%, 100% {
+    transform: translateY(0);
+    filter: drop-shadow(0 0 12px var(--neon-purple));
+  }
+  50% {
+    transform: translateY(-8px);
+    filter: drop-shadow(0 0 20px var(--neon-purple)) drop-shadow(0 0 30px var(--neon-cyan));
+  }
+}
+
+@keyframes rainbow-flow {
+  0%, 100% {
+    background-position: 0% 0%;
+  }
+  50% {
+    background-position: 100% 0%;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .admin-dashboard .completeness-card {
+    grid-template-columns: 1fr;
+    text-align: center;
+    gap: 24px;
+  }
+  
+  .admin-dashboard .circular-progress {
+    width: 140px;
+    height: 140px;
+  }
+  
+  .admin-dashboard .progress-percentage {
+    font-size: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-dashboard .portfolio-metrics {
+    gap: 24px;
+  }
+  
+  .admin-dashboard .portfolio-metrics-title {
+    font-size: 24px;
+  }
+  
+  .admin-dashboard .portfolio-metrics-subtitle {
+    font-size: 14px;
+  }
+  
+  .admin-dashboard .completeness-card {
+    padding: 24px;
+  }
+  
+  .admin-dashboard .completeness-title {
+    font-size: 20px;
+  }
+  
+  .admin-dashboard .score-value {
+    font-size: 36px;
+  }
+  
+  .admin-dashboard .circular-progress {
+    width: 120px;
+    height: 120px;
+  }
+  
+  .admin-dashboard .progress-percentage {
+    font-size: 18px;
+  }
+  
+  .admin-dashboard .portfolio-metrics-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .admin-dashboard .section-progress-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .admin-dashboard .engagement-grid {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-dashboard .portfolio-metrics {
+    gap: 20px;
+  }
+  
+  .admin-dashboard .completeness-card,
+  .admin-dashboard .section-progress,
+  .admin-dashboard .engagement-summary,
+  .admin-dashboard .growth-timeline {
+    padding: 16px;
+  }
+  
+  .admin-dashboard .portfolio-metrics-title {
+    font-size: 20px;
+  }
+  
+  .admin-dashboard .score-value {
+    font-size: 28px;
+  }
+  
+  .admin-dashboard .circular-progress {
+    width: 100px;
+    height: 100px;
+  }
+  
+  .admin-dashboard .progress-percentage {
+    font-size: 16px;
+  }
+  
+  .admin-dashboard .section-item {
+    padding: 12px;
+  }
+  
+  .admin-dashboard .engagement-item {
+    padding: 12px;
+  }
+}
+
+/* Theme Adjustments */
+[data-theme="light"] .admin-dashboard .completeness-card,
+[data-theme="light"] .admin-dashboard .section-progress,
+[data-theme="light"] .admin-dashboard .engagement-summary,
+[data-theme="light"] .admin-dashboard .growth-timeline {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .admin-dashboard .section-item,
+[data-theme="light"] .admin-dashboard .engagement-item {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .admin-dashboard .section-item:hover,
+[data-theme="light"] .admin-dashboard .engagement-item:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .admin-dashboard .portfolio-metrics *,
+  .admin-dashboard .portfolio-metrics *::before,
+  .admin-dashboard .portfolio-metrics *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Accessibility */
+@media (prefers-contrast: high) {
+  .admin-dashboard .completeness-card,
+  .admin-dashboard .section-progress,
+  .admin-dashboard .engagement-summary,
+  .admin-dashboard .growth-timeline {
+    border-width: 2px;
+  }
+  
+  .admin-dashboard .section-item,
+  .admin-dashboard .engagement-item {
+    border-width: 2px;
+  }
+  
+  .admin-dashboard .circular-progress circle {
+    stroke-width: 6;
+  }
+}
+
+/* Focus States for Accessibility */
+.admin-dashboard .section-item:focus,
+.admin-dashboard .engagement-item:focus {
+  outline: 2px solid var(--neon-cyan);
+  outline-offset: 2px;
+}
+
+/* Print Styles */
+@media print {
+  .admin-dashboard .portfolio-metrics {
+    background: white;
+    color: black;
+  }
+  
+  .admin-dashboard .completeness-card,
+  .admin-dashboard .section-progress,
+  .admin-dashboard .engagement-summary,
+  .admin-dashboard .growth-timeline {
+    background: white;
+    border: 1px solid #ddd;
+    page-break-inside: avoid;
+    margin-bottom: 20px;
+  }
+  
+  .admin-dashboard .section-item,
+  .admin-dashboard .engagement-item {
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+  }
+  
+  .admin-dashboard .portfolio-metrics-title,
+  .admin-dashboard .completeness-title,
+  .admin-dashboard .section-progress-title,
+  .admin-dashboard .engagement-title,
+  .admin-dashboard .timeline-title {
+    color: black;
+    text-shadow: none;
+  }
+  
+  .admin-dashboard .metrics-icon {
+    display: none;
+  }
+  
+  .admin-dashboard .circular-progress {
+    filter: grayscale(100%);
+  }
+}

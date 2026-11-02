@@ -1,0 +1,1948 @@
+/* ============================================ */
+/* EDUCATION SECTION - 3D FLIP CARDS CSS */
+/* Updated Part 1: Base Styles + Front Side */
+/* Orange/Green Neon Theme */
+/* ============================================ */
+
+/* Education Section Base Styles */
+.education-section {
+  min-height: 100vh;
+  padding: calc(80px + var(--spacing-4xl) + var(--spacing-2xl)) 0 var(--spacing-4xl);
+  background: linear-gradient(135deg, 
+    var(--bg-primary) 0%, 
+    var(--bg-secondary) 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.education-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(
+    ellipse at 70% 30%,
+    rgba(255, 102, 0, 0.12) 0%,
+    rgba(0, 255, 128, 0.06) 25%,
+    transparent 70%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Light theme adjustments */
+[data-theme="light"] .education-section::before {
+  background: radial-gradient(
+    ellipse at 70% 30%,
+    rgba(255, 102, 0, 0.05) 0%,
+    rgba(0, 255, 128, 0.03) 25%,
+    transparent 70%
+  );
+}
+
+/* Enhanced Section Header */
+.education-section .section-header {
+  text-align: center;
+  margin-bottom: var(--spacing-4xl);
+  position: relative;
+  z-index: 2;
+  padding-top: var(--spacing-3xl);
+}
+
+.education-section .neon-title {
+  font-size: var(--text-5xl);
+  font-weight: 800;
+  margin-bottom: var(--spacing-lg);
+  background: linear-gradient(135deg, var(--neon-orange), var(--neon-green), var(--neon-cyan));
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 30px rgba(255, 102, 0, 0.6);
+  position: relative;
+  animation: gradientShift 4s ease-in-out infinite;
+}
+
+.education-section .neon-title::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100px;
+  height: 3px;
+  background: linear-gradient(135deg, var(--neon-orange), var(--neon-green));
+  border-radius: 2px;
+  box-shadow: 0 0 15px rgba(255, 102, 0, 0.7);
+}
+
+.education-section .neon-subtitle {
+  font-size: var(--text-xl);
+  color: var(--text-secondary);
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.6;
+  font-weight: 500;
+  background: linear-gradient(135deg, var(--text-secondary), var(--neon-green));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 20px rgba(0, 255, 128, 0.4);
+}
+
+/* ============================================ */
+/* ACADEMIC TIMELINE CONTAINER */
+/* ============================================ */
+
+.education-section .timeline-container {
+  position: relative;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: var(--spacing-2xl) 0;
+}
+
+/* Vertical Timeline Path */
+.education-section .timeline-path {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4xl);
+}
+
+.education-section .timeline-path::before {
+  content: '';
+  position: absolute;
+  left: 60px;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(
+    to bottom,
+    var(--neon-orange) 0%,
+    var(--neon-green) 50%,
+    var(--neon-cyan) 100%
+  );
+  border-radius: 2px;
+  box-shadow: 0 0 20px rgba(255, 102, 0, 0.5);
+  z-index: 1;
+}
+
+/* ============================================ */
+/* TIMELINE MILESTONE */
+/* ============================================ */
+
+.education-section .timeline-milestone {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-2xl);
+  animation: fadeInUp 0.8s ease-out;
+}
+
+.education-section .timeline-milestone:nth-child(1) { animation-delay: 0.1s; }
+.education-section .timeline-milestone:nth-child(2) { animation-delay: 0.3s; }
+.education-section .timeline-milestone:nth-child(3) { animation-delay: 0.5s; }
+.education-section .timeline-milestone:nth-child(4) { animation-delay: 0.7s; }
+
+/* Timeline Node (Graduation Cap) */
+.education-section .timeline-node {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  flex-shrink: 0;
+}
+
+.education-section .graduation-cap {
+  font-size: 3rem;
+  background: var(--glass-bg);
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid var(--neon-orange);
+  backdrop-filter: var(--glass-backdrop);
+  position: relative;
+  z-index: 3;
+  transition: all var(--duration-normal) var(--ease-in-out);
+  animation: nodePulse 3s ease-in-out infinite;
+}
+
+.education-section .timeline-milestone:hover .graduation-cap {
+  border-color: var(--neon-green);
+  box-shadow: 
+    0 0 40px rgba(0, 255, 128, 0.8),
+    inset 0 0 15px rgba(0, 255, 128, 0.2);
+  background: rgba(0, 255, 128, 0.05);
+}
+
+.education-section .node-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 102, 0, 0.3) 0%,
+    rgba(0, 255, 128, 0.2) 50%,
+    transparent 70%
+  );
+  animation: glowPulse 4s ease-in-out infinite;
+  z-index: 1;
+}
+
+/* ============================================ */
+/* 3D FLIP CARD CONTAINER */
+/* ============================================ */
+
+.education-section .education-flip-card {
+  background: transparent;
+  width: 100%;
+  height: 600px; /* FIXED HEIGHT FOR BOTH SIDES */
+  perspective: 1000px;
+  flex: 1;
+}
+
+.education-section .education-flip-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  text-align: left;
+  transition: transform 0.8s ease-in-out;
+  transform-style: preserve-3d;
+}
+
+.education-section .education-flip-card.flipped .education-flip-card-inner {
+  transform: rotateY(180deg);
+}
+
+.education-section .education-flip-card-front,
+.education-section .education-flip-card-back {
+  position: absolute;
+  width: 100%;
+  height: 100%; /* SAME HEIGHT FOR BOTH SIDES */
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border-color);
+  border-radius: var(--radius-2xl);
+  backdrop-filter: var(--glass-backdrop);
+  padding: var(--spacing-2xl);
+  transition: all var(--duration-normal) var(--ease-in-out);
+  overflow: hidden;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.2),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.education-section .education-flip-card-back {
+  transform: rotateY(180deg);
+}
+
+/* Card Hover Effects */
+.education-section .timeline-milestone:hover .education-flip-card-front,
+.education-section .timeline-milestone:hover .education-flip-card-back {
+  border-color: var(--neon-orange);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    0 0 40px rgba(255, 102, 0, 0.6),
+    inset 0 0 20px rgba(255, 102, 0, 0.1);
+  background: var(--glass-bg-enhanced);
+}
+
+.education-section .timeline-milestone:hover .education-flip-card-back {
+  transform: rotateY(180deg);
+  border-color: var(--neon-green);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    0 0 40px rgba(0, 255, 128, 0.6),
+    inset 0 0 20px rgba(0, 255, 128, 0.1);
+  background: var(--glass-bg-enhanced);
+}
+
+/* ============================================ */
+/* FRONT SIDE STYLES - UPDATED LAYOUT */
+/* ============================================ */
+
+.education-section .education-flip-card-front::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 102, 0, 0.05), rgba(0, 255, 128, 0.05));
+  opacity: 0;
+  transition: opacity var(--duration-normal) var(--ease-in-out);
+  pointer-events: none;
+}
+
+.education-section .timeline-milestone:hover .education-flip-card-front::before {
+  opacity: 1;
+}
+
+/* Top Row: Logo (Center) + Flip Icon (Right) */
+.education-section .card-top-row {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  margin-bottom: var(--spacing-lg);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid rgba(255, 102, 0, 0.2);
+  position: relative;
+}
+
+/* Institution Logo - Bigger Size, Centered */
+.education-section .institution-logo-large {
+  position: relative;
+  width: 120px; /* BIGGER SIZE */
+  height: 120px;
+  flex-shrink: 0;
+}
+
+.education-section .logo-image-large {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--neon-green);
+  box-shadow: 0 0 25px rgba(0, 255, 128, 0.4);
+  transition: all var(--duration-normal) var(--ease-in-out);
+}
+
+.education-section .logo-image-large:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 35px rgba(0, 255, 128, 0.6);
+}
+
+.education-section .logo-temp-large {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--neon-orange), var(--neon-green));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-2xl); /* BIGGER FONT FOR BIGGER LOGO */
+  font-weight: 800;
+  color: var(--color-white);
+  border: 3px solid var(--neon-cyan);
+  box-shadow: 
+    0 0 25px rgba(255, 102, 0, 0.5),
+    inset 0 0 15px rgba(255, 255, 255, 0.1);
+  text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  animation: logoGlow 3s ease-in-out infinite;
+}
+
+/* Flip Card Button - Right Aligned */
+.education-section .flip-card-btn {
+  background: rgba(255, 102, 0, 0.1);
+  border: 2px solid var(--neon-orange);
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--duration-normal) var(--ease-in-out);
+  backdrop-filter: blur(10px);
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 5;
+}
+
+.education-section .flip-card-btn svg {
+  width: 24px;
+  height: 24px;
+  stroke: var(--neon-orange);
+  transition: all var(--duration-normal) var(--ease-in-out);
+}
+
+.education-section .flip-card-btn:hover {
+  background: rgba(255, 102, 0, 0.2);
+  border-color: var(--neon-green);
+  transform: scale(1.1);
+  box-shadow: 0 0 20px rgba(255, 102, 0, 0.5);
+}
+
+.education-section .flip-card-btn:hover svg {
+  stroke: var(--neon-green);
+}
+
+/* Degree Title */
+.education-section .front-degree-title {
+  margin-bottom: var(--spacing-md);
+  text-align: center;
+}
+
+.education-section .front-degree-title h3 {
+  font-size: var(--text-2xl);
+  font-weight: 800;
+  margin: 0;
+  background: linear-gradient(135deg, var(--neon-orange), var(--neon-green));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 20px rgba(255, 102, 0, 0.4);
+  line-height: 1.2;
+}
+
+/* Institution Names */
+.education-section .front-institution-info {
+  margin-bottom: var(--spacing-lg);
+  text-align: center;
+}
+
+.education-section .university-name {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  margin: 0 0 var(--spacing-xs) 0;
+  color: var(--neon-cyan);
+  text-shadow: 0 0 15px rgba(0, 255, 255, 0.4);
+}
+
+.education-section .college-school-name {
+  font-size: var(--text-base);
+  font-weight: 600;
+  margin: 0;
+  color: var(--text-secondary);
+  opacity: 0.9;
+  font-style: italic;
+}
+
+/* Duration Display */
+.education-section .front-duration {
+  background: rgba(255, 102, 0, 0.1);
+  border: 1px solid rgba(255, 102, 0, 0.3);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-sm) var(--spacing-md);
+  text-align: center;
+  margin-bottom: var(--spacing-md);
+}
+
+.education-section .duration-label {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+  display: block;
+}
+
+.education-section .duration-value {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--neon-orange);
+  text-shadow: 0 0 8px rgba(255, 102, 0, 0.4);
+}
+
+/* Status Badge */
+.education-section .front-status {
+  text-align: center;
+  margin-bottom: var(--spacing-md);
+}
+
+.education-section .front-status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+  background: linear-gradient(135deg, var(--neon-green), var(--neon-cyan));
+  color: var(--color-white);
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 0 15px rgba(0, 255, 128, 0.5);
+  text-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+}
+
+/* GPA/Percentage - SEPARATE BOXES */
+.education-section .front-grade-container {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+}
+
+.education-section .front-grade-received,
+.education-section .front-grade-max {
+  flex: 1;
+  background: rgba(0, 255, 128, 0.1);
+  border: 1px solid rgba(0, 255, 128, 0.3);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.education-section .front-grade-max {
+  background: rgba(0, 255, 255, 0.1);
+  border-color: rgba(0, 255, 255, 0.3);
+}
+
+.education-section .front-grade-label {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.education-section .front-grade-value {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--neon-green), var(--neon-cyan));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 10px rgba(0, 255, 128, 0.4);
+}
+
+/* Major Display */
+.education-section .front-major {
+  background: rgba(0, 255, 255, 0.1);
+  border: 1px solid rgba(0, 255, 255, 0.2);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm);
+  text-align: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.education-section .front-major-label {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.education-section .front-major-value {
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: var(--neon-cyan);
+  text-shadow: 0 0 8px rgba(0, 255, 255, 0.4);
+}
+
+/* ============================================ */
+/* LIGHT THEME ADJUSTMENTS - FRONT SIDE */
+/* ============================================ */
+
+[data-theme="light"] .education-section .neon-title {
+  text-shadow: 0 0 30px rgba(255, 102, 0, 0.4);
+}
+
+[data-theme="light"] .education-section .neon-title::after {
+  box-shadow: 0 0 15px rgba(255, 102, 0, 0.5);
+}
+
+[data-theme="light"] .education-section .neon-subtitle {
+  text-shadow: 0 0 20px rgba(0, 255, 128, 0.3);
+}
+
+[data-theme="light"] .education-flip-card-front,
+[data-theme="light"] .education-flip-card-back {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(255, 102, 0, 0.2);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(255, 255, 255, 0.8);
+}
+
+[data-theme="light"] .timeline-milestone:hover .education-flip-card-front,
+[data-theme="light"] .timeline-milestone:hover .education-flip-card-back {
+  border-color: var(--neon-orange);
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.12),
+    0 0 30px rgba(255, 102, 0, 0.3);
+}
+
+[data-theme="light"] .timeline-milestone:hover .education-flip-card-back {
+  transform: rotateY(180deg) translateY(-8px);
+}
+
+[data-theme="light"] .university-name {
+  color: var(--neon-purple);
+  text-shadow: 0 0 15px rgba(139, 0, 255, 0.4);
+}
+
+[data-theme="light"] .duration-value {
+  color: #cc4400;
+}
+
+[data-theme="light"] .front-duration {
+  background: rgba(255, 102, 0, 0.15);
+  border-color: rgba(255, 102, 0, 0.4);
+}
+
+[data-theme="light"] .front-grade-received {
+  background: rgba(0, 255, 128, 0.15);
+  border-color: rgba(0, 255, 128, 0.4);
+}
+
+[data-theme="light"] .front-grade-max {
+  background: rgba(0, 255, 255, 0.15);
+  border-color: rgba(0, 255, 255, 0.3);
+}
+
+[data-theme="light"] .front-major {
+  background: rgba(0, 255, 255, 0.15);
+  border-color: rgba(0, 255, 255, 0.3);
+}
+
+[data-theme="light"] .front-major-value {
+  color: var(--neon-purple);
+  text-shadow: 0 0 8px rgba(139, 0, 255, 0.4);
+}
+
+/* ============================================ */
+/* EDUCATION SECTION - 3D FLIP CARDS CSS */
+/* Updated Part 2: Back Side with Scrollbar */
+/* Orange/Green Neon Theme */
+/* ============================================ */
+
+/* ============================================ */
+/* BACK SIDE STYLES - FIXED HEIGHT WITH SCROLL */
+/* ============================================ */
+
+.education-section .education-flip-card-back {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border-color);
+  position: relative;
+  height: 450px; /* SAME HEIGHT AS FRONT */
+  overflow: hidden; /* PREVENT OVERFLOW */
+}
+
+.education-section .education-flip-card-back::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(0, 255, 128, 0.03), rgba(255, 102, 0, 0.03));
+  opacity: 0;
+  transition: opacity var(--duration-normal) var(--ease-in-out);
+  pointer-events: none;
+}
+
+.education-section .timeline-milestone:hover .education-flip-card-back::before {
+  opacity: 1;
+}
+
+/* Back Content Container - FULL HEIGHT MANAGEMENT */
+.education-section .back-content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0; /* NO GAP TO MAXIMIZE SPACE */
+  overflow: hidden;
+}
+
+/* Back Header - FIXED AT TOP */
+.education-section .back-header {
+  flex-shrink: 0; /* DON'T SHRINK */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid rgba(0, 255, 128, 0.2);
+  margin-bottom: var(--spacing-sm);
+  position: relative;
+}
+
+.education-section .back-title {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  margin: 0;
+  background: linear-gradient(135deg, var(--neon-green), var(--neon-cyan));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 15px rgba(0, 255, 128, 0.4);
+}
+
+.education-section .flip-back-btn {
+  background: rgba(0, 255, 128, 0.1);
+  border: 2px solid var(--neon-green);
+  border-radius: 50%;
+  width: 45px;
+  height: 45px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--duration-normal) var(--ease-in-out);
+  backdrop-filter: blur(10px);
+  position: relative;
+  z-index: 5;
+  flex-shrink: 0;
+}
+
+.education-section .flip-back-btn svg {
+  width: 20px;
+  height: 20px;
+  stroke: var(--neon-green);
+  transition: all var(--duration-normal) var(--ease-in-out);
+}
+
+.education-section .flip-back-btn:hover {
+  background: rgba(0, 255, 128, 0.2);
+  border-color: var(--neon-orange);
+  transform: scale(1.1);
+  box-shadow: 0 0 20px rgba(0, 255, 128, 0.5);
+}
+
+.education-section .flip-back-btn:hover svg {
+  stroke: var(--neon-orange);
+}
+
+/* Back Details Container - SCROLLABLE AREA */
+.education-section .back-details {
+  flex: 1; /* TAKE REMAINING SPACE */
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  overflow-y: auto; /* SCROLLABLE */
+  overflow-x: hidden;
+  padding-right: var(--spacing-xs); /* SPACE FOR SCROLLBAR */
+  padding-bottom: var(--spacing-sm);
+  
+  /* CUSTOM SCROLLBAR STYLING */
+  scrollbar-width: thin;
+  scrollbar-color: var(--neon-orange) rgba(255, 255, 255, 0.1);
+}
+
+/* Webkit Scrollbar for Chrome/Safari */
+.education-section .back-details::-webkit-scrollbar {
+  width: 6px;
+}
+
+.education-section .back-details::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+.education-section .back-details::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, var(--neon-orange), var(--neon-green));
+  border-radius: 3px;
+  transition: all var(--duration-fast) var(--ease-in-out);
+}
+
+.education-section .back-details::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, var(--neon-green), var(--neon-cyan));
+  box-shadow: 0 0 8px rgba(0, 255, 128, 0.5);
+}
+
+/* Back Section Styling - COMPACT */
+.education-section .back-section {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm); /* SMALLER PADDING FOR MORE CONTENT */
+  transition: all var(--duration-normal) var(--ease-in-out);
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0; /* DON'T SHRINK SECTIONS */
+}
+
+.education-section .back-section:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(0, 255, 128, 0.3);
+  transform: translateY(-1px); /* SUBTLE HOVER */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.education-section .back-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(
+    to bottom,
+    var(--neon-orange) 0%,
+    var(--neon-green) 50%,
+    var(--neon-cyan) 100%
+  );
+  border-radius: 0 2px 2px 0;
+  opacity: 0;
+  transition: opacity var(--duration-normal) var(--ease-in-out);
+}
+
+.education-section .back-section:hover::before {
+  opacity: 1;
+}
+
+/* Back Section Headers - COMPACT */
+.education-section .back-section-header {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  margin-bottom: var(--spacing-xs); /* SMALLER MARGIN */
+  color: var(--neon-cyan);
+  text-shadow: 0 0 10px rgba(0, 255, 255, 0.4);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.education-section .back-section-header::before {
+  content: '';
+  width: 4px;
+  height: 4px;
+  background: var(--neon-orange);
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(255, 102, 0, 0.6);
+  flex-shrink: 0;
+}
+
+/* Back Section Content - OPTIMIZED */
+.education-section .back-section-content {
+  color: var(--text-secondary);
+  line-height: 1.5; /* TIGHTER LINE HEIGHT */
+  font-size: var(--text-sm);
+}
+
+/* Description Styling */
+.education-section .back-section-content p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+
+/* Coursework Tags - COMPACT */
+.education-section .coursework-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-xs);
+}
+
+.education-section .coursework-tag {
+  background: linear-gradient(135deg, rgba(255, 102, 0, 0.1), rgba(0, 255, 128, 0.1));
+  border: 1px solid rgba(255, 102, 0, 0.3);
+  border-radius: var(--radius-full);
+  padding: 2px var(--spacing-xs); /* VERY COMPACT PADDING */
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--neon-orange);
+  text-shadow: 0 0 5px rgba(255, 102, 0, 0.3);
+  transition: all var(--duration-fast) var(--ease-in-out);
+  line-height: 1.2;
+}
+
+.education-section .coursework-tag:hover {
+  background: linear-gradient(135deg, rgba(255, 102, 0, 0.2), rgba(0, 255, 128, 0.2));
+  border-color: var(--neon-green);
+  color: var(--neon-green);
+  text-shadow: 0 0 8px rgba(0, 255, 128, 0.4);
+  transform: translateY(-1px);
+}
+
+/* Achievements List - COMPACT */
+.education-section .achievements-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px; /* VERY SMALL GAP */
+}
+
+.education-section .achievements-list li {
+  position: relative;
+  padding-left: var(--spacing-md);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  line-height: 1.4;
+}
+
+.education-section .achievements-list li::before {
+  content: '🏆';
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-size: var(--text-xs);
+  filter: sepia(1) hue-rotate(30deg) saturate(2);
+}
+
+.education-section .achievements-list li:hover {
+  color: var(--neon-green);
+  text-shadow: 0 0 5px rgba(0, 255, 128, 0.3);
+  transform: translateX(2px);
+  transition: all var(--duration-fast) var(--ease-in-out);
+}
+
+/* Activities List - COMPACT */
+.education-section .activities-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px; /* VERY SMALL GAP */
+}
+
+.education-section .activities-list li {
+  position: relative;
+  padding-left: var(--spacing-md);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  line-height: 1.4;
+}
+
+.education-section .activities-list li::before {
+  content: '🎯';
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-size: var(--text-xs);
+  filter: sepia(1) hue-rotate(60deg) saturate(1.5);
+}
+
+.education-section .activities-list li:hover {
+  color: var(--neon-cyan);
+  text-shadow: 0 0 5px rgba(0, 255, 255, 0.3);
+  transform: translateX(2px);
+  transition: all var(--duration-fast) var(--ease-in-out);
+}
+
+/* Thesis, Minor, Location - Single Line Items */
+.education-section .back-section-content .single-line-item {
+  font-style: italic;
+  color: var(--text-primary);
+  font-weight: 500;
+  font-size: var(--text-sm);
+}
+
+/* Smooth Scroll Behavior */
+.education-section .back-details {
+  scroll-behavior: smooth;
+}
+
+/* Focus States for Accessibility */
+.education-section .back-details:focus {
+  outline: 2px solid var(--neon-green);
+  outline-offset: 2px;
+}
+
+/* ============================================ */
+/* LIGHT THEME ADJUSTMENTS - BACK SIDE */
+/* ============================================ */
+
+[data-theme="light"] .education-flip-card-back::before {
+  background: linear-gradient(135deg, rgba(0, 255, 128, 0.05), rgba(255, 102, 0, 0.05));
+}
+
+[data-theme="light"] .back-header {
+  border-bottom-color: rgba(0, 255, 128, 0.3);
+}
+
+[data-theme="light"] .back-title {
+  background: linear-gradient(135deg, var(--neon-purple), var(--neon-pink));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 15px rgba(139, 0, 255, 0.4);
+}
+
+[data-theme="light"] .flip-back-btn {
+  background: rgba(139, 0, 255, 0.1);
+  border-color: var(--neon-purple);
+}
+
+[data-theme="light"] .flip-back-btn svg {
+  stroke: var(--neon-purple);
+}
+
+[data-theme="light"] .flip-back-btn:hover {
+  background: rgba(139, 0, 255, 0.2);
+  border-color: var(--neon-pink);
+  box-shadow: 0 0 20px rgba(139, 0, 255, 0.5);
+}
+
+[data-theme="light"] .flip-back-btn:hover svg {
+  stroke: var(--neon-pink);
+}
+
+[data-theme="light"] .back-details::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, var(--neon-purple), var(--neon-pink));
+}
+
+[data-theme="light"] .back-details::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, var(--neon-pink), var(--neon-orange));
+}
+
+[data-theme="light"] .back-section {
+  background: rgba(248, 249, 250, 0.5);
+  border-color: rgba(209, 213, 219, 0.4);
+}
+
+[data-theme="light"] .back-section:hover {
+  background: rgba(248, 249, 250, 0.8);
+  border-color: rgba(139, 0, 255, 0.3);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .back-section::before {
+  background: linear-gradient(
+    to bottom,
+    var(--neon-purple) 0%,
+    var(--neon-pink) 50%,
+    var(--neon-orange) 100%
+  );
+}
+
+[data-theme="light"] .back-section-header {
+  color: var(--neon-purple);
+  text-shadow: 0 0 10px rgba(139, 0, 255, 0.4);
+}
+
+[data-theme="light"] .back-section-header::before {
+  background: var(--neon-pink);
+  box-shadow: 0 0 8px rgba(255, 0, 128, 0.6);
+}
+
+[data-theme="light"] .coursework-tag {
+  background: linear-gradient(135deg, rgba(139, 0, 255, 0.1), rgba(255, 0, 128, 0.1));
+  border-color: rgba(139, 0, 255, 0.3);
+  color: var(--neon-purple);
+  text-shadow: 0 0 5px rgba(139, 0, 255, 0.3);
+}
+
+[data-theme="light"] .coursework-tag:hover {
+  background: linear-gradient(135deg, rgba(139, 0, 255, 0.2), rgba(255, 0, 128, 0.2));
+  border-color: var(--neon-pink);
+  color: var(--neon-pink);
+  text-shadow: 0 0 8px rgba(255, 0, 128, 0.4);
+}
+
+[data-theme="light"] .achievements-list li:hover {
+  color: var(--neon-purple);
+  text-shadow: 0 0 5px rgba(139, 0, 255, 0.3);
+}
+
+[data-theme="light"] .activities-list li:hover {
+  color: var(--neon-pink);
+  text-shadow: 0 0 5px rgba(255, 0, 128, 0.3);
+}
+
+/* ============================================ */
+/* RESPONSIVE ADJUSTMENTS - BACK SIDE */
+/* ============================================ */
+
+@media (max-width: 768px) {
+  .education-flip-card-back {
+    height: 380px; /* SMALLER ON MOBILE */
+  }
+
+  .back-header {
+    padding-bottom: var(--spacing-xs);
+    margin-bottom: var(--spacing-xs);
+  }
+
+  .back-title {
+    font-size: var(--text-base);
+  }
+
+  .flip-back-btn {
+    width: 40px;
+    height: 40px;
+  }
+
+  .flip-back-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .back-details {
+    gap: var(--spacing-xs);
+  }
+
+  .back-section {
+    padding: var(--spacing-xs);
+  }
+
+  .back-section-header {
+    font-size: var(--text-xs);
+    margin-bottom: 2px;
+  }
+
+  .coursework-tag {
+    font-size: 10px;
+    padding: 1px 4px;
+  }
+
+  .achievements-list li,
+  .activities-list li {
+    font-size: 11px;
+    padding-left: var(--spacing-sm);
+  }
+}
+
+@media (max-width: 480px) {
+  .education-flip-card-back {
+    height: 320px; /* EVEN SMALLER ON SMALL MOBILE */
+  }
+
+  .back-details {
+    padding-right: 2px;
+  }
+
+  .back-details::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .coursework-tag {
+    font-size: 9px;
+    padding: 1px 3px;
+  }
+
+  .achievements-list li,
+  .activities-list li {
+    font-size: 10px;
+  }
+}
+
+/* ============================================ */
+/* EDUCATION SECTION - 3D FLIP CARDS CSS */
+/* Updated Part 3: Animations + Responsive + Utilities */
+/* Orange/Green Neon Theme */
+/* ============================================ */
+
+/* ============================================ */
+/* KEYFRAME ANIMATIONS */
+/* ============================================ */
+
+@keyframes gradientShift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes nodePulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(255, 102, 0, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(0, 255, 128, 0.6);
+  }
+}
+
+@keyframes glowPulse {
+  0%, 100% {
+    opacity: 0.6;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+}
+
+@keyframes logoGlow {
+  0%, 100% {
+    box-shadow: 
+      0 0 25px rgba(255, 102, 0, 0.5),
+      inset 0 0 15px rgba(255, 255, 255, 0.1);
+  }
+  50% {
+    box-shadow: 
+      0 0 40px rgba(0, 255, 128, 0.6),
+      inset 0 0 20px rgba(255, 255, 255, 0.2);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes flipIconRotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(180deg);
+  }
+}
+
+@keyframes tagFloat {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes scrollbarGlow {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(0, 255, 128, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 15px rgba(255, 102, 0, 0.5);
+  }
+}
+
+@keyframes floatingParticles {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px) rotate(0deg);
+    opacity: 0.8;
+  }
+  25% {
+    transform: translateY(-20px) translateX(10px) rotate(90deg);
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(-40px) translateX(-10px) rotate(180deg);
+    opacity: 0.6;
+  }
+  75% {
+    transform: translateY(-20px) translateX(15px) rotate(270deg);
+    opacity: 1;
+  }
+}
+
+@keyframes cardFlipComplete {
+  0% {
+    transform: rotateY(0deg) scale(1);
+  }
+  50% {
+    transform: rotateY(90deg) scale(0.95);
+  }
+  100% {
+    transform: rotateY(180deg) scale(1);
+  }
+}
+
+@keyframes gradeBoxPulse {
+  0%, 100% {
+    border-color: rgba(0, 255, 128, 0.3);
+    box-shadow: 0 0 5px rgba(0, 255, 128, 0.2);
+  }
+  50% {
+    border-color: rgba(0, 255, 128, 0.6);
+    box-shadow: 0 0 15px rgba(0, 255, 128, 0.4);
+  }
+}
+
+/* ============================================ */
+/* NO CONTENT MESSAGE */
+/* ============================================ */
+
+.education-section .no-content-message {
+  background: var(--glass-bg);
+  border: 1px solid rgba(255, 102, 0, 0.2);
+  border-radius: var(--radius-2xl);
+  backdrop-filter: var(--glass-backdrop);
+  padding: var(--spacing-4xl);
+  text-align: center;
+  max-width: 600px;
+  margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+  animation: fadeInUp 0.8s ease-out;
+}
+
+.education-section .no-content-icon {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto var(--spacing-lg);
+  color: var(--neon-orange);
+  opacity: 0.6;
+  animation: glowPulse 3s ease-in-out infinite;
+}
+
+.education-section .no-content-title {
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  margin: 0 0 var(--spacing-md) 0;
+  background: linear-gradient(135deg, var(--neon-orange), var(--neon-green));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradientShift 4s ease-in-out infinite;
+}
+
+.education-section .no-content-text {
+  font-size: var(--text-base);
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.education-section .no-content-decoration {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.education-section .no-content-decoration .floating-particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  animation: floatingParticles 8s ease-in-out infinite;
+  opacity: 0.6;
+}
+
+.education-section .no-content-decoration .floating-particle:nth-child(1) {
+  background: var(--neon-orange);
+  top: 20%;
+  left: 15%;
+  animation-delay: 0s;
+}
+
+.education-section .no-content-decoration .floating-particle:nth-child(2) {
+  background: var(--neon-green);
+  top: 60%;
+  right: 20%;
+  animation-delay: 2s;
+}
+
+.education-section .no-content-decoration .floating-particle:nth-child(3) {
+  background: var(--neon-cyan);
+  bottom: 30%;
+  left: 25%;
+  animation-delay: 4s;
+}
+
+/* ============================================ */
+/* ENHANCED ANIMATIONS FOR INTERACTIVITY */
+/* ============================================ */
+
+/* Grade Box Hover Animation */
+.education-section .front-grade-received:hover,
+.education-section .front-grade-max:hover {
+  animation: gradeBoxPulse 1.5s ease-in-out infinite;
+  transform: translateY(-2px);
+}
+
+/* Coursework Tag Floating Animation */
+.education-section .coursework-tag {
+  animation: tagFloat 3s ease-in-out infinite;
+}
+
+.education-section .coursework-tag:nth-child(2n) {
+  animation-delay: 0.5s;
+}
+
+.education-section .coursework-tag:nth-child(3n) {
+  animation-delay: 1s;
+}
+
+.education-section .coursework-tag:nth-child(4n) {
+  animation-delay: 1.5s;
+}
+
+/* Flip Button Enhanced Animation */
+.education-section .flip-card-btn:hover {
+  animation: flipIconRotate 0.6s ease-in-out;
+}
+
+.education-section .flip-back-btn:hover {
+  animation: flipIconRotate 0.6s ease-in-out reverse;
+}
+
+/* Achievement and Activity List Enhanced Hover */
+.education-section .achievements-list li:hover::before,
+.education-section .activities-list li:hover::before {
+  animation: glowPulse 0.8s ease-in-out;
+  transform: scale(1.2);
+}
+
+/* Scrollbar Glow Animation */
+.education-section .back-details::-webkit-scrollbar-thumb:hover {
+  animation: scrollbarGlow 2s ease-in-out infinite;
+}
+
+/* Card Flip Enhanced Animation */
+.education-section .education-flip-card.flipped .education-flip-card-inner {
+  animation: cardFlipComplete 0.8s ease-in-out;
+}
+
+/* ============================================ */
+/* LIGHT THEME ADJUSTMENTS */
+/* ============================================ */
+
+[data-theme="light"] .education-section .no-content-message {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(255, 102, 0, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .education-section .no-content-icon {
+  color: var(--neon-purple);
+}
+
+[data-theme="light"] .education-section .no-content-title {
+  background: linear-gradient(135deg, var(--neon-purple), var(--neon-pink));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+[data-theme="light"] .education-section .no-content-decoration .floating-particle:nth-child(1) {
+  background: var(--neon-purple);
+}
+
+[data-theme="light"] .education-section .no-content-decoration .floating-particle:nth-child(2) {
+  background: var(--neon-pink);
+}
+
+[data-theme="light"] .education-section .no-content-decoration .floating-particle:nth-child(3) {
+  background: var(--neon-orange);
+}
+
+[data-theme="light"] .front-grade-received:hover,
+[data-theme="light"] .front-grade-max:hover {
+  border-color: var(--neon-purple);
+  box-shadow: 0 0 15px rgba(139, 0, 255, 0.4);
+}
+
+/* ============================================ */
+/* RESPONSIVE DESIGN */
+/* ============================================ */
+
+@media (max-width: 1024px) {
+  .education-section .timeline-path::before {
+    left: 50px;
+  }
+
+  .education-section .timeline-node {
+    width: 100px;
+    height: 100px;
+  }
+
+  .education-section .graduation-cap {
+    width: 70px;
+    height: 70px;
+    font-size: 2.5rem;
+  }
+
+  .education-section .node-glow {
+    width: 90px;
+    height: 90px;
+  }
+
+  .education-section .education-flip-card {
+    height: 420px;
+  }
+
+  .education-section .education-flip-card-front,
+  .education-section .education-flip-card-back {
+    height: 420px;
+  }
+
+  .education-section .institution-logo-large {
+    width: 100px;
+    height: 100px;
+  }
+
+  .education-section .logo-temp-large {
+    font-size: var(--text-xl);
+  }
+
+  .education-section .flip-card-btn {
+    width: 45px;
+    height: 45px;
+  }
+
+  .education-section .flip-card-btn svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .education-section {
+    padding: calc(70px + var(--spacing-3xl) + var(--spacing-xl)) 0 var(--spacing-2xl);
+  }
+
+  .education-section .section-header {
+    margin-bottom: var(--spacing-2xl);
+    padding-top: var(--spacing-2xl);
+  }
+
+  .education-section .neon-title {
+    font-size: var(--text-4xl);
+  }
+
+  .education-section .neon-subtitle {
+    font-size: var(--text-lg);
+  }
+
+  .timeline-path::before {
+    left: 40px;
+  }
+
+  .timeline-milestone {
+    gap: var(--spacing-lg);
+  }
+
+  .timeline-node {
+    width: 80px;
+    height: 80px;
+  }
+
+  .graduation-cap {
+    width: 60px;
+    height: 60px;
+    font-size: 2rem;
+  }
+
+  .node-glow {
+    width: 80px;
+    height: 80px;
+  }
+
+  .education-flip-card {
+    height: 380px;
+  }
+
+  .education-flip-card-front,
+  .education-flip-card-back {
+    height: 380px;
+    padding: var(--spacing-lg);
+  }
+
+  .card-top-row {
+    margin-bottom: var(--spacing-md);
+  }
+
+  .institution-logo-large {
+    width: 90px;
+    height: 90px;
+  }
+
+  .logo-temp-large {
+    font-size: var(--text-lg);
+  }
+
+  .flip-card-btn {
+    width: 40px;
+    height: 40px;
+    top: var(--spacing-sm);
+    right: var(--spacing-sm);
+  }
+
+  .flip-card-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .front-degree-title h3 {
+    font-size: var(--text-xl);
+  }
+
+  .university-name {
+    font-size: var(--text-base);
+  }
+
+  .college-school-name {
+    font-size: var(--text-sm);
+  }
+
+  .front-grade-container {
+    flex-direction: column;
+    gap: var(--spacing-xs);
+  }
+
+  .duration-value {
+    font-size: var(--text-sm);
+  }
+
+  .front-status-badge {
+    font-size: var(--text-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+
+  .front-grade-value {
+    font-size: var(--text-base);
+  }
+
+  .back-title {
+    font-size: var(--text-base);
+  }
+
+  .flip-back-btn {
+    width: 40px;
+    height: 40px;
+  }
+
+  .flip-back-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .coursework-tag {
+    font-size: var(--text-xs);
+    padding: 2px var(--spacing-xs);
+  }
+}
+
+@media (max-width: 480px) {
+  .education-section .section-header {
+    padding-top: var(--spacing-xl);
+  }
+
+  .education-section .neon-title {
+    font-size: var(--text-3xl);
+  }
+
+  .education-section .neon-subtitle {
+    font-size: var(--text-base);
+  }
+
+  .timeline-container {
+    padding: var(--spacing-lg) 0;
+  }
+
+  .timeline-path {
+    gap: var(--spacing-2xl);
+  }
+
+  .timeline-path::before {
+    left: 30px;
+    width: 3px;
+  }
+
+  .timeline-node {
+    width: 60px;
+    height: 60px;
+  }
+
+  .graduation-cap {
+    width: 50px;
+    height: 50px;
+    font-size: 1.5rem;
+  }
+
+  .education-flip-card {
+    height: 320px;
+  }
+
+  .education-flip-card-front,
+  .education-flip-card-back {
+    height: 320px;
+    padding: var(--spacing-md);
+  }
+
+  .institution-logo-large {
+    width: 80px;
+    height: 80px;
+  }
+
+  .logo-temp-large {
+    font-size: var(--text-base);
+  }
+
+  .flip-card-btn {
+    width: 35px;
+    height: 35px;
+    top: var(--spacing-xs);
+    right: var(--spacing-xs);
+  }
+
+  .flip-card-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .front-degree-title h3 {
+    font-size: var(--text-lg);
+  }
+
+  .university-name {
+    font-size: var(--text-sm);
+  }
+
+  .college-school-name {
+    font-size: var(--text-xs);
+  }
+
+  .duration-value {
+    font-size: var(--text-xs);
+  }
+
+  .front-grade-label {
+    font-size: 10px;
+  }
+
+  .front-grade-value {
+    font-size: var(--text-sm);
+  }
+
+  .front-major {
+    flex-direction: column;
+    gap: var(--spacing-xs);
+    text-align: center;
+  }
+
+  .coursework-tag {
+    font-size: 10px;
+    padding: 1px 4px;
+  }
+
+  .achievements-list li,
+  .activities-list li {
+    font-size: 10px;
+    padding-left: var(--spacing-sm);
+  }
+}
+
+/* ============================================ */
+/* ACCESSIBILITY */
+/* ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .education-section .timeline-milestone,
+  .education-section .graduation-cap,
+  .education-section .logo-image-large,
+  .education-section .education-flip-card-front,
+  .education-section .education-flip-card-back,
+  .education-section .floating-particle,
+  .education-section .coursework-tag,
+  .education-section .achievements-list li,
+  .education-section .activities-list li,
+  .education-section .front-grade-received,
+  .education-section .front-grade-max,
+  .education-section .flip-card-btn,
+  .education-section .flip-back-btn {
+    animation: none !important;
+  }
+
+  .education-section .timeline-milestone:hover .graduation-cap,
+  .education-section .timeline-milestone:hover .education-flip-card-front,
+  .education-section .timeline-milestone:hover .education-flip-card-back,
+  .education-section .flip-card-btn:hover,
+  .education-section .coursework-tag:hover,
+  .education-section .achievements-list li:hover,
+  .education-section .activities-list li:hover,
+  .education-section .front-grade-received:hover,
+  .education-section .front-grade-max:hover {
+    transform: none !important;
+  }
+
+  .education-section .education-flip-card-inner {
+    transition: none !important;
+  }
+
+  .education-section .education-flip-card.flipped .education-flip-card-inner {
+    transform: rotateY(180deg);
+  }
+}
+
+.education-section .timeline-milestone:focus-visible {
+  outline: 2px solid var(--neon-orange);
+  outline-offset: 4px;
+  border-radius: var(--radius-md);
+}
+
+.education-section .flip-card-btn:focus-visible,
+.education-section .flip-back-btn:focus-visible {
+  outline: 2px solid var(--neon-green);
+  outline-offset: 2px;
+}
+
+.education-section .back-details:focus-visible {
+  outline: 2px solid var(--neon-cyan);
+  outline-offset: 2px;
+}
+
+/* ============================================ */
+/* UTILITY CLASSES */
+/* ============================================ */
+
+.education-section .education-hidden {
+  display: none !important;
+}
+
+.education-section .education-visible {
+  display: block !important;
+}
+
+.education-section .education-fade-in {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.education-section .education-no-scroll {
+  overflow: hidden !important;
+}
+
+.education-section .education-loading {
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+/* Smooth Transitions */
+.education-section .education-smooth-transition * {
+  transition: all var(--duration-normal) var(--ease-in-out);
+}
+
+/* Print Optimization */
+@media print {
+  .education-section {
+    background: white !important;
+    color: black !important;
+    padding: 20px 0;
+  }
+
+  .education-section::before {
+    display: none !important;
+  }
+
+  .education-flip-card {
+    height: auto !important;
+    page-break-inside: avoid;
+  }
+
+  .education-flip-card-inner {
+    transform: none !important;
+  }
+
+  .education-flip-card-back {
+    transform: none !important;
+    position: relative !important;
+    margin-top: 20px;
+    height: auto !important;
+  }
+
+  .flip-card-btn,
+  .flip-back-btn {
+    display: none !important;
+  }
+
+  .timeline-path::before,
+  .node-glow,
+  .floating-particle {
+    display: none !important;
+  }
+
+  .education-section .neon-title,
+  .education-section .neon-subtitle,
+  .front-degree-title h3,
+  .back-title,
+  .university-name,
+  .back-section-header {
+    color: black !important;
+    text-shadow: none !important;
+    background: none !important;
+    -webkit-text-fill-color: initial !important;
+  }
+
+  .education-flip-card-front,
+  .education-flip-card-back {
+    border: 1px solid #ccc !important;
+    background: white !important;
+    box-shadow: none !important;
+    height: auto !important;
+    page-break-inside: avoid;
+  }
+
+  .back-section {
+    border: 1px solid #ddd !important;
+    background: #f9f9f9 !important;
+  }
+
+  .coursework-tag {
+    border: 1px solid #999 !important;
+    background: #f0f0f0 !important;
+    color: black !important;
+    animation: none !important;
+  }
+
+  .achievements-list li::before,
+  .activities-list li::before {
+    display: none !important;
+  }
+
+  .achievements-list li,
+  .activities-list li {
+    padding-left: 0 !important;
+  }
+
+  .back-details {
+    overflow: visible !important;
+    height: auto !important;
+  }
+}
+
+/* ============================================ */
+/* PERFORMANCE OPTIMIZATIONS */
+/* ============================================ */
+
+/* GPU Acceleration for Smooth Animations */
+.education-section .education-flip-card-inner,
+.education-section .graduation-cap,
+.education-section .flip-card-btn,
+.education-section .flip-back-btn,
+.education-section .coursework-tag {
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+/* Contain Layout Shifts */
+.education-section .education-flip-card {
+  contain: layout style paint;
+}
+
+.education-section .timeline-milestone {
+  contain: layout paint;
+}
+
+/* Optimize Scrolling Performance */
+.education-section .back-details {
+  contain: layout style paint;
+  will-change: scroll-position;
+}
+
+/* ============================================ */
+/* CUSTOM PROPERTIES FOR EASY THEME SWITCHING */
+/* ============================================ */
+
+.education-section {
+  --education-primary-color: var(--neon-orange);
+  --education-secondary-color: var(--neon-green);
+  --education-accent-color: var(--neon-cyan);
+  --education-card-height: 450px;
+  --education-card-height-tablet: 380px;
+  --education-card-height-mobile: 320px;
+}
+
+[data-theme="light"] .education-section {
+  --education-primary-color: var(--neon-purple);
+  --education-secondary-color: var(--neon-pink);
+  --education-accent-color: var(--neon-orange);
+}

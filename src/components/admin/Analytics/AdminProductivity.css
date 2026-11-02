@@ -1,0 +1,1130 @@
+/* src/components/admin/Analytics/AdminProductivity.css - ADMIN SCOPED VERSION - PART 1 */
+/* 🔒 ADMIN SCOPED - NO CONFLICTS WITH PUBLIC PORTFOLIO */
+
+.admin-dashboard .admin-productivity {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  width: 100%;
+  animation: slideInUp 0.6s ease-out;
+}
+
+/* Header */
+.admin-dashboard .admin-productivity-header {
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.admin-dashboard .admin-productivity-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 0 0 12px 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-shadow: 0 0 20px var(--neon-purple);
+}
+
+.admin-dashboard .productivity-icon {
+  font-size: 32px;
+  filter: drop-shadow(0 0 12px var(--neon-purple));
+  animation: pulse-energy 2.5s ease-in-out infinite;
+}
+
+.admin-dashboard .admin-productivity-subtitle {
+  margin: 0;
+  font-size: 16px;
+  color: var(--text-secondary);
+  max-width: 700px;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+
+/* Productivity Score Overview */
+.admin-dashboard .productivity-score-overview {
+  margin-bottom: 16px;
+}
+
+.admin-dashboard .productivity-score-card {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 32px;
+  align-items: center;
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  padding: 32px;
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-dashboard .productivity-score-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, 
+    var(--neon-purple) 0%, 
+    var(--neon-cyan) 50%, 
+    var(--neon-emerald) 100%);
+  animation: productivity-flow 3s ease-in-out infinite;
+}
+
+.admin-dashboard .score-content {
+  flex: 1;
+}
+
+.admin-dashboard .score-title {
+  margin: 0 0 16px 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.admin-dashboard .score-display {
+  margin-bottom: 12px;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.admin-dashboard .score-value {
+  font-size: 48px;
+  font-weight: 800;
+  color: var(--neon-purple);
+  text-shadow: 0 0 30px var(--neon-purple);
+  line-height: 1;
+}
+
+.admin-dashboard .score-max {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.admin-dashboard .score-level {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.admin-dashboard .score-progress {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.admin-dashboard .score-progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 1s ease-out;
+  box-shadow: 0 0 20px rgba(139, 69, 255, 0.5);
+}
+
+/* Circular Score Visualization */
+.admin-dashboard .score-visual {
+  display: flex;
+  justify-content: center;
+}
+
+.admin-dashboard .circular-score {
+  position: relative;
+  width: 160px;
+  height: 160px;
+}
+
+.admin-dashboard .circular-score svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.admin-dashboard .circular-score circle {
+  transition: stroke-dashoffset 1s ease-out;
+  filter: drop-shadow(0 0 8px currentColor);
+}
+
+.admin-dashboard .score-percentage {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-shadow: 0 0 15px var(--neon-purple);
+}
+
+/* Productivity Metrics Grid */
+.admin-dashboard .productivity-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+}
+
+/* Section Usage Analysis */
+.admin-dashboard .section-usage-analysis {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+}
+
+.admin-dashboard .usage-chart-section,
+.admin-dashboard .usage-details-section {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 24px;
+  transition: all 0.3s ease;
+}
+
+.admin-dashboard .usage-chart-section:hover,
+.admin-dashboard .usage-details-section:hover {
+  border-color: rgba(139, 69, 255, 0.3);
+  box-shadow: 0 8px 32px rgba(139, 69, 255, 0.1);
+}
+
+.admin-dashboard .usage-title,
+.admin-dashboard .details-title {
+  margin: 0 0 24px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-dashboard .usage-title::before {
+  content: '📊';
+  font-size: 18px;
+  filter: drop-shadow(0 0 8px var(--neon-cyan));
+}
+
+.admin-dashboard .details-title::before {
+  content: '📋';
+  font-size: 18px;
+  filter: drop-shadow(0 0 8px var(--neon-emerald));
+}
+
+/* Usage Chart */
+.admin-dashboard .usage-chart {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 8px;
+  height: 200px;
+  padding: 0 8px;
+}
+
+.admin-dashboard .usage-bar-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  max-width: 60px;
+}
+
+.admin-dashboard .usage-bar-wrapper {
+  height: 160px;
+  display: flex;
+  align-items: flex-end;
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.admin-dashboard .usage-bar {
+  width: 100%;
+  max-width: 32px;
+  background: linear-gradient(180deg, var(--neon-purple), var(--neon-cyan));
+  border-radius: 4px 4px 0 0;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 12px rgba(139, 69, 255, 0.5);
+  cursor: pointer;
+  margin: 0 auto;
+}
+
+.admin-dashboard .usage-bar:hover {
+  background: linear-gradient(180deg, var(--neon-cyan), var(--neon-emerald));
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.7);
+  transform: scaleY(1.05);
+}
+
+.admin-dashboard .usage-label {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  margin-bottom: 4px;
+  text-align: center;
+  writing-mode: horizontal-tb;
+  max-width: 60px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-dashboard .usage-count {
+  font-size: 12px;
+  color: var(--neon-purple);
+  font-weight: 600;
+  text-align: center;
+}
+
+/* Usage Details */
+.admin-dashboard .usage-details-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.admin-dashboard .usage-detail-item {
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.admin-dashboard .usage-detail-item:hover {
+  background: rgba(139, 69, 255, 0.1);
+  border-color: rgba(139, 69, 255, 0.3);
+  transform: translateX(4px);
+}
+
+.admin-dashboard .usage-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.admin-dashboard .section-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.admin-dashboard .section-percentage {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--neon-purple);
+}
+
+.admin-dashboard .usage-detail-bar {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.admin-dashboard .usage-detail-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--neon-purple), var(--neon-cyan));
+  border-radius: 3px;
+  transition: width 0.8s ease-out;
+  box-shadow: 0 0 8px rgba(139, 69, 255, 0.5);
+}
+
+.admin-dashboard .usage-detail-stats {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.admin-dashboard .visits-count,
+.admin-dashboard .time-spent {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.admin-dashboard .visits-count {
+  color: var(--neon-cyan);
+}
+
+.admin-dashboard .time-spent {
+  color: var(--neon-emerald);
+}
+
+/* src/components/admin/Analytics/AdminProductivity.css - ADMIN SCOPED VERSION - PART 2 */
+/* 🔒 ADMIN SCOPED - NO CONFLICTS WITH PUBLIC PORTFOLIO */
+
+/* Session Patterns */
+.admin-dashboard .session-patterns-section {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.admin-dashboard .patterns-title {
+  margin: 0 0 24px 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-dashboard .patterns-title::before {
+  content: '⏰';
+  font-size: 20px;
+  filter: drop-shadow(0 0 8px var(--neon-orange));
+}
+
+.admin-dashboard .session-patterns-chart {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 4px;
+  height: 140px;
+  padding: 0 8px;
+}
+
+.admin-dashboard .hour-activity {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  min-width: 20px;
+}
+
+.admin-dashboard .activity-bar {
+  width: 100%;
+  max-width: 24px;
+  background: linear-gradient(180deg, var(--neon-orange), var(--neon-yellow));
+  border-radius: 4px 4px 0 0;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 12px rgba(255, 165, 0, 0.5);
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+
+.admin-dashboard .activity-bar:hover {
+  background: linear-gradient(180deg, var(--neon-cyan), var(--neon-purple));
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.7);
+  transform: scaleY(1.1);
+}
+
+.admin-dashboard .hour-label {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  margin-bottom: 4px;
+  text-align: center;
+}
+
+.admin-dashboard .session-count {
+  font-size: 12px;
+  color: var(--neon-orange);
+  font-weight: 600;
+  text-align: center;
+}
+
+/* Workflow Insights */
+.admin-dashboard .workflow-insights-section {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.admin-dashboard .insights-title {
+  margin: 0 0 24px 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-dashboard .insights-title::before {
+  content: '💡';
+  font-size: 20px;
+  filter: drop-shadow(0 0 8px var(--neon-yellow));
+}
+
+.admin-dashboard .insights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.admin-dashboard .insight-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-dashboard .insight-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--insight-color);
+  transition: width 0.3s ease;
+}
+
+.admin-dashboard .insight-card:hover::before {
+  width: 8px;
+}
+
+.admin-dashboard .insight-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-2px);
+}
+
+.admin-dashboard .insight-card--success {
+  --insight-color: var(--neon-emerald);
+  border-left: 2px solid var(--neon-emerald);
+}
+
+.admin-dashboard .insight-card--warning {
+  --insight-color: var(--neon-orange);
+  border-left: 2px solid var(--neon-orange);
+}
+
+.admin-dashboard .insight-card--info {
+  --insight-color: var(--neon-cyan);
+  border-left: 2px solid var(--neon-cyan);
+}
+
+.admin-dashboard .insight-card--success:hover {
+  border-color: rgba(50, 205, 50, 0.3);
+  box-shadow: 0 4px 20px rgba(50, 205, 50, 0.2);
+}
+
+.admin-dashboard .insight-card--warning:hover {
+  border-color: rgba(255, 165, 0, 0.3);
+  box-shadow: 0 4px 20px rgba(255, 165, 0, 0.2);
+}
+
+.admin-dashboard .insight-card--info:hover {
+  border-color: rgba(0, 255, 255, 0.3);
+  box-shadow: 0 4px 20px rgba(0, 255, 255, 0.2);
+}
+
+.admin-dashboard .insight-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 8px var(--insight-color));
+}
+
+.admin-dashboard .insight-content {
+  flex: 1;
+}
+
+.admin-dashboard .insight-title {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.admin-dashboard .insight-message {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* Productivity Tips */
+.admin-dashboard .productivity-tips-section {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.admin-dashboard .tips-title {
+  margin: 0 0 24px 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-dashboard .tips-title::before {
+  content: '🚀';
+  font-size: 20px;
+  filter: drop-shadow(0 0 8px var(--neon-pink));
+}
+
+.admin-dashboard .tips-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.admin-dashboard .tip-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.admin-dashboard .tip-card:hover {
+  background: rgba(255, 20, 147, 0.1);
+  border-color: rgba(255, 20, 147, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(255, 20, 147, 0.15);
+}
+
+.admin-dashboard .tip-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 8px var(--neon-pink));
+}
+
+.admin-dashboard .tip-content h4 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.admin-dashboard .tip-content p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+/* Footer */
+.admin-dashboard .admin-productivity-footer {
+  text-align: center;
+  padding-top: 20px;
+  border-top: 1px solid var(--glass-border);
+}
+
+.admin-dashboard .last-updated {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  font-style: italic;
+}
+
+/* Animations */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-energy {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 12px var(--neon-purple));
+  }
+  50% {
+    transform: scale(1.1);
+    filter: drop-shadow(0 0 20px var(--neon-purple)) drop-shadow(0 0 30px var(--neon-cyan));
+  }
+}
+
+@keyframes productivity-flow {
+  0%, 100% {
+    background-position: 0% 0%;
+  }
+  50% {
+    background-position: 100% 0%;
+  }
+}
+
+@keyframes chart-fill {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--target-height);
+  }
+}
+
+@keyframes bar-glow {
+  0%, 100% {
+    box-shadow: 0 0 12px rgba(139, 69, 255, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 24px rgba(139, 69, 255, 0.8);
+  }
+}
+
+@keyframes insight-reveal {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .admin-dashboard .section-usage-analysis {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  
+  .admin-dashboard .insights-grid {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  }
+  
+  .admin-dashboard .tips-grid {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-dashboard .admin-productivity {
+    gap: 24px;
+  }
+  
+  .admin-dashboard .admin-productivity-title {
+    font-size: 24px;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .admin-dashboard .admin-productivity-subtitle {
+    font-size: 14px;
+  }
+  
+  .admin-dashboard .productivity-score-card {
+    grid-template-columns: 1fr;
+    text-align: center;
+    gap: 24px;
+    padding: 24px;
+  }
+  
+  .admin-dashboard .score-value {
+    font-size: 36px;
+  }
+  
+  .admin-dashboard .circular-score {
+    width: 140px;
+    height: 140px;
+  }
+  
+  .admin-dashboard .score-percentage {
+    font-size: 20px;
+  }
+  
+  .admin-dashboard .productivity-metrics-grid {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+  }
+  
+  .admin-dashboard .section-usage-analysis {
+    grid-template-columns: 1fr;
+  }
+  
+  .admin-dashboard .usage-chart-section,
+  .admin-dashboard .usage-details-section,
+  .admin-dashboard .session-patterns-section,
+  .admin-dashboard .workflow-insights-section,
+  .admin-dashboard .productivity-tips-section {
+    padding: 20px;
+  }
+  
+  .admin-dashboard .usage-chart {
+    height: 160px;
+    gap: 4px;
+  }
+  
+  .admin-dashboard .usage-bar {
+    max-width: 24px;
+  }
+  
+  .admin-dashboard .usage-label {
+    font-size: 9px;
+    max-width: 50px;
+  }
+  
+  .admin-dashboard .session-patterns-chart {
+    height: 120px;
+    gap: 2px;
+  }
+  
+  .admin-dashboard .activity-bar {
+    max-width: 20px;
+  }
+  
+  .admin-dashboard .hour-label,
+  .admin-dashboard .session-count {
+    font-size: 9px;
+  }
+  
+  .admin-dashboard .insights-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .admin-dashboard .tips-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .admin-dashboard .insight-card,
+  .admin-dashboard .tip-card {
+    padding: 16px;
+    gap: 12px;
+  }
+}
+
+/* src/components/admin/Analytics/AdminProductivity.css - ADMIN SCOPED VERSION - PART 3 */
+/* 🔒 ADMIN SCOPED - NO CONFLICTS WITH PUBLIC PORTFOLIO */
+
+@media (max-width: 480px) {
+  .admin-dashboard .admin-productivity {
+    gap: 20px;
+  }
+  
+  .admin-dashboard .admin-productivity-title {
+    font-size: 20px;
+  }
+  
+  .admin-dashboard .productivity-icon {
+    font-size: 24px;
+  }
+  
+  .admin-dashboard .productivity-score-card,
+  .admin-dashboard .usage-chart-section,
+  .admin-dashboard .usage-details-section,
+  .admin-dashboard .session-patterns-section,
+  .admin-dashboard .workflow-insights-section,
+  .admin-dashboard .productivity-tips-section {
+    padding: 16px;
+  }
+  
+  .admin-dashboard .score-title,
+  .admin-dashboard .usage-title,
+  .admin-dashboard .details-title,
+  .admin-dashboard .patterns-title,
+  .admin-dashboard .insights-title,
+  .admin-dashboard .tips-title {
+    font-size: 16px;
+  }
+  
+  .admin-dashboard .score-value {
+    font-size: 28px;
+  }
+  
+  .admin-dashboard .circular-score {
+    width: 120px;
+    height: 120px;
+  }
+  
+  .admin-dashboard .score-percentage {
+    font-size: 18px;
+  }
+  
+  .admin-dashboard .productivity-metrics-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .admin-dashboard .usage-chart {
+    height: 120px;
+    gap: 2px;
+  }
+  
+  .admin-dashboard .usage-bar {
+    max-width: 20px;
+  }
+  
+  .admin-dashboard .usage-label {
+    font-size: 8px;
+    max-width: 40px;
+  }
+  
+  .admin-dashboard .usage-count {
+    font-size: 10px;
+  }
+  
+  .admin-dashboard .usage-detail-item {
+    padding: 12px;
+  }
+  
+  .admin-dashboard .section-name,
+  .admin-dashboard .section-percentage {
+    font-size: 12px;
+  }
+  
+  .admin-dashboard .visits-count,
+  .admin-dashboard .time-spent {
+    font-size: 10px;
+  }
+  
+  .admin-dashboard .session-patterns-chart {
+    height: 100px;
+    gap: 1px;
+  }
+  
+  .admin-dashboard .activity-bar {
+    max-width: 16px;
+  }
+  
+  .admin-dashboard .hour-label,
+  .admin-dashboard .session-count {
+    font-size: 8px;
+  }
+  
+  .admin-dashboard .insight-card,
+  .admin-dashboard .tip-card {
+    padding: 12px;
+    gap: 10px;
+  }
+  
+  .admin-dashboard .insight-icon,
+  .admin-dashboard .tip-icon {
+    font-size: 20px;
+  }
+  
+  .admin-dashboard .insight-title,
+  .admin-dashboard .tip-content h4 {
+    font-size: 14px;
+  }
+  
+  .admin-dashboard .insight-message,
+  .admin-dashboard .tip-content p {
+    font-size: 12px;
+  }
+}
+
+/* Theme Adjustments */
+[data-theme="light"] .admin-dashboard .productivity-score-card,
+[data-theme="light"] .admin-dashboard .usage-chart-section,
+[data-theme="light"] .admin-dashboard .usage-details-section,
+[data-theme="light"] .admin-dashboard .session-patterns-section,
+[data-theme="light"] .admin-dashboard .workflow-insights-section,
+[data-theme="light"] .admin-dashboard .productivity-tips-section {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .admin-dashboard .usage-detail-item,
+[data-theme="light"] .admin-dashboard .insight-card,
+[data-theme="light"] .admin-dashboard .tip-card {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .admin-dashboard .usage-detail-item:hover,
+[data-theme="light"] .admin-dashboard .insight-card:hover,
+[data-theme="light"] .admin-dashboard .tip-card:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .admin-dashboard .usage-bar {
+  box-shadow: 0 0 12px rgba(139, 69, 255, 0.3);
+}
+
+[data-theme="light"] .admin-dashboard .activity-bar {
+  box-shadow: 0 0 12px rgba(255, 165, 0, 0.3);
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+  .admin-dashboard .circular-score circle {
+    stroke-width: 12;
+  }
+  
+  .admin-dashboard .usage-bar,
+  .admin-dashboard .activity-bar {
+    border: 2px solid var(--text-primary);
+  }
+  
+  .admin-dashboard .usage-detail-fill {
+    border-top: 2px solid var(--neon-purple);
+  }
+  
+  .admin-dashboard .insight-card,
+  .admin-dashboard .tip-card {
+    border-width: 2px;
+  }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .admin-dashboard .admin-productivity *,
+  .admin-dashboard .admin-productivity *::before,
+  .admin-dashboard .admin-productivity *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .admin-dashboard .productivity-icon {
+    animation: none;
+  }
+  
+  .admin-dashboard .circular-score circle,
+  .admin-dashboard .usage-bar,
+  .admin-dashboard .activity-bar,
+  .admin-dashboard .usage-detail-fill {
+    transition: none;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .admin-dashboard .admin-productivity {
+    background: white;
+    color: black;
+  }
+  
+  .admin-dashboard .productivity-score-card,
+  .admin-dashboard .usage-chart-section,
+  .admin-dashboard .usage-details-section,
+  .admin-dashboard .session-patterns-section,
+  .admin-dashboard .workflow-insights-section,
+  .admin-dashboard .productivity-tips-section {
+    background: white;
+    border: 1px solid #ddd;
+    page-break-inside: avoid;
+    margin-bottom: 20px;
+  }
+  
+  .admin-dashboard .usage-chart,
+  .admin-dashboard .session-patterns-chart,
+  .admin-dashboard .circular-score {
+    filter: grayscale(100%);
+  }
+  
+  .admin-dashboard .usage-detail-item,
+  .admin-dashboard .insight-card,
+  .admin-dashboard .tip-card {
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+  }
+  
+  .admin-dashboard .productivity-icon,
+  .admin-dashboard .insight-icon,
+  .admin-dashboard .tip-icon {
+    display: none;
+  }
+}
+
+/* Focus States for Accessibility */
+.admin-dashboard .usage-bar:focus,
+.admin-dashboard .activity-bar:focus,
+.admin-dashboard .usage-detail-item:focus,
+.admin-dashboard .insight-card:focus,
+.admin-dashboard .tip-card:focus {
+  outline: 2px solid var(--neon-cyan);
+  outline-offset: 2px;
+}
+
+/* Loading States */
+.admin-dashboard .admin-productivity.loading .productivity-score-card,
+.admin-dashboard .admin-productivity.loading .usage-chart-section,
+.admin-dashboard .admin-productivity.loading .usage-details-section,
+.admin-dashboard .admin-productivity.loading .session-patterns-section {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.admin-dashboard .admin-productivity.loading .usage-chart,
+.admin-dashboard .admin-productivity.loading .session-patterns-chart,
+.admin-dashboard .admin-productivity.loading .circular-score {
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+/* Interactive Elements */
+.admin-dashboard .usage-bar,
+.admin-dashboard .activity-bar {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.admin-dashboard .usage-bar:focus,
+.admin-dashboard .activity-bar:focus {
+  transform: scale(1.05);
+}
+
+/* Tooltip Styles */
+.admin-dashboard .tooltip {
+  position: absolute;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--text-primary);
+  backdrop-filter: blur(10px);
+  z-index: 1000;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.admin-dashboard .tooltip.visible {
+  opacity: 1;
+}
+
+/* Custom Scrollbar */
+.admin-dashboard .usage-details-section::-webkit-scrollbar,
+.admin-dashboard .workflow-insights-section::-webkit-scrollbar {
+  width: 6px;
+}
+
+.admin-dashboard .usage-details-section::-webkit-scrollbar-track,
+.admin-dashboard .workflow-insights-section::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.admin-dashboard .usage-details-section::-webkit-scrollbar-thumb,
+.admin-dashboard .workflow-insights-section::-webkit-scrollbar-thumb {
+  background: var(--neon-purple);
+  border-radius: 3px;
+  box-shadow: 0 0 8px var(--neon-purple);
+}
+
+.admin-dashboard .usage-details-section::-webkit-scrollbar-thumb:hover,
+.admin-dashboard .workflow-insights-section::-webkit-scrollbar-thumb:hover {
+  background: var(--neon-cyan);
+  box-shadow: 0 0 12px var(--neon-cyan);
+}

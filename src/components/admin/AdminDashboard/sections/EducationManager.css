@@ -1,0 +1,2973 @@
+/* EducationManager-Part1.css - Variables & Base Styles */
+
+.education-content-manager {
+  --edu-space-xs: 4px;
+  --edu-space-sm: 8px;
+  --edu-space-md: 12px;
+  --edu-space-lg: 16px;
+  --edu-space-xl: 24px;
+  --edu-space-2xl: 32px;
+  --edu-space-3xl: 48px;
+  
+  --edu-radius-xs: 4px;
+  --edu-radius-sm: 6px;
+  --edu-radius-md: 8px;
+  --edu-radius-lg: 12px;
+  --edu-radius-xl: 16px;
+  --edu-radius-2xl: 20px;
+  
+  --edu-transition-fast: 0.15s ease;
+  --edu-transition-normal: 0.25s ease;
+  --edu-transition-slow: 0.4s ease;
+  
+  --edu-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --edu-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.15);
+  --edu-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.2);
+  
+  --edu-glow-orange: 0 0 15px rgba(255, 102, 0, 0.3);
+  --edu-glow-amber: 0 0 15px rgba(255, 193, 7, 0.25);
+  --edu-glow-yellow: 0 0 15px rgba(255, 235, 59, 0.2);
+  --edu-glow-deep-orange: 0 0 15px rgba(255, 87, 34, 0.25);
+  --edu-glow-red: 0 0 15px rgba(244, 67, 54, 0.25);
+  
+  --edu-grad-primary: linear-gradient(135deg, #ff6600, #ff9800);
+  --edu-grad-secondary: linear-gradient(135deg, #ff8f00, #ffb300);
+  --edu-grad-success: linear-gradient(135deg, #4caf50, #8bc34a);
+  --edu-grad-error: linear-gradient(135deg, #f44336, #ff5722);
+  
+  --edu-glass-bg: rgba(255, 255, 255, 0.05);
+  --edu-glass-border: rgba(255, 255, 255, 0.1);
+  --edu-glass-backdrop: blur(20px);
+  --edu-glass-hover: rgba(255, 255, 255, 0.08);
+  
+  --edu-course-bg: rgba(255, 102, 0, 0.1);
+  --edu-course-border: rgba(255, 102, 0, 0.3);
+  --edu-course-text: #ff6600;
+  
+  --edu-achievement-bg: rgba(255, 193, 7, 0.1);
+  --edu-achievement-border: rgba(255, 193, 7, 0.3);
+  --edu-achievement-text: #ffc107;
+  
+  --edu-activity-bg: rgba(255, 152, 0, 0.1);
+  --edu-activity-border: rgba(255, 152, 0, 0.3);
+  --edu-activity-text: #ff9800;
+  
+  --edu-logo-bg: rgba(255, 87, 34, 0.1);
+  --edu-logo-border: rgba(255, 87, 34, 0.3);
+  --edu-logo-text: #ff5722;
+  
+  --edu-text-primary: #ffffff;
+  --edu-text-secondary: #cccccc;
+  --edu-text-muted: #888888;
+  --edu-text-accent: #ff9800;
+  
+  --edu-bg-primary: #0a0a0a;
+  --edu-bg-secondary: #111111;
+  --edu-bg-tertiary: #1a1a1a;
+}
+
+[data-theme="light"] .education-content-manager {
+  --edu-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --edu-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.1);
+  --edu-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
+  
+  --edu-glow-orange: 0 0 15px rgba(255, 87, 34, 0.15);
+  --edu-glow-amber: 0 0 15px rgba(255, 152, 0, 0.15);
+  --edu-glow-yellow: 0 0 15px rgba(255, 193, 7, 0.15);
+  --edu-glow-deep-orange: 0 0 15px rgba(230, 74, 25, 0.15);
+  --edu-glow-red: 0 0 15px rgba(211, 47, 47, 0.15);
+  
+  --edu-grad-primary: linear-gradient(135deg, #e65100, #ff6600);
+  --edu-grad-secondary: linear-gradient(135deg, #ff8f00, #ff6f00);
+  --edu-grad-success: linear-gradient(135deg, #388e3c, #66bb6a);
+  --edu-grad-error: linear-gradient(135deg, #d32f2f, #f44336);
+  
+  --edu-glass-bg: rgba(255, 255, 255, 0.8);
+  --edu-glass-border: rgba(0, 0, 0, 0.1);
+  --edu-glass-hover: rgba(240, 240, 240, 0.95);
+  
+  --edu-course-bg: rgba(255, 87, 34, 0.08);
+  --edu-course-border: rgba(255, 87, 34, 0.2);
+  --edu-course-text: #e65100;
+  
+  --edu-achievement-bg: rgba(255, 152, 0, 0.08);
+  --edu-achievement-border: rgba(255, 152, 0, 0.2);
+  --edu-achievement-text: #ef6c00;
+  
+  --edu-activity-bg: rgba(255, 193, 7, 0.08);
+  --edu-activity-border: rgba(255, 193, 7, 0.2);
+  --edu-activity-text: #f57c00;
+  
+  --edu-logo-bg: rgba(255, 102, 0, 0.08);
+  --edu-logo-border: rgba(255, 102, 0, 0.2);
+  --edu-logo-text: #ff6600;
+  
+  --edu-text-primary: #1a1a1a;
+  --edu-text-secondary: #444444;
+  --edu-text-muted: #666666;
+  --edu-text-accent: #e65100;
+  
+  --edu-bg-primary: #fafafa;
+  --edu-bg-secondary: #ffffff;
+  --edu-bg-tertiary: #f5f5f5;
+}
+
+.education-content-manager {
+  padding: var(--edu-space-xl);
+  max-width: 1600px;
+  margin: 0 auto;
+  animation: eduManagerFadeIn 0.6s ease-out;
+  position: relative;
+  min-height: 100vh;
+  background: transparent;
+}
+
+.education-content-manager::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 200px;
+  background: radial-gradient(ellipse at top center, rgba(255, 102, 0, 0.05) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+[data-theme="light"] .education-content-manager::before {
+  background: radial-gradient(ellipse at top center, rgba(255, 87, 34, 0.03) 0%, transparent 70%);
+}
+
+.education-content-manager::after {
+  content: '';
+  position: fixed;
+  top: 80px;
+  left: 0;
+  width: 100vw;
+  height: calc(100vh - 80px);
+  background-image:
+    radial-gradient(circle at 10% 20%, var(--edu-course-text) 1px, transparent 1px),
+    radial-gradient(circle at 90% 30%, var(--edu-achievement-text) 1.5px, transparent 1.5px),
+    radial-gradient(circle at 30% 80%, var(--edu-activity-text) 1px, transparent 1px),
+    radial-gradient(circle at 70% 60%, var(--edu-logo-text) 1.2px, transparent 1.2px);
+  background-size: 400px 400px, 350px 350px, 300px 300px, 450px 450px;
+  animation: eduParticlesFloat 30s linear infinite;
+  opacity: 0.3;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.education-manager-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--edu-space-2xl);
+  gap: var(--edu-space-xl);
+  padding: var(--edu-space-xl);
+  background: var(--edu-glass-bg);
+  border: 1px solid var(--edu-glass-border);
+  border-radius: var(--edu-radius-xl);
+  backdrop-filter: var(--edu-glass-backdrop);
+  box-shadow: var(--edu-shadow-md);
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.education-manager-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--edu-grad-primary);
+  opacity: 0.05;
+  border-radius: var(--edu-radius-xl);
+  z-index: -1;
+  transition: opacity var(--edu-transition-normal);
+}
+
+.education-manager-header:hover::before {
+  opacity: 0.08;
+}
+
+.header-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.education-manager-title {
+  font-size: 2.2rem;
+  font-weight: 800;
+  margin: 0 0 var(--edu-space-md);
+  display: flex;
+  align-items: center;
+  gap: var(--edu-space-md);
+  background: var(--edu-grad-primary);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: eduTitleShimmer 3s ease-in-out infinite;
+  line-height: 1.2;
+  word-break: break-word;
+  position: relative;
+}
+
+.education-title-icon {
+  font-size: 2.5rem;
+  filter: drop-shadow(0 0 10px var(--edu-course-text));
+  animation: eduIconFloat 2s ease-in-out infinite;
+  flex-shrink: 0;
+  background: var(--edu-grad-primary);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.manager-subtitle {
+  font-size: 1.1rem;
+  color: var(--edu-text-secondary);
+  margin: 0;
+  font-weight: 500;
+  line-height: 1.6;
+  opacity: 0.9;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--edu-space-lg);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.edit-actions {
+  display: flex;
+  gap: var(--edu-space-md);
+  flex-wrap: wrap;
+}
+
+.education-manager-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--edu-space-3xl);
+  gap: var(--edu-space-lg);
+  color: var(--edu-text-secondary);
+  min-height: 400px;
+  position: relative;
+}
+
+.education-manager-loading p {
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin: 0;
+  background: var(--edu-grad-primary);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.education-manager-content {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--edu-space-2xl);
+  position: relative;
+  z-index: 1;
+}
+
+.education-manager-content.with-preview {
+  grid-template-columns: 1fr 420px;
+  align-items: start;
+}
+
+@keyframes eduManagerFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes eduTitleShimmer {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes eduIconFloat {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(5deg);
+  }
+}
+
+@keyframes eduParticlesFloat {
+  0% {
+    transform: translateY(0px) translateX(0px) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-20px) translateX(15px) rotate(90deg);
+  }
+  50% {
+    transform: translateY(-10px) translateX(-8px) rotate(180deg);
+  }
+  75% {
+    transform: translateY(-25px) translateX(-20px) rotate(270deg);
+  }
+  100% {
+    transform: translateY(0px) translateX(0px) rotate(360deg);
+  }
+}
+
+/* EducationManager-Part2.css - Action Buttons & Status Messages */
+
+.education-content-manager .action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--edu-space-sm);
+  padding: var(--edu-space-md) var(--edu-space-lg);
+  background: var(--edu-glass-bg);
+  border: 1px solid var(--edu-glass-border);
+  border-radius: var(--edu-radius-md);
+  color: var(--edu-text-primary);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--edu-transition-normal);
+  backdrop-filter: var(--edu-glass-backdrop);
+  position: relative;
+  overflow: hidden;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  min-width: 140px;
+  margin-right: var(--edu-space-lg);
+  white-space: nowrap;
+  z-index: 1;
+}
+
+.education-content-manager .action-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left var(--edu-transition-slow);
+  z-index: -1;
+}
+
+.education-content-manager .action-btn:hover:not(:disabled)::before {
+  left: 100%;
+}
+
+.education-content-manager .action-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--edu-shadow-lg);
+}
+
+.education-content-manager .action-btn:active:not(:disabled) {
+  transform: translateY(0);
+  transition: transform var(--edu-transition-fast);
+}
+
+.education-content-manager .action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.education-content-manager .action-btn.primary {
+  background: var(--edu-grad-primary);
+  border-color: transparent;
+  color: var(--edu-bg-primary);
+  font-weight: 700;
+  box-shadow: var(--edu-glow-orange);
+}
+
+.education-content-manager .action-btn.primary:hover:not(:disabled) {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: var(--edu-shadow-lg), var(--edu-glow-orange);
+}
+
+[data-theme="light"] .education-content-manager .action-btn.primary {
+  color: #ffffff;
+  box-shadow: var(--edu-glow-deep-orange);
+}
+
+[data-theme="light"] .education-content-manager .action-btn.primary:hover:not(:disabled) {
+  box-shadow: var(--edu-shadow-lg), var(--edu-glow-deep-orange);
+}
+
+.education-content-manager .add-btn:hover:not(:disabled) {
+  border-color: var(--edu-course-text);
+  color: var(--edu-course-text);
+  box-shadow: var(--edu-glow-orange);
+}
+
+.education-content-manager .preview-btn:hover:not(:disabled) {
+  border-color: var(--edu-achievement-text);
+  color: var(--edu-achievement-text);
+  box-shadow: var(--edu-glow-amber);
+}
+
+.education-content-manager .cancel-btn:hover:not(:disabled) {
+  border-color: #f44336;
+  color: #f44336;
+  box-shadow: var(--edu-glow-red);
+}
+
+.education-content-manager .save-btn:hover:not(:disabled) {
+  background: var(--edu-grad-success);
+  box-shadow: 0 0 15px rgba(76, 175, 80, 0.25);
+}
+
+.education-content-manager .btn-icon {
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.education-content-manager .action-btn-mini {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: var(--edu-glass-bg);
+  border: 1px solid var(--edu-glass-border);
+  border-radius: var(--edu-radius-sm);
+  cursor: pointer;
+  transition: all var(--edu-transition-fast);
+  font-size: 0.9rem;
+  backdrop-filter: var(--edu-glass-backdrop);
+}
+
+.education-content-manager .action-btn-mini.edit-btn:hover {
+  background: var(--edu-course-bg);
+  border-color: var(--edu-course-border);
+  transform: scale(1.1);
+  box-shadow: var(--edu-glow-orange);
+}
+
+.education-content-manager .action-btn-mini.delete-btn:hover {
+  background: rgba(244, 67, 54, 0.1);
+  border-color: rgba(244, 67, 54, 0.3);
+  transform: scale(1.1);
+  box-shadow: var(--edu-glow-red);
+}
+
+.education-content-manager .status-message {
+  display: flex;
+  align-items: center;
+  gap: var(--edu-space-md);
+  padding: var(--edu-space-lg) var(--edu-space-xl);
+  border-radius: var(--edu-radius-lg);
+  margin-bottom: var(--edu-space-xl);
+  font-weight: 600;
+  backdrop-filter: var(--edu-glass-backdrop);
+  animation: eduStatusSlideIn 0.3s ease-out;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid transparent;
+}
+
+.education-content-manager .status-message::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  animation: eduStatusShimmer 2s ease-in-out infinite;
+}
+
+.education-content-manager .status-message::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: currentColor;
+  opacity: 0.6;
+}
+
+.education-content-manager .status-message.success {
+  background: var(--edu-glass-bg);
+  border-color: var(--edu-course-border);
+  color: var(--edu-course-text);
+  box-shadow: 0 0 15px rgba(76, 175, 80, 0.25);
+}
+
+.education-content-manager .status-message.success::after {
+  background: var(--edu-course-text);
+}
+
+.education-content-manager .status-message.error {
+  background: var(--edu-glass-bg);
+  border-color: rgba(244, 67, 54, 0.3);
+  color: #f44336;
+  box-shadow: var(--edu-glow-red);
+}
+
+.education-content-manager .status-message.error::after {
+  background: #f44336;
+}
+
+.education-content-manager .status-icon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+  animation: eduStatusIconPulse 1.5s ease-in-out infinite;
+}
+
+.education-content-manager .status-content {
+  flex: 1;
+  line-height: 1.4;
+}
+
+.education-content-manager .status-content strong {
+  font-weight: 700;
+  margin-right: var(--edu-space-sm);
+}
+
+.education-content-manager .glass-card {
+  background: var(--edu-glass-bg);
+  border: 1px solid var(--edu-glass-border);
+  border-radius: var(--edu-radius-xl);
+  backdrop-filter: var(--edu-glass-backdrop);
+  box-shadow: var(--edu-shadow-md);
+  position: relative;
+  overflow: hidden;
+}
+
+.education-content-manager .glass-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--edu-grad-primary);
+  opacity: 0.02;
+  border-radius: var(--edu-radius-xl);
+  z-index: 0;
+}
+
+.education-content-manager .glass-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.education-content-manager .glass-card:hover {
+  border-color: var(--edu-course-border);
+  box-shadow: var(--edu-shadow-lg);
+  transform: translateY(-2px);
+  transition: all var(--edu-transition-normal);
+}
+
+.education-content-manager .glass-card:hover::before {
+  opacity: 0.05;
+}
+
+.education-content-manager .char-count,
+.education-content-manager .highlight-count,
+.education-content-manager .info-count {
+  font-size: 0.8rem;
+  color: var(--edu-text-muted);
+  font-weight: 500;
+  background: var(--edu-glass-bg);
+  padding: 4px 8px;
+  border-radius: var(--edu-radius-sm);
+  border: 1px solid var(--edu-glass-border);
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width: 60px;
+  text-align: center;
+  backdrop-filter: blur(10px);
+  transition: all var(--edu-transition-fast);
+}
+
+.education-content-manager .char-count:hover,
+.education-content-manager .highlight-count:hover,
+.education-content-manager .info-count:hover {
+  border-color: var(--edu-course-border);
+  color: var(--edu-course-text);
+}
+
+.education-content-manager .char-count.warning {
+  color: var(--edu-achievement-text);
+  border-color: var(--edu-achievement-border);
+  background: var(--edu-achievement-bg);
+}
+
+.education-content-manager .char-count.danger {
+  color: #f44336;
+  border-color: rgba(244, 67, 54, 0.3);
+  background: rgba(244, 67, 54, 0.1);
+  animation: eduCountPulse 1s ease-in-out infinite;
+}
+
+.education-content-manager .form-label-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--edu-space-sm);
+  gap: var(--edu-space-md);
+}
+
+.education-content-manager .form-label {
+  color: var(--edu-text-primary);
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  position: relative;
+}
+
+.education-content-manager .form-label.required::after {
+  content: '*';
+  color: #f44336;
+  margin-left: var(--edu-space-xs);
+  font-weight: 700;
+  font-size: 1.1rem;
+  animation: eduRequiredPulse 2s ease-in-out infinite;
+}
+
+.education-content-manager .form-label:not(.required):hover {
+  color: var(--edu-text-accent);
+  transition: color var(--edu-transition-fast);
+}
+
+.education-content-manager .section-title {
+  display: flex;
+  align-items: center;
+  gap: var(--edu-space-md);
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin: 0 0 var(--edu-space-lg);
+  color: var(--edu-text-primary);
+  padding-bottom: var(--edu-space-md);
+  border-bottom: 1px solid var(--edu-glass-border);
+  position: relative;
+}
+
+.education-content-manager .section-title::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 60px;
+  height: 2px;
+  background: var(--edu-grad-primary);
+  border-radius: 1px;
+}
+
+.education-content-manager .section-icon {
+  font-size: 1.4rem;
+  filter: drop-shadow(0 0 8px currentColor);
+}
+
+.education-content-manager .form-title-section {
+  text-align: center;
+  margin-bottom: var(--edu-space-2xl);
+  padding-bottom: var(--edu-space-xl);
+  border-bottom: 1px solid var(--edu-glass-border);
+  position: relative;
+}
+
+.education-content-manager .form-title {
+  font-size: 1.8rem;
+  font-weight: 800;
+  margin: 0 0 var(--edu-space-md);
+  background: var(--edu-grad-primary);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.education-content-manager .form-subtitle {
+  font-size: 1rem;
+  color: var(--edu-text-secondary);
+  margin: 0;
+  font-weight: 500;
+  opacity: 0.9;
+}
+
+.education-content-manager .error-text {
+  display: flex;
+  align-items: center;
+  gap: var(--edu-space-xs);
+  color: #f44336;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-top: var(--edu-space-sm);
+  animation: eduErrorFadeIn 0.3s ease-out;
+  padding: var(--edu-space-xs) var(--edu-space-sm);
+  background: rgba(244, 67, 54, 0.1);
+  border-radius: var(--edu-radius-sm);
+  border: 1px solid rgba(244, 67, 54, 0.2);
+}
+
+.education-content-manager .error-text::before {
+  content: '⚠️';
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.education-content-manager .form-input.error,
+.education-content-manager .form-textarea.error,
+.education-content-manager .form-select.error {
+  border-color: #f44336;
+  box-shadow: 0 0 0 3px rgba(244, 67, 54, 0.15), 0 0 20px rgba(244, 67, 54, 0.2);
+}
+
+.education-content-manager .form-input.success,
+.education-content-manager .form-textarea.success {
+  border-color: var(--edu-course-text);
+  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.15), 0 0 20px rgba(76, 175, 80, 0.2);
+}
+
+.education-content-manager .modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(5px);
+  animation: eduModalFadeIn 0.3s ease-out;
+}
+
+.education-content-manager .modal-content {
+  padding: var(--edu-space-2xl);
+  max-width: 500px;
+  width: 90%;
+  text-align: center;
+  overflow: visible;
+  animation: eduModalSlideIn 0.3s ease-out;
+}
+
+.education-content-manager .modal-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--edu-text-primary);
+  margin: 0 0 var(--edu-space-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--edu-space-sm);
+}
+
+.education-content-manager .modal-icon {
+  font-size: 1.6rem;
+  color: #f44336;
+}
+
+.education-content-manager .modal-text {
+  font-size: 1rem;
+  color: var(--edu-text-secondary);
+  margin-bottom: var(--edu-space-xl);
+  line-height: 1.6;
+}
+
+.education-content-manager .modal-text strong {
+  color: var(--edu-text-primary);
+  font-weight: 600;
+}
+
+.education-content-manager .modal-actions {
+  display: flex;
+  justify-content: center;
+  gap: var(--edu-space-lg);
+  margin-top: var(--edu-space-xl);
+}
+
+.education-content-manager .modal-actions .delete-btn-confirm.primary {
+  background: #f44336;
+  border-color: transparent;
+  color: #ffffff;
+  box-shadow: var(--edu-glow-red);
+}
+
+.education-content-manager .modal-actions .delete-btn-confirm.primary:hover:not(:disabled) {
+  background: #d32f2f;
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: var(--edu-shadow-lg), var(--edu-glow-red);
+}
+
+[data-theme="light"] .education-content-manager .modal-actions .delete-btn-confirm.primary {
+  background: #d32f2f;
+  color: #ffffff;
+  box-shadow: var(--edu-glow-red);
+}
+
+[data-theme="light"] .education-content-manager .modal-actions .delete-btn-confirm.primary:hover:not(:disabled) {
+  background: #b71c1c;
+}
+
+@keyframes eduStatusSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes eduStatusShimmer {
+  0%, 100% {
+    left: -100%;
+  }
+  50% {
+    left: 100%;
+  }
+}
+
+@keyframes eduStatusIconPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+@keyframes eduCountPulse {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(244, 67, 54, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 15px rgba(244, 67, 54, 0.5);
+  }
+}
+
+@keyframes eduRequiredPulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+@keyframes eduErrorFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes eduModalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes eduModalSlideIn {
+  from { opacity: 0; transform: translateY(-30px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* EducationManager-Part3.css - Table Styling & Education List */
+
+.education-content-manager .education-list-section {
+  position: relative;
+}
+
+.education-content-manager .list-container {
+  padding: var(--edu-space-xl);
+  position: relative;
+  overflow: hidden;
+}
+
+.education-content-manager .list-controls {
+  display: flex;
+  gap: var(--edu-space-lg);
+  margin-bottom: var(--edu-space-xl);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.education-content-manager .search-section {
+  flex: 1;
+  min-width: 300px;
+}
+
+.education-content-manager .search-wrapper {
+  position: relative;
+}
+
+.education-content-manager .search-icon {
+  position: absolute;
+  left: var(--edu-space-md);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--edu-text-muted);
+  font-size: 1.1rem;
+  z-index: 2;
+}
+
+.education-content-manager .search-input {
+  width: 100%;
+  padding: var(--edu-space-md) var(--edu-space-md) var(--edu-space-md) 40px;
+  background: var(--edu-glass-bg);
+  border: 1px solid var(--edu-glass-border);
+  border-radius: var(--edu-radius-md);
+  color: var(--edu-text-primary);
+  font-size: 1rem;
+  transition: all var(--edu-transition-normal);
+  backdrop-filter: var(--edu-glass-backdrop);
+}
+
+.education-content-manager .search-input:focus {
+  outline: none;
+  border-color: var(--edu-course-text);
+  box-shadow: 0 0 0 3px var(--edu-course-bg), 0 0 20px var(--edu-glow-orange);
+  background: var(--edu-glass-hover);
+}
+
+.education-content-manager .search-input::placeholder {
+  color: var(--edu-text-muted);
+  opacity: 0.7;
+}
+
+.education-content-manager .filters-section {
+  display: flex;
+  gap: var(--edu-space-md);
+  flex-wrap: wrap;
+}
+
+.education-content-manager .filter-select {
+  padding: var(--edu-space-sm) var(--edu-space-md);
+  background: var(--edu-glass-bg);
+  border: 1px solid var(--edu-glass-border);
+  border-radius: var(--edu-radius-md);
+  color: var(--edu-text-primary);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all var(--edu-transition-normal);
+  backdrop-filter: var(--edu-glass-backdrop);
+  min-width: 120px;
+}
+
+.education-content-manager .filter-select:focus {
+  outline: none;
+  border-color: var(--edu-achievement-text);
+  box-shadow: 0 0 0 2px var(--edu-achievement-bg);
+}
+
+.education-content-manager .education-table-wrapper {
+  background: var(--edu-glass-bg);
+  border: 1px solid var(--edu-glass-border);
+  border-radius: var(--edu-radius-lg);
+  overflow: hidden;
+  backdrop-filter: var(--edu-glass-backdrop);
+  margin-bottom: var(--edu-space-xl);
+}
+
+.education-content-manager .education-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: transparent;
+}
+
+.education-content-manager .education-table thead {
+  background: var(--edu-glass-bg);
+  backdrop-filter: var(--edu-glass-backdrop);
+}
+
+.education-content-manager .education-table th {
+  padding: var(--edu-space-lg) var(--edu-space-md);
+  text-align: left;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--edu-text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--edu-glass-border);
+  position: relative;
+}
+
+.education-content-manager .education-table th::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--edu-grad-primary);
+  opacity: 0.3;
+}
+
+.education-content-manager .education-table td {
+  padding: var(--edu-space-lg) var(--edu-space-md);
+  border-bottom: 1px solid var(--edu-glass-border);
+  vertical-align: top;
+}
+
+.education-content-manager .education-row {
+  transition: background-color var(--edu-transition-normal);
+  position: relative;
+}
+
+.education-content-manager .education-row:hover {
+  background: var(--edu-glass-hover);
+}
+
+.education-content-manager .education-row:hover::before {
+  width: 0;
+  background: transparent;
+}
+
+.education-content-manager .education-degree {
+  min-width: 300px;
+}
+
+.education-content-manager .degree-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--edu-space-sm);
+}
+
+.education-content-manager .degree-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--edu-text-primary);
+  margin: 0;
+  background: var(--edu-grad-primary);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.education-content-manager .degree-major {
+  font-size: 0.9rem;
+  color: var(--edu-text-secondary);
+  margin: 0;
+  font-weight: 500;
+}
+
+.education-content-manager .degree-minor {
+  font-size: 0.85rem;
+  color: var(--edu-text-muted);
+  margin: 0;
+  font-style: italic;
+}
+
+.education-content-manager .degree-meta {
+  display: flex;
+  gap: var(--edu-space-md);
+  flex-wrap: wrap;
+}
+
+.education-content-manager .meta-item {
+  display: flex;
+  align-items: center;
+  gap: var(--edu-space-xs);
+  font-size: 0.8rem;
+  color: var(--edu-text-muted);
+  background: var(--edu-glass-bg);
+  padding: var(--edu-space-xs) var(--edu-space-sm);
+  border-radius: var(--edu-radius-sm);
+  border: 1px solid var(--edu-glass-border);
+}
+
+.education-content-manager .education-college {
+  min-width: 200px;
+}
+
+.education-content-manager .college-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--edu-space-xs);
+}
+
+.education-content-manager .college-name {
+  font-weight: 600;
+  color: var(--edu-text-primary);
+}
+
+.education-content-manager .college-location {
+  font-size: 0.85rem;
+  color: var(--edu-text-muted);
+}
+
+.education-content-manager .education-institution {
+  min-width: 150px;
+}
+
+.education-content-manager .institution-name {
+  font-weight: 500;
+  color: var(--edu-text-secondary);
+}
+
+.education-content-manager .education-gpa {
+  min-width: 120px;
+}
+
+.education-content-manager .gpa-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--edu-space-xs);
+}
+
+.education-content-manager .gpa-value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--edu-course-text);
+  background: var(--edu-course-bg);
+  padding: var(--edu-space-xs) var(--edu-space-sm);
+  border-radius: var(--edu-radius-sm);
+  text-align: center;
+  border: 1px solid var(--edu-course-border);
+}
+
+.education-content-manager .gpa-type {
+  font-size: 0.75rem;
+  color: var(--edu-text-muted);
+  text-transform: uppercase;
+  text-align: center;
+  font-weight: 500;
+}
+
+.education-content-manager .gpa-na {
+  color: var(--edu-text-muted);
+  font-style: italic;
+}
+
+.education-content-manager .education-level {
+  min-width: 120px;
+}
+
+.education-content-manager .level-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--edu-space-xs) var(--edu-space-sm);
+  background: var(--edu-activity-bg);
+  border: 1px solid var(--edu-activity-border);
+  color: var(--edu-activity-text);
+  border-radius: var(--edu-radius-md);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.education-content-manager .education-actions {
+  min-width: 80px;
+}
+
+.education-content-manager .action-buttons {
+  display: flex;
+  gap: var(--edu-space-sm);
+  justify-content: center;
+}
+
+.education-content-manager .no-education-message {
+  text-align: center;
+  padding: var(--edu-space-3xl);
+  color: var(--edu-text-secondary);
+  background: var(--edu-glass-bg);
+  border: 2px dashed var(--edu-glass-border);
+  border-radius: var(--edu-radius-xl);
+  margin: var(--edu-space-xl) 0;
+}
+
+.education-content-manager .no-education-icon {
+  font-size: 3rem;
+  margin-bottom: var(--edu-space-lg);
+  opacity: 0.6;
+}
+
+.education-content-manager .no-education-message h3 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 var(--edu-space-md);
+  color: var(--edu-text-primary);
+}
+
+.education-content-manager .no-education-message p {
+  font-size: 1rem;
+  margin: 0;
+  line-height: 1.6;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.education-content-manager .education-summary {
+  background: var(--edu-glass-bg);
+  border: 1px solid var(--edu-glass-border);
+  border-radius: var(--edu-radius-lg);
+  padding: var(--edu-space-lg);
+  backdrop-filter: var(--edu-glass-backdrop);
+  text-align: center;
+}
+
+.education-content-manager .summary-stats {
+  display: flex;
+  justify-content: center;
+  gap: var(--edu-space-2xl);
+  flex-wrap: wrap;
+}
+
+.education-content-manager .stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--edu-space-xs);
+  font-size: 0.9rem;
+  color: var(--edu-text-secondary);
+}
+
+.education-content-manager .stat-item strong {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--edu-text-primary);
+  background: var(--edu-grad-primary);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+@media (max-width: 1024px) {
+  .education-content-manager {
+    padding: var(--edu-space-lg);
+  }
+  
+  .education-content-manager .education-manager-header {
+    flex-direction: column;
+    gap: var(--edu-space-lg);
+    align-items: flex-start;
+    padding: var(--edu-space-lg);
+  }
+  
+  .education-content-manager .header-actions {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+  
+  .education-content-manager .education-manager-content,
+  .education-content-manager .education-manager-content.with-preview {
+    grid-template-columns: 1fr;
+  }
+  
+  .education-content-manager .education-manager-title {
+    font-size: 1.8rem;
+  }
+
+  .education-content-manager .education-table-wrapper {
+    overflow-x: auto;
+  }
+
+  .education-content-manager .education-table {
+    min-width: 800px;
+  }
+
+  .education-content-manager .education-degree {
+    min-width: 250px;
+  }
+
+  .education-content-manager .education-college {
+    min-width: 180px;
+  }
+
+  .education-content-manager .list-controls {
+    flex-direction: column;
+    gap: var(--edu-space-md);
+  }
+
+  .education-content-manager .search-section {
+    min-width: auto;
+  }
+
+  .education-content-manager .filters-section {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 768px) {
+  .education-content-manager {
+    padding: var(--edu-space-md);
+  }
+  
+  .education-content-manager .education-manager-header {
+    padding: var(--edu-space-md);
+  }
+  
+  .education-content-manager .edit-actions {
+    flex-direction: column;
+    width: 100%;
+    gap: var(--edu-space-sm);
+  }
+  
+  .education-content-manager .action-btn {
+    min-width: auto;
+    padding: var(--edu-space-sm) var(--edu-space-md);
+    font-size: 0.9rem;
+  }
+  
+  .education-content-manager .education-manager-title {
+    font-size: 1.5rem;
+    flex-direction: column;
+    gap: var(--edu-space-sm);
+    text-align: center;
+  }
+  
+  .education-content-manager .education-title-icon {
+    font-size: 2rem;
+  }
+
+  .education-content-manager .education-table {
+    min-width: 600px;
+    font-size: 0.9rem;
+  }
+
+  .education-content-manager .education-table th,
+  .education-content-manager .education-table td {
+    padding: var(--edu-space-sm);
+  }
+
+  .education-content-manager .degree-title {
+    font-size: 1rem;
+  }
+
+  .education-content-manager .degree-major,
+  .education-content-manager .degree-minor {
+    font-size: 0.85rem;
+  }
+
+  .education-content-manager .action-btn-mini {
+    width: 28px;
+    height: 28px;
+    font-size: 0.8rem;
+  }
+
+  .education-content-manager .gpa-value {
+    font-size: 0.9rem;
+    padding: 2px 6px;
+  }
+
+  .education-content-manager .level-badge {
+    font-size: 0.7rem;
+    padding: 2px 6px;
+  }
+}
+
+@media (max-width: 480px) {
+  .education-content-manager {
+    padding: var(--edu-space-sm);
+  }
+  
+  .education-content-manager .education-manager-header {
+    padding: var(--edu-space-sm);
+  }
+  
+  .education-content-manager .education-manager-title {
+    font-size: 1.3rem;
+  }
+
+  .education-content-manager .education-table {
+    min-width: 500px;
+    font-size: 0.85rem;
+  }
+
+  .education-content-manager .education-table th,
+  .education-content-manager .education-table td {
+    padding: 6px;
+  }
+
+  .education-content-manager .degree-title {
+    font-size: 0.9rem;
+  }
+
+  .education-content-manager .degree-major,
+  .education-content-manager .degree-minor {
+    font-size: 0.8rem;
+  }
+
+  .education-content-manager .meta-item {
+    font-size: 0.7rem;
+    padding: 2px 4px;
+  }
+
+  .education-content-manager .action-btn-mini {
+    width: 24px;
+    height: 24px;
+    font-size: 0.7rem;
+  }
+
+  .education-content-manager .gpa-value {
+    font-size: 0.8rem;
+    padding: 1px 4px;
+  }
+
+  .education-content-manager .level-badge {
+    font-size: 0.65rem;
+    padding: 1px 4px;
+  }
+
+  .education-content-manager .college-name,
+  .education-content-manager .institution-name {
+    font-size: 0.85rem;
+  }
+
+  .education-content-manager .college-location {
+    font-size: 0.75rem;
+  }
+}
+
+/* EducationManager-Part4.css - Form Elements & Input Styling */
+
+.education-content-manager .form-section {
+  position: relative;
+}
+
+.education-content-manager .form-container {
+  padding: var(--edu-space-2xl);
+  position: relative;
+  overflow: hidden;
+}
+
+.education-content-manager .form-container > * {
+  position: relative;
+  z-index: 1;
+}
+
+.education-content-manager .form-group {
+  margin-bottom: var(--edu-space-xl);
+}
+
+.education-content-manager .form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--edu-space-lg);
+}
+
+.education-content-manager .form-section-group {
+  margin-bottom: var(--edu-space-3xl);
+  padding: var(--edu-space-xl);
+  background: var(--edu-glass-bg);
+  border: 1px solid var(--edu-glass-border);
+  border-radius: var(--edu-radius-lg);
+  backdrop-filter: var(--edu-glass-backdrop);
+  position: relative;
+  overflow: hidden;
+}
+
+.education-content-manager .form-section-group::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--edu-grad-secondary);
+  opacity: 0.02;
+  border-radius: var(--edu-radius-lg);
+  z-index: 0;
+}
+
+.education-content-manager .form-section-group > * {
+  position: relative;
+  z-index: 1;
+}
+
+.education-content-manager .form-input,
+.education-content-manager .form-textarea,
+.education-content-manager .form-select {
+  width: 100%;
+  padding: var(--edu-space-md) var(--edu-space-lg);
+  background: var(--edu-glass-bg);
+  border: 1px solid var(--edu-glass-border);
+  border-radius: var(--edu-radius-md);
+  color: var(--edu-text-primary);
+  font-size: 1rem;
+  transition: all var(--edu-transition-normal);
+  backdrop-filter: var(--edu-glass-backdrop);
+  font-family: inherit;
+  resize: vertical;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.education-content-manager .form-input::placeholder,
+.education-content-manager .form-textarea::placeholder {
+  color: var(--edu-text-muted);
+  opacity: 0.7;
+  font-style: italic;
+}
+
+.education-content-manager .form-input:focus,
+.education-content-manager .form-textarea:focus,
+.education-content-manager .form-select:focus {
+  outline: none;
+  border-color: var(--edu-course-text);
+  box-shadow: 0 0 0 3px var(--edu-course-bg), 0 0 20px var(--edu-glow-orange);
+  background: var(--edu-glass-hover);
+  transform: translateY(-1px);
+}
+
+[data-theme="light"] .education-content-manager .form-input:focus,
+[data-theme="light"] .education-content-manager .form-textarea:focus,
+[data-theme="light"] .education-content-manager .form-select:focus {
+  border-color: var(--edu-logo-text);
+  box-shadow: 0 0 0 3px var(--edu-logo-bg), 0 0 20px var(--edu-glow-orange);
+  background: var(--edu-glass-hover);
+}
+
+.education-content-manager .form-input:disabled,
+.education-content-manager .form-textarea:disabled,
+.education-content-manager .form-select:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  background: var(--edu-bg-secondary);
+  transform: none;
+}
+
+.education-content-manager .form-textarea {
+  min-height: 120px;
+  line-height: 1.6;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.education-content-manager .form-select {
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23888888' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 12px center;
+  background-repeat: no-repeat;
+  background-size: 16px;
+  padding-right: 40px;
+}
+
+.education-content-manager .coursework-list,
+.education-content-manager .achievements-list,
+.education-content-manager .activities-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--edu-space-sm);
+  margin-bottom: var(--edu-space-lg);
+  min-height: 40px;
+  padding: var(--edu-space-md);
+  background: var(--edu-glass-bg);
+  border: 1px dashed var(--edu-glass-border);
+  border-radius: var(--edu-radius-md);
+  transition: all var(--edu-transition-normal);
+}
+
+.education-content-manager .coursework-list:empty::before,
+.education-content-manager .achievements-list:empty::before,
+.education-content-manager .activities-list:empty::before {
+  content: 'No items added yet...';
+  color: var(--edu-text-muted);
+  font-style: italic;
+  opacity: 0.6;
+}
+
+.education-content-manager .coursework-list:hover,
+.education-content-manager .achievements-list:hover,
+.education-content-manager .activities-list:hover {
+  border-color: var(--edu-course-border);
+  background: var(--edu-course-bg);
+}
+
+.education-content-manager .coursework-item {
+  display: flex;
+  align-items: center;
+  gap: var(--edu-space-sm);
+  background: var(--edu-course-bg);
+  border: 1px solid var(--edu-course-border);
+  border-radius: var(--edu-radius-sm);
+  padding: var(--edu-space-sm) var(--edu-space-md);
+  transition: all var(--edu-transition-fast);
+  animation: eduItemSlideIn 0.3s ease-out;
+}
+
+.education-content-manager .coursework-item:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--edu-glow-orange);
+}
+
+.education-content-manager .course-name {
+  color: var(--edu-course-text);
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.education-content-manager .remove-course-btn {
+  background: none;
+  border: none;
+  color: #f44336;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: var(--edu-radius-xs);
+  transition: all var(--edu-transition-fast);
+  font-size: 0.8rem;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.education-content-manager .remove-course-btn:hover {
+  background: rgba(244, 67, 54, 0.1);
+  transform: scale(1.2);
+}
+
+.education-content-manager .achievement-item {
+  display: flex;
+  align-items: center;
+  gap: var(--edu-space-md);
+  background: var(--edu-achievement-bg);
+  border: 1px solid var(--edu-achievement-border);
+  border-radius: var(--edu-radius-sm);
+  padding: var(--edu-space-md);
+  margin-bottom: var(--edu-space-sm);
+  transition: all var(--edu-transition-fast);
+  animation: eduItemSlideIn 0.3s ease-out;
+}
+
+.education-content-manager .achievement-item:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--edu-glow-amber);
+}
+
+.education-content-manager .achievement-text {
+  flex: 1;
+  color: var(--edu-achievement-text);
+  font-weight: 500;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.education-content-manager .remove-achievement-btn {
+  background: none;
+  border: none;
+  color: #f44336;
+  cursor: pointer;
+  padding: var(--edu-space-xs);
+  border-radius: var(--edu-radius-xs);
+  transition: all var(--edu-transition-fast);
+  font-size: 0.8rem;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.education-content-manager .remove-achievement-btn:hover {
+  background: rgba(244, 67, 54, 0.1);
+  transform: scale(1.2);
+}
+
+.education-content-manager .activity-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--edu-space-md);
+  background: var(--edu-activity-bg);
+  border: 1px solid var(--edu-activity-border);
+  border-radius: var(--edu-radius-sm);
+  padding: var(--edu-space-md);
+  margin-bottom: var(--edu-space-sm);
+  transition: all var(--edu-transition-fast);
+  animation: eduItemSlideIn 0.3s ease-out;
+}
+
+.education-content-manager .activity-item:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--edu-glow-yellow);
+}
+
+.education-content-manager .activity-text {
+  flex: 1;
+  color: var(--edu-activity-text);
+  font-weight: 500;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.education-content-manager .remove-activity-btn {
+  background: none;
+  border: none;
+  color: #f44336;
+  cursor: pointer;
+  padding: var(--edu-space-xs);
+  border-radius: var(--edu-radius-xs);
+  transition: all var(--edu-transition-fast);
+  font-size: 0.8rem;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+}
+
+.education-content-manager .remove-activity-btn:hover {
+  background: rgba(244, 67, 54, 0.1);
+  transform: scale(1.2);
+}
+
+.education-content-manager .add-coursework,
+.education-content-manager .add-achievement,
+.education-content-manager .add-activity {
+  display: flex;
+  gap: var(--edu-space-md);
+  align-items: center;
+  padding: var(--edu-space-md);
+  background: var(--edu-glass-bg);
+  border: 1px dashed var(--edu-course-border);
+  border-radius: var(--edu-radius-md);
+  transition: all var(--edu-transition-normal);
+  position: relative;
+  overflow: hidden;
+}
+
+.education-content-manager .add-coursework::before,
+.education-content-manager .add-achievement::before,
+.education-content-manager .add-activity::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, var(--edu-course-bg), transparent);
+  transition: left var(--edu-transition-slow);
+}
+
+.education-content-manager .add-coursework:hover,
+.education-content-manager .add-achievement:hover,
+.education-content-manager .add-activity:hover {
+  background: var(--edu-course-bg);
+  border-style: solid;
+  transform: translateY(-1px);
+}
+
+.education-content-manager .add-coursework:hover::before,
+.education-content-manager .add-achievement:hover::before,
+.education-content-manager .add-activity:hover::before {
+  left: 100%;
+}
+
+.education-content-manager .add-achievement {
+  border-color: var(--edu-achievement-border);
+}
+
+.education-content-manager .add-achievement::before {
+  background: linear-gradient(90deg, transparent, var(--edu-achievement-bg), transparent);
+}
+
+.education-content-manager .add-achievement:hover {
+  background: var(--edu-achievement-bg);
+}
+
+.education-content-manager .add-activity {
+  border-color: var(--edu-activity-border);
+}
+
+.education-content-manager .add-activity::before {
+  background: linear-gradient(90deg, transparent, var(--edu-activity-bg), transparent);
+}
+
+.education-content-manager .add-activity:hover {
+  background: var(--edu-activity-bg);
+}
+
+.education-content-manager .add-course-btn,
+.education-content-manager .add-achievement-btn,
+.education-content-manager .add-activity-btn {
+  background: var(--edu-grad-primary);
+  border: none;
+  border-radius: var(--edu-radius-md);
+  padding: var(--edu-space-sm) var(--edu-space-lg);
+  color: var(--edu-bg-primary);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--edu-transition-normal);
+  white-space: nowrap;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  position: relative;
+  z-index: 1;
+}
+
+.education-content-manager .add-course-btn:hover:not(:disabled),
+.education-content-manager .add-achievement-btn:hover:not(:disabled),
+.education-content-manager .add-activity-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--edu-glow-orange);
+}
+
+.education-content-manager .add-course-btn:disabled,
+.education-content-manager .add-achievement-btn:disabled,
+.education-content-manager .add-activity-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+[data-theme="light"] .education-content-manager .add-course-btn,
+[data-theme="light"] .education-content-manager .add-achievement-btn,
+[data-theme="light"] .education-content-manager .add-activity-btn {
+  color: #ffffff;
+}
+
+[data-theme="light"] .education-content-manager .add-course-btn:hover:not(:disabled),
+[data-theme="light"] .education-content-manager .add-achievement-btn:hover:not(:disabled),
+[data-theme="light"] .education-content-manager .add-activity-btn:hover:not(:disabled) {
+  box-shadow: var(--edu-glow-deep-orange);
+}
+
+.education-content-manager .current-logo {
+  display: flex;
+  align-items: center;
+  gap: var(--edu-space-md);
+  padding: var(--edu-space-md);
+  background: var(--edu-glass-bg);
+  border: 1px solid var(--edu-glass-border);
+  border-radius: var(--edu-radius-md);
+  backdrop-filter: var(--edu-glass-backdrop);
+}
+
+.education-content-manager .logo-preview {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  border-radius: var(--edu-radius-md);
+  overflow: hidden;
+  border: 2px solid var(--edu-logo-border);
+  background: var(--edu-logo-bg);
+}
+
+.education-content-manager .logo-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--edu-transition-normal);
+}
+
+.education-content-manager .logo-preview:hover .logo-image {
+  transform: scale(1.05);
+}
+
+.education-content-manager .remove-logo-btn {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #f44336;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  transition: all var(--edu-transition-fast);
+  box-shadow: 0 2px 8px rgba(244, 67, 54, 0.3);
+}
+
+.education-content-manager .remove-logo-btn:hover {
+  background: #d32f2f;
+  transform: scale(1.1);
+}
+
+.education-content-manager .logo-filename {
+  font-size: 0.9rem;
+  color: var(--edu-text-secondary);
+  font-weight: 500;
+}
+
+.education-content-manager .upload-section {
+  text-align: center;
+  padding: var(--edu-space-xl);
+  background: var(--edu-glass-bg);
+  border: 2px dashed var(--edu-glass-border);
+  border-radius: var(--edu-radius-lg);
+  transition: all var(--edu-transition-normal);
+  position: relative;
+  overflow: hidden;
+}
+
+.education-content-manager .upload-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, var(--edu-logo-bg), transparent);
+  transition: left var(--edu-transition-slow);
+}
+
+.education-content-manager .upload-section:hover {
+  border-color: var(--edu-logo-border);
+  background: var(--edu-logo-bg);
+  border-style: solid;
+}
+
+.education-content-manager .upload-section:hover::before {
+  left: 100%;
+}
+
+.education-content-manager .file-input {
+  display: none;
+}
+
+.education-content-manager .upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--edu-space-sm);
+  background: var(--edu-grad-secondary);
+  border: none;
+  border-radius: var(--edu-radius-md);
+  padding: var(--edu-space-md) var(--edu-space-xl);
+  color: var(--edu-bg-primary);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--edu-transition-normal);
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  position: relative;
+  z-index: 1;
+}
+
+.education-content-manager .upload-btn:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: var(--edu-glow-amber);
+}
+
+.education-content-manager .upload-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+[data-theme="light"] .education-content-manager .upload-btn {
+  color: #ffffff;
+}
+
+.education-content-manager .upload-help {
+  margin-top: var(--edu-space-md);
+  color: var(--edu-text-muted);
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+.education-content-manager .form-help {
+  margin-top: var(--edu-space-xs);
+  color: var(--edu-text-muted);
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+@keyframes eduItemSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .education-content-manager .form-container {
+    padding: var(--edu-space-xl);
+  }
+  
+  .education-content-manager .form-row {
+    grid-template-columns: 1fr;
+    gap: var(--edu-space-md);
+  }
+
+  .education-content-manager .form-label-wrapper {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--edu-space-xs);
+  }
+  
+  .education-content-manager .char-count,
+  .education-content-manager .highlight-count,
+  .education-content-manager .info-count {
+    align-self: flex-end;
+  }
+
+  .education-content-manager .coursework-item,
+  .education-content-manager .achievement-item,
+  .education-content-manager .activity-item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--edu-space-sm);
+  }
+
+  .education-content-manager .remove-course-btn,
+  .education-content-manager .remove-achievement-btn,
+  .education-content-manager .remove-activity-btn {
+    align-self: flex-end;
+    margin-top: var(--edu-space-xs);
+  }
+
+  .education-content-manager .upload-section {
+    padding: var(--edu-space-md);
+  }
+
+  .education-content-manager .upload-btn {
+    padding: var(--edu-space-sm) var(--edu-space-md);
+    font-size: 0.85rem;
+  }
+
+  .education-content-manager .logo-preview {
+    width: 60px;
+    height: 60px;
+  }
+}
+
+@media (max-width: 480px) {
+  .education-content-manager .form-container {
+    padding: var(--edu-space-md);
+  }
+
+  .education-content-manager .form-input,
+  .education-content-manager .form-textarea,
+  .education-content-manager .form-select {
+    padding: var(--edu-space-sm);
+    font-size: 0.9rem;
+  }
+
+  .education-content-manager .form-textarea {
+    min-height: 100px;
+  }
+
+  .education-content-manager .add-course-btn,
+  .education-content-manager .add-achievement-btn,
+  .education-content-manager .add-activity-btn {
+    padding: var(--edu-space-xs) var(--edu-space-sm);
+    font-size: 0.8rem;
+  }
+
+  .education-content-manager .coursework-list,
+  .education-content-manager .achievements-list,
+  .education-content-manager .activities-list {
+    gap: var(--edu-space-xs);
+    padding: var(--edu-space-sm);
+  }
+
+  .education-content-manager .coursework-item {
+    padding: var(--edu-space-xs) var(--edu-space-sm);
+  }
+
+  .education-content-manager .course-name {
+    font-size: 0.8rem;
+  }
+
+  .education-content-manager .achievement-item,
+  .education-content-manager .activity-item {
+    padding: var(--edu-space-sm);
+  }
+
+  .education-content-manager .achievement-text,
+  .education-content-manager .activity-text {
+    font-size: 0.8rem;
+  }
+
+  .education-content-manager .upload-help {
+    font-size: 0.8rem;
+  }
+
+  .education-content-manager .logo-preview {
+    width: 50px;
+    height: 50px;
+  }
+
+  .education-content-manager .remove-logo-btn {
+    width: 20px;
+    height: 20px;
+    font-size: 0.7rem;
+  }
+}
+
+/* EducationManager-Part5.css - Preview Section & Responsive Design */
+
+.education-content-manager .preview-section {
+  position: sticky;
+  top: var(--edu-space-xl);
+  height: fit-content;
+  max-height: calc(100vh - var(--edu-space-2xl));
+  overflow-y: auto;
+}
+
+.education-content-manager .preview-container {
+  background: var(--edu-glass-bg);
+  border: 1px solid var(--edu-glass-border);
+  border-radius: var(--edu-radius-xl);
+  padding: var(--edu-space-xl);
+  backdrop-filter: var(--edu-glass-backdrop);
+  box-shadow: var(--edu-shadow-md);
+  position: relative;
+  overflow: hidden;
+}
+
+.education-content-manager .preview-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--edu-grad-primary);
+  opacity: 0.03;
+  border-radius: var(--edu-radius-xl);
+  z-index: 0;
+}
+
+.education-content-manager .preview-container > * {
+  position: relative;
+  z-index: 1;
+}
+
+.education-content-manager .preview-title {
+  display: flex;
+  align-items: center;
+  gap: var(--edu-space-md);
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: var(--edu-space-lg);
+  color: var(--edu-text-primary);
+  border-bottom: 1px solid var(--edu-glass-border);
+  padding-bottom: var(--edu-space-md);
+}
+
+.education-content-manager .preview-icon {
+  font-size: 1.4rem;
+  color: var(--edu-course-text);
+  animation: eduPreviewIconGlow 2s ease-in-out infinite;
+}
+
+[data-theme="light"] .education-content-manager .preview-icon {
+  color: var(--edu-logo-text);
+}
+
+.education-content-manager .education-preview {
+  margin-bottom: var(--edu-space-lg);
+}
+
+.education-content-manager .preview-education-card {
+  background: var(--edu-bg-primary);
+  border: 1px solid var(--edu-glass-border);
+  border-radius: var(--edu-radius-lg);
+  padding: var(--edu-space-2xl);
+  position: relative;
+  overflow: hidden;
+  min-height: 400px;
+}
+
+.education-content-manager .preview-education-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(ellipse at center, var(--edu-course-bg) 0%, transparent 70%);
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+[data-theme="light"] .education-content-manager .preview-education-card {
+  background: var(--edu-bg-secondary);
+}
+
+[data-theme="light"] .education-content-manager .preview-education-card::before {
+  background: radial-gradient(ellipse at center, var(--edu-logo-bg) 0%, transparent 70%);
+  opacity: 0.2;
+}
+
+.education-content-manager .preview-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--edu-space-lg);
+  position: relative;
+  z-index: 2;
+}
+
+.education-content-manager .preview-institution-logo {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid var(--edu-course-border);
+  background: var(--edu-course-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.education-content-manager .preview-logo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.education-content-manager .preview-logo-temp {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--edu-course-text);
+  background: var(--edu-grad-primary);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.education-content-manager .preview-status-indicators {
+  display: flex;
+  gap: var(--edu-space-sm);
+  flex-wrap: wrap;
+}
+
+.education-content-manager .preview-status-badge {
+  display: flex;
+  align-items: center;
+  gap: var(--edu-space-xs);
+  padding: var(--edu-space-xs) var(--edu-space-sm);
+  border-radius: var(--edu-radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: 1px solid transparent;
+  backdrop-filter: blur(10px);
+}
+
+.education-content-manager .preview-status-badge.completed {
+  background: var(--edu-course-bg);
+  border-color: var(--edu-course-border);
+  color: var(--edu-course-text);
+  animation: eduPreviewCompletedGlow 2s ease-in-out infinite;
+}
+
+.education-content-manager .badge-icon {
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
+.education-content-manager .badge-text {
+  font-weight: 700;
+}
+
+.education-content-manager .preview-title-section {
+  margin-bottom: var(--edu-space-xl);
+  position: relative;
+  z-index: 2;
+  text-align: center;
+}
+
+.education-content-manager .preview-degree-title {
+  font-size: 1.8rem;
+  font-weight: 800;
+  margin: 0 0 var(--edu-space-sm);
+  background: var(--edu-grad-primary);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  line-height: 1.2;
+  word-break: break-word;
+  animation: eduPreviewTitleShimmer 4s ease-in-out infinite;
+}
+
+.education-content-manager .preview-title-underline {
+  width: 60px;
+  height: 3px;
+  background: var(--edu-grad-primary);
+  border-radius: 2px;
+  margin: var(--edu-space-sm) auto 0;
+}
+
+.education-content-manager .preview-institution-section {
+  margin-bottom: var(--edu-space-xl);
+  position: relative;
+  z-index: 2;
+  text-align: center;
+}
+
+.education-content-manager .preview-institution-name {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin: 0 0 var(--edu-space-sm);
+  color: var(--edu-text-primary);
+}
+
+.education-content-manager .preview-college-name {
+  font-size: 1rem;
+  color: var(--edu-text-secondary);
+  margin: 0 0 var(--edu-space-sm);
+  font-style: italic;
+}
+
+.education-content-manager .preview-location {
+  font-size: 0.9rem;
+  color: var(--edu-text-muted);
+  margin: 0;
+}
+
+.education-content-manager .preview-meta-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--edu-space-sm);
+  margin-bottom: var(--edu-space-xl);
+  position: relative;
+  z-index: 2;
+}
+
+.education-content-manager .preview-meta-row {
+  display: flex;
+  gap: var(--edu-space-lg);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.education-content-manager .preview-meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--edu-space-xs);
+  min-width: 100px;
+  text-align: center;
+}
+
+.education-content-manager .preview-meta-item.full-width {
+  flex: 1;
+  max-width: 200px;
+}
+
+.education-content-manager .meta-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--edu-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.education-content-manager .meta-value {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--edu-text-primary);
+}
+
+.education-content-manager .meta-value.status {
+  color: var(--edu-course-text);
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.education-content-manager .meta-value.gpa {
+  color: var(--edu-achievement-text);
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.education-content-manager .preview-description-section {
+  margin-bottom: var(--edu-space-xl);
+  position: relative;
+  z-index: 2;
+}
+
+.education-content-manager .preview-description-text {
+  font-size: 1rem;
+  color: var(--edu-text-secondary);
+  margin: 0;
+  line-height: 1.6;
+  text-align: justify;
+}
+
+.education-content-manager .preview-academic-section {
+  margin-bottom: var(--edu-space-xl);
+  position: relative;
+  z-index: 2;
+}
+
+.education-content-manager .preview-academic-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--edu-space-sm);
+  padding: var(--edu-space-sm) var(--edu-space-md);
+  background: var(--edu-glass-bg);
+  border-radius: var(--edu-radius-sm);
+  border: 1px solid var(--edu-glass-border);
+}
+
+.education-content-manager .academic-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--edu-text-muted);
+  text-transform: uppercase;
+}
+
+.education-content-manager .academic-value {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--edu-text-primary);
+}
+
+.education-content-manager .preview-detailed-section {
+  position: relative;
+  z-index: 2;
+}
+
+.education-content-manager .preview-section-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: var(--edu-space-lg);
+  color: var(--edu-text-primary);
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.education-content-manager .preview-detail-group {
+  margin-bottom: var(--edu-space-lg);
+  background: var(--edu-glass-bg);
+  border: 1px solid var(--edu-glass-border);
+  border-radius: var(--edu-radius-md);
+  padding: var(--edu-space-md);
+}
+
+.education-content-manager .preview-detail-header {
+  display: flex;
+  align-items: center;
+  gap: var(--edu-space-sm);
+  margin-bottom: var(--edu-space-md);
+}
+
+.education-content-manager .detail-icon {
+  font-size: 1rem;
+  color: var(--edu-course-text);
+}
+
+.education-content-manager .detail-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--edu-text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.education-content-manager .preview-coursework-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--edu-space-sm);
+}
+
+.education-content-manager .preview-course-tag {
+  background: var(--edu-course-bg);
+  border: 1px solid var(--edu-course-border);
+  color: var(--edu-course-text);
+  padding: var(--edu-space-xs) var(--edu-space-sm);
+  border-radius: var(--edu-radius-sm);
+  font-size: 0.8rem;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: all var(--edu-transition-fast);
+}
+
+.education-content-manager .preview-course-tag:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--edu-glow-orange);
+}
+
+.education-content-manager .preview-course-tag.course-more {
+  background: var(--edu-glass-bg);
+  border-color: var(--edu-glass-border);
+  color: var(--edu-text-muted);
+}
+
+.education-content-manager .preview-achievements-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--edu-space-xs);
+}
+
+.education-content-manager .preview-achievement-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--edu-space-sm);
+}
+
+.education-content-manager .achievement-bullet {
+  color: var(--edu-achievement-text);
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.education-content-manager .achievement-text {
+  color: var(--edu-text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.education-content-manager .preview-activities-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--edu-space-sm);
+}
+
+.education-content-manager .preview-activity-tag {
+  background: var(--edu-activity-bg);
+  border: 1px solid var(--edu-activity-border);
+  color: var(--edu-activity-text);
+  padding: var(--edu-space-xs) var(--edu-space-sm);
+  border-radius: var(--edu-radius-sm);
+  font-size: 0.8rem;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: all var(--edu-transition-fast);
+}
+
+.education-content-manager .preview-activity-tag:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--edu-glow-yellow);
+}
+
+.education-content-manager .preview-status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: var(--edu-space-lg);
+  border-top: 1px solid var(--edu-glass-border);
+  gap: var(--edu-space-md);
+  flex-wrap: wrap;
+}
+
+.education-content-manager .status-indicator {
+  display: flex;
+  align-items: center;
+  gap: var(--edu-space-sm);
+  padding: var(--edu-space-sm) var(--edu-space-lg);
+  border-radius: var(--edu-radius-lg);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  backdrop-filter: blur(10px);
+  border: 1px solid;
+}
+
+.education-content-manager .status-indicator.active {
+  background: rgba(76, 175, 80, 0.1);
+  border-color: rgba(76, 175, 80, 0.3);
+  color: #4caf50;
+  box-shadow: 0 0 15px rgba(76, 175, 80, 0.1);
+}
+
+.education-content-manager .status-indicator.draft {
+  background: var(--edu-achievement-bg);
+  border-color: var(--edu-achievement-border);
+  color: var(--edu-achievement-text);
+  box-shadow: 0 0 15px var(--edu-achievement-bg);
+}
+
+.education-content-manager .status-indicator.archived {
+  background: rgba(136, 136, 136, 0.1);
+  border-color: rgba(136, 136, 136, 0.3);
+  color: #888888;
+  box-shadow: 0 0 15px rgba(136, 136, 136, 0.1);
+}
+
+.education-content-manager .education-status-indicator {
+  background: var(--edu-course-bg);
+  border: 1px solid var(--edu-course-border);
+  color: var(--edu-course-text);
+  padding: var(--edu-space-sm) var(--edu-space-lg);
+  border-radius: var(--edu-radius-lg);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  backdrop-filter: blur(10px);
+  animation: eduCompletedPulse 2s ease-in-out infinite;
+}
+
+@keyframes eduPreviewIconGlow {
+  0%, 100% {
+    filter: drop-shadow(0 0 5px currentColor);
+  }
+  50% {
+    filter: drop-shadow(0 0 15px currentColor);
+  }
+}
+
+@keyframes eduPreviewCompletedGlow {
+  0%, 100% {
+    box-shadow: 0 0 5px var(--edu-course-text);
+  }
+  50% {
+    box-shadow: 0 0 15px var(--edu-course-text);
+  }
+}
+
+@keyframes eduPreviewTitleShimmer {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes eduCompletedPulse {
+  0%, 100% {
+    box-shadow: 0 0 10px var(--edu-course-text);
+  }
+  50% {
+    box-shadow: 0 0 20px var(--edu-course-text);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .education-content-manager,
+  .education-content-manager .status-message,
+  .education-content-manager .action-btn,
+  .education-content-manager .coursework-item,
+  .education-content-manager .achievement-item,
+  .education-content-manager .activity-item,
+  .education-content-manager .education-manager-title,
+  .education-content-manager .education-title-icon,
+  .education-content-manager .preview-icon,
+  .education-content-manager .status-icon,
+  .education-content-manager .add-coursework::before,
+  .education-content-manager .add-achievement::before,
+  .education-content-manager .add-activity::before,
+  .education-content-manager .upload-section::before,
+  .education-content-manager .action-btn::before,
+  .education-content-manager .preview-course-tag,
+  .education-content-manager .preview-activity-tag,
+  .education-content-manager .preview-status-badge,
+  .education-content-manager .preview-degree-title,
+  .education-content-manager .education-status-indicator {
+    animation: none;
+  }
+  
+  .education-content-manager .action-btn:hover,
+  .education-content-manager .coursework-item:hover,
+  .education-content-manager .achievement-item:hover,
+  .education-content-manager .activity-item:hover,
+  .education-content-manager .education-row:hover,
+  .education-content-manager .upload-btn:hover,
+  .education-content-manager .add-course-btn:hover,
+  .education-content-manager .add-achievement-btn:hover,
+  .education-content-manager .add-activity-btn:hover,
+  .education-content-manager .preview-course-tag:hover,
+  .education-content-manager .preview-activity-tag:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .education-content-manager .form-input:focus,
+  .education-content-manager .form-textarea:focus,
+  .education-content-manager .form-select:focus {
+    transform: none;
+    box-shadow: 0 0 0 3px var(--edu-course-bg);
+  }
+
+  [data-theme="light"] .education-content-manager .form-input:focus,
+  [data-theme="light"] .education-content-manager .form-textarea:focus,
+  [data-theme="light"] .education-content-manager .form-select:focus {
+    box-shadow: 0 0 0 3px var(--edu-logo-bg);
+  }
+
+  .education-content-manager .education-manager-header::before,
+  .education-content-manager .form-container::before,
+  .education-content-manager .preview-container::before,
+  .education-content-manager .preview-education-card::before {
+    transition: none;
+  }
+}
+
+@media (prefers-contrast: high) {
+  .education-content-manager .form-input,
+  .education-content-manager .form-textarea,
+  .education-content-manager .form-select,
+  .education-content-manager .coursework-item,
+  .education-content-manager .achievement-item,
+  .education-content-manager .activity-item,
+  .education-content-manager .action-btn,
+  .education-content-manager .education-table,
+  .education-content-manager .preview-education-card,
+  .education-content-manager .preview-course-tag,
+  .education-content-manager .preview-activity-tag {
+    border-width: 2px;
+  }
+  
+  .education-content-manager .action-btn.primary {
+    border: 2px solid var(--edu-course-text);
+  }
+  
+  .education-content-manager .char-count,
+  .education-content-manager .highlight-count,
+  .education-content-manager .info-count {
+    border-width: 2px;
+  }
+  
+  .education-content-manager .status-message {
+    border-width: 2px;
+  }
+
+  .education-content-manager .education-table th,
+  .education-content-manager .education-table td {
+    border-width: 2px;
+  }
+
+  .education-content-manager .preview-status-badge,
+  .education-content-manager .status-indicator,
+  .education-content-manager .education-status-indicator {
+    border-width: 2px;
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .education-content-manager .action-btn,
+  .education-content-manager .add-course-btn,
+  .education-content-manager .add-achievement-btn,
+  .education-content-manager .add-activity-btn,
+  .education-content-manager .upload-btn,
+  .education-content-manager .filter-select,
+  .education-content-manager .search-input {
+    min-height: 44px;
+    padding: var(--edu-space-md) var(--edu-space-lg);
+  }
+
+  .education-content-manager .action-btn-mini,
+  .education-content-manager .remove-course-btn,
+  .education-content-manager .remove-achievement-btn,
+  .education-content-manager .remove-activity-btn,
+  .education-content-manager .remove-logo-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 1.1rem;
+  }
+
+  .education-content-manager .form-input,
+  .education-content-manager .form-textarea,
+  .education-content-manager .form-select {
+    min-height: 44px;
+    padding: var(--edu-space-md);
+  }
+
+  .education-content-manager .coursework-item,
+  .education-content-manager .achievement-item,
+  .education-content-manager .activity-item {
+    min-height: 44px;
+    padding: var(--edu-space-md);
+  }
+
+  .education-content-manager .action-btn:hover,
+  .education-content-manager .coursework-item:hover,
+  .education-content-manager .achievement-item:hover,
+  .education-content-manager .activity-item:hover,
+  .education-content-manager .education-row:hover,
+  .education-content-manager .upload-btn:hover,
+  .education-content-manager .add-course-btn:hover,
+  .education-content-manager .add-achievement-btn:hover,
+  .education-content-manager .add-activity-btn:hover,
+  .education-content-manager .preview-course-tag:hover,
+  .education-content-manager .preview-activity-tag:hover {
+    transform: none;
+    box-shadow: none;
+  }
+  
+  .education-content-manager .education-row:hover {
+    background: var(--edu-glass-hover);
+  }
+
+  .education-content-manager .form-input:focus,
+  .education-content-manager .form-textarea:focus,
+  .education-content-manager .form-select:focus {
+    transform: none;
+    box-shadow: 0 0 0 3px var(--edu-course-bg);
+  }
+
+  [data-theme="light"] .education-content-manager .form-input:focus,
+  [data-theme="light"] .education-content-manager .form-textarea:focus,
+  [data-theme="light"] .education-content-manager .form-select:focus {
+    box-shadow: 0 0 0 3px var(--edu-logo-bg);
+  }
+
+  .education-content-manager .education-table th,
+  .education-content-manager .education-table td {
+    min-height: 44px;
+    padding: var(--edu-space-md);
+  }
+
+  .education-content-manager .preview-course-tag,
+  .education-content-manager .preview-activity-tag {
+    min-height: 32px;
+    min-width: 32px;
+  }
+}
+
+.education-content-manager .action-btn:focus-visible,
+.education-content-manager .form-input:focus-visible,
+.education-content-manager .form-textarea:focus-visible,
+.education-content-manager .form-select:focus-visible,
+.education-content-manager .add-course-btn:focus-visible,
+.education-content-manager .add-achievement-btn:focus-visible,
+.education-content-manager .add-activity-btn:focus-visible,
+.education-content-manager .upload-btn:focus-visible,
+.education-content-manager .remove-course-btn:focus-visible,
+.education-content-manager .remove-achievement-btn:focus-visible,
+.education-content-manager .remove-activity-btn:focus-visible,
+.education-content-manager .remove-logo-btn:focus-visible,
+.education-content-manager .search-input:focus-visible,
+.education-content-manager .filter-select:focus-visible,
+.education-content-manager .action-btn-mini:focus-visible {
+  outline: 3px solid var(--edu-course-text);
+  outline-offset: 2px;
+}
+
+[data-theme="light"] .education-content-manager .action-btn:focus-visible,
+[data-theme="light"] .education-content-manager .form-input:focus-visible,
+[data-theme="light"] .education-content-manager .form-textarea:focus-visible,
+[data-theme="light"] .education-content-manager .form-select:focus-visible,
+[data-theme="light"] .education-content-manager .add-course-btn:focus-visible,
+[data-theme="light"] .education-content-manager .add-achievement-btn:focus-visible,
+[data-theme="light"] .education-content-manager .add-activity-btn:focus-visible,
+[data-theme="light"] .education-content-manager .upload-btn:focus-visible,
+[data-theme="light"] .education-content-manager .remove-course-btn:focus-visible,
+[data-theme="light"] .education-content-manager .remove-achievement-btn:focus-visible,
+[data-theme="light"] .education-content-manager .remove-activity-btn:focus-visible,
+[data-theme="light"] .education-content-manager .remove-logo-btn:focus-visible,
+[data-theme="light"] .education-content-manager .search-input:focus-visible,
+[data-theme="light"] .education-content-manager .filter-select:focus-visible,
+[data-theme="light"] .education-content-manager .action-btn-mini:focus-visible {
+  outline-color: var(--edu-logo-text);
+}
+
+.education-content-manager * {
+  box-sizing: border-box;
+}
+
+.education-content-manager .form-container,
+.education-content-manager .preview-container,
+.education-content-manager .education-manager-header,
+.education-content-manager .education-table-wrapper {
+  contain: layout style;
+}
+
+.education-content-manager .preview-education-card {
+  contain: layout;
+}
+
+.education-content-manager .coursework-item,
+.education-content-manager .achievement-item,
+.education-content-manager .activity-item,
+.education-content-manager .preview-course-tag {
+  contain: layout style;
+}
+
+.education-content-manager .action-btn,
+.education-content-manager .coursework-item,
+.education-content-manager .achievement-item,
+.education-content-manager .activity-item,
+.education-content-manager .preview-course-tag,
+.education-content-manager .preview-activity-tag {
+  will-change: transform;
+}
+
+.education-content-manager .education-row {
+  will-change: background-color;
+}
+
+.education-content-manager .action-btn::before,
+.education-content-manager .add-coursework::before,
+.education-content-manager .add-achievement::before,
+.education-content-manager .add-activity::before,
+.education-content-manager .upload-section::before {
+  will-change: transform, left;
+}
+
+.education-content-manager .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-contrast: more) {
+  .education-content-manager .form-label,
+  .education-content-manager .education-manager-title,
+  .education-content-manager .preview-degree-title {
+    color: var(--edu-text-primary);
+    -webkit-text-fill-color: var(--edu-text-primary);
+    background: none;
+  }
+
+  .education-content-manager .action-btn.primary,
+  .education-content-manager .add-course-btn,
+  .education-content-manager .add-achievement-btn,
+  .education-content-manager .add-activity-btn,
+  .education-content-manager .upload-btn {
+    color: white;
+    background: #e65100;
+  }
+
+  .education-content-manager .status-indicator.active {
+    background: #2e7d32;
+    color: white;
+  }
+
+  .education-content-manager .status-indicator.draft {
+    background: #ef6c00;
+    color: white;
+  }
+
+  .education-content-manager .status-indicator.archived {
+    background: #424242;
+    color: white;
+  }
+}

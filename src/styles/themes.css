@@ -1,0 +1,115 @@
+/* Theme System for Dynamic Portfolio */
+
+/* Global Theme Transitions */
+*,
+*::before,
+*::after {
+  transition: 
+    background-color var(--duration-normal) var(--ease-in-out),
+    color var(--duration-normal) var(--ease-in-out),
+    border-color var(--duration-normal) var(--ease-in-out),
+    box-shadow var(--duration-normal) var(--ease-in-out);
+}
+
+/* Body Base Styling */
+html,
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-primary);
+  line-height: 1.6;
+  margin: 0;
+  padding: 0;
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+}
+
+/* Document Element Theme Application */
+html[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+html[data-theme="light"] {
+  color-scheme: light;
+}
+
+/* Dark Theme Specific Styles */
+[data-theme="dark"] {
+  /* Enhanced glassmorphism for dark mode */
+  --glass-bg-enhanced: rgba(255, 255, 255, 0.08);
+  --glass-border-enhanced: rgba(255, 255, 255, 0.15);
+  --glass-shadow-enhanced: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+  
+  /* Card variations */
+  --card-bg-primary: rgba(255, 255, 255, 0.05);
+  --card-bg-secondary: rgba(255, 255, 255, 0.08);
+  --card-hover-bg: rgba(255, 255, 255, 0.12);
+  
+  /* Input backgrounds */
+  --input-bg: rgba(255, 255, 255, 0.05);
+  --input-border: rgba(255, 255, 255, 0.2);
+  --input-focus: rgba(255, 255, 255, 0.15);
+}
+
+/* Light Theme Specific Styles */
+[data-theme="light"] {
+  /* Enhanced glassmorphism for light mode */
+  --glass-bg-enhanced: rgba(248, 249, 250, 0.9);
+  --glass-border-enhanced: rgba(229, 231, 235, 0.8);
+  --glass-shadow-enhanced: 0 8px 32px 0 rgba(0, 0, 0, 0.06);
+  
+  /* Card variations */
+  --card-bg-primary: #ffffff;
+  --card-bg-secondary: #f8f9fa;
+  --card-hover-bg: #f1f3f4;
+  
+  /* Input backgrounds */
+  --input-bg: #ffffff;
+  --input-border: #e5e7eb;
+  --input-focus: #d1d5db;
+  
+  /* Light theme neon adjustments */
+  --neon-glow-cyan-light: 0 0 10px rgba(0, 255, 255, 0.3), 0 0 20px rgba(0, 255, 255, 0.2);
+  --neon-glow-purple-light: 0 0 10px rgba(139, 0, 255, 0.3), 0 0 20px rgba(139, 0, 255, 0.2);
+  --neon-glow-pink-light: 0 0 10px rgba(255, 0, 128, 0.3), 0 0 20px rgba(255, 0, 128, 0.2);
+  --neon-glow-orange-light: 0 0 10px rgba(255, 102, 0, 0.3), 0 0 20px rgba(255, 102, 0, 0.2);
+}
+
+/* Theme Toggle Animation */
+.theme-transition {
+  transition: all var(--duration-slow) var(--ease-in-out);
+}
+
+/* Container Base Styles */
+.container {
+  width: 100%;
+  max-width: var(--container-xl);
+  margin: 0 auto;
+  padding: 0 var(--spacing-md);
+}
+
+.container-sm { max-width: var(--container-sm); }
+.container-md { max-width: var(--container-md); }
+.container-lg { max-width: var(--container-lg); }
+.container-xl { max-width: var(--container-xl); }
+.container-2xl { max-width: var(--container-2xl); }
+
+/* Section Base Styles */
+.section {
+  padding: var(--spacing-4xl) 0;
+  position: relative;
+}
+
+.section-sm { padding: var(--spacing-2xl) 0; }
+.section-lg { padding: var(--spacing-4xl) 0; }
+
+/* Text Color Utilities */
+.text-primary { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-tertiary { color: var(--text-tertiary); }
+.text-muted { color: var(--text-muted); }
+
+/* Background Utilities */
+.bg-primary { background-color: var(--bg-primary); }
+.bg-secondary { background-color: var(--bg-secondary); }
+.bg-tertiary { background-color: var(--bg-tertiary); }

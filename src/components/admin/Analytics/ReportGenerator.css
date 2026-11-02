@@ -1,0 +1,1006 @@
+/* src/components/admin/Analytics/ReportGenerator.css - ADMIN SCOPED VERSION - PART 1 */
+/* 🔒 ADMIN SCOPED - NO CONFLICTS WITH PUBLIC PORTFOLIO */
+
+.admin-dashboard .report-generator {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  width: 100%;
+  animation: slideInUp 0.6s ease-out;
+}
+
+/* ===== HEADER ===== */
+.admin-dashboard .report-generator-header {
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.admin-dashboard .report-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 0 0 12px 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-shadow: 0 0 20px var(--neon-orange);
+}
+
+.admin-dashboard .report-icon {
+  font-size: 32px;
+  filter: drop-shadow(0 0 12px var(--neon-orange));
+  animation: pulse-report 2.5s ease-in-out infinite;
+}
+
+@keyframes pulse-report {
+  0%, 100% { 
+    transform: scale(1);
+    filter: drop-shadow(0 0 12px var(--neon-orange));
+  }
+  50% { 
+    transform: scale(1.05);
+    filter: drop-shadow(0 0 20px var(--neon-pink));
+  }
+}
+
+.admin-dashboard .report-subtitle {
+  margin: 0;
+  font-size: 16px;
+  color: var(--text-secondary);
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+
+/* ===== MAIN CONTENT ===== */
+.admin-dashboard .report-generator-content {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* ===== CONFIGURATION SECTION ===== */
+.admin-dashboard .report-config-section {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.admin-dashboard .config-title {
+  margin: 0 0 24px 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-align: center;
+}
+
+.admin-dashboard .config-group {
+  margin-bottom: 28px;
+}
+
+.admin-dashboard .config-group:last-child {
+  margin-bottom: 0;
+}
+
+.admin-dashboard .config-label {
+  display: block;
+  margin-bottom: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* ===== REPORT TYPES ===== */
+.admin-dashboard .report-types {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+}
+
+.admin-dashboard .report-type-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: left;
+}
+
+.admin-dashboard .report-type-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--neon-orange);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.admin-dashboard .report-type-btn.active {
+  background: linear-gradient(135deg, var(--neon-orange), var(--neon-pink));
+  border-color: var(--neon-orange);
+  color: white;
+  box-shadow: 0 8px 24px rgba(255, 165, 0, 0.3);
+}
+
+.admin-dashboard .type-name {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.admin-dashboard .type-description {
+  font-size: 14px;
+  opacity: 0.8;
+  line-height: 1.4;
+}
+
+/* ===== FORMAT OPTIONS ===== */
+.admin-dashboard .format-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.admin-dashboard .format-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.admin-dashboard .format-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--neon-purple);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.admin-dashboard .format-btn.active {
+  background: linear-gradient(135deg, var(--neon-purple), var(--neon-cyan));
+  border-color: var(--neon-purple);
+  color: white;
+  box-shadow: 0 8px 24px rgba(138, 43, 226, 0.3);
+}
+
+.admin-dashboard .format-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.admin-dashboard .format-info {
+  flex: 1;
+  text-align: left;
+}
+
+.admin-dashboard .format-name {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.admin-dashboard .format-description {
+  font-size: 13px;
+  opacity: 0.8;
+  line-height: 1.3;
+}
+
+/* ===== SECTION SELECTION ===== */
+.admin-dashboard .section-selection {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.admin-dashboard .section-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.admin-dashboard .section-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--neon-cyan);
+  transform: translateY(-1px);
+}
+
+.admin-dashboard .section-btn.active {
+  background: linear-gradient(135deg, var(--neon-cyan), var(--neon-emerald));
+  border-color: var(--neon-cyan);
+  color: white;
+  box-shadow: 0 4px 16px rgba(6, 182, 212, 0.3);
+}
+
+.admin-dashboard .section-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.admin-dashboard .section-icon {
+  font-size: 16px;
+}
+
+.admin-dashboard .section-name {
+  font-weight: 600;
+}
+
+/* ===== GENERATE SECTION ===== */
+.admin-dashboard .generate-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--glass-border);
+}
+
+.admin-dashboard .generate-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 32px;
+  background: linear-gradient(135deg, var(--neon-orange), var(--neon-pink));
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 24px rgba(255, 165, 0, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-dashboard .generate-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.admin-dashboard .generate-btn:hover::before {
+  left: 100%;
+}
+
+.admin-dashboard .generate-btn:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px rgba(255, 165, 0, 0.4);
+}
+
+.admin-dashboard .generate-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.admin-dashboard .btn-icon {
+  font-size: 18px;
+}
+
+.admin-dashboard .spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ===== PROGRESS BAR ===== */
+.admin-dashboard .progress-section {
+  width: 100%;
+  max-width: 400px;
+}
+
+.admin-dashboard .progress-bar {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.admin-dashboard .progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--neon-cyan), var(--neon-purple));
+  border-radius: 4px;
+  transition: width 0.3s ease;
+  box-shadow: 0 0 10px rgba(6, 182, 212, 0.5);
+}
+
+.admin-dashboard .progress-text {
+  text-align: center;
+  font-size: 14px;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+/* ===== RECENT REPORTS ===== */
+.admin-dashboard .recent-reports-section {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.admin-dashboard .recent-title {
+  margin: 0 0 20px 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-align: center;
+}
+
+.admin-dashboard .reports-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.admin-dashboard .report-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.admin-dashboard .report-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--neon-emerald);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.admin-dashboard .report-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-dashboard .report-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+  word-break: break-word;
+}
+
+.admin-dashboard .report-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.admin-dashboard .report-format,
+.admin-dashboard .report-date,
+.admin-dashboard .report-size {
+  font-size: 13px;
+  color: var(--text-secondary);
+  padding: 2px 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.admin-dashboard .report-format {
+  background: linear-gradient(135deg, var(--neon-purple), var(--neon-cyan));
+  color: white;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.admin-dashboard .report-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.admin-dashboard .action-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.admin-dashboard .action-btn:hover {
+  background: var(--neon-emerald);
+  border-color: var(--neon-emerald);
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
+}
+
+.admin-dashboard .action-icon {
+  font-size: 14px;
+}
+
+/* src/components/admin/Analytics/ReportGenerator.css - ADMIN SCOPED VERSION - PART 2 */
+/* 🔒 ADMIN SCOPED - NO CONFLICTS WITH PUBLIC PORTFOLIO */
+
+/* ===== SCHEDULED REPORTS ===== */
+.admin-dashboard .schedule-section {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.admin-dashboard .schedule-title {
+  margin: 0 0 20px 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-align: center;
+}
+
+.admin-dashboard .schedule-config {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.admin-dashboard .schedule-toggle {
+  display: flex;
+  justify-content: center;
+}
+
+.admin-dashboard .toggle-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.admin-dashboard .toggle-container input[type="checkbox"] {
+  display: none;
+}
+
+.admin-dashboard .toggle-slider {
+  position: relative;
+  width: 50px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  border: 1px solid var(--glass-border);
+}
+
+.admin-dashboard .toggle-slider::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  background: white;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.admin-dashboard .toggle-container input:checked + .toggle-slider {
+  background: linear-gradient(135deg, var(--neon-emerald), var(--neon-cyan));
+  border-color: var(--neon-emerald);
+}
+
+.admin-dashboard .toggle-container input:checked + .toggle-slider::before {
+  transform: translateX(26px);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.admin-dashboard .toggle-label {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.admin-dashboard .schedule-options {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  animation: slideInDown 0.3s ease-out;
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.admin-dashboard .schedule-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-dashboard .schedule-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.admin-dashboard .schedule-select,
+.admin-dashboard .schedule-input {
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.admin-dashboard .schedule-select:focus,
+.admin-dashboard .schedule-input:focus {
+  outline: none;
+  border-color: var(--neon-cyan);
+  box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.admin-dashboard .schedule-select option {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.admin-dashboard .schedule-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.admin-dashboard .save-schedule-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, var(--neon-emerald), var(--neon-cyan));
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
+  align-self: flex-start;
+}
+
+.admin-dashboard .save-schedule-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
+@media (max-width: 768px) {
+  .admin-dashboard .report-generator {
+    gap: 24px;
+  }
+  
+  .admin-dashboard .report-title {
+    font-size: 24px;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .admin-dashboard .report-icon {
+    font-size: 28px;
+  }
+  
+  .admin-dashboard .report-subtitle {
+    font-size: 14px;
+    padding: 0 16px;
+  }
+  
+  .admin-dashboard .report-config-section,
+  .admin-dashboard .recent-reports-section,
+  .admin-dashboard .schedule-section {
+    padding: 20px 16px;
+  }
+  
+  .admin-dashboard .config-title,
+  .admin-dashboard .recent-title,
+  .admin-dashboard .schedule-title {
+    font-size: 18px;
+    margin-bottom: 16px;
+  }
+  
+  .admin-dashboard .report-types,
+  .admin-dashboard .format-options {
+    grid-template-columns: 1fr;
+  }
+  
+  .admin-dashboard .section-selection {
+    gap: 8px;
+  }
+  
+  .admin-dashboard .section-btn {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+  
+  .admin-dashboard .generate-btn {
+    padding: 14px 24px;
+    font-size: 15px;
+  }
+  
+  .admin-dashboard .report-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .admin-dashboard .report-actions {
+    align-self: stretch;
+    justify-content: flex-end;
+  }
+  
+  .admin-dashboard .report-meta {
+    gap: 8px;
+  }
+  
+  .admin-dashboard .schedule-options {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-dashboard .report-generator {
+    gap: 20px;
+  }
+  
+  .admin-dashboard .report-title {
+    font-size: 20px;
+  }
+  
+  .admin-dashboard .report-icon {
+    font-size: 24px;
+  }
+  
+  .admin-dashboard .report-config-section,
+  .admin-dashboard .recent-reports-section,
+  .admin-dashboard .schedule-section {
+    padding: 16px 12px;
+  }
+  
+  .admin-dashboard .config-group {
+    margin-bottom: 20px;
+  }
+  
+  .admin-dashboard .report-type-btn,
+  .admin-dashboard .format-btn {
+    padding: 12px;
+  }
+  
+  .admin-dashboard .type-name,
+  .admin-dashboard .format-name {
+    font-size: 14px;
+  }
+  
+  .admin-dashboard .type-description,
+  .admin-dashboard .format-description {
+    font-size: 12px;
+  }
+  
+  .admin-dashboard .section-btn {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+  
+  .admin-dashboard .section-icon {
+    font-size: 14px;
+  }
+  
+  .admin-dashboard .generate-btn {
+    padding: 12px 20px;
+    font-size: 14px;
+  }
+  
+  .admin-dashboard .btn-icon {
+    font-size: 16px;
+  }
+  
+  .admin-dashboard .report-name {
+    font-size: 14px;
+  }
+  
+  .admin-dashboard .report-format,
+  .admin-dashboard .report-date,
+  .admin-dashboard .report-size {
+    font-size: 11px;
+  }
+  
+  .admin-dashboard .action-btn {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+  
+  .admin-dashboard .schedule-options {
+    padding: 12px;
+  }
+  
+  .admin-dashboard .toggle-label {
+    font-size: 14px;
+  }
+  
+  .admin-dashboard .schedule-select,
+  .admin-dashboard .schedule-input {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+  
+  .admin-dashboard .save-schedule-btn {
+    padding: 10px 20px;
+    font-size: 13px;
+  }
+}
+
+/* ===== THEME VARIATIONS ===== */
+[data-theme="light"] .admin-dashboard .report-generator {
+  --glass-bg: rgba(255, 255, 255, 0.8);
+  --glass-border: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .admin-dashboard .report-type-btn,
+[data-theme="light"] .admin-dashboard .format-btn,
+[data-theme="light"] .admin-dashboard .section-btn,
+[data-theme="light"] .admin-dashboard .report-item,
+[data-theme="light"] .admin-dashboard .action-btn,
+[data-theme="light"] .admin-dashboard .schedule-options {
+  background: rgba(255, 255, 255, 0.6);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .admin-dashboard .report-type-btn:hover,
+[data-theme="light"] .admin-dashboard .format-btn:hover,
+[data-theme="light"] .admin-dashboard .section-btn:hover,
+[data-theme="light"] .admin-dashboard .report-item:hover {
+  background: rgba(255, 255, 255, 0.8);
+}
+
+[data-theme="light"] .admin-dashboard .report-format,
+[data-theme="light"] .admin-dashboard .report-date,
+[data-theme="light"] .admin-dashboard .report-size {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .admin-dashboard .toggle-slider {
+  background: rgba(0, 0, 0, 0.1);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .admin-dashboard .schedule-select,
+[data-theme="light"] .admin-dashboard .schedule-input {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+/* ===== ACCESSIBILITY ===== */
+@media (prefers-reduced-motion: reduce) {
+  .admin-dashboard .report-generator,
+  .admin-dashboard .schedule-options {
+    animation: none !important;
+  }
+  
+  .admin-dashboard .report-type-btn,
+  .admin-dashboard .format-btn,
+  .admin-dashboard .section-btn,
+  .admin-dashboard .generate-btn,
+  .admin-dashboard .action-btn,
+  .admin-dashboard .report-item,
+  .admin-dashboard .toggle-slider,
+  .admin-dashboard .save-schedule-btn {
+    transition: none;
+  }
+  
+  .admin-dashboard .spinner {
+    animation: none;
+  }
+  
+  .admin-dashboard .progress-fill {
+    transition: none;
+  }
+}
+
+@media (prefers-contrast: high) {
+  .admin-dashboard .report-generator {
+    --glass-border: rgba(255, 255, 255, 0.3);
+  }
+  
+  .admin-dashboard .report-type-btn,
+  .admin-dashboard .format-btn,
+  .admin-dashboard .section-btn,
+  .admin-dashboard .report-item,
+  .admin-dashboard .action-btn {
+    border-width: 2px;
+  }
+  
+  .admin-dashboard .generate-btn,
+  .admin-dashboard .save-schedule-btn {
+    border: 2px solid rgba(255, 255, 255, 0.3);
+  }
+  
+  .admin-dashboard .toggle-slider {
+    border-width: 2px;
+  }
+  
+  .admin-dashboard .schedule-select,
+  .admin-dashboard .schedule-input {
+    border-width: 2px;
+  }
+}
+
+/* Focus indicators for keyboard navigation */
+.admin-dashboard .report-type-btn:focus,
+.admin-dashboard .format-btn:focus,
+.admin-dashboard .section-btn:focus,
+.admin-dashboard .generate-btn:focus,
+.admin-dashboard .action-btn:focus,
+.admin-dashboard .save-schedule-btn:focus,
+.admin-dashboard .schedule-select:focus,
+.admin-dashboard .schedule-input:focus {
+  outline: 2px solid var(--neon-cyan);
+  outline-offset: 2px;
+}
+
+.admin-dashboard .toggle-container:focus-within .toggle-slider {
+  outline: 2px solid var(--neon-cyan);
+  outline-offset: 2px;
+}
+
+/* ===== PRINT STYLES ===== */
+@media print {
+  .admin-dashboard .report-generator {
+    background: white;
+    color: black;
+  }
+  
+  .admin-dashboard .report-config-section,
+  .admin-dashboard .recent-reports-section,
+  .admin-dashboard .schedule-section {
+    background: white;
+    border: 1px solid #ccc;
+    box-shadow: none;
+    break-inside: avoid;
+    margin-bottom: 20px;
+  }
+  
+  .admin-dashboard .generate-btn,
+  .admin-dashboard .action-btn,
+  .admin-dashboard .save-schedule-btn {
+    background: #f0f0f0;
+    color: black;
+    border: 1px solid #ccc;
+    box-shadow: none;
+  }
+  
+  .admin-dashboard .report-type-btn.active,
+  .admin-dashboard .format-btn.active,
+  .admin-dashboard .section-btn.active {
+    background: #e0e0e0;
+    color: black;
+  }
+  
+  .admin-dashboard .toggle-slider {
+    background: #f0f0f0;
+    border: 1px solid #ccc;
+  }
+  
+  .admin-dashboard .toggle-container input:checked + .toggle-slider {
+    background: #d0d0d0;
+  }
+  
+  .admin-dashboard .schedule-select,
+  .admin-dashboard .schedule-input {
+    background: white;
+    border: 1px solid #ccc;
+  }
+}
+
+/* ===== LOADING STATES ===== */
+@keyframes reportShimmer {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+.admin-dashboard .report-generator.loading {
+  pointer-events: none;
+}
+
+.admin-dashboard .report-generator.loading .report-config-section,
+.admin-dashboard .report-generator.loading .recent-reports-section,
+.admin-dashboard .report-generator.loading .schedule-section {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.05) 25%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.05) 75%
+  );
+  background-size: 200px 100%;
+  animation: reportShimmer 1.5s infinite;
+}
+
+/* ===== INTERACTIVE ENHANCEMENTS ===== */
+.admin-dashboard .report-type-btn:active,
+.admin-dashboard .format-btn:active,
+.admin-dashboard .section-btn:active {
+  transform: scale(0.98);
+}
+
+.admin-dashboard .generate-btn:active,
+.admin-dashboard .action-btn:active,
+.admin-dashboard .save-schedule-btn:active {
+  transform: translateY(-1px) scale(0.98);
+}
+
+/* ===== CUSTOM SCROLLBAR ===== */
+.admin-dashboard .reports-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.admin-dashboard .reports-list::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+.admin-dashboard .reports-list::-webkit-scrollbar-thumb {
+  background: var(--neon-cyan);
+  border-radius: 3px;
+}
+
+.admin-dashboard .reports-list::-webkit-scrollbar-thumb:hover {
+  background: var(--neon-purple);
+}

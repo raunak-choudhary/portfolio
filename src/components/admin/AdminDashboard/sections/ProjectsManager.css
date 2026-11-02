@@ -1,0 +1,3152 @@
+/* ProjectsManager-Part1.css - Variables & Base Styles */
+
+.projects-content-manager {
+  --proj-space-xs: 4px;
+  --proj-space-sm: 8px;
+  --proj-space-md: 12px;
+  --proj-space-lg: 16px;
+  --proj-space-xl: 24px;
+  --proj-space-2xl: 32px;
+  --proj-space-3xl: 48px;
+  
+  --proj-radius-xs: 4px;
+  --proj-radius-sm: 6px;
+  --proj-radius-md: 8px;
+  --proj-radius-lg: 12px;
+  --proj-radius-xl: 16px;
+  --proj-radius-2xl: 20px;
+  
+  --proj-transition-fast: 0.15s ease;
+  --proj-transition-normal: 0.25s ease;
+  --proj-transition-slow: 0.4s ease;
+  
+  --proj-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --proj-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.15);
+  --proj-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.2);
+  
+  --proj-glow-blue: 0 0 15px rgba(0, 136, 255, 0.3);
+  --proj-glow-cyan: 0 0 15px rgba(0, 255, 255, 0.25);
+  --proj-glow-purple: 0 0 15px rgba(139, 43, 255, 0.2);
+  --proj-glow-green: 0 0 15px rgba(0, 255, 136, 0.25);
+  --proj-glow-orange: 0 0 15px rgba(255, 102, 0, 0.25);
+  --proj-glow-red: 0 0 15px rgba(255, 0, 68, 0.25);
+  
+  --proj-grad-primary: linear-gradient(135deg, #0088ff, #00ffff);
+  --proj-grad-secondary: linear-gradient(135deg, #8b2bff, #ff44cc);
+  --proj-grad-success: linear-gradient(135deg, #00ff88, #00ffff);
+  --proj-grad-error: linear-gradient(135deg, #ff0044, #ff6600);
+  
+  --proj-glass-bg: rgba(255, 255, 255, 0.05);
+  --proj-glass-border: rgba(255, 255, 255, 0.1);
+  --proj-glass-backdrop: blur(20px);
+  --proj-glass-hover: rgba(255, 255, 255, 0.08); /* This is used for row hover */
+  
+  --proj-tech-bg: rgba(0, 136, 255, 0.1);
+  --proj-tech-border: rgba(0, 136, 255, 0.3);
+  --proj-tech-text: #0088ff;
+  
+  --proj-feature-bg: rgba(255, 196, 0, 0.1);
+  --proj-feature-border: rgba(255, 196, 0, 0.3);
+  --proj-feature-text: #ffc400;
+  
+  --proj-github-bg: rgba(139, 43, 255, 0.1);
+  --proj-github-border: rgba(139, 43, 255, 0.3);
+  --proj-github-text: #8b2bff;
+  
+  --proj-image-bg: rgba(255, 20, 147, 0.1);
+  --proj-image-border: rgba(255, 20, 147, 0.3);
+  --proj-image-text: #ff1493;
+  
+  --proj-text-primary: #ffffff;
+  --proj-text-secondary: #cccccc;
+  --proj-text-muted: #888888;
+  --proj-text-accent: #00ffff;
+  
+  --proj-bg-primary: #0a0a0a;
+  --proj-bg-secondary: #111111;
+  --proj-bg-tertiary: #1a1a1a;
+}
+
+[data-theme="light"] .projects-content-manager {
+  --proj-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --proj-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.1);
+  --proj-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
+  
+  --proj-glow-blue: 0 0 15px rgba(139, 43, 255, 0.15);
+  --proj-glow-cyan: var(--proj-glow-blue);
+  --proj-glow-purple: 0 0 15px rgba(255, 102, 0, 0.15);
+  --proj-glow-green: 0 0 15px rgba(76, 175, 80, 0.15);
+  --proj-glow-orange: 0 0 15px rgba(255, 152, 0, 0.15);
+  --proj-glow-red: 0 0 15px rgba(244, 67, 54, 0.15);
+  
+  --proj-grad-primary: linear-gradient(135deg, #8b2bff, #0088ff);
+  --proj-grad-secondary: linear-gradient(135deg, #ff6600, #e91e63);
+  --proj-grad-success: linear-gradient(135deg, #4caf50, #8bc34a);
+  --proj-grad-error: linear-gradient(135deg, #f44336, #ff5722);
+  
+  --proj-glass-bg: rgba(255, 255, 255, 0.8);
+  --proj-glass-border: rgba(0, 0, 0, 0.1);
+  --proj-glass-hover: rgba(240, 240, 240, 0.95); /* Adjusted for light theme row hover */
+  
+  --proj-tech-bg: rgba(139, 43, 255, 0.08);
+  --proj-tech-border: rgba(139, 43, 255, 0.2);
+  --proj-tech-text: #673ab7;
+  
+  --proj-feature-bg: rgba(255, 152, 0, 0.08);
+  --proj-feature-border: rgba(255, 152, 0, 0.2);
+  --proj-feature-text: #ff9800;
+  
+  --proj-github-bg: rgba(0, 136, 255, 0.08);
+  --proj-github-border: rgba(0, 136, 255, 0.2);
+  --proj-github-text: #2196f3;
+  
+  --proj-image-bg: rgba(233, 30, 99, 0.08);
+  --proj-image-border: rgba(233, 30, 99, 0.2);
+  --proj-image-text: #e91e63;
+  
+  --proj-text-primary: #1a1a1a;
+  --proj-text-secondary: #444444;
+  --proj-text-muted: #666666;
+  --proj-text-accent: #8b2bff;
+  
+  --proj-bg-primary: #fafafa;
+  --proj-bg-secondary: #ffffff;
+  --proj-bg-tertiary: #f5f5f5;
+}
+
+.projects-content-manager {
+  padding: var(--proj-space-xl);
+  max-width: 1600px;
+  margin: 0 auto;
+  animation: projManagerFadeIn 0.6s ease-out;
+  position: relative;
+  min-height: 100vh;
+  background: transparent;
+}
+
+.projects-content-manager::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 200px;
+  background: radial-gradient(ellipse at top center, rgba(0, 136, 255, 0.05) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+[data-theme="light"] .projects-content-manager::before {
+  background: radial-gradient(ellipse at top center, rgba(139, 43, 255, 0.03) 0%, transparent 70%);
+}
+
+.projects-content-manager::after {
+  content: '';
+  position: fixed;
+  top: 80px;
+  left: 0;
+  width: 100vw;
+  height: calc(100vh - 80px);
+  background-image:
+    radial-gradient(circle at 10% 20%, var(--proj-tech-text) 1px, transparent 1px),
+    radial-gradient(circle at 90% 30%, var(--proj-feature-text) 1.5px, transparent 1.5px),
+    radial-gradient(circle at 30% 80%, var(--proj-github-text) 1px, transparent 1px),
+    radial-gradient(circle at 70% 60%, var(--proj-image-text) 1.2px, transparent 1.2px);
+  background-size: 400px 400px, 350px 350px, 300px 300px, 450px 450px;
+  animation: projParticlesFloat 30s linear infinite;
+  opacity: 0.3;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.projects-manager-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--proj-space-2xl);
+  gap: var(--proj-space-xl);
+  padding: var(--proj-space-xl);
+  background: var(--proj-glass-bg);
+  border: 1px solid var(--proj-glass-border);
+  border-radius: var(--proj-radius-xl);
+  backdrop-filter: var(--proj-glass-backdrop);
+  box-shadow: var(--proj-shadow-md);
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.projects-manager-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--proj-grad-primary);
+  opacity: 0.05;
+  border-radius: var(--proj-radius-xl);
+  z-index: -1;
+  transition: opacity var(--proj-transition-normal);
+}
+
+.projects-manager-header:hover::before {
+  opacity: 0.08;
+}
+
+.header-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.projects-manager-title {
+  font-size: 2.2rem;
+  font-weight: 800;
+  margin: 0 0 var(--proj-space-md);
+  display: flex;
+  align-items: center;
+  gap: var(--proj-space-md);
+  background: var(--proj-grad-primary);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: projTitleShimmer 3s ease-in-out infinite;
+  line-height: 1.2;
+  word-break: break-word;
+  position: relative;
+}
+
+.projects-title-icon {
+  font-size: 2.5rem;
+  filter: drop-shadow(0 0 10px var(--proj-tech-text));
+  animation: projIconFloat 2s ease-in-out infinite;
+  flex-shrink: 0;
+  background: var(--proj-grad-primary);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.manager-subtitle {
+  font-size: 1.1rem;
+  color: var(--proj-text-secondary);
+  margin: 0;
+  font-weight: 500;
+  line-height: 1.6;
+  opacity: 0.9;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--proj-space-lg);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.edit-actions {
+  display: flex;
+  gap: var(--proj-space-md);
+  flex-wrap: wrap;
+}
+
+.projects-manager-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--proj-space-3xl);
+  gap: var(--proj-space-lg);
+  color: var(--proj-text-secondary);
+  min-height: 400px;
+  position: relative;
+}
+
+.projects-manager-loading p {
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin: 0;
+  background: var(--proj-grad-primary);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.projects-manager-content {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--proj-space-2xl);
+  position: relative;
+  z-index: 1;
+}
+
+.projects-manager-content.with-preview {
+  grid-template-columns: 1fr 420px;
+  align-items: start;
+}
+
+@keyframes projManagerFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes projTitleShimmer {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes projIconFloat {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(5deg);
+  }
+}
+
+@keyframes projParticlesFloat {
+  0% {
+    transform: translateY(0px) translateX(0px) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-20px) translateX(15px) rotate(90deg);
+  }
+  50% {
+    transform: translateY(-10px) translateX(-8px) rotate(180deg);
+  }
+  75% {
+    transform: translateY(-25px) translateX(-20px) rotate(270deg);
+  }
+  100% {
+    transform: translateY(0px) translateX(0px) rotate(360deg);
+  }
+}
+
+/* ProjectsManager-Part2.css - Action Buttons & Status Messages */
+
+.projects-content-manager .action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--proj-space-sm);
+  padding: var(--proj-space-md) var(--proj-space-lg);
+  background: var(--proj-glass-bg);
+  border: 1px solid var(--proj-glass-border);
+  border-radius: var(--proj-radius-md);
+  color: var(--proj-text-primary);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--proj-transition-normal);
+  backdrop-filter: var(--proj-glass-backdrop);
+  position: relative;
+  overflow: hidden;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  min-width: 140px;
+  margin-right: var(--proj-space-lg);
+  white-space: nowrap;
+  z-index: 1;
+}
+
+.projects-content-manager .action-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left var(--proj-transition-slow);
+  z-index: -1;
+}
+
+.projects-content-manager .action-btn:hover:not(:disabled)::before {
+  left: 100%;
+}
+
+.projects-content-manager .action-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--proj-shadow-lg);
+}
+
+.projects-content-manager .action-btn:active:not(:disabled) {
+  transform: translateY(0);
+  transition: transform var(--proj-transition-fast);
+}
+
+.projects-content-manager .action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.projects-content-manager .action-btn.primary {
+  background: var(--proj-grad-primary);
+  border-color: transparent;
+  color: var(--proj-bg-primary);
+  font-weight: 700;
+  box-shadow: var(--proj-glow-blue);
+}
+
+.projects-content-manager .action-btn.primary:hover:not(:disabled) {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: var(--proj-shadow-lg), var(--proj-glow-blue);
+}
+
+[data-theme="light"] .projects-content-manager .action-btn.primary {
+  color: #ffffff;
+  box-shadow: var(--proj-glow-purple);
+}
+
+[data-theme="light"] .projects-content-manager .action-btn.primary:hover:not(:disabled) {
+  box-shadow: var(--proj-shadow-lg), var(--proj-glow-purple);
+}
+
+.projects-content-manager .add-btn:hover:not(:disabled) {
+  border-color: var(--proj-tech-text);
+  color: var(--proj-tech-text);
+  box-shadow: var(--proj-glow-blue);
+}
+
+.projects-content-manager .preview-btn:hover:not(:disabled) {
+  border-color: var(--proj-feature-text);
+  color: var(--proj-feature-text);
+  box-shadow: var(--proj-glow-orange);
+}
+
+.projects-content-manager .cancel-btn:hover:not(:disabled) {
+  border-color: #ff0044;
+  color: #ff0044;
+  box-shadow: var(--proj-glow-red);
+}
+
+.projects-content-manager .save-btn:hover:not(:disabled) {
+  background: var(--proj-grad-success);
+  box-shadow: var(--proj-glow-green);
+}
+
+.projects-content-manager .btn-icon {
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.projects-content-manager .action-btn-mini {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: var(--proj-glass-bg);
+  border: 1px solid var(--proj-glass-border);
+  border-radius: var(--proj-radius-sm);
+  cursor: pointer;
+  transition: all var(--proj-transition-fast);
+  font-size: 0.9rem;
+  backdrop-filter: var(--proj-glass-backdrop);
+}
+
+.projects-content-manager .action-btn-mini.edit-btn:hover {
+  background: var(--proj-tech-bg);
+  border-color: var(--proj-tech-border);
+  transform: scale(1.1);
+  box-shadow: var(--proj-glow-blue);
+}
+
+.projects-content-manager .action-btn-mini.delete-btn:hover {
+  background: rgba(255, 0, 68, 0.1);
+  border-color: rgba(255, 0, 68, 0.3);
+  transform: scale(1.1);
+  box-shadow: var(--proj-glow-red);
+}
+
+.projects-content-manager .status-message {
+  display: flex;
+  align-items: center;
+  gap: var(--proj-space-md);
+  padding: var(--proj-space-lg) var(--proj-space-xl);
+  border-radius: var(--proj-radius-lg);
+  margin-bottom: var(--proj-space-xl);
+  font-weight: 600;
+  backdrop-filter: var(--proj-glass-backdrop);
+  animation: projStatusSlideIn 0.3s ease-out;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid transparent;
+}
+
+.projects-content-manager .status-message::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  animation: projStatusShimmer 2s ease-in-out infinite;
+}
+
+.projects-content-manager .status-message::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: currentColor;
+  opacity: 0.6;
+}
+
+.projects-content-manager .status-message.success {
+  background: var(--proj-glass-bg);
+  border-color: var(--proj-tech-border);
+  color: var(--proj-tech-text);
+  box-shadow: var(--proj-glow-green);
+}
+
+.projects-content-manager .status-message.success::after {
+  background: var(--proj-tech-text);
+}
+
+.projects-content-manager .status-message.error {
+  background: var(--proj-glass-bg);
+  border-color: rgba(255, 0, 68, 0.3);
+  color: #ff0044;
+  box-shadow: var(--proj-glow-red);
+}
+
+.projects-content-manager .status-message.error::after {
+  background: #ff0044;
+}
+
+.projects-content-manager .status-icon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+  animation: projStatusIconPulse 1.5s ease-in-out infinite;
+}
+
+.projects-content-manager .status-content {
+  flex: 1;
+  line-height: 1.4;
+}
+
+.projects-content-manager .status-content strong {
+  font-weight: 700;
+  margin-right: var(--proj-space-sm);
+}
+
+.projects-content-manager .glass-card {
+  background: var(--proj-glass-bg);
+  border: 1px solid var(--proj-glass-border);
+  border-radius: var(--proj-radius-xl);
+  backdrop-filter: var(--proj-glass-backdrop);
+  box-shadow: var(--proj-shadow-md);
+  position: relative;
+  overflow: hidden;
+}
+
+.projects-content-manager .glass-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--proj-grad-primary);
+  opacity: 0.02;
+  border-radius: var(--proj-radius-xl);
+  z-index: 0;
+}
+
+.projects-content-manager .glass-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.projects-content-manager .glass-card:hover {
+  border-color: var(--proj-tech-border);
+  box-shadow: var(--proj-shadow-lg);
+  transform: translateY(-2px);
+  transition: all var(--proj-transition-normal);
+}
+
+.projects-content-manager .glass-card:hover::before {
+  opacity: 0.05;
+}
+
+.projects-content-manager .char-count,
+.projects-content-manager .highlight-count,
+.projects-content-manager .info-count {
+  font-size: 0.8rem;
+  color: var(--proj-text-muted);
+  font-weight: 500;
+  background: var(--proj-glass-bg);
+  padding: 4px 8px;
+  border-radius: var(--proj-radius-sm);
+  border: 1px solid var(--proj-glass-border);
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width: 60px;
+  text-align: center;
+  backdrop-filter: blur(10px);
+  transition: all var(--proj-transition-fast);
+}
+
+.projects-content-manager .char-count:hover,
+.projects-content-manager .highlight-count:hover,
+.projects-content-manager .info-count:hover {
+  border-color: var(--proj-tech-border);
+  color: var(--proj-tech-text);
+}
+
+.projects-content-manager .char-count.warning {
+  color: var(--proj-feature-text);
+  border-color: var(--proj-feature-border);
+  background: var(--proj-feature-bg);
+}
+
+.projects-content-manager .char-count.danger {
+  color: #ff0044;
+  border-color: rgba(255, 0, 68, 0.3);
+  background: rgba(255, 0, 68, 0.1);
+  animation: projCountPulse 1s ease-in-out infinite;
+}
+
+.projects-content-manager .form-label-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--proj-space-sm);
+  gap: var(--proj-space-md);
+}
+
+.projects-content-manager .form-label {
+  color: var(--proj-text-primary);
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  position: relative;
+}
+
+.projects-content-manager .form-label.required::after {
+  content: '*';
+  color: #ff0044;
+  margin-left: var(--proj-space-xs);
+  font-weight: 700;
+  font-size: 1.1rem;
+  animation: projRequiredPulse 2s ease-in-out infinite;
+}
+
+.projects-content-manager .form-label:not(.required):hover {
+  color: var(--proj-text-accent);
+  transition: color var(--proj-transition-fast);
+}
+
+.projects-content-manager .section-title {
+  display: flex;
+  align-items: center;
+  gap: var(--proj-space-md);
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin: 0 0 var(--proj-space-lg);
+  color: var(--proj-text-primary);
+  padding-bottom: var(--proj-space-md);
+  border-bottom: 1px solid var(--proj-glass-border);
+  position: relative;
+}
+
+.projects-content-manager .section-title::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 60px;
+  height: 2px;
+  background: var(--proj-grad-primary);
+  border-radius: 1px;
+}
+
+.projects-content-manager .section-icon {
+  font-size: 1.4rem;
+  filter: drop-shadow(0 0 8px currentColor);
+}
+
+.projects-content-manager .form-title-section {
+  text-align: center;
+  margin-bottom: var(--proj-space-2xl);
+  padding-bottom: var(--proj-space-xl);
+  border-bottom: 1px solid var(--proj-glass-border);
+  position: relative;
+}
+
+.projects-content-manager .form-title {
+  font-size: 1.8rem;
+  font-weight: 800;
+  margin: 0 0 var(--proj-space-md);
+  background: var(--proj-grad-primary);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.projects-content-manager .form-subtitle {
+  font-size: 1rem;
+  color: var(--proj-text-secondary);
+  margin: 0;
+  font-weight: 500;
+  opacity: 0.9;
+}
+
+.projects-content-manager .error-text {
+  display: flex;
+  align-items: center;
+  gap: var(--proj-space-xs);
+  color: #ff0044;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-top: var(--proj-space-sm);
+  animation: projErrorFadeIn 0.3s ease-out;
+  padding: var(--proj-space-xs) var(--proj-space-sm);
+  background: rgba(255, 0, 68, 0.1);
+  border-radius: var(--proj-radius-sm);
+  border: 1px solid rgba(255, 0, 68, 0.2);
+}
+
+.projects-content-manager .error-text::before {
+  content: '⚠️';
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.projects-content-manager .form-input.error,
+.projects-content-manager .form-textarea.error,
+.projects-content-manager .form-select.error {
+  border-color: #ff0044;
+  box-shadow: 0 0 0 3px rgba(255, 0, 68, 0.15), 0 0 20px rgba(255, 0, 68, 0.2);
+}
+
+.projects-content-manager .form-input.success,
+.projects-content-manager .form-textarea.success {
+  border-color: var(--proj-tech-text);
+  box-shadow: 0 0 0 3px rgba(0, 255, 136, 0.15), 0 0 20px rgba(0, 255, 136, 0.2);
+}
+
+@keyframes projStatusSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes projStatusShimmer {
+  0%, 100% {
+    left: -100%;
+  }
+  50% {
+    left: 100%;
+  }
+}
+
+@keyframes projStatusIconPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+@keyframes projCountPulse {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(255, 0, 68, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 15px rgba(255, 0, 68, 0.5);
+  }
+}
+
+@keyframes projRequiredPulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+@keyframes projErrorFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ProjectsManager-Part3.css - Table Styling & Project List */
+
+.projects-content-manager .projects-list-section {
+  position: relative;
+}
+
+.projects-content-manager .list-container {
+  padding: var(--proj-space-xl);
+  position: relative;
+  overflow: hidden;
+}
+
+.projects-content-manager .list-controls {
+  display: flex;
+  gap: var(--proj-space-lg);
+  margin-bottom: var(--proj-space-xl);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.projects-content-manager .search-section {
+  flex: 1;
+  min-width: 300px;
+}
+
+.projects-content-manager .search-wrapper {
+  position: relative;
+}
+
+.projects-content-manager .search-icon {
+  position: absolute;
+  left: var(--proj-space-md);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--proj-text-muted);
+  font-size: 1.1rem;
+  z-index: 2;
+}
+
+.projects-content-manager .search-input {
+  width: 100%;
+  padding: var(--proj-space-md) var(--proj-space-md) var(--proj-space-md) 40px;
+  background: var(--proj-glass-bg);
+  border: 1px solid var(--proj-glass-border);
+  border-radius: var(--proj-radius-md);
+  color: var(--proj-text-primary);
+  font-size: 1rem;
+  transition: all var(--proj-transition-normal);
+  backdrop-filter: var(--proj-glass-backdrop);
+}
+
+.projects-content-manager .search-input:focus {
+  outline: none;
+  border-color: var(--proj-tech-text);
+  box-shadow: 0 0 0 3px var(--proj-tech-bg), 0 0 20px var(--proj-glow-blue);
+  background: var(--proj-glass-hover);
+}
+
+.projects-content-manager .search-input::placeholder {
+  color: var(--proj-text-muted);
+  opacity: 0.7;
+}
+
+.projects-content-manager .filters-section {
+  display: flex;
+  gap: var(--proj-space-md);
+  flex-wrap: wrap;
+}
+
+.projects-content-manager .filter-select {
+  padding: var(--proj-space-sm) var(--proj-space-md);
+  background: var(--proj-glass-bg);
+  border: 1px solid var(--proj-glass-border);
+  border-radius: var(--proj-radius-md);
+  color: var(--proj-text-primary);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all var(--proj-transition-normal);
+  backdrop-filter: var(--proj-glass-backdrop);
+  min-width: 120px;
+}
+
+.projects-content-manager .filter-select:focus {
+  outline: none;
+  border-color: var(--proj-feature-text);
+  box-shadow: 0 0 0 2px var(--proj-feature-bg);
+}
+
+.projects-content-manager .projects-table-wrapper {
+  background: var(--proj-glass-bg);
+  border: 1px solid var(--proj-glass-border);
+  border-radius: var(--proj-radius-lg);
+  overflow: hidden;
+  backdrop-filter: var(--proj-glass-backdrop);
+  margin-bottom: var(--proj-space-xl);
+}
+
+.projects-content-manager .projects-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: transparent;
+}
+
+.projects-content-manager .projects-table thead {
+  background: var(--proj-glass-bg);
+  backdrop-filter: var(--proj-glass-backdrop);
+}
+
+.projects-content-manager .projects-table th {
+  padding: var(--proj-space-lg) var(--proj-space-md);
+  text-align: left;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--proj-text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--proj-glass-border);
+  position: relative;
+}
+
+.projects-content-manager .projects-table th::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--proj-grad-primary);
+  opacity: 0.3;
+}
+
+.projects-content-manager .projects-table td {
+  padding: var(--proj-space-lg) var(--proj-space-md);
+  border-bottom: 1px solid var(--proj-glass-border);
+  vertical-align: top;
+}
+
+.projects-content-manager .project-row {
+  /* MODIFIED: Transition only background-color for a smoother highlight */
+  transition: background-color var(--proj-transition-normal);
+  position: relative;
+}
+
+.projects-content-manager .project-row:hover {
+  /* MODIFIED: Use var(--proj-glass-hover) for background highlight */
+  background: var(--proj-glass-hover); 
+  /* box-shadow: none; */ /* Optionally remove box-shadow for simpler hover */
+  /* transform: none !important; */ /* Ensure no transform if other rules might apply it */
+}
+
+/* MODIFIED: Remove or neutralize the ::before pseudo-element on hover */
+.projects-content-manager .project-row:hover::before {
+  /* content: none; */ /* Option 1: Remove content */
+  /* Option 2: Make it invisible/zero-width */
+  width: 0; 
+  background: transparent;
+}
+
+
+.projects-content-manager .project-info {
+  min-width: 300px;
+}
+
+.projects-content-manager .project-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--proj-space-sm);
+}
+
+.projects-content-manager .project-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--proj-space-md);
+  flex-wrap: wrap;
+}
+
+.projects-content-manager .project-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--proj-text-primary);
+  margin: 0;
+  background: var(--proj-grad-primary);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.projects-content-manager .project-description {
+  font-size: 0.9rem;
+  color: var(--proj-text-secondary);
+  line-height: 1.4;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.projects-content-manager .project-meta {
+  display: flex;
+  gap: var(--proj-space-md);
+  flex-wrap: wrap;
+}
+
+.projects-content-manager .meta-item {
+  display: flex;
+  align-items: center;
+  gap: var(--proj-space-xs);
+  font-size: 0.8rem;
+  color: var(--proj-text-muted);
+  background: var(--proj-glass-bg);
+  padding: var(--proj-space-xs) var(--proj-space-sm);
+  border-radius: var(--proj-radius-sm);
+  border: 1px solid var(--proj-glass-border);
+}
+
+.projects-content-manager .project-type {
+  min-width: 120px;
+}
+
+.projects-content-manager .project-technologies {
+  min-width: 200px;
+}
+
+.projects-content-manager .tech-tags-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--proj-space-xs);
+}
+
+.projects-content-manager .tech-tag-mini {
+  background: var(--proj-tech-bg);
+  border: 1px solid var(--proj-tech-border);
+  color: var(--proj-tech-text);
+  padding: 2px 6px;
+  border-radius: var(--proj-radius-xs);
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.projects-content-manager .tech-more {
+  background: var(--proj-glass-bg);
+  border: 1px solid var(--proj-glass-border);
+  color: var(--proj-text-muted);
+  padding: 2px 6px;
+  border-radius: var(--proj-radius-xs);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.projects-content-manager .project-status {
+  min-width: 80px;
+}
+
+.projects-content-manager .status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--proj-space-xs);
+  padding: var(--proj-space-xs) var(--proj-space-sm);
+  border-radius: var(--proj-radius-md);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: 1px solid transparent;
+  transition: all var(--proj-transition-fast);
+}
+
+.projects-content-manager .status-badge.active {
+  background: var(--proj-tech-bg);
+  border-color: var(--proj-tech-border);
+  color: var(--proj-tech-text);
+}
+
+.projects-content-manager .status-badge.draft {
+  background: var(--proj-feature-bg);
+  border-color: var(--proj-feature-border);
+  color: var(--proj-feature-text);
+}
+
+.projects-content-manager .status-badge.archived {
+  background: rgba(136, 136, 136, 0.1);
+  border-color: rgba(136, 136, 136, 0.3);
+  color: #888888;
+}
+
+.projects-content-manager .project-featured { /* For the new 'Featured' column cell */
+  min-width: 100px;
+  text-align: left; /* Or center if preferred */
+}
+
+.projects-content-manager .featured-value { /* For the TRUE/FALSE text */
+  font-weight: 600;
+}
+
+.projects-content-manager .featured-value.true {
+  color: var(--proj-tech-text); /* Or a specific color for TRUE */
+}
+
+.projects-content-manager .featured-value.false {
+  color: var(--proj-text-muted); /* Or a specific color for FALSE */
+}
+
+/* .projects-content-manager .project-features { */ /* This class might be unused now or repurposed */
+  /* min-width: 100px; */
+/* } */
+
+/* .projects-content-manager .features-summary { */ /* This class might be unused now or repurposed */
+  /* display: flex; */
+  /* gap: var(--proj-space-sm); */
+  /* flex-wrap: wrap; */
+/* } */
+
+/* .projects-content-manager .feature-icon { */ /* This class might be unused now or repurposed */
+  /* font-size: 1rem; */
+  /* opacity: 0.8; */
+  /* transition: all var(--proj-transition-fast); */
+/* } */
+
+/* .projects-content-manager .feature-icon:hover { */ /* This class might be unused now or repurposed */
+  /* opacity: 1; */
+  /* transform: scale(1.2); */
+/* } */
+
+.projects-content-manager .project-actions {
+  min-width: 80px;
+}
+
+.projects-content-manager .action-buttons {
+  display: flex;
+  gap: var(--proj-space-sm);
+  justify-content: center;
+}
+
+.projects-content-manager .type-badge {
+  background: var(--proj-github-bg);
+  border: 1px solid var(--proj-github-border);
+  color: var(--proj-github-text);
+  padding: var(--proj-space-xs) var(--proj-space-sm);
+  border-radius: var(--proj-radius-sm);
+  font-size: 0.8rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.projects-content-manager .no-projects-message {
+  text-align: center;
+  padding: var(--proj-space-3xl);
+  color: var(--proj-text-secondary);
+  background: var(--proj-glass-bg);
+  border: 2px dashed var(--proj-glass-border);
+  border-radius: var(--proj-radius-xl);
+  margin: var(--proj-space-xl) 0;
+}
+
+.projects-content-manager .no-projects-icon {
+  font-size: 3rem;
+  margin-bottom: var(--proj-space-lg);
+  opacity: 0.6;
+}
+
+.projects-content-manager .no-projects-message h3 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 var(--proj-space-md);
+  color: var(--proj-text-primary);
+}
+
+.projects-content-manager .no-projects-message p {
+  font-size: 1rem;
+  margin: 0;
+  line-height: 1.6;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.projects-content-manager .projects-summary {
+  background: var(--proj-glass-bg);
+  border: 1px solid var(--proj-glass-border);
+  border-radius: var(--proj-radius-lg);
+  padding: var(--proj-space-lg);
+  backdrop-filter: var(--proj-glass-backdrop);
+  text-align: center;
+}
+
+.projects-content-manager .summary-stats {
+  display: flex;
+  justify-content: center;
+  gap: var(--proj-space-2xl);
+  flex-wrap: wrap;
+}
+
+.projects-content-manager .stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--proj-space-xs);
+  font-size: 0.9rem;
+  color: var(--proj-text-secondary);
+}
+
+.projects-content-manager .stat-item strong {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--proj-text-primary);
+  background: var(--proj-grad-primary);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+@media (max-width: 1024px) {
+  .projects-content-manager {
+    padding: var(--proj-space-lg);
+  }
+  
+  .projects-content-manager .projects-manager-header {
+    flex-direction: column;
+    gap: var(--proj-space-lg);
+    align-items: flex-start;
+    padding: var(--proj-space-lg);
+  }
+  
+  .projects-content-manager .header-actions {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+  
+  .projects-content-manager .projects-manager-content,
+  .projects-content-manager .projects-manager-content.with-preview {
+    grid-template-columns: 1fr;
+  }
+  
+  .projects-content-manager .projects-manager-title {
+    font-size: 1.8rem;
+  }
+
+  .projects-content-manager .projects-table-wrapper {
+    overflow-x: auto;
+  }
+
+  .projects-content-manager .projects-table {
+    min-width: 800px;
+  }
+
+  .projects-content-manager .project-info {
+    min-width: 250px;
+  }
+
+  .projects-content-manager .project-technologies {
+    min-width: 150px;
+  }
+
+  .projects-content-manager .list-controls {
+    flex-direction: column;
+    gap: var(--proj-space-md);
+  }
+
+  .projects-content-manager .search-section {
+    min-width: auto;
+  }
+
+  .projects-content-manager .filters-section {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 768px) {
+  .projects-content-manager {
+    padding: var(--proj-space-md);
+  }
+  
+  .projects-content-manager .projects-manager-header {
+    padding: var(--proj-space-md);
+  }
+  
+  .projects-content-manager .edit-actions {
+    flex-direction: column;
+    width: 100%;
+    gap: var(--proj-space-sm);
+  }
+  
+  .projects-content-manager .action-btn {
+    min-width: auto;
+    padding: var(--proj-space-sm) var(--proj-space-md);
+    font-size: 0.9rem;
+  }
+  
+  .projects-content-manager .projects-manager-title {
+    font-size: 1.5rem;
+    flex-direction: column;
+    gap: var(--proj-space-sm);
+    text-align: center;
+  }
+  
+  .projects-content-manager .projects-title-icon {
+    font-size: 2rem;
+  }
+
+  .projects-content-manager .projects-table {
+    min-width: 600px;
+    font-size: 0.9rem;
+  }
+
+  .projects-content-manager .projects-table th,
+  .projects-content-manager .projects-table td {
+    padding: var(--proj-space-sm);
+  }
+
+  .projects-content-manager .project-title {
+    font-size: 1rem;
+  }
+
+  .projects-content-manager .project-description {
+    font-size: 0.85rem;
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+  }
+
+  .projects-content-manager .tech-tag-mini {
+    font-size: 0.7rem;
+    padding: 1px 4px;
+  }
+
+  .projects-content-manager .action-btn-mini {
+    width: 28px;
+    height: 28px;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .projects-content-manager {
+    padding: var(--proj-space-sm);
+  }
+  
+  .projects-content-manager .projects-manager-header {
+    padding: var(--proj-space-sm);
+  }
+  
+  .projects-content-manager .projects-manager-title {
+    font-size: 1.3rem;
+  }
+
+  .projects-content-manager .projects-table {
+    min-width: 500px;
+    font-size: 0.85rem;
+  }
+
+  .projects-content-manager .projects-table th,
+  .projects-content-manager .projects-table td {
+    padding: 6px;
+  }
+
+  .projects-content-manager .project-title {
+    font-size: 0.9rem;
+  }
+
+  .projects-content-manager .project-description {
+    font-size: 0.8rem;
+  }
+
+  .projects-content-manager .meta-item {
+    font-size: 0.7rem;
+    padding: 2px 4px;
+  }
+
+  .projects-content-manager .tech-tag-mini {
+    font-size: 0.65rem;
+    padding: 1px 3px;
+  }
+
+  .projects-content-manager .action-btn-mini {
+    width: 24px;
+    height: 24px;
+    font-size: 0.7rem;
+  }
+}
+
+/* ProjectsManager-Part4.css - Form Elements & Input Styling */
+
+.projects-content-manager .form-section {
+  position: relative;
+}
+
+.projects-content-manager .form-container {
+  padding: var(--proj-space-2xl);
+  position: relative;
+  overflow: hidden;
+}
+
+.projects-content-manager .form-container > * {
+  position: relative;
+  z-index: 1;
+}
+
+.projects-content-manager .form-group {
+  margin-bottom: var(--proj-space-xl);
+}
+
+.projects-content-manager .form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--proj-space-lg);
+}
+
+.projects-content-manager .form-section-group {
+  margin-bottom: var(--proj-space-3xl);
+  padding: var(--proj-space-xl);
+  background: var(--proj-glass-bg);
+  border: 1px solid var(--proj-glass-border);
+  border-radius: var(--proj-radius-lg);
+  backdrop-filter: var(--proj-glass-backdrop);
+  position: relative;
+  overflow: hidden;
+}
+
+.projects-content-manager .form-section-group::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--proj-grad-secondary);
+  opacity: 0.02;
+  border-radius: var(--proj-radius-lg);
+  z-index: 0;
+}
+
+.projects-content-manager .form-section-group > * {
+  position: relative;
+  z-index: 1;
+}
+
+.projects-content-manager .form-input,
+.projects-content-manager .form-textarea,
+.projects-content-manager .form-select {
+  width: 100%;
+  padding: var(--proj-space-md) var(--proj-space-lg);
+  background: var(--proj-glass-bg);
+  border: 1px solid var(--proj-glass-border);
+  border-radius: var(--proj-radius-md);
+  color: var(--proj-text-primary);
+  font-size: 1rem;
+  transition: all var(--proj-transition-normal);
+  backdrop-filter: var(--proj-glass-backdrop);
+  font-family: inherit;
+  resize: vertical;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.projects-content-manager .form-input::placeholder,
+.projects-content-manager .form-textarea::placeholder {
+  color: var(--proj-text-muted);
+  opacity: 0.7;
+  font-style: italic;
+}
+
+.projects-content-manager .form-input:focus,
+.projects-content-manager .form-textarea:focus,
+.projects-content-manager .form-select:focus {
+  outline: none;
+  border-color: var(--proj-tech-text);
+  box-shadow: 0 0 0 3px var(--proj-tech-bg), 0 0 20px var(--proj-glow-blue);
+  background: var(--proj-glass-hover);
+  transform: translateY(-1px);
+}
+
+[data-theme="light"] .projects-content-manager .form-input:focus,
+[data-theme="light"] .projects-content-manager .form-textarea:focus,
+[data-theme="light"] .projects-content-manager .form-select:focus {
+  border-color: var(--proj-github-text);
+  box-shadow: 0 0 0 3px var(--proj-github-bg), 0 0 20px var(--proj-glow-blue);
+  background: var(--proj-glass-hover);
+}
+
+.projects-content-manager .form-input:disabled,
+.projects-content-manager .form-textarea:disabled,
+.projects-content-manager .form-select:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  background: var(--proj-bg-secondary);
+  transform: none;
+}
+
+.projects-content-manager .form-textarea {
+  min-height: 120px;
+  line-height: 1.6;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.projects-content-manager .form-select {
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23888888' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 12px center;
+  background-repeat: no-repeat;
+  background-size: 16px;
+  padding-right: 40px;
+}
+
+.projects-content-manager .technologies-list,
+.projects-content-manager .github-urls-list,
+.projects-content-manager .features-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--proj-space-sm);
+  margin-bottom: var(--proj-space-lg);
+  min-height: 40px;
+  padding: var(--proj-space-md);
+  background: var(--proj-glass-bg);
+  border: 1px dashed var(--proj-glass-border);
+  border-radius: var(--proj-radius-md);
+  transition: all var(--proj-transition-normal);
+}
+
+.projects-content-manager .technologies-list:empty::before,
+.projects-content-manager .github-urls-list:empty::before,
+.projects-content-manager .features-list:empty::before {
+  content: 'No items added yet...';
+  color: var(--proj-text-muted);
+  font-style: italic;
+  opacity: 0.6;
+}
+
+.projects-content-manager .technologies-list:hover,
+.projects-content-manager .github-urls-list:hover,
+.projects-content-manager .features-list:hover {
+  border-color: var(--proj-tech-border);
+  background: var(--proj-tech-bg);
+}
+
+.projects-content-manager .technology-item {
+  display: flex;
+  align-items: center;
+  gap: var(--proj-space-sm);
+  background: var(--proj-tech-bg);
+  border: 1px solid var(--proj-tech-border);
+  border-radius: var(--proj-radius-sm);
+  padding: var(--proj-space-sm) var(--proj-space-md);
+  transition: all var(--proj-transition-fast);
+  animation: projItemSlideIn 0.3s ease-out;
+}
+
+.projects-content-manager .technology-item:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--proj-glow-blue);
+}
+
+.projects-content-manager .tech-name {
+  color: var(--proj-tech-text);
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.projects-content-manager .remove-tech-btn {
+  background: none;
+  border: none;
+  color: #ff0044;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: var(--proj-radius-xs);
+  transition: all var(--proj-transition-fast);
+  font-size: 0.8rem;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.projects-content-manager .remove-tech-btn:hover {
+  background: rgba(255, 0, 68, 0.1);
+  transform: scale(1.2);
+}
+
+.projects-content-manager .github-url-item {
+  display: flex;
+  align-items: center;
+  gap: var(--proj-space-md);
+  background: var(--proj-github-bg);
+  border: 1px solid var(--proj-github-border);
+  border-radius: var(--proj-radius-sm);
+  padding: var(--proj-space-md);
+  margin-bottom: var(--proj-space-sm);
+  transition: all var(--proj-transition-fast);
+  animation: projItemSlideIn 0.3s ease-out;
+}
+
+.projects-content-manager .github-url-item:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--proj-glow-purple);
+}
+
+.projects-content-manager .url-text {
+  flex: 1;
+  color: var(--proj-github-text);
+  font-weight: 500;
+  font-size: 0.9rem;
+  word-break: break-all;
+  font-family: 'Monaco', 'Menlo', monospace;
+}
+
+.projects-content-manager .remove-url-btn {
+  background: none;
+  border: none;
+  color: #ff0044;
+  cursor: pointer;
+  padding: var(--proj-space-xs);
+  border-radius: var(--proj-radius-xs);
+  transition: all var(--proj-transition-fast);
+  font-size: 0.8rem;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.projects-content-manager .remove-url-btn:hover {
+  background: rgba(255, 0, 68, 0.1);
+  transform: scale(1.2);
+}
+
+.projects-content-manager .feature-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--proj-space-md);
+  background: var(--proj-feature-bg);
+  border: 1px solid var(--proj-feature-border);
+  border-radius: var(--proj-radius-sm);
+  padding: var(--proj-space-md);
+  margin-bottom: var(--proj-space-sm);
+  transition: all var(--proj-transition-fast);
+  animation: projItemSlideIn 0.3s ease-out;
+}
+
+.projects-content-manager .feature-item:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--proj-glow-orange);
+}
+
+.projects-content-manager .feature-text {
+  flex: 1;
+  color: var(--proj-feature-text);
+  font-weight: 500;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.projects-content-manager .remove-feature-btn {
+  background: none;
+  border: none;
+  color: #ff0044;
+  cursor: pointer;
+  padding: var(--proj-space-xs);
+  border-radius: var(--proj-radius-xs);
+  transition: all var(--proj-transition-fast);
+  font-size: 0.8rem;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+}
+
+.projects-content-manager .remove-feature-btn:hover {
+  background: rgba(255, 0, 68, 0.1);
+  transform: scale(1.2);
+}
+
+.projects-content-manager .add-technology,
+.projects-content-manager .add-github-url,
+.projects-content-manager .add-feature {
+  display: flex;
+  gap: var(--proj-space-md);
+  align-items: center;
+  padding: var(--proj-space-md);
+  background: var(--proj-glass-bg);
+  border: 1px dashed var(--proj-tech-border);
+  border-radius: var(--proj-radius-md);
+  transition: all var(--proj-transition-normal);
+  position: relative;
+  overflow: hidden;
+}
+
+.projects-content-manager .add-technology::before,
+.projects-content-manager .add-github-url::before,
+.projects-content-manager .add-feature::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, var(--proj-tech-bg), transparent);
+  transition: left var(--proj-transition-slow);
+}
+
+.projects-content-manager .add-technology:hover,
+.projects-content-manager .add-github-url:hover,
+.projects-content-manager .add-feature:hover {
+  background: var(--proj-tech-bg);
+  border-style: solid;
+  transform: translateY(-1px);
+}
+
+.projects-content-manager .add-technology:hover::before,
+.projects-content-manager .add-github-url:hover::before,
+.projects-content-manager .add-feature:hover::before {
+  left: 100%;
+}
+
+.projects-content-manager .add-github-url {
+  border-color: var(--proj-github-border);
+}
+
+.projects-content-manager .add-github-url::before {
+  background: linear-gradient(90deg, transparent, var(--proj-github-bg), transparent);
+}
+
+.projects-content-manager .add-github-url:hover {
+  background: var(--proj-github-bg);
+}
+
+.projects-content-manager .add-feature {
+  border-color: var(--proj-feature-border);
+}
+
+.projects-content-manager .add-feature::before {
+  background: linear-gradient(90deg, transparent, var(--proj-feature-bg), transparent);
+}
+
+.projects-content-manager .add-feature:hover {
+  background: var(--proj-feature-bg);
+}
+
+.projects-content-manager .add-tech-btn,
+.projects-content-manager .add-url-btn,
+.projects-content-manager .add-feature-btn {
+  background: var(--proj-grad-primary);
+  border: none;
+  border-radius: var(--proj-radius-md);
+  padding: var(--proj-space-sm) var(--proj-space-lg);
+  color: var(--proj-bg-primary);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--proj-transition-normal);
+  white-space: nowrap;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  position: relative;
+  z-index: 1;
+}
+
+.projects-content-manager .add-tech-btn:hover:not(:disabled),
+.projects-content-manager .add-url-btn:hover:not(:disabled),
+.projects-content-manager .add-feature-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--proj-glow-blue);
+}
+
+.projects-content-manager .add-tech-btn:disabled,
+.projects-content-manager .add-url-btn:disabled,
+.projects-content-manager .add-feature-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+[data-theme="light"] .projects-content-manager .add-tech-btn,
+[data-theme="light"] .projects-content-manager .add-url-btn,
+[data-theme="light"] .projects-content-manager .add-feature-btn {
+  color: #ffffff;
+}
+
+[data-theme="light"] .projects-content-manager .add-tech-btn:hover:not(:disabled),
+[data-theme="light"] .projects-content-manager .add-url-btn:hover:not(:disabled),
+[data-theme="light"] .projects-content-manager .add-feature-btn:hover:not(:disabled) {
+  box-shadow: var(--proj-glow-purple);
+}
+
+.projects-content-manager .checkbox-wrapper {
+  display: flex;
+  align-items: center;
+  gap: var(--proj-space-md);
+  cursor: pointer;
+  user-select: none;
+  padding: var(--proj-space-md);
+  border-radius: var(--proj-radius-md);
+  transition: all var(--proj-transition-normal);
+  position: relative;
+}
+
+.projects-content-manager .checkbox-wrapper::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--proj-glass-bg);
+  border-radius: var(--proj-radius-md);
+  opacity: 0;
+  transition: opacity var(--proj-transition-normal);
+}
+
+.projects-content-manager .checkbox-wrapper:hover::before {
+  opacity: 1;
+}
+
+.projects-content-manager .checkbox-input {
+  display: none;
+}
+
+.projects-content-manager .checkbox-custom {
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--proj-tech-border);
+  border-radius: var(--proj-radius-sm);
+  background: var(--proj-glass-bg);
+  position: relative;
+  transition: all var(--proj-transition-normal);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.projects-content-manager .checkbox-custom::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  background: var(--proj-tech-text);
+  border-radius: 2px;
+  transform: translate(-50%, -50%) scale(0);
+  transition: transform var(--proj-transition-normal);
+}
+
+.projects-content-manager .checkbox-input:checked + .checkbox-custom {
+  background: var(--proj-grad-primary);
+  border-color: transparent;
+  box-shadow: var(--proj-glow-blue);
+}
+
+.projects-content-manager .checkbox-input:checked + .checkbox-custom::before {
+  background: var(--proj-bg-primary);
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.projects-content-manager .checkbox-input:checked + .checkbox-custom::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--proj-bg-primary);
+  font-size: 14px;
+  font-weight: bold;
+  line-height: 1;
+}
+
+[data-theme="light"] .projects-content-manager .checkbox-custom {
+  border-color: var(--proj-github-border);
+}
+
+[data-theme="light"] .projects-content-manager .checkbox-custom::before {
+  background: var(--proj-github-text);
+}
+
+[data-theme="light"] .projects-content-manager .checkbox-input:checked + .checkbox-custom {
+  box-shadow: var(--proj-glow-purple);
+}
+
+[data-theme="light"] .projects-content-manager .checkbox-input:checked + .checkbox-custom::before,
+[data-theme="light"] .projects-content-manager .checkbox-input:checked + .checkbox-custom::after {
+  color: #ffffff;
+}
+
+.projects-content-manager .checkbox-label {
+  color: var(--proj-text-secondary);
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.projects-content-manager .images-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: var(--proj-space-md);
+  margin-bottom: var(--proj-space-lg);
+  min-height: 100px;
+  padding: var(--proj-space-md);
+  background: var(--proj-glass-bg);
+  border: 1px dashed var(--proj-image-border);
+  border-radius: var(--proj-radius-md);
+  transition: all var(--proj-transition-normal);
+}
+
+.projects-content-manager .images-grid:empty::before {
+  content: 'No images uploaded yet...';
+  color: var(--proj-text-muted);
+  font-style: italic;
+  opacity: 0.6;
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: var(--proj-space-xl);
+}
+
+.projects-content-manager .images-grid:hover {
+  border-color: var(--proj-image-text);
+  background: var(--proj-image-bg);
+}
+
+.projects-content-manager .image-item {
+  position: relative;
+  border-radius: var(--proj-radius-md);
+  overflow: hidden;
+  background: var(--proj-glass-bg);
+  border: 1px solid var(--proj-glass-border);
+  transition: all var(--proj-transition-normal);
+  animation: projImageSlideIn 0.4s ease-out;
+}
+
+.projects-content-manager .image-item:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--proj-glow-red);
+  border-color: var(--proj-image-border);
+}
+
+.projects-content-manager .image-preview {
+  position: relative;
+  width: 100%;
+  height: 80px;
+  overflow: hidden;
+}
+
+.projects-content-manager .preview-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--proj-transition-normal);
+}
+
+.projects-content-manager .image-item:hover .preview-img {
+  transform: scale(1.1);
+}
+
+.projects-content-manager .remove-image-btn {
+  position: absolute;
+  top: var(--proj-space-xs);
+  right: var(--proj-space-xs);
+  background: rgba(255, 0, 68, 0.9);
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  opacity: 0;
+  transform: scale(0);
+  transition: all var(--proj-transition-fast);
+}
+
+.projects-content-manager .image-item:hover .remove-image-btn {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.projects-content-manager .remove-image-btn:hover {
+  background: #cc0036;
+  transform: scale(1.1);
+}
+
+.projects-content-manager .image-index {
+  padding: var(--proj-space-xs) var(--proj-space-sm);
+  background: var(--proj-image-bg);
+  color: var(--proj-image-text);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+  border-top: 1px solid var(--proj-image-border);
+}
+
+.projects-content-manager .upload-section {
+  text-align: center;
+  padding: var(--proj-space-xl);
+  background: var(--proj-glass-bg);
+  border: 2px dashed var(--proj-glass-border);
+  border-radius: var(--proj-radius-lg);
+  transition: all var(--proj-transition-normal);
+  position: relative;
+  overflow: hidden;
+}
+
+.projects-content-manager .upload-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, var(--proj-image-bg), transparent);
+  transition: left var(--proj-transition-slow);
+}
+
+.projects-content-manager .upload-section:hover {
+  border-color: var(--proj-image-border);
+  background: var(--proj-image-bg);
+  border-style: solid;
+}
+
+.projects-content-manager .upload-section:hover::before {
+  left: 100%;
+}
+
+.projects-content-manager .file-input {
+  display: none;
+}
+
+.projects-content-manager .upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--proj-space-sm);
+  background: var(--proj-grad-secondary);
+  border: none;
+  border-radius: var(--proj-radius-md);
+  padding: var(--proj-space-md) var(--proj-space-xl);
+  color: var(--proj-bg-primary);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--proj-transition-normal);
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  position: relative;
+  z-index: 1;
+}
+
+.projects-content-manager .upload-btn:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: var(--proj-glow-orange);
+}
+
+.projects-content-manager .upload-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+[data-theme="light"] .projects-content-manager .upload-btn {
+  color: #ffffff;
+}
+
+.projects-content-manager .upload-help {
+  margin-top: var(--proj-space-md);
+  color: var(--proj-text-muted);
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+@keyframes projItemSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes projImageSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 768px) {
+  .projects-content-manager .form-container {
+    padding: var(--proj-space-xl);
+  }
+  
+  .projects-content-manager .form-row {
+    grid-template-columns: 1fr;
+    gap: var(--proj-space-md);
+  }
+
+  .projects-content-manager .form-label-wrapper {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--proj-space-xs);
+  }
+  
+  .projects-content-manager .char-count,
+  .projects-content-manager .highlight-count,
+  .projects-content-manager .info-count {
+    align-self: flex-end;
+  }
+
+  .projects-content-manager .technology-item,
+  .projects-content-manager .github-url-item,
+  .projects-content-manager .feature-item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--proj-space-sm);
+  }
+
+  .projects-content-manager .remove-tech-btn,
+  .projects-content-manager .remove-url-btn,
+  .projects-content-manager .remove-feature-btn {
+    align-self: flex-end;
+    margin-top: var(--proj-space-xs);
+  }
+
+  .projects-content-manager .images-grid {
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: var(--proj-space-sm);
+  }
+
+  .projects-content-manager .image-item {
+    aspect-ratio: 1;
+  }
+
+  .projects-content-manager .image-preview {
+    height: 60px;
+  }
+
+  .projects-content-manager .upload-section {
+    padding: var(--proj-space-md);
+  }
+
+  .projects-content-manager .upload-btn {
+    padding: var(--proj-space-sm) var(--proj-space-md);
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .projects-content-manager .form-container {
+    padding: var(--proj-space-md);
+  }
+
+  .projects-content-manager .form-input,
+  .projects-content-manager .form-textarea,
+  .projects-content-manager .form-select {
+    padding: var(--proj-space-sm);
+    font-size: 0.9rem;
+  }
+
+  .projects-content-manager .form-textarea {
+    min-height: 100px;
+  }
+
+  .projects-content-manager .add-tech-btn,
+  .projects-content-manager .add-url-btn,
+  .projects-content-manager .add-feature-btn {
+    padding: var(--proj-space-xs) var(--proj-space-sm);
+    font-size: 0.8rem;
+  }
+
+  .projects-content-manager .checkbox-custom {
+    width: 18px;
+    height: 18px;
+  }
+
+  .projects-content-manager .checkbox-label {
+    font-size: 0.9rem;
+  }
+
+  .projects-content-manager .technologies-list,
+  .projects-content-manager .github-urls-list,
+  .projects-content-manager .features-list {
+    gap: var(--proj-space-xs);
+    padding: var(--proj-space-sm);
+  }
+
+  .projects-content-manager .technology-item {
+    padding: var(--proj-space-xs) var(--proj-space-sm);
+  }
+
+  .projects-content-manager .tech-name {
+    font-size: 0.8rem;
+  }
+
+  .projects-content-manager .github-url-item,
+  .projects-content-manager .feature-item {
+    padding: var(--proj-space-sm);
+  }
+
+  .projects-content-manager .url-text,
+  .projects-content-manager .feature-text {
+    font-size: 0.8rem;
+  }
+
+  .projects-content-manager .images-grid {
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    gap: 4px;
+  }
+
+  .projects-content-manager .image-preview {
+    height: 50px;
+  }
+
+  .projects-content-manager .image-index {
+    font-size: 0.7rem;
+    padding: 2px 4px;
+  }
+
+  .projects-content-manager .upload-help {
+    font-size: 0.8rem;
+  }
+}
+
+/* ProjectsManager-Part5.css - Preview Section & Responsive Design */
+
+.projects-content-manager .preview-section {
+  position: sticky;
+  top: var(--proj-space-xl);
+  height: fit-content;
+  max-height: calc(100vh - var(--proj-space-2xl));
+  overflow-y: auto;
+}
+
+.projects-content-manager .preview-container {
+  background: var(--proj-glass-bg);
+  border: 1px solid var(--proj-glass-border);
+  border-radius: var(--proj-radius-xl);
+  padding: var(--proj-space-xl);
+  backdrop-filter: var(--proj-glass-backdrop);
+  box-shadow: var(--proj-shadow-md);
+  position: relative;
+  overflow: hidden;
+}
+
+.projects-content-manager .preview-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--proj-grad-primary);
+  opacity: 0.03;
+  border-radius: var(--proj-radius-xl);
+  z-index: 0;
+}
+
+.projects-content-manager .preview-container > * {
+  position: relative;
+  z-index: 1;
+}
+
+.projects-content-manager .preview-title {
+  display: flex;
+  align-items: center;
+  gap: var(--proj-space-md);
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: var(--proj-space-lg);
+  color: var(--proj-text-primary);
+  border-bottom: 1px solid var(--proj-glass-border);
+  padding-bottom: var(--proj-space-md);
+}
+
+.projects-content-manager .preview-icon {
+  font-size: 1.4rem;
+  color: var(--proj-tech-text);
+  animation: projPreviewIconGlow 2s ease-in-out infinite;
+}
+
+[data-theme="light"] .projects-content-manager .preview-icon {
+  color: var(--proj-github-text);
+}
+
+.projects-content-manager .project-preview {
+  margin-bottom: var(--proj-space-lg);
+}
+
+.projects-content-manager .preview-project-card {
+  background: var(--proj-bg-primary);
+  border: 1px solid var(--proj-glass-border);
+  border-radius: var(--proj-radius-lg);
+  padding: var(--proj-space-2xl);
+  position: relative;
+  overflow: hidden;
+  min-height: 300px;
+}
+
+.projects-content-manager .preview-project-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(ellipse at center, var(--proj-tech-bg) 0%, transparent 70%);
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+[data-theme="light"] .projects-content-manager .preview-project-card {
+  background: var(--proj-bg-secondary);
+}
+
+[data-theme="light"] .projects-content-manager .preview-project-card::before {
+  background: radial-gradient(ellipse at center, var(--proj-github-bg) 0%, transparent 70%);
+  opacity: 0.2;
+}
+
+.projects-content-manager .preview-card-header {
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-start;
+  margin-bottom: var(--proj-space-lg);
+  position: relative;
+  z-index: 2;
+}
+
+.projects-content-manager .preview-status-indicators {
+  display: flex;
+  gap: var(--proj-space-sm);
+  flex-wrap: wrap;
+}
+
+.projects-content-manager .preview-status-badge {
+  display: flex;
+  align-items: center;
+  gap: var(--proj-space-xs);
+  padding: var(--proj-space-xs) var(--proj-space-sm);
+  border-radius: var(--proj-radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: 1px solid transparent;
+  backdrop-filter: blur(10px);
+}
+
+.projects-content-manager .preview-status-badge.featured {
+  background: var(--proj-image-bg);
+  border-color: var(--proj-image-border);
+  color: var(--proj-image-text);
+  animation: projPreviewFeaturedGlow 2s ease-in-out infinite;
+}
+
+.projects-content-manager .preview-status-badge.images {
+  background: var(--proj-feature-bg);
+  border-color: var(--proj-feature-border);
+  color: var(--proj-feature-text);
+}
+
+.projects-content-manager .badge-icon {
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
+.projects-content-manager .badge-text {
+  font-weight: 700;
+}
+
+.projects-content-manager .preview-title-section {
+  margin-bottom: var(--proj-space-xl);
+  position: relative;
+  z-index: 2;
+}
+
+.projects-content-manager .preview-project-title {
+  font-size: 1.8rem;
+  font-weight: 800;
+  margin: 0 0 var(--proj-space-sm);
+  background: var(--proj-grad-primary);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  line-height: 1.2;
+  word-break: break-word;
+  animation: projPreviewTitleShimmer 4s ease-in-out infinite;
+}
+
+.projects-content-manager .preview-title-underline {
+  width: 60px;
+  height: 3px;
+  background: var(--proj-grad-primary);
+  border-radius: 2px;
+  margin-top: var(--proj-space-sm);
+}
+
+.projects-content-manager .preview-meta-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--proj-space-sm);
+  margin-bottom: var(--proj-space-xl);
+  position: relative;
+  z-index: 2;
+}
+
+.projects-content-manager .preview-meta-row {
+  display: flex;
+  gap: var(--proj-space-lg);
+  flex-wrap: wrap;
+}
+
+.projects-content-manager .preview-meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--proj-space-xs);
+  min-width: 100px;
+}
+
+.projects-content-manager .meta-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--proj-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.projects-content-manager .meta-value {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--proj-text-primary);
+}
+
+.projects-content-manager .meta-value.status {
+  color: var(--proj-tech-text);
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.projects-content-manager .preview-description-section {
+  margin-bottom: var(--proj-space-xl);
+  position: relative;
+  z-index: 2;
+}
+
+.projects-content-manager .preview-description-text {
+  font-size: 1rem;
+  color: var(--proj-text-secondary);
+  margin: 0;
+  line-height: 1.6;
+  text-align: justify;
+}
+
+.projects-content-manager .preview-tech-section {
+  margin-bottom: var(--proj-space-xl);
+  position: relative;
+  z-index: 2;
+}
+
+.projects-content-manager .preview-tech-header {
+  display: flex;
+  align-items: center;
+  gap: var(--proj-space-sm);
+  margin-bottom: var(--proj-space-md);
+}
+
+.projects-content-manager .tech-icon {
+  font-size: 1.1rem;
+  color: var(--proj-tech-text);
+}
+
+.projects-content-manager .tech-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--proj-text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.projects-content-manager .preview-tech-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--proj-space-sm);
+}
+
+.projects-content-manager .preview-tech-tag {
+  background: var(--proj-tech-bg);
+  border: 1px solid var(--proj-tech-border);
+  color: var(--proj-tech-text);
+  padding: var(--proj-space-xs) var(--proj-space-sm);
+  border-radius: var(--proj-radius-sm);
+  font-size: 0.85rem;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: all var(--proj-transition-fast);
+}
+
+.projects-content-manager .preview-tech-tag:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--proj-glow-blue);
+}
+
+.projects-content-manager .preview-tech-tag.tech-more {
+  background: var(--proj-glass-bg);
+  border-color: var(--proj-glass-border);
+  color: var(--proj-text-muted);
+}
+
+.projects-content-manager .preview-action-section {
+  display: flex;
+  gap: var(--proj-space-md);
+  flex-wrap: wrap;
+  margin-bottom: var(--proj-space-xl);
+  position: relative;
+  z-index: 2;
+}
+
+.projects-content-manager .preview-action-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--proj-space-sm);
+  padding: var(--proj-space-md) var(--proj-space-lg);
+  border-radius: var(--proj-radius-md);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: not-allowed;
+  transition: all var(--proj-transition-normal);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: 1px solid;
+  backdrop-filter: var(--proj-glass-backdrop);
+  opacity: 0.9;
+}
+
+.projects-content-manager .preview-action-btn:hover {
+  transform: translateY(-2px);
+  opacity: 1;
+}
+
+.projects-content-manager .preview-action-btn.demo-btn {
+  background: var(--proj-grad-success);
+  border-color: transparent;
+  color: var(--proj-bg-primary);
+  box-shadow: var(--proj-glow-green);
+}
+
+.projects-content-manager .preview-action-btn.github-btn {
+  background: var(--proj-github-bg);
+  border-color: var(--proj-github-border);
+  color: var(--proj-github-text);
+}
+
+.projects-content-manager .preview-action-btn.images-btn {
+  background: var(--proj-image-bg);
+  border-color: var(--proj-image-border);
+  color: var(--proj-image-text);
+}
+
+[data-theme="light"] .projects-content-manager .preview-action-btn.demo-btn {
+  color: #ffffff;
+}
+
+[data-theme="light"] .projects-content-manager .preview-action-btn.github-btn {
+  background: var(--proj-tech-bg);
+  border-color: var(--proj-tech-border);
+  color: var(--proj-tech-text);
+}
+
+.projects-content-manager .preview-status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: var(--proj-space-lg);
+  border-top: 1px solid var(--proj-glass-border);
+  gap: var(--proj-space-md);
+  flex-wrap: wrap;
+}
+
+.projects-content-manager .status-indicator {
+  display: flex;
+  align-items: center;
+  gap: var(--proj-space-sm);
+  padding: var(--proj-space-sm) var(--proj-space-lg);
+  border-radius: var(--proj-radius-lg);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  backdrop-filter: blur(10px);
+  border: 1px solid;
+}
+
+.projects-content-manager .status-indicator.active {
+  background: rgba(0, 255, 136, 0.1);
+  border-color: rgba(0, 255, 136, 0.3);
+  color: #00ff88;
+  box-shadow: 0 0 15px rgba(0, 255, 136, 0.1);
+}
+
+.projects-content-manager .status-indicator.draft {
+  background: var(--proj-feature-bg);
+  border-color: var(--proj-feature-border);
+  color: var(--proj-feature-text);
+  box-shadow: 0 0 15px var(--proj-feature-bg);
+}
+
+.projects-content-manager .status-indicator.archived {
+  background: rgba(136, 136, 136, 0.1);
+  border-color: rgba(136, 136, 136, 0.3);
+  color: #888888;
+  box-shadow: 0 0 15px rgba(136, 136, 136, 0.1);
+}
+
+.projects-content-manager .featured-indicator {
+  background: var(--proj-image-bg);
+  border: 1px solid var(--proj-image-border);
+  color: var(--proj-image-text);
+  padding: var(--proj-space-sm) var(--proj-space-lg);
+  border-radius: var(--proj-radius-lg);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  backdrop-filter: blur(10px);
+  animation: projFeaturedPulse 2s ease-in-out infinite;
+}
+
+@keyframes projPreviewIconGlow {
+  0%, 100% {
+    filter: drop-shadow(0 0 5px currentColor);
+  }
+  50% {
+    filter: drop-shadow(0 0 15px currentColor);
+  }
+}
+
+@keyframes projPreviewFeaturedGlow {
+  0%, 100% {
+    box-shadow: 0 0 5px var(--proj-image-text);
+  }
+  50% {
+    box-shadow: 0 0 15px var(--proj-image-text);
+  }
+}
+
+@keyframes projPreviewTitleShimmer {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes projFeaturedPulse {
+  0%, 100% {
+    box-shadow: 0 0 10px var(--proj-image-text);
+  }
+  50% {
+    box-shadow: 0 0 20px var(--proj-image-text);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .projects-content-manager,
+  .projects-content-manager .status-message,
+  .projects-content-manager .action-btn,
+  .projects-content-manager .technology-item,
+  .projects-content-manager .github-url-item,
+  .projects-content-manager .feature-item,
+  .projects-content-manager .image-item,
+  .projects-content-manager .projects-manager-title,
+  .projects-content-manager .projects-title-icon,
+  .projects-content-manager .preview-icon,
+  .projects-content-manager .status-icon,
+  .projects-content-manager .checkbox-custom,
+  .projects-content-manager .add-technology::before,
+  .projects-content-manager .add-github-url::before,
+  .projects-content-manager .add-feature::before,
+  .projects-content-manager .upload-section::before,
+  .projects-content-manager .action-btn::before,
+  .projects-content-manager .preview-tech-tag,
+  .projects-content-manager .preview-action-btn,
+  .projects-content-manager .preview-status-badge,
+  .projects-content-manager .preview-project-title,
+  .projects-content-manager .featured-indicator {
+    animation: none;
+  }
+  
+  .projects-content-manager .action-btn:hover,
+  .projects-content-manager .technology-item:hover,
+  .projects-content-manager .github-url-item:hover,
+  .projects-content-manager .feature-item:hover,
+  .projects-content-manager .image-item:hover,
+  /* .projects-content-manager .project-row:hover, */ /* Keep hover effect for project row if desired, even with reduced motion */
+  .projects-content-manager .upload-btn:hover,
+  .projects-content-manager .add-tech-btn:hover,
+  .projects-content-manager .add-url-btn:hover,
+  .projects-content-manager .add-feature-btn:hover,
+  .projects-content-manager .checkbox-wrapper:hover,
+  .projects-content-manager .preview-tech-tag:hover,
+  .projects-content-manager .preview-action-btn:hover {
+    transform: none;
+    box-shadow: none; /* This line might be too aggressive if some elements should retain shadow */
+    /* border-color: initial; */ /* This might also be too aggressive */
+  }
+
+  .projects-content-manager .form-input:focus,
+  .projects-content-manager .form-textarea:focus,
+  .projects-content-manager .form-select:focus {
+    transform: none;
+    box-shadow: 0 0 0 3px var(--proj-tech-bg);
+  }
+
+  [data-theme="light"] .projects-content-manager .form-input:focus,
+  [data-theme="light"] .projects-content-manager .form-textarea:focus,
+  [data-theme="light"] .projects-content-manager .form-select:focus {
+    box-shadow: 0 0 0 3px var(--proj-github-bg);
+  }
+
+  .projects-content-manager .projects-manager-header::before,
+  .projects-content-manager .form-container::before,
+  .projects-content-manager .preview-container::before,
+  .projects-content-manager .preview-project-card::before {
+    transition: none;
+  }
+}
+
+@media (prefers-contrast: high) {
+  .projects-content-manager .form-input,
+  .projects-content-manager .form-textarea,
+  .projects-content-manager .form-select,
+  .projects-content-manager .technology-item,
+  .projects-content-manager .github-url-item,
+  .projects-content-manager .feature-item,
+  .projects-content-manager .image-item,
+  .projects-content-manager .checkbox-custom,
+  .projects-content-manager .action-btn,
+  .projects-content-manager .projects-table,
+  .projects-content-manager .preview-project-card,
+  .projects-content-manager .preview-tech-tag,
+  .projects-content-manager .preview-action-btn {
+    border-width: 2px;
+  }
+  
+  .projects-content-manager .action-btn.primary {
+    border: 2px solid var(--proj-tech-text);
+  }
+  
+  [data-theme="light"] .projects-content-manager .action-btn.primary {
+    border: 2px solid var(--proj-github-text);
+  }
+  
+  .projects-content-manager .char-count,
+  .projects-content-manager .highlight-count,
+  .projects-content-manager .info-count {
+    border-width: 2px;
+  }
+  
+  .projects-content-manager .status-message {
+    border-width: 2px;
+  }
+
+  .projects-content-manager .projects-table th,
+  .projects-content-manager .projects-table td {
+    border-width: 2px;
+  }
+
+  .projects-content-manager .preview-status-badge,
+  .projects-content-manager .status-indicator,
+  .projects-content-manager .featured-indicator {
+    border-width: 2px;
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .projects-content-manager .action-btn,
+  .projects-content-manager .add-tech-btn,
+  .projects-content-manager .add-url-btn,
+  .projects-content-manager .add-feature-btn,
+  .projects-content-manager .upload-btn,
+  .projects-content-manager .filter-select,
+  .projects-content-manager .search-input {
+    min-height: 44px;
+    padding: var(--proj-space-md) var(--proj-space-lg);
+  }
+
+  .projects-content-manager .action-btn-mini,
+  .projects-content-manager .remove-tech-btn,
+  .projects-content-manager .remove-url-btn,
+  .projects-content-manager .remove-feature-btn,
+  .projects-content-manager .remove-image-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 1.1rem;
+  }
+
+  .projects-content-manager .checkbox-custom {
+    width: 24px;
+    height: 24px;
+  }
+
+  .projects-content-manager .form-input,
+  .projects-content-manager .form-textarea,
+  .projects-content-manager .form-select {
+    min-height: 44px;
+    padding: var(--proj-space-md);
+  }
+
+  .projects-content-manager .technology-item,
+  .projects-content-manager .github-url-item,
+  .projects-content-manager .feature-item {
+    min-height: 44px;
+    padding: var(--proj-space-md);
+  }
+
+  .projects-content-manager .action-btn:hover,
+  .projects-content-manager .technology-item:hover,
+  .projects-content-manager .github-url-item:hover,
+  .projects-content-manager .feature-item:hover,
+  .projects-content-manager .image-item:hover,
+  .projects-content-manager .project-row:hover, /* Ensure project row hover is still effective if needed */
+  .projects-content-manager .upload-btn:hover,
+  .projects-content-manager .add-tech-btn:hover,
+  .projects-content-manager .add-url-btn:hover,
+  .projects-content-manager .add-feature-btn:hover,
+  .projects-content-manager .checkbox-wrapper:hover,
+  .projects-content-manager .preview-tech-tag:hover,
+  .projects-content-manager .preview-action-btn:hover {
+    transform: none;
+    box-shadow: none;
+    /* border-color: initial; */ /* Avoid resetting border color for project-row hover if it's part of the style */
+  }
+  
+  .projects-content-manager .project-row:hover { /* Specific override for project row if needed on touch devices */
+    background: var(--proj-glass-hover); /* Ensure background highlight remains */
+  }
+
+
+  .projects-content-manager .form-input:focus,
+  .projects-content-manager .form-textarea:focus,
+  .projects-content-manager .form-select:focus {
+    transform: none;
+    box-shadow: 0 0 0 3px var(--proj-tech-bg);
+  }
+
+  [data-theme="light"] .projects-content-manager .form-input:focus,
+  [data-theme="light"] .projects-content-manager .form-textarea:focus,
+  [data-theme="light"] .projects-content-manager .form-select:focus {
+    box-shadow: 0 0 0 3px var(--proj-github-bg);
+  }
+
+  .projects-content-manager .projects-table th,
+  .projects-content-manager .projects-table td {
+    min-height: 44px;
+    padding: var(--proj-space-md);
+  }
+
+  .projects-content-manager .preview-tech-tag,
+  .projects-content-manager .preview-action-btn {
+    min-height: 32px;
+    min-width: 32px;
+  }
+}
+
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 2dppx) {
+  .projects-content-manager .preview-img {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+
+  .projects-content-manager .projects-manager-title,
+  .projects-content-manager .preview-project-title {
+    text-rendering: optimizeLegibility;
+  }
+}
+
+.projects-content-manager .action-btn:focus-visible,
+.projects-content-manager .form-input:focus-visible,
+.projects-content-manager .form-textarea:focus-visible,
+.projects-content-manager .form-select:focus-visible,
+.projects-content-manager .add-tech-btn:focus-visible,
+.projects-content-manager .add-url-btn:focus-visible,
+.projects-content-manager .add-feature-btn:focus-visible,
+.projects-content-manager .upload-btn:focus-visible,
+.projects-content-manager .remove-tech-btn:focus-visible,
+.projects-content-manager .remove-url-btn:focus-visible,
+.projects-content-manager .remove-feature-btn:focus-visible,
+.projects-content-manager .remove-image-btn:focus-visible,
+.projects-content-manager .checkbox-wrapper:focus-visible,
+.projects-content-manager .search-input:focus-visible,
+.projects-content-manager .filter-select:focus-visible,
+.projects-content-manager .action-btn-mini:focus-visible {
+  outline: 3px solid var(--proj-tech-text);
+  outline-offset: 2px;
+}
+
+[data-theme="light"] .projects-content-manager .action-btn:focus-visible,
+[data-theme="light"] .projects-content-manager .form-input:focus-visible,
+[data-theme="light"] .projects-content-manager .form-textarea:focus-visible,
+[data-theme="light"] .projects-content-manager .form-select:focus-visible,
+[data-theme="light"] .projects-content-manager .add-tech-btn:focus-visible,
+[data-theme="light"] .projects-content-manager .add-url-btn:focus-visible,
+[data-theme="light"] .projects-content-manager .add-feature-btn:focus-visible,
+[data-theme="light"] .projects-content-manager .upload-btn:focus-visible,
+[data-theme="light"] .projects-content-manager .remove-tech-btn:focus-visible,
+[data-theme="light"] .projects-content-manager .remove-url-btn:focus-visible,
+[data-theme="light"] .projects-content-manager .remove-feature-btn:focus-visible,
+[data-theme="light"] .projects-content-manager .remove-image-btn:focus-visible,
+[data-theme="light"] .projects-content-manager .checkbox-wrapper:focus-visible,
+[data-theme="light"] .projects-content-manager .search-input:focus-visible,
+[data-theme="light"] .projects-content-manager .filter-select:focus-visible,
+[data-theme="light"] .projects-content-manager .action-btn-mini:focus-visible {
+  outline-color: var(--proj-github-text);
+}
+
+.projects-content-manager * {
+  box-sizing: border-box;
+}
+
+.projects-content-manager .form-container,
+.projects-content-manager .preview-container,
+.projects-content-manager .projects-manager-header,
+.projects-content-manager .projects-table-wrapper {
+  contain: layout style;
+}
+
+.projects-content-manager .preview-project-card {
+  contain: layout;
+}
+
+.projects-content-manager .technology-item,
+.projects-content-manager .github-url-item,
+.projects-content-manager .feature-item,
+.projects-content-manager .image-item,
+/* .projects-content-manager .project-row, */ /* MODIFIED: Removed .project-row from this will-change group if it was causing issues */
+.projects-content-manager .preview-tech-tag {
+  contain: layout style;
+}
+
+.projects-content-manager .action-btn,
+.projects-content-manager .technology-item,
+.projects-content-manager .github-url-item,
+.projects-content-manager .feature-item,
+.projects-content-manager .image-item,
+.projects-content-manager .preview-tech-tag,
+.projects-content-manager .preview-action-btn {
+  /* .projects-content-manager .project-row { */ /* MODIFIED: Removed .project-row from will-change: transform */
+  will-change: transform;
+}
+/* If .project-row was part of the above group, it's now removed. If it had its own will-change: transform, ensure it's removed or changed. */
+.projects-content-manager .project-row {
+  will-change: background-color; /* MODIFIED: Optimize for background color change instead of transform */
+}
+
+
+.projects-content-manager .action-btn::before,
+.projects-content-manager .add-technology::before,
+.projects-content-manager .add-github-url::before,
+.projects-content-manager .add-feature::before,
+.projects-content-manager .upload-section::before {
+  will-change: transform, left;
+}
+
+.projects-content-manager .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-contrast: more) {
+  .projects-content-manager .form-label,
+  .projects-content-manager .projects-manager-title,
+  .projects-content-manager .preview-project-title {
+    color: var(--proj-text-primary);
+    -webkit-text-fill-color: var(--proj-text-primary);
+    background: none;
+  }
+
+  .projects-content-manager .action-btn.primary,
+  .projects-content-manager .add-tech-btn,
+  .projects-content-manager .add-url-btn,
+  .projects-content-manager .add-feature-btn,
+  .projects-content-manager .upload-btn {
+    color: white;
+    background: #0066cc;
+  }
+
+  .projects-content-manager .status-indicator.active {
+    background: #006600;
+    color: white;
+  }
+
+  .projects-content-manager .status-indicator.draft {
+    background: #cc6600;
+    color: white;
+  }
+
+  .projects-content-manager .status-indicator.archived {
+    background: #666666;
+    color: white;
+  }
+}
+
+.projects-content-manager .form-group.has-error .form-input,
+.projects-content-manager .form-group.has-error .form-textarea,
+.projects-content-manager .form-group.has-error .form-select {
+  border-color: #ff0044;
+  box-shadow: 0 0 0 3px rgba(255, 0, 68, 0.2);
+}
+
+.projects-content-manager .form-group.has-error .form-label {
+  color: #ff0044;
+}
+
+.projects-content-manager .form-group.has-error .char-count,
+.projects-content-manager .form-group.has-error .highlight-count,
+.projects-content-manager .form-group.has-error .info-count {
+  border-color: #ff0044;
+  color: #ff0044;
+}
+
+.projects-content-manager .image-uploading .upload-btn,
+.projects-content-manager .form-saving .form-input,
+.projects-content-manager .form-saving .form-textarea,
+.projects-content-manager .form-saving .form-select,
+.projects-content-manager .form-saving .add-tech-btn,
+.projects-content-manager .form-saving .add-url-btn,
+.projects-content-manager .form-saving .add-feature-btn {
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+/* NEW: Styles for Delete Confirmation Modal */
+.projects-content-manager .modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7); /* Darker overlay */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000; /* Ensure it's on top */
+  backdrop-filter: blur(5px); /* Optional: blur background */
+  animation: projModalFadeIn 0.3s ease-out;
+}
+
+.projects-content-manager .modal-content {
+  /* Reusing glass-card for consistency, but with overrides */
+  padding: var(--proj-space-2xl);
+  max-width: 500px;
+  width: 90%;
+  text-align: center;
+  /* Override glass-card's default overflow if it causes issues */
+  overflow: visible; 
+  animation: projModalSlideIn 0.3s ease-out;
+}
+
+.projects-content-manager .modal-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--proj-text-primary);
+  margin: 0 0 var(--proj-space-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--proj-space-sm);
+}
+
+.projects-content-manager .modal-icon {
+  font-size: 1.6rem;
+  color: #ff0044; /* Red for delete warning */
+}
+
+.projects-content-manager .modal-text {
+  font-size: 1rem;
+  color: var(--proj-text-secondary);
+  margin-bottom: var(--proj-space-xl);
+  line-height: 1.6;
+}
+
+.projects-content-manager .modal-text strong {
+  color: var(--proj-text-primary);
+  font-weight: 600;
+}
+
+.projects-content-manager .modal-actions {
+  display: flex;
+  justify-content: center; /* Center buttons */
+  gap: var(--proj-space-lg);
+  margin-top: var(--proj-space-xl);
+}
+
+/* Specific styling for the confirm delete button in the modal */
+.projects-content-manager .modal-actions .delete-btn-confirm.primary {
+  background: #ff0044; /* Red background for delete */
+  border-color: transparent;
+  color: #ffffff; /* White text */
+  box-shadow: var(--proj-glow-red);
+}
+
+.projects-content-manager .modal-actions .delete-btn-confirm.primary:hover:not(:disabled) {
+  background: #cc0036; /* Darker red on hover */
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: var(--proj-shadow-lg), var(--proj-glow-red);
+}
+
+[data-theme="light"] .projects-content-manager .modal-actions .delete-btn-confirm.primary {
+  background: #d32f2f; /* Adjusted red for light theme */
+  color: #ffffff;
+  box-shadow: var(--proj-glow-red);
+}
+
+[data-theme="light"] .projects-content-manager .modal-actions .delete-btn-confirm.primary:hover:not(:disabled) {
+  background: #b71c1c; /* Darker red for light theme hover */
+}
+
+
+@keyframes projModalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes projModalSlideIn {
+  from { opacity: 0; transform: translateY(-30px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}

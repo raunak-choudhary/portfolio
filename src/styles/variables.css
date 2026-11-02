@@ -1,0 +1,164 @@
+/* CSS Variables for Dynamic Portfolio */
+
+:root {
+  /* Base Colors */
+  --color-black: #000000;
+  --color-white: #ffffff;
+  
+  /* Neon Colors */
+  --neon-cyan: #00ffff;
+  --neon-purple: #8b00ff;
+  --neon-pink: #ff0080;
+  --neon-orange: #ff6600;
+  --neon-blue: #0066ff;
+  --neon-green: #00ff66;
+  
+  /* Gradient Combinations */
+  --gradient-primary: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+  --gradient-secondary: linear-gradient(135deg, var(--neon-pink), var(--neon-orange));
+  --gradient-accent: linear-gradient(135deg, var(--neon-blue), var(--neon-green));
+  --gradient-hero: linear-gradient(135deg, var(--neon-cyan) 0%, var(--neon-purple) 25%, var(--neon-pink) 50%, var(--neon-orange) 75%, var(--neon-blue) 100%);
+  
+  /* Glassmorphism */
+  --glass-backdrop: blur(20px);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.2);
+  --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  
+  /* Shadows and Glows */
+  --neon-glow-cyan: 0 0 20px var(--neon-cyan), 0 0 40px var(--neon-cyan), 0 0 60px var(--neon-cyan);
+  --neon-glow-purple: 0 0 20px var(--neon-purple), 0 0 40px var(--neon-purple), 0 0 60px var(--neon-purple);
+  --neon-glow-pink: 0 0 20px var(--neon-pink), 0 0 40px var(--neon-pink), 0 0 60px var(--neon-pink);
+  --neon-glow-orange: 0 0 20px var(--neon-orange), 0 0 40px var(--neon-orange), 0 0 60px var(--neon-orange);
+  
+  /* Typography */
+  --font-primary: 'Inter', 'Segoe UI', 'Roboto', system-ui, sans-serif;
+  --font-heading: 'Poppins', var(--font-primary);
+  --font-mono: 'Fira Code', 'Monaco', 'Consolas', monospace;
+  
+  /* Font Sizes - Original Names */
+  --text-xs: 0.75rem;    /* 12px */
+  --text-sm: 0.875rem;   /* 14px */
+  --text-base: 1rem;     /* 16px */
+  --text-lg: 1.125rem;   /* 18px */
+  --text-xl: 1.25rem;    /* 20px */
+  --text-2xl: 1.5rem;    /* 24px */
+  --text-3xl: 1.875rem;  /* 30px */
+  --text-4xl: 2.25rem;   /* 36px */
+  --text-5xl: 3rem;      /* 48px */
+  --text-6xl: 3.75rem;   /* 60px */
+  
+  /* Font Sizes - Alternative Names (for compatibility) */
+  --font-size-xs: var(--text-xs);
+  --font-size-sm: var(--text-sm);
+  --font-size-base: var(--text-base);
+  --font-size-lg: var(--text-lg);
+  --font-size-xl: var(--text-xl);
+  --font-size-2xl: var(--text-2xl);
+  --font-size-3xl: var(--text-3xl);
+  --font-size-4xl: var(--text-4xl);
+  --font-size-5xl: var(--text-5xl);
+  --font-size-6xl: var(--text-6xl);
+  
+  /* Spacing */
+  --spacing-xs: 0.25rem;  /* 4px */
+  --spacing-sm: 0.5rem;   /* 8px */
+  --spacing-md: 1rem;     /* 16px */
+  --spacing-lg: 1.5rem;   /* 24px */
+  --spacing-xl: 2rem;     /* 32px */
+  --spacing-2xl: 3rem;    /* 48px */
+  --spacing-3xl: 4rem;    /* 64px */
+  --spacing-4xl: 6rem;    /* 96px */
+  
+  /* Border Radius */
+  --radius-sm: 0.25rem;   /* 4px */
+  --radius-md: 0.5rem;    /* 8px */
+  --radius-lg: 0.75rem;   /* 12px */
+  --radius-xl: 1rem;      /* 16px */
+  --radius-2xl: 1.5rem;   /* 24px */
+  --radius-full: 50%;
+  
+  /* Transitions - Original Names */
+  --duration-fast: 0.15s;
+  --duration-normal: 0.3s;
+  --duration-slow: 0.5s;
+  --duration-slower: 0.75s;
+  
+  /* Transitions - Alternative Names (for compatibility) */
+  --transition-fast: all var(--duration-fast) ease;
+  --transition-normal: all var(--duration-normal) ease;
+  --transition-slow: all var(--duration-slow) ease;
+  --transition-slower: all var(--duration-slower) ease;
+  
+  /* Z-Index Layers */
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-fixed: 1030;
+  --z-modal-backdrop: 1040;
+  --z-modal: 1050;
+  --z-popover: 1060;
+  --z-tooltip: 1070;
+  --z-toast: 1080;
+  
+  /* Transition Timing Functions */
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  
+  /* Container Widths */
+  --container-sm: 640px;
+  --container-md: 768px;
+  --container-lg: 1024px;
+  --container-xl: 1280px;
+  --container-2xl: 1536px;
+}
+
+/* Dark Theme Variables (Default) */
+[data-theme="dark"] {
+  --bg-primary: var(--color-black);
+  --bg-secondary: rgba(255, 255, 255, 0.05);
+  --bg-tertiary: rgba(255, 255, 255, 0.1);
+  
+  --text-primary: var(--color-white);
+  --text-secondary: rgba(255, 255, 255, 0.8);
+  --text-tertiary: rgba(255, 255, 255, 0.6);
+  --text-muted: rgba(255, 255, 255, 0.4);
+  
+  --border-primary: rgba(255, 255, 255, 0.2);
+  --border-secondary: rgba(255, 255, 255, 0.1);
+  
+  --glass-bg: rgba(255, 255, 255, 0.1);
+  --glass-border-color: rgba(255, 255, 255, 0.2);
+  
+  --shadow-primary: 0 10px 25px rgba(0, 0, 0, 0.5);
+  --shadow-secondary: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+/* Light Theme Variables */
+[data-theme="light"] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f9fa;
+  --bg-tertiary: #f1f3f4;
+  
+  --text-primary: #1a1a1a;
+  --text-secondary: #4a4a4a;
+  --text-tertiary: #6b7280;
+  --text-muted: #9ca3af;
+  
+  --border-primary: #e5e7eb;
+  --border-secondary: #f3f4f6;
+  
+  --glass-bg: rgba(248, 249, 250, 0.8);
+  --glass-border-color: rgba(229, 231, 235, 0.6);
+  
+  --shadow-primary: 0 10px 25px rgba(0, 0, 0, 0.08);
+  --shadow-secondary: 0 5px 15px rgba(0, 0, 0, 0.04);
+  
+  /* Light theme specific colors */
+  --card-bg-light: #ffffff;
+  --card-bg-hover-light: #f8f9fa;
+  --input-bg-light: #ffffff;
+  --input-border-light: #e5e7eb;
+  --button-bg-light: #f1f3f4;
+  --button-hover-light: #e5e7eb;
+}

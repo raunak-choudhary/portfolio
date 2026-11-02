@@ -1,0 +1,213 @@
+/* src/components/common/LoadingSpinner.css */
+
+.loading-spinner-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 2rem;
+  }
+  
+  .loading-spinner {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Spinner Sizes */
+  .spinner-small {
+    width: 30px;
+    height: 30px;
+  }
+  
+  .spinner-medium {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .spinner-large {
+    width: 80px;
+    height: 80px;
+  }
+  
+  /* Spinner Ring */
+  .spinner-ring {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    border-top: 3px solid var(--neon-cyan);
+    border-right: 3px solid var(--neon-purple);
+    animation: spin 1.2s linear infinite;
+    position: relative;
+  }
+  
+  .spinner-ring-inner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 70%;
+    height: 70%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    border: 2px solid transparent;
+    border-bottom: 2px solid var(--neon-pink);
+    border-left: 2px solid var(--neon-orange);
+    animation: spin 0.8s linear infinite reverse;
+  }
+  
+  /* Glowing Background Effect */
+  .spinner-glow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 120%;
+    height: 120%;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(
+      circle,
+      rgba(0, 255, 255, 0.1) 0%,
+      rgba(138, 43, 226, 0.1) 50%,
+      transparent 70%
+    );
+    border-radius: 50%;
+    animation: neonPulse 2s ease-in-out infinite;
+  }
+  
+  /* Loading Message */
+  .loading-message {
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin: 0;
+    text-align: center;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-size: 200% 100%;
+    animation: shimmer 2s linear infinite;
+  }
+  
+  /* Size-specific adjustments */
+  .spinner-small .spinner-ring {
+    border-width: 2px;
+  }
+  
+  .spinner-small .spinner-ring-inner {
+    border-width: 1px;
+  }
+  
+  .spinner-large .spinner-ring {
+    border-width: 4px;
+  }
+  
+  .spinner-large .spinner-ring-inner {
+    border-width: 3px;
+  }
+  
+  .spinner-large .loading-message {
+    font-size: var(--font-size-lg);
+  }
+  
+  /* Fullscreen Loading Overlay */
+  .loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    z-index: var(--z-modal);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .loading-overlay .loading-spinner-container {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    padding: 3rem;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+  
+  /* Button Loading State */
+  .btn-loading {
+    position: relative;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  
+  .btn-loading::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid transparent;
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  
+  .btn-loading .btn-text {
+    opacity: 0;
+  }
+  
+  /* Page Transition Loading */
+  .page-loading {
+    min-height: 60vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Light Theme Adjustments */
+  [data-theme="light"] .loading-overlay {
+    background: rgba(255, 255, 255, 0.8);
+  }
+  
+  [data-theme="light"] .loading-overlay .loading-spinner-container {
+    background: rgba(0, 0, 0, 0.1);
+    border-color: rgba(0, 0, 0, 0.2);
+  }
+  
+  /* Reduced Motion Support */
+  @media (prefers-reduced-motion: reduce) {
+    .spinner-ring,
+    .spinner-ring-inner {
+      animation-duration: 3s;
+    }
+    
+    .spinner-glow {
+      animation: none;
+    }
+    
+    .loading-message {
+      animation: none;
+      background: var(--text-secondary);
+      -webkit-background-clip: initial;
+      background-clip: initial;
+      -webkit-text-fill-color: initial;
+    }
+  }
+  
+  /* Responsive Adjustments */
+  @media (max-width: 768px) {
+    .loading-spinner-container {
+      padding: 1.5rem;
+    }
+    
+    .loading-overlay .loading-spinner-container {
+      padding: 2rem;
+      margin: 1rem;
+    }
+  }

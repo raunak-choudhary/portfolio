@@ -1,0 +1,341 @@
+/* src/components/admin/Analytics/MetricsCard.css - ADMIN SCOPED VERSION */
+/* 🔒 ADMIN SCOPED - NO CONFLICTS WITH PUBLIC PORTFOLIO */
+
+.admin-dashboard .metrics-card {
+  position: relative;
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 24px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  min-height: 140px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.admin-dashboard .metrics-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, 
+    var(--neon-cyan) 0%, 
+    var(--neon-purple) 50%, 
+    var(--neon-pink) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.admin-dashboard .metrics-card:hover::before {
+  opacity: 1;
+}
+
+.admin-dashboard .metrics-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--neon-cyan);
+  box-shadow: 
+    0 20px 40px rgba(0, 255, 255, 0.15),
+    0 0 30px rgba(139, 69, 255, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Size Variants */
+.admin-dashboard .metrics-card--small {
+  padding: 16px;
+  min-height: 100px;
+}
+
+.admin-dashboard .metrics-card--medium {
+  padding: 24px;
+  min-height: 140px;
+}
+
+.admin-dashboard .metrics-card--large {
+  padding: 32px;
+  min-height: 180px;
+}
+
+/* Color Themes */
+.admin-dashboard .metrics-card--blue {
+  --card-accent: var(--neon-cyan);
+  --card-glow: rgba(0, 255, 255, 0.2);
+}
+
+.admin-dashboard .metrics-card--purple {
+  --card-accent: var(--neon-purple);
+  --card-glow: rgba(139, 69, 255, 0.2);
+}
+
+.admin-dashboard .metrics-card--pink {
+  --card-accent: var(--neon-pink);
+  --card-glow: rgba(255, 20, 147, 0.2);
+}
+
+.admin-dashboard .metrics-card--orange {
+  --card-accent: var(--neon-orange);
+  --card-glow: rgba(255, 165, 0, 0.2);
+}
+
+.admin-dashboard .metrics-card--emerald {
+  --card-accent: var(--neon-emerald);
+  --card-glow: rgba(50, 205, 50, 0.2);
+}
+
+/* Clickable State */
+.admin-dashboard .metrics-card--clickable {
+  cursor: pointer;
+}
+
+.admin-dashboard .metrics-card--clickable:active {
+  transform: translateY(-2px);
+}
+
+/* Header */
+.admin-dashboard .metrics-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.admin-dashboard .metrics-card-icon {
+  font-size: 24px;
+  color: var(--card-accent, var(--neon-cyan));
+  filter: drop-shadow(0 0 8px currentColor);
+}
+
+.admin-dashboard .metrics-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Content */
+.admin-dashboard .metrics-card-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-dashboard .metrics-card-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+  text-shadow: 0 0 20px var(--card-glow, rgba(0, 255, 255, 0.3));
+}
+
+.admin-dashboard .metrics-card--small .metrics-card-value {
+  font-size: 24px;
+}
+
+.admin-dashboard .metrics-card--large .metrics-card-value {
+  font-size: 40px;
+}
+
+/* Change Indicator */
+.admin-dashboard .metrics-card-change {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.admin-dashboard .metrics-card-change--positive {
+  color: var(--success-color);
+}
+
+.admin-dashboard .metrics-card-change--negative {
+  color: var(--error-color);
+}
+
+.admin-dashboard .metrics-card-change--neutral {
+  color: var(--text-secondary);
+}
+
+.admin-dashboard .change-indicator {
+  font-size: 16px;
+}
+
+/* Sparkline */
+.admin-dashboard .metrics-card-sparkline {
+  height: 40px;
+  width: 100%;
+  margin-top: 8px;
+  color: var(--card-accent, var(--neon-cyan));
+  opacity: 0.7;
+}
+
+.admin-dashboard .metrics-card-sparkline svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Description */
+.admin-dashboard .metrics-card-description {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-top: 8px;
+  line-height: 1.4;
+}
+
+/* Glow Effect */
+.admin-dashboard .metrics-card-glow {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, var(--card-glow, rgba(0, 255, 255, 0.1)) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.admin-dashboard .metrics-card:hover .metrics-card-glow {
+  opacity: 1;
+}
+
+/* Loading State */
+.admin-dashboard .metrics-card--loading {
+  pointer-events: none;
+}
+
+.admin-dashboard .metrics-card-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.admin-dashboard .skeleton-title,
+.admin-dashboard .skeleton-value,
+.admin-dashboard .skeleton-change {
+  background: linear-gradient(90deg, 
+    rgba(255, 255, 255, 0.1) 25%, 
+    rgba(255, 255, 255, 0.2) 50%, 
+    rgba(255, 255, 255, 0.1) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+  border-radius: 4px;
+}
+
+.admin-dashboard .skeleton-title {
+  height: 14px;
+  width: 60%;
+}
+
+.admin-dashboard .skeleton-value {
+  height: 32px;
+  width: 80%;
+}
+
+.admin-dashboard .skeleton-change {
+  height: 14px;
+  width: 40%;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .admin-dashboard .metrics-card {
+    padding: 16px;
+    min-height: 120px;
+  }
+  
+  .admin-dashboard .metrics-card-value {
+    font-size: 24px;
+  }
+  
+  .admin-dashboard .metrics-card-icon {
+    font-size: 20px;
+  }
+}
+
+/* Dark Theme Adjustments */
+[data-theme="dark"] .admin-dashboard .metrics-card {
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.1);
+}
+
+/* Light Theme Adjustments */
+[data-theme="light"] .admin-dashboard .metrics-card {
+  --glass-bg: rgba(0, 0, 0, 0.05);
+  --glass-border: rgba(0, 0, 0, 0.1);
+  color: var(--text-primary);
+}
+
+[data-theme="light"] .admin-dashboard .metrics-card:hover {
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.1),
+    0 0 30px var(--card-glow, rgba(0, 255, 255, 0.2)),
+    inset 0 1px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+  .admin-dashboard .metrics-card {
+    border-width: 2px;
+  }
+  
+  .admin-dashboard .metrics-card-title,
+  .admin-dashboard .metrics-card-value {
+    text-shadow: none;
+  }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .admin-dashboard .metrics-card,
+  .admin-dashboard .metrics-card *,
+  .admin-dashboard .metrics-card *::before,
+  .admin-dashboard .metrics-card *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Focus States for Accessibility */
+.admin-dashboard .metrics-card--clickable:focus {
+  outline: 2px solid var(--neon-cyan);
+  outline-offset: 2px;
+}
+
+/* Print Styles */
+@media print {
+  .admin-dashboard .metrics-card {
+    background: white;
+    border: 1px solid #ddd;
+    box-shadow: none;
+    color: black;
+    page-break-inside: avoid;
+  }
+  
+  .admin-dashboard .metrics-card::before,
+  .admin-dashboard .metrics-card-glow {
+    display: none;
+  }
+  
+  .admin-dashboard .metrics-card-value {
+    text-shadow: none;
+  }
+}

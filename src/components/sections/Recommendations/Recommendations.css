@@ -1,0 +1,1714 @@
+/* ============================================ */
+/* Recommendations.css - COMPLETELY FIXED VERSION */
+/* Fixed 3D flip card functionality */
+/* ============================================ */
+
+/* Color Variables for Ruby/Burgundy Theme */
+:root {
+  --ruby-red: #E0115F;
+  --burgundy: #800020;
+  --rose-gold: #E8B4B8;
+  --champagne-pink: #F1DDCF;
+  --soft-coral: #F88379;
+  --deep-ruby: #B91350;
+  --dark-burgundy: #5C001A;
+  --light-rose: #F4C2C2;
+}
+
+/* Recommendations Section Base Styles */
+.recommendations-section {
+  min-height: 100vh;
+  padding: calc(80px + var(--spacing-4xl) + var(--spacing-2xl)) 0 var(--spacing-4xl);
+  background: linear-gradient(135deg, 
+    var(--bg-primary) 0%, 
+    var(--bg-secondary) 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.recommendations-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(
+    ellipse at 70% 20%,
+    rgba(224, 17, 95, 0.12) 0%,
+    rgba(128, 0, 32, 0.08) 25%,
+    rgba(232, 180, 184, 0.06) 50%,
+    transparent 70%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Light theme adjustments */
+[data-theme="light"] .recommendations-section::before {
+  background: radial-gradient(
+    ellipse at 70% 20%,
+    rgba(224, 17, 95, 0.06) 0%,
+    rgba(128, 0, 32, 0.04) 25%,
+    rgba(232, 180, 184, 0.03) 50%,
+    transparent 70%
+  );
+}
+
+/* Enhanced Section Header */
+.recommendations-section .section-header {
+  text-align: center;
+  margin-bottom: var(--spacing-4xl);
+  position: relative;
+  z-index: 2;
+  padding-top: var(--spacing-3xl);
+}
+
+.recommendations-section .neon-title {
+  font-size: var(--text-5xl);
+  font-weight: 800;
+  margin-bottom: var(--spacing-lg);
+  background: linear-gradient(135deg, var(--ruby-red), var(--burgundy), var(--rose-gold));
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 30px rgba(224, 17, 95, 0.6);
+  position: relative;
+  animation: gradientShift 4s ease-in-out infinite;
+}
+
+.recommendations-section .neon-title::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100px;
+  height: 3px;
+  background: linear-gradient(135deg, var(--ruby-red), var(--rose-gold));
+  border-radius: 2px;
+  box-shadow: 0 0 15px rgba(224, 17, 95, 0.7);
+}
+
+.recommendations-section .neon-subtitle {
+  font-size: var(--text-xl);
+  color: var(--text-secondary);
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.6;
+  font-weight: 500;
+  background: linear-gradient(135deg, var(--text-secondary), var(--ruby-red));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 20px rgba(224, 17, 95, 0.4);
+}
+
+/* Recommendations Content */
+.recommendations-section .recompft-recommendations-content {
+  position: relative;
+  z-index: 2;
+}
+
+/* ============================================ */
+/* RECOMMENDATIONS GRID */
+/* ============================================ */
+
+.recommendations-section .recompft-recommendations-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  gap: var(--spacing-3xl);
+  margin-top: var(--spacing-3xl);
+  padding: var(--spacing-lg) 0;
+}
+
+/* ============================================ */
+/* FIXED 3D FLIP CARD SYSTEM */
+/* ============================================ */
+
+/* Main Card Container with Perspective */
+.recommendations-section .recompft-card-container {
+  perspective: 1200px;
+  height: 750px;
+  cursor: pointer;
+  transition: transform var(--duration-normal) var(--ease-in-out);
+  position: relative;
+  width: 100%;
+}
+
+.recommendations-section .recompft-card-container:hover {
+  transform: translateY(-6px);
+}
+
+/* Card Inner - This rotates */
+.recommendations-section .recompft-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  -webkit-transform-style: preserve-3d;
+  transform-style: preserve-3d;
+  transition: transform 0.8s var(--ease-in-out);
+  border-radius: var(--radius-2xl);
+}
+
+/* Flipped State */
+.recommendations-section .recompft-card-container.recompft-flipped .recompft-card-inner {
+  -webkit-transform: rotateY(180deg);
+  transform: rotateY(180deg);
+}
+
+/* Card Faces - Front and Back */
+.recommendations-section .recompft-card-face {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  border-radius: var(--radius-2xl);
+  overflow: hidden;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border-color);
+  backdrop-filter: var(--glass-backdrop);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.2),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  transition: all var(--duration-normal) var(--ease-in-out);
+}
+
+.recommendations-section .recompft-card-container:hover .recompft-card-face {
+  border-color: var(--ruby-red);
+  box-shadow: 
+    0 12px 40px rgba(0, 0, 0, 0.3),
+    0 0 20px rgba(224, 17, 95, 0.4),
+    0 0 0 1px var(--ruby-red);
+}
+
+/* =================== FRONT SIDE =================== */
+
+.recommendations-section .recompft-card-front {
+  padding: var(--spacing-lg);
+  /* Default rotation is 0deg */
+  -webkit-transform: rotateY(0deg);
+  transform: rotateY(0deg);
+}
+
+/* =================== BACK SIDE =================== */
+
+.recommendations-section .recompft-card-back {
+  padding: var(--spacing-lg);
+  /* Back face is rotated 180deg by default */
+  -webkit-transform: rotateY(180deg);
+  transform: rotateY(180deg);
+}
+
+/* Featured Badge - TOP LEFT ABSOLUTE POSITION with High Z-Index */
+.recommendations-section .recompft-featured-section {
+  position: absolute;
+  top: var(--spacing-md);
+  left: var(--spacing-md);
+  z-index: 15; /* Higher than card z-index */
+}
+
+.recommendations-section .recompft-featured-badge {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  background: linear-gradient(135deg, var(--ruby-red), var(--burgundy));
+  color: var(--color-white);
+  padding: 6px var(--spacing-sm);
+  border-radius: var(--radius-full);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 
+    0 4px 12px rgba(224, 17, 95, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  animation: featuredPulse 3s ease-in-out infinite;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(232, 180, 184, 0.3);
+}
+
+.recommendations-section .recompft-featured-badge::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 1.5s ease-in-out;
+}
+
+.recommendations-section .recompft-featured-badge:hover::before {
+  left: 100%;
+}
+
+.recommendations-section .recompft-featured-star {
+  font-size: 12px;
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.8));
+  animation: starTwinkle 2s ease-in-out infinite;
+}
+
+.recommendations-section .recompft-featured-text {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+}
+
+/* Card Header */
+.recommendations-section .recompft-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--spacing-lg);
+  margin-top: var(--spacing-2xl); /* Space for featured badge */
+  min-height: 100px;
+}
+
+.recommendations-section .recompft-profile-image-section {
+  display: flex;
+  justify-content: center;
+  flex: 1;
+}
+
+.recommendations-section .recompft-recommender-photo-large,
+.recommendations-section .recompft-recommender-photo-temp.recompft-recommender-photo-large {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--ruby-red);
+  box-shadow: 0 0 25px rgba(224, 17, 95, 0.5);
+  transition: all var(--duration-normal) var(--ease-in-out);
+}
+
+.recommendations-section .recompft-recommender-photo-large:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 35px rgba(128, 0, 32, 0.6);
+}
+
+.recommendations-section .recompft-recommender-photo-temp.recompft-recommender-photo-large {
+  background: linear-gradient(135deg, var(--ruby-red), var(--burgundy));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-xl);
+  font-weight: 800;
+  color: var(--color-white);
+  border: 3px solid var(--rose-gold);
+  box-shadow: 
+    0 0 25px rgba(224, 17, 95, 0.5),
+    inset 0 0 15px rgba(255, 255, 255, 0.1);
+  text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  position: relative;
+  overflow: hidden;
+}
+
+.recommendations-section .recompft-recommender-photo-temp.recompft-recommender-photo-large::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transform: rotate(45deg);
+  transition: transform 0.8s ease-in-out;
+}
+
+.recommendations-section .recompft-card-container:hover .recompft-recommender-photo-temp.recompft-recommender-photo-large::before {
+  transform: rotate(45deg) translateX(100%);
+}
+
+/* Flip Icon Button */
+.recommendations-section .recompft-flip-icon-btn {
+  background: rgba(224, 17, 95, 0.1);
+  border: 2px solid var(--ruby-red);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--duration-normal) var(--ease-in-out);
+  color: var(--ruby-red);
+  position: relative;
+  overflow: hidden;
+}
+
+.recommendations-section .recompft-flip-icon-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--ruby-red);
+  transform: scale(0);
+  transition: transform var(--duration-normal) var(--ease-in-out);
+  border-radius: 50%;
+}
+
+.recommendations-section .recompft-flip-icon-btn:hover::before {
+  transform: scale(1);
+}
+
+.recommendations-section .recompft-flip-icon-btn:hover {
+  color: var(--color-white);
+  box-shadow: 0 0 20px rgba(224, 17, 95, 0.5);
+  transform: scale(1.1);
+}
+
+.recommendations-section .recompft-flip-icon-btn svg {
+  width: 16px;
+  height: 16px;
+  z-index: 1;
+  position: relative;
+}
+
+/* Name Section */
+.recommendations-section .recompft-name-section {
+  text-align: center;
+  margin-bottom: var(--spacing-md);
+}
+
+.recommendations-section .recompft-recommender-name {
+  font-size: var(--text-xl);
+  font-weight: 800;
+  letter-spacing: 1px;
+  margin: 0 0 var(--spacing-xs) 0;
+  background: linear-gradient(135deg, var(--ruby-red), var(--burgundy));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 20px rgba(224, 17, 95, 0.4);
+  line-height: 1.2;
+}
+
+.recommendations-section .recompft-name-underline {
+  width: 60px;
+  height: 3px;
+  background: linear-gradient(135deg, var(--ruby-red), var(--rose-gold));
+  margin: 0 auto;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 0 10px rgba(224, 17, 95, 0.6);
+}
+
+/* Relationship Section */
+.recommendations-section .recompft-relationship-section {
+  text-align: center;
+  margin-bottom: var(--spacing-md);
+}
+
+.recommendations-section .recompft-relationship-badge {
+  display: inline-block;
+  background: rgba(232, 180, 184, 0.1);
+  border: 1px solid rgba(232, 180, 184, 0.3);
+  border-radius: var(--radius-full);
+  padding: var(--spacing-xs) var(--spacing-md);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--rose-gold);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  backdrop-filter: blur(10px);
+  transition: all var(--duration-normal) var(--ease-in-out);
+}
+
+.recommendations-section .recompft-relationship-badge:hover {
+  background: rgba(232, 180, 184, 0.15);
+  border-color: var(--rose-gold);
+  transform: translateY(-2px);
+}
+
+/* Content Section */
+.recommendations-section .recompft-content-section {
+  margin-bottom: var(--spacing-md);
+  flex: 1;
+}
+
+.recommendations-section .recompft-content-container {
+  background: rgba(224, 17, 95, 0.05);
+  border: 1px solid rgba(224, 17, 95, 0.2);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: all var(--duration-normal) var(--ease-in-out);
+}
+
+.recommendations-section .recompft-content-container:hover {
+  background: rgba(224, 17, 95, 0.08);
+  border-color: rgba(224, 17, 95, 0.4);
+}
+
+/* Recommendation Content */
+.recommendations-section .recompft-recommendation-content {
+  margin-bottom: var(--spacing-sm);
+}
+
+.recommendations-section .recompft-content-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: rgba(224, 17, 95, 0.1);
+  border-bottom: 1px solid rgba(224, 17, 95, 0.2);
+}
+
+.recommendations-section .recompft-content-icon {
+  font-size: var(--text-sm);
+}
+
+.recommendations-section .recompft-content-title {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--ruby-red);
+}
+
+.recommendations-section .recompft-content-text-wrapper {
+  max-height: 120px;
+  overflow-y: auto;
+  padding: var(--spacing-md);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(224, 17, 95, 0.5) transparent;
+}
+
+.recommendations-section .recompft-content-text-wrapper::-webkit-scrollbar {
+  width: 4px;
+  height: 0;
+}
+
+.recommendations-section .recompft-content-text-wrapper::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.recommendations-section .recompft-content-text-wrapper::-webkit-scrollbar-thumb {
+  background: rgba(224, 17, 95, 0.5);
+  border-radius: var(--radius-sm);
+}
+
+.recommendations-section .recompft-content-text-wrapper::-webkit-scrollbar-thumb:hover {
+  background: rgba(224, 17, 95, 0.7);
+}
+
+.recommendations-section .recompft-content-text {
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+  line-height: 1.6;
+  margin: 0;
+  font-style: italic;
+}
+
+/* LinkedIn Section */
+.recommendations-section .recompft-linkedin-section {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: rgba(232, 180, 184, 0.05);
+  border-top: 1px solid rgba(232, 180, 184, 0.2);
+}
+
+.recommendations-section .recompft-linkedin-link {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  color: var(--rose-gold);
+  text-decoration: none;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  transition: all var(--duration-normal) var(--ease-in-out);
+  padding: var(--spacing-xs);
+  border-radius: var(--radius-md);
+}
+
+.recommendations-section .recompft-linkedin-link:hover {
+  color: var(--ruby-red);
+  background: rgba(224, 17, 95, 0.05);
+  transform: translateX(4px);
+}
+
+.recommendations-section .recompft-linkedin-icon {
+  width: 18px;
+  height: 18px;
+  filter: drop-shadow(0 0 4px rgba(232, 180, 184, 0.4));
+}
+
+/* Card Footer */
+.recommendations-section .recompft-card-footer {
+  margin-top: auto;
+  text-align: center;
+  padding: var(--spacing-sm) 0;
+  border-top: 2px solid var(--ruby-red);
+  background: rgba(224, 17, 95, 0.05);
+  position: relative;
+}
+
+.recommendations-section .recompft-card-footer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(224, 17, 95, 0.1), transparent);
+  animation: shimmerFooter 3s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.recommendations-section .recompft-flip-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  font-size: var(--text-sm);
+  color: var(--ruby-red);
+  font-style: italic;
+  font-weight: 700;
+  text-shadow: 0 0 8px var(--ruby-red);
+  position: relative;
+  z-index: 1;
+}
+
+.recommendations-section .recompft-no-flip-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  font-style: italic;
+  font-weight: 500;
+  position: relative;
+  z-index: 1;
+}
+
+.recommendations-section .recompft-hint-text {
+  animation: pulseText 2s ease-in-out infinite;
+}
+
+.recommendations-section .recompft-hint-arrow {
+  font-weight: bold;
+  color: var(--ruby-red);
+  transition: transform var(--duration-normal) var(--ease-in-out);
+  font-size: var(--text-lg);
+  text-shadow: 0 0 10px var(--ruby-red);
+  animation: bounceArrow 2s ease-in-out infinite;
+}
+
+.recommendations-section .recompft-card-container:hover .recompft-hint-arrow {
+  transform: translateX(8px) scale(1.2);
+  color: var(--burgundy);
+  text-shadow: 0 0 15px var(--burgundy);
+}
+
+/* =================== BACK SIDE STYLES =================== */
+
+/* Back Header */
+.recommendations-section .recompft-back-header {
+  margin-bottom: var(--spacing-lg);
+  text-align: center;
+  border-bottom: 1px solid var(--glass-border-color);
+  padding-bottom: var(--spacing-md);
+  flex-shrink: 0;
+}
+
+.recommendations-section .recompft-back-title {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  margin: 0 0 var(--spacing-xs) 0;
+  background: linear-gradient(135deg, var(--ruby-red), var(--burgundy));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.recommendations-section .recompft-back-subtitle {
+  font-size: var(--text-sm);
+  color: var(--rose-gold);
+  font-weight: 600;
+  text-shadow: 0 0 5px rgba(232, 180, 184, 0.4);
+}
+
+/* Scrollable Content Area */
+.recommendations-section .recompft-back-content {
+  flex: 1;
+  min-height: 0;
+  margin-bottom: var(--spacing-md);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: var(--spacing-sm);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(224, 17, 95, 0.6) transparent;
+}
+
+.recommendations-section .recompft-back-content::-webkit-scrollbar {
+  width: 6px;
+  height: 0;
+}
+
+.recommendations-section .recompft-back-content::-webkit-scrollbar-track {
+  background: rgba(224, 17, 95, 0.1);
+  border-radius: var(--radius-sm);
+  margin: var(--spacing-xs) 0;
+}
+
+.recommendations-section .recompft-back-content::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--ruby-red), var(--burgundy));
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.recommendations-section .recompft-back-content::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, var(--burgundy), var(--ruby-red));
+  box-shadow: 0 0 8px rgba(224, 17, 95, 0.4);
+}
+
+/* Detail Sections */
+.recommendations-section .recompft-detail-section {
+  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: rgba(224, 17, 95, 0.05);
+  border-radius: var(--radius-lg);
+  border-left: 4px solid var(--ruby-red);
+  transition: all var(--duration-normal) var(--ease-in-out);
+  position: relative;
+  overflow: hidden;
+}
+
+.recommendations-section .recompft-detail-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(180deg, var(--ruby-red), var(--burgundy), var(--rose-gold));
+  transition: width var(--duration-normal) var(--ease-in-out);
+}
+
+.recommendations-section .recompft-detail-section:hover {
+  background: rgba(224, 17, 95, 0.08);
+  transform: translateX(6px);
+}
+
+.recommendations-section .recompft-detail-section:hover::before {
+  width: 6px;
+}
+
+.recommendations-section .recompft-detail-section:nth-child(2) {
+  border-left-color: var(--burgundy);
+}
+
+.recommendations-section .recompft-detail-section:nth-child(3) {
+  border-left-color: var(--rose-gold);
+}
+
+.recommendations-section .recompft-detail-section:nth-child(4) {
+  border-left-color: var(--soft-coral);
+}
+
+.recommendations-section .recompft-detail-section:nth-child(5) {
+  border-left-color: var(--champagne-pink);
+}
+
+.recommendations-section .recompft-detail-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid rgba(224, 17, 95, 0.2);
+}
+
+.recommendations-section .recompft-detail-icon {
+  font-size: var(--text-base);
+  color: var(--ruby-red);
+  filter: drop-shadow(0 0 4px rgba(224, 17, 95, 0.4));
+}
+
+.recommendations-section .recompft-detail-section:nth-child(2) .recompft-detail-icon {
+  color: var(--burgundy);
+  filter: drop-shadow(0 0 4px rgba(128, 0, 32, 0.4));
+}
+
+.recommendations-section .recompft-detail-section:nth-child(3) .recompft-detail-icon {
+  color: var(--rose-gold);
+  filter: drop-shadow(0 0 4px rgba(232, 180, 184, 0.4));
+}
+
+.recommendations-section .recompft-detail-section:nth-child(4) .recompft-detail-icon {
+  color: var(--soft-coral);
+  filter: drop-shadow(0 0 4px rgba(248, 131, 121, 0.4));
+}
+
+.recommendations-section .recompft-detail-section:nth-child(5) .recompft-detail-icon {
+  color: var(--champagne-pink);
+  filter: drop-shadow(0 0 4px rgba(241, 221, 207, 0.4));
+}
+
+.recommendations-section .recompft-detail-title {
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: var(--ruby-red);
+  margin: 0;
+  text-shadow: 0 0 8px rgba(224, 17, 95, 0.3);
+}
+
+.recommendations-section .recompft-detail-section:nth-child(2) .recompft-detail-title {
+  color: var(--burgundy);
+  text-shadow: 0 0 8px rgba(128, 0, 32, 0.3);
+}
+
+.recommendations-section .recompft-detail-section:nth-child(3) .recompft-detail-title {
+  color: var(--rose-gold);
+  text-shadow: 0 0 8px rgba(232, 180, 184, 0.3);
+}
+
+.recommendations-section .recompft-detail-section:nth-child(4) .recompft-detail-title {
+  color: var(--soft-coral);
+  text-shadow: 0 0 8px rgba(248, 131, 121, 0.3);
+}
+
+.recommendations-section .recompft-detail-section:nth-child(5) .recompft-detail-title {
+  color: var(--champagne-pink);
+  text-shadow: 0 0 8px rgba(241, 221, 207, 0.3);
+}
+
+/* Dark Mode Text Visibility Fixes */
+[data-theme="dark"] .recommendations-section .recompft-detail-title {
+  color: var(--rose-gold) !important;
+  text-shadow: 0 0 8px rgba(232, 180, 184, 0.5) !important;
+}
+
+[data-theme="dark"] .recommendations-section .recompft-detail-section:nth-child(2) .recompft-detail-title {
+  color: #F4C2C2 !important;
+  text-shadow: 0 0 8px rgba(244, 194, 194, 0.5) !important;
+}
+
+[data-theme="dark"] .recommendations-section .recompft-detail-section:nth-child(3) .recompft-detail-title {
+  color: var(--champagne-pink) !important;
+  text-shadow: 0 0 8px rgba(241, 221, 207, 0.5) !important;
+}
+
+[data-theme="dark"] .recommendations-section .recompft-detail-section:nth-child(4) .recompft-detail-title {
+  color: #FFB3AA !important;
+  text-shadow: 0 0 8px rgba(255, 179, 170, 0.5) !important;
+}
+
+[data-theme="dark"] .recommendations-section .recompft-detail-section:nth-child(5) .recompft-detail-title {
+  color: #F8E6D7 !important;
+  text-shadow: 0 0 8px rgba(248, 230, 215, 0.5) !important;
+}
+
+[data-theme="dark"] .recommendations-section .recompft-back-title {
+  color: var(--rose-gold) !important;
+  text-shadow: 0 0 8px rgba(232, 180, 184, 0.5) !important;
+}
+
+[data-theme="dark"] .recommendations-section .recompft-back-subtitle {
+  color: var(--champagne-pink) !important;
+  text-shadow: 0 0 5px rgba(241, 221, 207, 0.5) !important;
+}
+
+[data-theme="dark"] .recommendations-section .recompft-card-back .recompft-flip-hint {
+  color: #F4C2C2 !important;
+  text-shadow: 0 0 8px rgba(244, 194, 194, 0.6) !important;
+}
+
+[data-theme="dark"] .recommendations-section .recompft-card-back .recompft-hint-arrow {
+  color: #F4C2C2 !important;
+  text-shadow: 0 0 10px rgba(244, 194, 194, 0.6) !important;
+}
+
+[data-theme="dark"] .recommendations-section .recompft-relationship-title {
+  color: var(--rose-gold) !important;
+  text-shadow: 0 0 8px rgba(232, 180, 184, 0.4) !important;
+}
+
+[data-theme="dark"] .recommendations-section .recompft-relationship-badge {
+  color: var(--text-primary) !important;
+  background: rgba(232, 180, 184, 0.1) !important;
+  border-color: rgba(232, 180, 184, 0.3) !important;
+}
+
+/* Light Mode Text Visibility Fixes */
+[data-theme="light"] .recommendations-section .recompft-detail-title {
+  color: var(--deep-ruby) !important;
+  text-shadow: 0 0 5px rgba(185, 19, 80, 0.3) !important;
+}
+
+[data-theme="light"] .recommendations-section .recompft-detail-section:nth-child(2) .recompft-detail-title {
+  color: var(--dark-burgundy) !important;
+  text-shadow: 0 0 5px rgba(92, 0, 26, 0.3) !important;
+}
+
+[data-theme="light"] .recommendations-section .recompft-detail-section:nth-child(3) .recompft-detail-title {
+  color: #B8506B !important;
+  text-shadow: 0 0 5px rgba(184, 80, 107, 0.3) !important;
+}
+
+[data-theme="light"] .recommendations-section .recompft-detail-section:nth-child(4) .recompft-detail-title {
+  color: #D15A4A !important;
+  text-shadow: 0 0 5px rgba(209, 90, 74, 0.3) !important;
+}
+
+[data-theme="light"] .recommendations-section .recompft-detail-section:nth-child(5) .recompft-detail-title {
+  color: #C19A82 !important;
+  text-shadow: 0 0 5px rgba(193, 154, 130, 0.3) !important;
+}
+
+[data-theme="light"] .recommendations-section .recompft-back-title {
+  color: var(--deep-ruby) !important;
+  text-shadow: 0 0 5px rgba(185, 19, 80, 0.3) !important;
+}
+
+[data-theme="light"] .recommendations-section .recompft-back-subtitle {
+  color: #B8506B !important;
+  text-shadow: 0 0 3px rgba(184, 80, 107, 0.3) !important;
+}
+
+[data-theme="light"] .recommendations-section .recompft-card-back .recompft-flip-hint {
+  color: var(--dark-burgundy) !important;
+  text-shadow: 0 0 5px rgba(92, 0, 26, 0.4) !important;
+}
+
+[data-theme="light"] .recommendations-section .recompft-card-back .recompft-hint-arrow {
+  color: var(--dark-burgundy) !important;
+  text-shadow: 0 0 8px rgba(92, 0, 26, 0.4) !important;
+}
+
+[data-theme="light"] .recommendations-section .recompft-relationship-title {
+  color: #B8506B !important;
+  text-shadow: 0 0 5px rgba(184, 80, 107, 0.3) !important;
+}
+
+[data-theme="light"] .recommendations-section .recompft-relationship-badge {
+  color: var(--text-primary) !important;
+  background: rgba(232, 180, 184, 0.15) !important;
+  border-color: rgba(232, 180, 184, 0.4) !important;
+}
+
+.recommendations-section .recompft-detail-text {
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+  line-height: 1.6;
+  margin: 0;
+  text-align: justify;
+}
+
+/* Rating Display */
+.recommendations-section .recompft-rating-display {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.recommendations-section .recompft-star {
+  font-size: var(--text-lg);
+  transition: all var(--duration-normal) var(--ease-in-out);
+}
+
+.recommendations-section .recompft-star.recompft-filled {
+  color: var(--ruby-red);
+  text-shadow: 0 0 8px rgba(224, 17, 95, 0.5);
+  filter: drop-shadow(0 0 4px rgba(224, 17, 95, 0.3));
+}
+
+.recommendations-section .recompft-star.recompft-empty {
+  color: rgba(224, 17, 95, 0.3);
+}
+
+.recommendations-section .recompft-rating-text {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  font-weight: 600;
+  margin-left: var(--spacing-sm);
+}
+
+/* Type Badge */
+.recommendations-section .recompft-type-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, var(--rose-gold), var(--ruby-red));
+  color: var(--color-white);
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 12px rgba(224, 17, 95, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Back Card Footer */
+.recommendations-section .recompft-card-back .recompft-card-footer {
+  margin-top: var(--spacing-sm);
+  flex-shrink: 0;
+  border-top-color: var(--burgundy);
+  background: rgba(128, 0, 32, 0.05);
+}
+
+.recommendations-section .recompft-card-back .recompft-card-footer::before {
+  background: linear-gradient(90deg, transparent, rgba(128, 0, 32, 0.1), transparent);
+}
+
+/* ============================================ */
+/* NO CONTENT MESSAGE */
+/* ============================================ */
+
+.recommendations-section .recompft-no-content-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--spacing-4xl);
+  min-height: 500px;
+  position: relative;
+  overflow: hidden;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border-color);
+  border-radius: var(--radius-2xl);
+  backdrop-filter: var(--glass-backdrop);
+}
+
+.recommendations-section .recompft-no-content-icon {
+  width: 100px;
+  height: 100px;
+  margin-bottom: var(--spacing-xl);
+  color: var(--ruby-red);
+  opacity: 0.7;
+  filter: drop-shadow(0 0 20px rgba(224, 17, 95, 0.3));
+}
+
+.recommendations-section .recompft-no-content-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.recommendations-section .recompft-no-content-title {
+  font-size: var(--text-3xl);
+  font-weight: 800;
+  margin: 0 0 var(--spacing-lg) 0;
+  background: linear-gradient(135deg, var(--ruby-red), var(--burgundy));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 30px rgba(224, 17, 95, 0.3);
+}
+
+.recommendations-section .recompft-no-content-text {
+  font-size: var(--text-lg);
+  color: var(--text-secondary);
+  max-width: 600px;
+  line-height: 1.8;
+  margin: 0;
+}
+
+.recommendations-section .recompft-no-content-decoration {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.recommendations-section .recompft-floating-particle {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  animation: floatingParticles 12s ease-in-out infinite;
+  opacity: 0.7;
+}
+
+.recommendations-section .recompft-floating-particle:nth-child(1) {
+  top: 15%;
+  left: 10%;
+  background: var(--ruby-red);
+  animation-delay: 0s;
+  box-shadow: 0 0 10px rgba(224, 17, 95, 0.6);
+}
+
+.recommendations-section .recompft-floating-particle:nth-child(2) {
+  top: 60%;
+  right: 15%;
+  background: var(--burgundy);
+  animation-delay: 4s;
+  box-shadow: 0 0 10px rgba(128, 0, 32, 0.6);
+}
+
+.recommendations-section .recompft-floating-particle:nth-child(3) {
+  bottom: 25%;
+  left: 25%;
+  background: var(--rose-gold);
+  animation-delay: 8s;
+  box-shadow: 0 0 10px rgba(232, 180, 184, 0.6);
+}
+
+/* ============================================ */
+/* LIGHT THEME ADJUSTMENTS */
+/* ============================================ */
+
+[data-theme="light"] .recommendations-section .recompft-card-face {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(224, 17, 95, 0.2);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(255, 255, 255, 0.8);
+}
+
+[data-theme="light"] .recommendations-section .recompft-card-container:hover .recompft-card-face {
+  border-color: var(--ruby-red);
+  box-shadow: 
+    0 12px 40px rgba(0, 0, 0, 0.12),
+    0 0 20px rgba(224, 17, 95, 0.3),
+    0 0 0 1px var(--ruby-red);
+}
+
+[data-theme="light"] .recommendations-section .recompft-card-footer {
+  border-top-color: var(--ruby-red);
+  background: rgba(224, 17, 95, 0.05);
+}
+
+[data-theme="light"] .recommendations-section .recompft-flip-hint {
+  color: var(--ruby-red);
+  text-shadow: 0 0 8px rgba(224, 17, 95, 0.3);
+}
+
+[data-theme="light"] .recommendations-section .recompft-hint-arrow {
+  color: var(--ruby-red);
+  text-shadow: 0 0 10px rgba(224, 17, 95, 0.3);
+}
+
+[data-theme="light"] .recommendations-section .recompft-card-container:hover .recompft-hint-arrow {
+  color: var(--burgundy);
+  text-shadow: 0 0 15px rgba(128, 0, 32, 0.4);
+}
+
+[data-theme="light"] .recommendations-section .recompft-detail-section {
+  background: rgba(224, 17, 95, 0.03);
+  border-left-color: var(--ruby-red);
+}
+
+[data-theme="light"] .recommendations-section .recompft-detail-section:hover {
+  background: rgba(224, 17, 95, 0.06);
+}
+
+[data-theme="light"] .recommendations-section .recompft-content-container {
+  background: rgba(248, 249, 250, 0.8);
+  border-color: rgba(224, 17, 95, 0.3);
+}
+
+[data-theme="light"] .recommendations-section .recompft-content-header {
+  background: rgba(224, 17, 95, 0.05);
+  border-bottom-color: rgba(224, 17, 95, 0.2);
+}
+
+/* ============================================ */
+/* RESPONSIVE DESIGN */
+/* ============================================ */
+
+@media (max-width: 1024px) {
+  .recommendations-section {
+    padding: calc(70px + var(--spacing-3xl) + var(--spacing-xl)) 0 var(--spacing-3xl);
+  }
+
+  .recommendations-section .section-header {
+    margin-bottom: var(--spacing-3xl);
+    padding-top: var(--spacing-2xl);
+  }
+
+  .recommendations-section .neon-title {
+    font-size: var(--text-4xl);
+  }
+
+  .recommendations-section .neon-subtitle {
+    font-size: var(--text-lg);
+  }
+
+  .recommendations-section .recompft-card-container {
+    height: 750px;
+  }
+
+  .recommendations-section .recompft-recommendations-grid {
+    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+    gap: var(--spacing-2xl);
+    padding: var(--spacing-md) 0;
+  }
+
+  .recommendations-section .recompft-recommender-photo-large,
+  .recommendations-section .recompft-recommender-photo-temp.recompft-recommender-photo-large {
+    width: 80px;
+    height: 80px;
+  }
+
+  .recommendations-section .recompft-recommender-photo-temp.recompft-recommender-photo-large {
+    font-size: var(--text-lg);
+  }
+
+  .recommendations-section .recompft-flip-icon-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .recommendations-section .recompft-flip-icon-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .recommendations-section .recompft-featured-badge {
+    font-size: 9px;
+    padding: 5px var(--spacing-xs);
+  }
+
+  .recommendations-section .recompft-featured-star {
+    font-size: 11px;
+  }
+
+  .recommendations-section .recompft-featured-text {
+    font-size: 8px;
+  }
+}
+
+@media (max-width: 768px) {
+  .recommendations-section {
+    padding: calc(70px + var(--spacing-2xl) + var(--spacing-lg)) 0 var(--spacing-2xl);
+  }
+
+  .recommendations-section .section-header {
+    margin-bottom: var(--spacing-2xl);
+    padding-top: var(--spacing-xl);
+  }
+
+  .recommendations-section .neon-title {
+    font-size: var(--text-3xl);
+  }
+
+  .recommendations-section .neon-subtitle {
+    font-size: var(--text-base);
+  }
+
+  .recommendations-section .recompft-card-container {
+    height: 700px;
+  }
+
+  .recommendations-section .recompft-card-front,
+  .recommendations-section .recompft-card-back {
+    padding: var(--spacing-md);
+  }
+
+  .recommendations-section .recompft-recommender-name {
+    font-size: var(--text-lg);
+  }
+
+  .recommendations-section .recompft-recommendations-grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-2xl);
+    padding: var(--spacing-sm) 0;
+  }
+
+  .recommendations-section .recompft-recommender-photo-large,
+  .recommendations-section .recompft-recommender-photo-temp.recompft-recommender-photo-large {
+    width: 70px;
+    height: 70px;
+  }
+
+  .recommendations-section .recompft-recommender-photo-temp.recompft-recommender-photo-large {
+    font-size: var(--text-base);
+  }
+
+  .recommendations-section .recompft-flip-icon-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .recommendations-section .recompft-flip-icon-btn svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  .recommendations-section .recompft-content-text-wrapper {
+    max-height: 100px;
+  }
+
+  .recommendations-section .recompft-featured-badge {
+    font-size: 8px;
+    padding: 4px 6px;
+  }
+
+  .recommendations-section .recompft-featured-star {
+    font-size: 10px;
+  }
+
+  .recommendations-section .recompft-featured-text {
+    font-size: 7px;
+  }
+}
+
+@media (max-width: 480px) {
+  .recommendations-section {
+    padding: calc(60px + var(--spacing-xl) + var(--spacing-md)) 0 var(--spacing-xl);
+  }
+
+  .recommendations-section .section-header {
+    margin-bottom: var(--spacing-xl);
+    padding-top: var(--spacing-lg);
+  }
+
+  .recommendations-section .neon-title {
+    font-size: var(--text-2xl);
+  }
+
+  .recommendations-section .neon-subtitle {
+    font-size: var(--text-sm);
+  }
+
+  .recommendations-section .recompft-card-container {
+    height: 800px;
+  }
+
+  .recommendations-section .recompft-card-front,
+  .recommendations-section .recompft-card-back {
+    padding: var(--spacing-sm);
+  }
+
+  .recommendations-section .recompft-recommender-name {
+    font-size: var(--text-base);
+  }
+
+  .recommendations-section .recompft-recommendations-grid {
+    gap: var(--spacing-xl);
+  }
+
+  .recommendations-section .recompft-recommender-photo-large,
+  .recommendations-section .recompft-recommender-photo-temp.recompft-recommender-photo-large {
+    width: 60px;
+    height: 60px;
+  }
+
+  .recommendations-section .recompft-recommender-photo-temp.recompft-recommender-photo-large {
+    font-size: var(--text-sm);
+  }
+
+  .recommendations-section .recompft-flip-icon-btn {
+    width: 28px;
+    height: 28px;
+  }
+
+  .recommendations-section .recompft-flip-icon-btn svg {
+    width: 10px;
+    height: 10px;
+  }
+
+  .recommendations-section .recompft-content-text-wrapper {
+    max-height: 80px;
+    padding: var(--spacing-sm);
+  }
+
+  .recommendations-section .recompft-featured-badge {
+    top: var(--spacing-sm);
+    left: var(--spacing-sm);
+    padding: 3px 5px;
+    font-size: 7px;
+  }
+
+  .recommendations-section .recompft-featured-star {
+    font-size: 8px;
+  }
+
+  .recommendations-section .recompft-featured-text {
+    font-size: 6px;
+    letter-spacing: 0.5px;
+  }
+
+  .recommendations-section .recompft-relationship-badge {
+    padding: 4px var(--spacing-sm);
+    font-size: var(--text-xs);
+  }
+
+  .recommendations-section .recompft-linkedin-link {
+    font-size: var(--text-xs);
+  }
+
+  .recommendations-section .recompft-linkedin-icon {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+/* ============================================ */
+/* ANIMATIONS */
+/* ============================================ */
+
+@keyframes gradientShift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes shimmerFooter {
+  0%, 100% { 
+    opacity: 0; 
+  }
+  50% { 
+    opacity: 1; 
+  }
+}
+
+@keyframes pulseText {
+  0%, 100% { 
+    opacity: 1; 
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 0.8; 
+    transform: scale(1.05);
+  }
+}
+
+@keyframes bounceArrow {
+  0%, 100% { 
+    transform: translateX(0); 
+  }
+  50% { 
+    transform: translateX(5px); 
+  }
+}
+
+@keyframes floatingParticles {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px) rotate(0deg);
+    opacity: 0.7;
+  }
+  25% {
+    transform: translateY(-30px) translateX(15px) rotate(90deg);
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(-60px) translateX(-15px) rotate(180deg);
+    opacity: 0.5;
+  }
+  75% {
+    transform: translateY(-30px) translateX(20px) rotate(270deg);
+    opacity: 1;
+  }
+}
+
+@keyframes featuredPulse {
+  0%, 100% {
+    box-shadow: 
+      0 4px 12px rgba(224, 17, 95, 0.4),
+      0 0 0 1px rgba(255, 255, 255, 0.2);
+  }
+  50% {
+    box-shadow: 
+      0 6px 20px rgba(128, 0, 32, 0.5),
+      0 0 0 2px rgba(255, 255, 255, 0.3);
+  }
+}
+
+@keyframes starTwinkle {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
+    filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.8));
+  }
+  25% {
+    transform: scale(1.1) rotate(90deg);
+    filter: drop-shadow(0 0 6px rgba(255, 255, 255, 1));
+  }
+  50% {
+    transform: scale(1.2) rotate(180deg);
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 1.2));
+  }
+  75% {
+    transform: scale(1.1) rotate(270deg);
+    filter: drop-shadow(0 0 6px rgba(255, 255, 255, 1));
+  }
+}
+
+/* Entry Animations */
+.recommendations-section .recompft-recommendations-grid {
+  animation: fadeInUp 0.8s ease-out;
+}
+
+.recommendations-section .recompft-card-container {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.recommendations-section .recompft-card-container:nth-child(1) { animation-delay: 0.1s; }
+.recommendations-section .recompft-card-container:nth-child(2) { animation-delay: 0.2s; }
+.recommendations-section .recompft-card-container:nth-child(3) { animation-delay: 0.3s; }
+.recommendations-section .recompft-card-container:nth-child(4) { animation-delay: 0.4s; }
+.recommendations-section .recompft-card-container:nth-child(5) { animation-delay: 0.5s; }
+.recommendations-section .recompft-card-container:nth-child(6) { animation-delay: 0.6s; }
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================================ */
+/* ACCESSIBILITY & REDUCED MOTION */
+/* ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .recommendations-section .recompft-card-container,
+  .recommendations-section .recompft-card-inner,
+  .recommendations-section .recompft-card-face,
+  .recommendations-section .recompft-flip-icon-btn,
+  .recommendations-section .recompft-detail-section,
+  .recommendations-section .recompft-content-container,
+  .recommendations-section .recompft-linkedin-link,
+  .recommendations-section .recompft-recommendations-grid,
+  .recommendations-section .recompft-no-content-message {
+    animation: none;
+    transition: none;
+  }
+
+  .recommendations-section .recompft-card-inner {
+    transition: transform 0.2s ease;
+  }
+
+  .recommendations-section .recompft-card-footer::before,
+  .recommendations-section .recompft-hint-text,
+  .recommendations-section .recompft-hint-arrow,
+  .recommendations-section .recompft-floating-particle,
+  .recommendations-section .recompft-featured-badge,
+  .recommendations-section .recompft-featured-star,
+  .recommendations-section .recompft-recommender-photo-temp.recompft-recommender-photo-large::before {
+    animation: none;
+  }
+
+  .recommendations-section .recompft-featured-badge::before {
+    display: none;
+  }
+}
+
+.recommendations-section .recompft-card-container:focus-visible {
+  outline: 2px solid var(--ruby-red);
+  outline-offset: 4px;
+}
+
+.recommendations-section .recompft-flip-icon-btn:focus-visible {
+  outline: 2px solid var(--ruby-red);
+  outline-offset: 2px;
+}
+
+.recommendations-section .recompft-linkedin-link:focus-visible {
+  outline: 2px solid var(--rose-gold);
+  outline-offset: 2px;
+}
+
+/* ============================================ */
+/* HOVER ENHANCEMENTS */
+/* ============================================ */
+
+.recommendations-section .recompft-card-container:hover .recompft-recommender-photo-large {
+  transform: scale(1.05);
+}
+
+.recommendations-section .recompft-card-container:hover .recompft-recommender-photo-temp.recompft-recommender-photo-large {
+  transform: scale(1.05);
+}
+
+.recommendations-section .recompft-card-container:hover .recompft-relationship-badge {
+  background: rgba(232, 180, 184, 0.2);
+  border-color: var(--rose-gold);
+}
+
+.recommendations-section .recompft-card-container:hover .recompft-featured-badge {
+  transform: scale(1.05);
+}
+
+/* ============================================ */
+/* UTILITY CLASSES */
+/* ============================================ */
+
+.recommendations-section .text-gradient-ruby {
+  background: linear-gradient(135deg, var(--ruby-red), var(--burgundy));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.recommendations-section .border-glow-ruby {
+  border: 1px solid var(--ruby-red);
+  box-shadow: 0 0 15px rgba(224, 17, 95, 0.4);
+}
+
+.recommendations-section .bg-glass-ruby {
+  background: rgba(224, 17, 95, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(224, 17, 95, 0.2);
+}
+
+/* ============================================ */
+/* SPECIAL FEATURED BADGE ENHANCEMENTS */
+/* ============================================ */
+
+.recommendations-section .recompft-featured-badge {
+  /* Enhanced shadow for better visibility */
+  box-shadow: 
+    0 4px 12px rgba(224, 17, 95, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.2),
+    0 2px 8px rgba(128, 0, 32, 0.3);
+  
+  /* Ensure it's always on top */
+  z-index: 20;
+  
+  /* Slight transform for depth */
+  transform: translateZ(10px);
+}
+
+.recommendations-section .recompft-featured-badge:hover {
+  transform: translateZ(10px) scale(1.05);
+  box-shadow: 
+    0 6px 16px rgba(224, 17, 95, 0.5),
+    0 0 0 2px rgba(255, 255, 255, 0.3),
+    0 4px 12px rgba(128, 0, 32, 0.4);
+}
+
+/* ============================================ */
+/* SPECIAL EFFECTS FOR RUBY THEME */
+/* ============================================ */
+
+.recommendations-section .recompft-card-container:hover {
+  /* Ruby glow effect on hover */
+  filter: drop-shadow(0 0 20px rgba(224, 17, 95, 0.2));
+}
+
+.recommendations-section .recompft-card-container.recompft-flipped {
+  /* Burgundy glow effect when flipped */
+  filter: drop-shadow(0 0 20px rgba(128, 0, 32, 0.2));
+}
+
+/* Enhanced rating stars */
+.recommendations-section .recompft-rating-display:hover .recompft-star.recompft-filled {
+  transform: scale(1.1);
+  text-shadow: 0 0 12px rgba(224, 17, 95, 0.8);
+}
+
+/* Enhanced LinkedIn link */
+.recommendations-section .recompft-linkedin-link:hover .recompft-linkedin-icon {
+  transform: scale(1.1);
+  filter: drop-shadow(0 0 8px rgba(232, 180, 184, 0.6));
+}
+
+/* ============================================ */
+/* PERFORMANCE OPTIMIZATIONS */
+/* ============================================ */
+
+.recommendations-section .recompft-card-container {
+  will-change: transform;
+}
+
+.recommendations-section .recompft-card-inner {
+  will-change: transform;
+}
+
+.recommendations-section .recompft-featured-badge {
+  will-change: transform;
+}
+
+/* GPU acceleration for smooth animations */
+.recommendations-section .recompft-card-face,
+.recommendations-section .recompft-flip-icon-btn,
+.recommendations-section .recompft-recommender-photo-large,
+.recommendations-section .recompft-recommender-photo-temp {
+  transform: translateZ(0);
+}
+
+/* ============================================ */
+/* CRITICAL 3D FLIP FIX - VENDOR PREFIXES */
+/* ============================================ */
+
+/* Ensure cross-browser compatibility for 3D transforms */
+.recommendations-section .recompft-card-container {
+  -webkit-perspective: 1200px;
+  -moz-perspective: 1200px;
+  perspective: 1200px;
+}
+
+.recommendations-section .recompft-card-inner {
+  -webkit-transform-style: preserve-3d;
+  -moz-transform-style: preserve-3d;
+  transform-style: preserve-3d;
+  -webkit-transition: -webkit-transform 0.8s var(--ease-in-out);
+  -moz-transition: -moz-transform 0.8s var(--ease-in-out);
+  transition: transform 0.8s var(--ease-in-out);
+}
+
+.recommendations-section .recompft-card-container.recompft-flipped .recompft-card-inner {
+  -webkit-transform: rotateY(180deg);
+  -moz-transform: rotateY(180deg);
+  transform: rotateY(180deg);
+}
+
+.recommendations-section .recompft-card-face {
+  -webkit-backface-visibility: hidden;
+  -moz-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+.recommendations-section .recompft-card-front {
+  -webkit-transform: rotateY(0deg);
+  -moz-transform: rotateY(0deg);
+  transform: rotateY(0deg);
+}
+
+.recommendations-section .recompft-card-back {
+  -webkit-transform: rotateY(180deg);
+  -moz-transform: rotateY(180deg);
+  transform: rotateY(180deg);
+}
+
+/* ============================================ */
+/* BROWSER-SPECIFIC FIXES */
+/* ============================================ */
+
+/* Firefox specific fixes */
+@-moz-document url-prefix() {
+  .recommendations-section .recompft-card-face {
+    -moz-transform-style: preserve-3d;
+    transform-style: preserve-3d;
+  }
+}
+
+/* Safari specific fixes */
+@supports (-webkit-appearance: none) {
+  .recommendations-section .recompft-card-inner {
+    -webkit-transform-style: preserve-3d;
+    transform-style: preserve-3d;
+  }
+  
+  .recommendations-section .recompft-card-face {
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+  }
+}
+
+/* Edge/IE specific fixes */
+@supports (-ms-ime-align: auto) {
+  .recommendations-section .recompft-card-container {
+    perspective: 1200px;
+  }
+  
+  .recommendations-section .recompft-card-inner {
+    transform-style: preserve-3d;
+  }
+}

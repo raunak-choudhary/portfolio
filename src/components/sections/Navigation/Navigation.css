@@ -1,0 +1,377 @@
+/* src/components/sections/Navigation/Navigation.css */
+
+.navigation-section {
+  padding: var(--spacing-4xl) 0;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.navigation-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 20% 80%, rgba(0, 255, 255, 0.1) 0%, transparent 50%),
+              radial-gradient(circle at 80% 20%, rgba(255, 0, 255, 0.1) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Light theme gradient overlay */
+[data-theme="light"] .navigation-section::before {
+  background: radial-gradient(circle at 20% 80%, rgba(139, 0, 255, 0.06) 0%, transparent 50%),
+              radial-gradient(circle at 80% 20%, rgba(255, 102, 0, 0.06) 0%, transparent 50%);
+}
+
+/* Enhanced Section Header Styling - Matching Contact Section with Different Animation */
+.section-header {
+  text-align: center;
+  margin-bottom: var(--spacing-2xl);
+  position: relative;
+  z-index: 2;
+}
+
+.neon-title {
+  font-size: var(--text-5xl);
+  font-weight: 800;
+  margin-bottom: var(--spacing-lg);
+  background: var(--gradient-hero);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+  position: relative;
+  animation: gradientShift 4s ease-in-out infinite;
+}
+
+.neon-title::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100px;
+  height: 3px;
+  background: var(--gradient-primary);
+  border-radius: 2px;
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.6);
+}
+
+.neon-subtitle {
+  font-size: var(--text-xl);
+  color: var(--text-secondary);
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.6;
+  font-weight: 500;
+  background: linear-gradient(135deg, var(--text-secondary), var(--neon-purple));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 20px rgba(138, 43, 226, 0.3);
+}
+
+/* Different Animation for Navigation - Gradient Shift */
+@keyframes gradientShift {
+  0%, 100% {
+    background-position: 0% 50%;
+    filter: hue-rotate(0deg);
+  }
+  25% {
+    background-position: 100% 50%;
+    filter: hue-rotate(90deg);
+  }
+  50% {
+    background-position: 100% 100%;
+    filter: hue-rotate(180deg);
+  }
+  75% {
+    background-position: 0% 100%;
+    filter: hue-rotate(270deg);
+  }
+}
+
+.navigation-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  margin-top: 3rem;
+  position: relative;
+  z-index: 1;
+}
+
+.navigation-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-xl);
+  padding: 2rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.navigation-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--card-gradient);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: -1;
+  border-radius: inherit;
+}
+
+.navigation-card:hover::before {
+  opacity: 0.1;
+}
+
+.navigation-card:hover {
+  transform: translateY(-10px) scale(1.02);
+  border-color: var(--neon-cyan);
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.3),
+    0 0 20px rgba(0, 255, 255, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.card-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  filter: drop-shadow(0 0 10px currentColor);
+  transition: transform 0.3s ease;
+}
+
+.navigation-card:hover .card-icon {
+  transform: scale(1.2) rotate(5deg);
+}
+
+.card-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 2;
+}
+
+/* Fixed hover effect for card titles */
+.navigation-card:hover .card-title {
+  color: var(--neon-cyan);
+  text-shadow: 0 0 20px var(--neon-cyan);
+  transform: translateY(-2px);
+  font-weight: 700;
+}
+
+/* Alternative gradient effect that works reliably */
+.navigation-card[data-card="internships"]:hover .card-title,
+.navigation-card[data-card="certifications"]:hover .card-title {
+  background: none;
+  -webkit-background-clip: initial;
+  background-clip: initial;
+  -webkit-text-fill-color: initial;
+  color: var(--neon-orange);
+  text-shadow: 0 0 20px var(--neon-orange);
+}
+
+.card-description {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0;
+  transition: color 0.3s ease;
+  position: relative;
+  z-index: 2;
+}
+
+.navigation-card:hover .card-description {
+  color: var(--text-primary);
+}
+
+.card-hover-effect {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), 
+                             rgba(0, 255, 255, 0.1) 0%, 
+                             transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.navigation-card:hover .card-hover-effect {
+  opacity: 1;
+}
+
+/* Light Theme Adjustments */
+[data-theme="light"] .neon-title {
+  text-shadow: 0 0 30px rgba(138, 43, 226, 0.5);
+}
+
+[data-theme="light"] .neon-title::after {
+  box-shadow: 0 0 15px var(--neon-purple);
+}
+
+[data-theme="light"] .neon-subtitle {
+  text-shadow: 0 0 20px rgba(255, 20, 147, 0.3);
+}
+
+[data-theme="light"] .navigation-card {
+  background: var(--card-bg-primary);
+  border-color: var(--border-primary);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .navigation-card:hover {
+  border-color: var(--neon-purple);
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.08),
+    0 0 20px rgba(139, 0, 255, 0.2),
+    inset 0 1px 0 rgba(0, 0, 0, 0.1);
+  background: var(--card-hover-bg);
+}
+
+[data-theme="light"] .navigation-card:hover .card-title {
+  color: var(--neon-purple);
+  text-shadow: 0 0 20px rgba(139, 0, 255, 0.3);
+}
+
+[data-theme="light"] .navigation-card[data-card="internships"]:hover .card-title,
+[data-theme="light"] .navigation-card[data-card="certifications"]:hover .card-title {
+  color: var(--neon-pink);
+  text-shadow: 0 0 20px rgba(255, 0, 128, 0.3);
+}
+
+[data-theme="light"] .card-hover-effect {
+  background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), 
+                             rgba(139, 0, 255, 0.08) 0%, 
+                             transparent 70%);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .navigation-section {
+    padding: var(--spacing-3xl) 0;
+  }
+  
+  .section-header {
+    margin-bottom: 3rem;
+  }
+  
+  .neon-title {
+    font-size: var(--text-4xl);
+  }
+  
+  .neon-subtitle {
+    font-size: var(--text-lg);
+  }
+  
+  .navigation-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    margin-top: 2rem;
+  }
+  
+  .navigation-card {
+    padding: 1.5rem;
+    min-height: 150px;
+  }
+  
+  .card-icon {
+    font-size: 2.5rem;
+  }
+  
+  .card-title {
+    font-size: 1.3rem;
+  }
+  
+  .card-description {
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .neon-title {
+    font-size: var(--text-3xl);
+  }
+  
+  .neon-subtitle {
+    font-size: var(--text-base);
+  }
+  
+  .navigation-card {
+    padding: 1rem;
+    min-height: 120px;
+  }
+  
+  .card-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .card-title {
+    font-size: 1.1rem;
+    margin-bottom: 0.25rem;
+  }
+}
+
+/* Animation for grid items */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.navigation-card {
+  animation: fadeInUp 0.6s ease forwards;
+}
+
+.navigation-card:nth-child(1) { animation-delay: 0.1s; }
+.navigation-card:nth-child(2) { animation-delay: 0.2s; }
+.navigation-card:nth-child(3) { animation-delay: 0.3s; }
+.navigation-card:nth-child(4) { animation-delay: 0.4s; }
+.navigation-card:nth-child(5) { animation-delay: 0.5s; }
+.navigation-card:nth-child(6) { animation-delay: 0.6s; }
+.navigation-card:nth-child(7) { animation-delay: 0.7s; }
+.navigation-card:nth-child(8) { animation-delay: 0.8s; }
+.navigation-card:nth-child(9) { animation-delay: 0.9s; }
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .navigation-card,
+  .neon-title {
+    animation: none;
+    transition: none;
+  }
+  
+  .navigation-card:hover {
+    transform: none;
+  }
+}

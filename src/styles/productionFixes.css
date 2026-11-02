@@ -1,0 +1,118 @@
+/* src/styles/productionFixes.css */
+
+/* Production Environment Specific Fixes */
+.production-environment {
+  /* Force consistent scaling in production */
+  zoom: 1 !important;
+  -webkit-zoom: 1 !important;
+  -moz-zoom: 1 !important;
+  
+  /* Transform reset */
+  transform: scale(1) !important;
+  -webkit-transform: scale(1) !important;
+  -moz-transform: scale(1) !important;
+  -ms-transform: scale(1) !important;
+  transform-origin: 0 0 !important;
+  
+  /* Typography baseline */
+  font-size: 16px !important;
+  -webkit-text-size-adjust: 100% !important;
+  -ms-text-size-adjust: 100% !important;
+  text-size-adjust: 100% !important;
+}
+
+/* High-DPI display fixes */
+.high-dpi.production-environment {
+  /* Additional fixes for retina displays in production */
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+}
+
+/* Browser-specific production fixes */
+@supports (-webkit-appearance: none) {
+  /* Safari in production */
+  .production-environment {
+    -webkit-transform: scale(1) !important;
+    transform: scale(1) !important;
+    -webkit-text-size-adjust: 100% !important;
+  }
+}
+
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+  /* Chrome/Webkit in production */
+  .production-environment {
+    zoom: 1 !important;
+    transform: scale(1) !important;
+  }
+}
+
+@-moz-document url-prefix() {
+  /* Firefox in production */
+  .production-environment {
+    -moz-transform: scale(1) !important;
+    transform: scale(1) !important;
+  }
+}
+
+/* Container fixes for production */
+.production-environment .container {
+  width: 100% !important;
+  max-width: 1200px !important;
+  margin: 0 auto !important;
+  box-sizing: border-box !important;
+}
+
+/* Responsive fixes for production */
+@media (max-width: 1200px) {
+  .production-environment .container {
+    max-width: 100% !important;
+    padding: 0 24px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .production-environment {
+    font-size: 15px !important;
+  }
+  
+  .production-environment .container {
+    padding: 0 16px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .production-environment {
+    font-size: 14px !important;
+  }
+  
+  .production-environment .container {
+    padding: 0 12px !important;
+  }
+}
+
+/* Force reflow fix for production */
+.production-environment::after {
+  content: '';
+  display: block;
+  height: 0;
+  clear: both;
+  visibility: hidden;
+}
+
+/* Input scaling fixes for production */
+.production-environment input,
+.production-environment textarea,
+.production-environment select,
+.production-environment button {
+  font-size: 16px !important;
+  zoom: 1 !important;
+  transform: scale(1) !important;
+  -webkit-text-size-adjust: 100% !important;
+}
+
+/* Image scaling fixes for production */
+.production-environment img {
+  max-width: 100% !important;
+  height: auto !important;
+  transform: scale(1) !important;
+}
