@@ -2,12 +2,63 @@
 // 1. CREATE: src/components/admin/Analytics/SocialMediaAnalytics.js
 // =====================================================
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../../../services/supabaseClient';
 import MetricsCard from './MetricsCard';
 import './SocialMediaAnalytics.css';
 
-const SocialMediaAnalytics = ({ selectedPeriod = 30 }) => {
+const SocialMediaAnalytics = ({ dateRange = '30d', selectedPeriod }) => {
+  const periodDays = useMemo(() => {
+    if (typeof selectedPeriod === 'number') {
+      return selectedPeriod;
+    }
+
+    switch (dateRange) {
+      case '7d': return 7;
+      case '30d': return 30;
+      case '90d': return 90;
+      case '1y': return 365;
+      default: return 30;
+    }
+  }, [dateRange, selectedPeriod]);
+
+  const calculateConversionRate = useCallback((socialClicks, totalDays) => {
+    return totalDays > 0 ? (socialClicks / totalDays).toFixed(1) : 0;
+  }, []);
+
+  const processSocialMediaData = useCallback((clicks) => {
+    const platformBreakdown = {};
+    const dailyData = {};
+    
+    clicks.forEach(click => {
+      const platform = click.event_label || 'unknown';
+      const date = new Date(click.created_at).toISOString().split('T')[0];
+      
+      platformBreakdown[platform] = (platformBreakdown[platform] || 0) + 1;
+      
+      if (!dailyData[date]) {
+        dailyData[date] = {};
+      }
+      dailyData[date][platform] = (dailyData[date][platform] || 0) + 1;
+    });
+
+    const dailyTrends = Object.entries(dailyData).map(([date, platforms]) => ({
+      date,
+      ...platforms,
+      total: Object.values(platforms).reduce((sum, count) => sum + count, 0)
+    }));
+
+    const topPlatform = Object.entries(platformBreakdown)
+      .sort(([,a], [,b]) => b - a)[0]?.[0] || null;
+
+    return {
+      totalSocialClicks: clicks.length,
+      platformBreakdown,
+      dailyTrends,
+      topPlatform,
+      conversionRate: calculateConversionRate(clicks.length, periodDays)
+    };
+  }, [calculateConversionRate, periodDays]);
 
   const fetchSocialMediaData = useCallback(async () => {
     try {
@@ -16,7 +67,7 @@ const SocialMediaAnalytics = ({ selectedPeriod = 30 }) => {
 
       const endDate = new Date();
       const startDate = new Date();
-      startDate.setDate(endDate.getDate() - selectedPeriod);
+      startDate.setDate(endDate.getDate() - periodDays);
 
       // Fetch social media click events
       const { data: socialClicks, error: clicksError } = await supabase
@@ -39,7 +90,7 @@ const SocialMediaAnalytics = ({ selectedPeriod = 30 }) => {
     } finally {
       setLoading(false);
     }
-  }, [selectedPeriod]);
+  }, [periodDays, processSocialMediaData]);
 
   const [socialData, setSocialData] = useState({
     totalSocialClicks: 0,
@@ -53,50 +104,7 @@ const SocialMediaAnalytics = ({ selectedPeriod = 30 }) => {
 
   useEffect(() => {
     fetchSocialMediaData();
-  }, [selectedPeriod, fetchSocialMediaData]);
-
-  const processSocialMediaData = (clicks) => {
-    const platformBreakdown = {};
-    const dailyData = {};
-    
-    clicks.forEach(click => {
-      const platform = click.event_label; // linkedin, github, instagram
-      const date = new Date(click.created_at).toISOString().split('T')[0];
-      
-      // Platform breakdown
-      platformBreakdown[platform] = (platformBreakdown[platform] || 0) + 1;
-      
-      // Daily trends
-      if (!dailyData[date]) {
-        dailyData[date] = {};
-      }
-      dailyData[date][platform] = (dailyData[date][platform] || 0) + 1;
-    });
-
-    // Convert daily data to array for charts
-    const dailyTrends = Object.entries(dailyData).map(([date, platforms]) => ({
-      date,
-      ...platforms,
-      total: Object.values(platforms).reduce((sum, count) => sum + count, 0)
-    }));
-
-    // Find top platform
-    const topPlatform = Object.entries(platformBreakdown)
-      .sort(([,a], [,b]) => b - a)[0]?.[0] || null;
-
-    return {
-      totalSocialClicks: clicks.length,
-      platformBreakdown,
-      dailyTrends,
-      topPlatform,
-      conversionRate: calculateConversionRate(clicks.length, selectedPeriod)
-    };
-  };
-
-  const calculateConversionRate = (socialClicks, totalDays) => {
-    // Simple conversion rate: social clicks per day
-    return totalDays > 0 ? (socialClicks / totalDays).toFixed(1) : 0;
-  };
+  }, [fetchSocialMediaData]);
 
   const getPlatformIcon = (platform) => {
     const icons = {
@@ -137,8 +145,8 @@ const SocialMediaAnalytics = ({ selectedPeriod = 30 }) => {
   return (
     <div className="social-media-analytics">
       <div className="section-header">
-        <h3>🌐 Social Media Engagement</h3>
-        <p>Track which platforms drive the most professional connections</p>
+        <h3>🌐 Social Link Clicks</h3>
+        <p>Measured from portfolio click events only. External GitHub and LinkedIn analytics are not connected yet.</p>
       </div>
 
       {/* Key Metrics */}
@@ -146,7 +154,7 @@ const SocialMediaAnalytics = ({ selectedPeriod = 30 }) => {
         <MetricsCard
           title="Total Social Clicks"
           value={socialData.totalSocialClicks}
-          subtitle={`Last ${selectedPeriod} days`}
+          subtitle={`Last ${periodDays} days`}
           trend="up"
           icon="🔗"
         />
@@ -213,20 +221,20 @@ const SocialMediaAnalytics = ({ selectedPeriod = 30 }) => {
           <div className="insight-card">
             <h5>💼 LinkedIn Performance</h5>
             <p>
-              {socialData.platformBreakdown.linkedin || 0} professional connections initiated.
+              {socialData.platformBreakdown.linkedin || 0} LinkedIn link clicks recorded.
               {socialData.platformBreakdown.linkedin > socialData.platformBreakdown.github ? 
-                " Great professional engagement!" : 
-                " Consider optimizing LinkedIn presence."}
+                " Visitors are using LinkedIn as the primary next step." : 
+                " LinkedIn clicks are still lower than other tracked links."}
             </p>
           </div>
           
           <div className="insight-card">
             <h5>👨‍💻 GitHub Activity</h5>
             <p>
-              {socialData.platformBreakdown.github || 0} developers checked your code.
+              {socialData.platformBreakdown.github || 0} GitHub link clicks recorded.
               {socialData.platformBreakdown.github > 10 ? 
-                " Strong technical interest!" : 
-                " Showcase more projects to attract developers."}
+                " GitHub links are getting measurable attention." : 
+                " Add clear project proof links to improve GitHub click-through."}
             </p>
           </div>
           
@@ -234,10 +242,10 @@ const SocialMediaAnalytics = ({ selectedPeriod = 30 }) => {
             <h5>📊 Overall Engagement</h5>
             <p>
               {socialData.totalSocialClicks > 20 ? 
-                "Excellent social media engagement! Your portfolio is attracting attention." :
+                "Strong social link click activity for this period." :
                 socialData.totalSocialClicks > 5 ?
-                "Good social engagement. Consider promoting your portfolio more." :
-                "Increase social media presence to drive more traffic."}
+                "Some social link activity is visible. Keep proof links easy to find." :
+                "No strong signal yet. This only measures clicks from your portfolio."}
             </p>
           </div>
         </div>

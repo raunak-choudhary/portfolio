@@ -2,7 +2,11 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSupabase } from '../../../../hooks/useSupabase';
 import LoadingSpinner from '../../../common/LoadingSpinner';
 import './CertificationsManager.css';
-import { triggerPublicRefresh } from '../../../../services/adminDataService';
+import {
+  getAdminSupabaseClient,
+  removeAdminStorageFiles,
+  triggerPublicRefresh
+} from '../../../../services/adminDataService';
 
 const CertificationsManager = () => {
   // ============================================================================
@@ -344,11 +348,7 @@ const CertificationsManager = () => {
     setUploadProgress(0);
 
     try {
-      const { createClient } = await import('@supabase/supabase-js');
-      const supabaseAdmin = createClient(
-        process.env.REACT_APP_SUPABASE_URL,
-        process.env.REACT_APP_SUPABASE_SERVICE_ROLE_KEY
-      );
+      const supabaseAdmin = getAdminSupabaseClient();
 
       const timestamp = Date.now();
       const fileExtension = file.name.split('.').pop();
@@ -432,11 +432,7 @@ const CertificationsManager = () => {
     setUploadProgress(0);
 
     try {
-      const { createClient } = await import('@supabase/supabase-js');
-      const supabaseAdmin = createClient(
-        process.env.REACT_APP_SUPABASE_URL,
-        process.env.REACT_APP_SUPABASE_SERVICE_ROLE_KEY
-      );
+      const supabaseAdmin = getAdminSupabaseClient();
 
       const timestamp = Date.now();
       const fileExtension = file.name.split('.').pop();
@@ -520,11 +516,7 @@ const CertificationsManager = () => {
     setUploadProgress(0);
 
     try {
-      const { createClient } = await import('@supabase/supabase-js');
-      const supabaseAdmin = createClient(
-        process.env.REACT_APP_SUPABASE_URL,
-        process.env.REACT_APP_SUPABASE_SERVICE_ROLE_KEY
-      );
+      const supabaseAdmin = getAdminSupabaseClient();
 
       const timestamp = Date.now();
       const fileExtension = file.name.split('.').pop();
@@ -598,24 +590,10 @@ const CertificationsManager = () => {
     if (!formData.issuer_logo_url) return;
 
     try {
-      const { createClient } = await import('@supabase/supabase-js');
-      const supabaseAdmin = createClient(
-        process.env.REACT_APP_SUPABASE_URL,
-        process.env.REACT_APP_SUPABASE_SERVICE_ROLE_KEY
-      );
-
-      // Extract file path from URL
-      const filePath = formData.issuer_logo_url.split('/storage/v1/object/public/certification-badges/')[1];
-      
-      if (filePath) {
-        // Delete file from storage
-        const { error: storageError } = await supabaseAdmin.storage
-          .from('certification-badges')
-          .remove([filePath]);
-
-        if (storageError) {
-          console.warn('⚠️ Could not delete file from storage:', storageError);
-        }
+      try {
+        await removeAdminStorageFiles('certification-badges', formData.issuer_logo_url);
+      } catch (storageError) {
+        console.warn('⚠️ Could not delete file from storage:', storageError);
       }
 
       // Remove logo URL from form
@@ -642,24 +620,10 @@ const CertificationsManager = () => {
     if (!formData.badge_image_url) return;
 
     try {
-      const { createClient } = await import('@supabase/supabase-js');
-      const supabaseAdmin = createClient(
-        process.env.REACT_APP_SUPABASE_URL,
-        process.env.REACT_APP_SUPABASE_SERVICE_ROLE_KEY
-      );
-
-      // Extract file path from URL
-      const filePath = formData.badge_image_url.split('/storage/v1/object/public/certification-badges/')[1];
-      
-      if (filePath) {
-        // Delete file from storage
-        const { error: storageError } = await supabaseAdmin.storage
-          .from('certification-badges')
-          .remove([filePath]);
-
-        if (storageError) {
-          console.warn('⚠️ Could not delete file from storage:', storageError);
-        }
+      try {
+        await removeAdminStorageFiles('certification-badges', formData.badge_image_url);
+      } catch (storageError) {
+        console.warn('⚠️ Could not delete file from storage:', storageError);
       }
 
       // Remove badge URL from form
@@ -686,24 +650,10 @@ const CertificationsManager = () => {
     if (!formData.certificate_pdf_url) return;
 
     try {
-      const { createClient } = await import('@supabase/supabase-js');
-      const supabaseAdmin = createClient(
-        process.env.REACT_APP_SUPABASE_URL,
-        process.env.REACT_APP_SUPABASE_SERVICE_ROLE_KEY
-      );
-
-      // Extract file path from URL
-      const filePath = formData.certificate_pdf_url.split('/storage/v1/object/public/certification-badges/')[1];
-      
-      if (filePath) {
-        // Delete file from storage
-        const { error: storageError } = await supabaseAdmin.storage
-          .from('certification-badges')
-          .remove([filePath]);
-
-        if (storageError) {
-          console.warn('⚠️ Could not delete file from storage:', storageError);
-        }
+      try {
+        await removeAdminStorageFiles('certification-badges', formData.certificate_pdf_url);
+      } catch (storageError) {
+        console.warn('⚠️ Could not delete file from storage:', storageError);
       }
 
       // Remove certificate URL from form
@@ -847,16 +797,10 @@ const CertificationsManager = () => {
 
       console.log('📤 Sending data to save:', saveData);
       
-      // Import Supabase with service key for admin operations
-      const { createClient } = await import('@supabase/supabase-js');
+      // Use authenticated Supabase client for admin operations
+      const supabaseAdmin = getAdminSupabaseClient();
       
-      // Create admin client with service key (bypasses RLS)
-      const supabaseAdmin = createClient(
-        process.env.REACT_APP_SUPABASE_URL,
-        process.env.REACT_APP_SUPABASE_SERVICE_ROLE_KEY
-      );
-      
-      console.log('🔐 Using service key for admin operations');
+      console.log('🔐 Using authenticated admin access');
       
       let result;
       
@@ -997,39 +941,16 @@ const CertificationsManager = () => {
     if (!certificationToDelete) return;
 
     try {
-      const { createClient } = await import('@supabase/supabase-js');
-      const supabaseAdmin = createClient(
-        process.env.REACT_APP_SUPABASE_URL,
-        process.env.REACT_APP_SUPABASE_SERVICE_ROLE_KEY
-      );
+      const supabaseAdmin = getAdminSupabaseClient();
 
-      // Delete associated files if exists
-      const filesToDelete = [];
-      
-      if (certificationToDelete.issuer_logo_url) {
-        const logoPath = certificationToDelete.issuer_logo_url.split('/storage/v1/object/public/certification-badges/')[1];
-        if (logoPath) filesToDelete.push(logoPath);
-      }
-      
-      if (certificationToDelete.badge_image_url) {
-        const badgePath = certificationToDelete.badge_image_url.split('/storage/v1/object/public/certification-badges/')[1];
-        if (badgePath) filesToDelete.push(badgePath);
-      }
-      
-      if (certificationToDelete.certificate_pdf_url) {
-        const certPath = certificationToDelete.certificate_pdf_url.split('/storage/v1/object/public/certification-badges/')[1];
-        if (certPath) filesToDelete.push(certPath);
-      }
-
-      // Delete files from storage
-      if (filesToDelete.length > 0) {
-        const { error: storageError } = await supabaseAdmin.storage
-          .from('certification-badges')
-          .remove(filesToDelete);
-
-        if (storageError) {
-          console.warn('⚠️ Some files may not have been deleted from storage:', storageError);
-        }
+      try {
+        await removeAdminStorageFiles('certification-badges', [
+          certificationToDelete.issuer_logo_url,
+          certificationToDelete.badge_image_url,
+          certificationToDelete.certificate_pdf_url
+        ]);
+      } catch (storageError) {
+        console.warn('⚠️ Some files may not have been deleted from storage:', storageError);
       }
 
       const { error } = await supabaseAdmin

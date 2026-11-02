@@ -5,6 +5,10 @@
 import { supabase } from './supabaseClient';
 import { requireAdminAuth } from './authService';
 import { portfolioData } from '../data/portfolioData';
+import {
+  extractPublicStoragePaths,
+  removeAdminStorageFiles
+} from './adminDataService';
 
 
 // Simulate API delay for realistic loading experience
@@ -959,20 +963,10 @@ export const deleteProjectImage = async (projectId, imageUrl) => {
 
     // Try to delete the actual file from storage
     try {
-      // Extract file path from URL
-      const urlParts = imageUrl.split('/storage/v1/object/public/project-images/');
-      if (urlParts.length > 1) {
-        const filePath = urlParts[1];
-        
-        const { error: storageError } = await supabase.storage
-          .from('project-images')
-          .remove([filePath]);
+      const removeResult = await removeAdminStorageFiles('project-images', imageUrl);
 
-        if (storageError) {
-          console.warn('⚠️ File may not have been deleted from storage:', storageError);
-        } else {
-          console.log('✅ File deleted from storage:', filePath);
-        }
+      if (!removeResult.skipped) {
+        console.log('✅ File deleted from storage:', removeResult.filePaths[0]);
       }
     } catch (storageError) {
       console.warn('⚠️ Storage deletion failed, but database updated:', storageError);
@@ -4818,16 +4812,9 @@ export const deleteSkillIcon = async (skillId, iconUrl) => {
       throw new Error('Skill ID and icon URL are required');
     }
 
-    // Extract file path from URL
-    const urlParts = iconUrl.split('/storage/v1/object/public/skill-icons/');
-    const filePath = urlParts.length > 1 ? urlParts[1] : iconUrl;
-
-    // Delete file from storage
-    const { error: storageError } = await supabase.storage
-      .from('skill-icons')
-      .remove([filePath]);
-
-    if (storageError) {
+    try {
+      await removeAdminStorageFiles('skill-icons', iconUrl);
+    } catch (storageError) {
       console.warn('⚠️ File may not have been deleted from storage:', storageError);
     }
 
@@ -4880,18 +4867,13 @@ export const deleteSkillCertificates = async (skillId, certificateUrls) => {
       throw new Error('Skill ID and certificate URLs array are required');
     }
 
-    // Extract file paths from URLs
-    const filePaths = certificateUrls.map(url => {
-      const urlParts = url.split('/storage/v1/object/public/skill-icons/');
-      return urlParts.length > 1 ? urlParts[1] : url; 
-    });
+    // Extract file paths from owned Supabase Storage values only.
+    const filePaths = extractPublicStoragePaths(certificateUrls, 'skill-icons');
 
     // Delete files from storage
-    const { error: storageError } = await supabase.storage
-      .from('skill-icons')
-      .remove(filePaths);
-
-    if (storageError) {
+    try {
+      await removeAdminStorageFiles('skill-icons', filePaths);
+    } catch (storageError) {
       console.warn('⚠️ Some files may not have been deleted from storage:', storageError);
     }
 

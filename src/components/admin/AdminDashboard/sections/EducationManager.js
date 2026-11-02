@@ -4,7 +4,12 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSupabase } from '../../../../hooks/useSupabase';
 import LoadingSpinner from '../../../common/LoadingSpinner';
 import './EducationManager.css';
-import { triggerPublicRefresh } from '../../../../services/adminDataService';
+import {
+  buildAdminStoragePath,
+  getAdminSupabaseClient,
+  triggerPublicRefresh,
+  uploadAdminPublicFile
+} from '../../../../services/adminDataService';
 
 const EducationManager = () => {
   // ============================================================================
@@ -433,48 +438,36 @@ const EducationManager = () => {
     setLogoUploading(true);
     setUploadProgress(0);
 
-    try {
-      // Import Supabase client for file upload
-      const { createClient } = await import('@supabase/supabase-js');
-      const supabaseAdmin = createClient(
-        process.env.REACT_APP_SUPABASE_URL,
-        process.env.REACT_APP_SUPABASE_SERVICE_ROLE_KEY
-      );
+    let progressInterval;
 
-      const timestamp = Date.now();
-      const fileExtension = file.name.split('.').pop();
+    try {
       const institutionName = formData.institution || formData.college || 'institution';
-      const sanitizedName = institutionName.toLowerCase().replace(/[^a-z0-9]/g, '-');
-      const fileName = `${sanitizedName}-logo-${timestamp}.${fileExtension}`;
-      const filePath = `education/${fileName}`;
+      const filePath = buildAdminStoragePath({
+        folder: 'education',
+        entityName: institutionName,
+        label: 'logo',
+        file
+      });
 
       // Simulate upload progress
-      const progressInterval = setInterval(() => {
+      progressInterval = setInterval(() => {
         setUploadProgress(prev => Math.min(prev + 10, 90));
       }, 100);
 
-      // Upload to Supabase Storage
-      const { error: uploadError } = await supabaseAdmin.storage
-        .from('organization-logos')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
+      const uploadResult = await uploadAdminPublicFile({
+        bucket: 'organization-logos',
+        filePath,
+        file,
+        cacheControl: '3600',
+        upsert: false
+      });
 
       clearInterval(progressInterval);
+      progressInterval = null;
       setUploadProgress(100);
 
-      if (uploadError) {
-        throw new Error(`Upload failed: ${uploadError.message}`);
-      }
-
-      // Get public URL
-      const { data: urlData } = supabaseAdmin.storage
-        .from('organization-logos')
-        .getPublicUrl(filePath);
-
       // Update form data with logo URL
-      handleInputChange('institution_logo_url', urlData.publicUrl);
+      handleInputChange('institution_logo_url', uploadResult.publicUrl);
 
       // Clear any validation errors
       setValidationErrors(prev => {
@@ -490,6 +483,9 @@ const EducationManager = () => {
         logo: error.message || 'Failed to upload logo'
       }));
     } finally {
+      if (progressInterval) {
+        clearInterval(progressInterval);
+      }
       setLogoUploading(false);
       setUploadProgress(0);
     }
@@ -670,16 +666,9 @@ const EducationManager = () => {
 
       console.log('📤 Sending data to save:', saveData);
       
-      // Import Supabase with service key for admin operations
-      const { createClient } = await import('@supabase/supabase-js');
+      const supabaseAdmin = getAdminSupabaseClient();
       
-      // Create admin client with service key (bypasses RLS)
-      const supabaseAdmin = createClient(
-        process.env.REACT_APP_SUPABASE_URL,
-        process.env.REACT_APP_SUPABASE_SERVICE_ROLE_KEY
-      );
-      
-      console.log('🔐 Using service key for admin operations');
+      console.log('🔐 Using authenticated admin access');
       
       let result;
       
@@ -823,11 +812,7 @@ const EducationManager = () => {
     if (!educationToDelete) return;
 
     try {
-      const { createClient } = await import('@supabase/supabase-js');
-      const supabaseAdmin = createClient(
-        process.env.REACT_APP_SUPABASE_URL,
-        process.env.REACT_APP_SUPABASE_SERVICE_ROLE_KEY
-      );
+      const supabaseAdmin = getAdminSupabaseClient();
 
       const { error } = await supabaseAdmin
         .from('education')

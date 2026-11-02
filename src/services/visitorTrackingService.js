@@ -238,46 +238,10 @@ const updateContentPerformance = async (contentType, contentId, timeSpent) => {
       return false;
     }
 
-    const today = new Date().toISOString().split('T')[0];
-    
-    // Calculate engagement score with bounds checking
-    const rawScore = Math.round(timeSpent / 10);
-    const engagementScore = Math.min(10, Math.max(1, rawScore));
-
-    // Use atomic database function for production reliability
-    const { error } = await supabase.rpc('increment_content_performance', {
-      p_content_type: contentType,
-      p_content_id: contentId,
-      p_performance_date: today,
-      p_engagement_score: engagementScore
-    });
-
-    if (error) {
-      // Log error details for production monitoring
-      console.error('❌ Content performance update failed:', {
-        error: error.message,
-        code: error.code,
-        details: error.details,
-        contentType,
-        contentId,
-        timeSpent,
-        engagementScore
-      });
-      
-      // Don't throw - fail gracefully in production
-      return false;
-    }
-
-    // Success logging for production monitoring
-    console.log('✅ Content performance updated:', {
-      contentType,
-      contentId,
-      timeSpent: `${timeSpent}s`,
-      engagementScore,
-      date: today
-    });
-
-    return true;
+    // Public content-performance mutation was retired because it
+    // required an exposed SECURITY DEFINER RPC. Keep this graceful no-op until
+    // content performance aggregation is moved to an Edge Function or cron job.
+    return false;
 
   } catch (error) {
     // Catch-all error handling for production

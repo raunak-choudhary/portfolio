@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSupabase } from '../../../../hooks/useSupabase';
 import LoadingSpinner from '../../../common/LoadingSpinner';
 import './LeadershipManager.css';
-import { triggerPublicRefresh } from '../../../../services/adminDataService';
+import { getAdminSupabaseClient, triggerPublicRefresh } from '../../../../services/adminDataService';
 
 const LeadershipManager = () => {
   // ============================================================================
@@ -633,16 +633,10 @@ const LeadershipManager = () => {
 
       console.log('📤 Sending data to save:', saveData);
       
-      // Import Supabase with service key for admin operations
-      const { createClient } = await import('@supabase/supabase-js');
+      // Use authenticated Supabase client for admin operations
+      const supabaseAdmin = getAdminSupabaseClient();
       
-      // Create admin client with service key (bypasses RLS)
-      const supabaseAdmin = createClient(
-        process.env.REACT_APP_SUPABASE_URL,
-        process.env.REACT_APP_SUPABASE_SERVICE_ROLE_KEY
-      );
-      
-      console.log('🔐 Using service key for admin operations');
+      console.log('🔐 Using authenticated admin access');
       
       let result;
       
@@ -788,11 +782,7 @@ const LeadershipManager = () => {
     if (!leadershipToDelete) return;
 
     try {
-      const { createClient } = await import('@supabase/supabase-js');
-      const supabaseAdmin = createClient(
-        process.env.REACT_APP_SUPABASE_URL,
-        process.env.REACT_APP_SUPABASE_SERVICE_ROLE_KEY
-      );
+      const supabaseAdmin = getAdminSupabaseClient();
 
       const { error } = await supabaseAdmin
         .from('leadership')

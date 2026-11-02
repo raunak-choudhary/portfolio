@@ -2,7 +2,12 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSupabase } from '../../../../hooks/useSupabase';
 import LoadingSpinner from '../../../common/LoadingSpinner';
 import './ContactMessagesManager.css';
-import { triggerPublicRefresh } from '../../../../services/adminDataService';
+import {
+  createContactAttachmentSignedUrl,
+  getAdminSupabaseClient,
+  normalizeContactAttachments,
+  triggerPublicRefresh
+} from '../../../../services/adminDataService';
 
 const ContactMessagesManager = () => {
   // ============================================================================
@@ -43,6 +48,11 @@ const ContactMessagesManager = () => {
     saveStatus: null, // 'success', 'error', null
     isPostAction: false,
     lastActionType: null // 'delete', 'read', 'unread', 'star', 'archive', 'spam'
+  });
+
+  const [attachmentState, setAttachmentState] = useState({
+    loadingKey: null,
+    error: null
   });
 
   // Bulk operation state
@@ -288,7 +298,7 @@ const ContactMessagesManager = () => {
   // ADMIN OPERATIONS - DATABASE INTERACTIONS
   // ============================================================================
   
-  // Generic message update function using service key
+  // Generic message update function using authenticated admin access
   const updateMessage = useCallback(async (messageId, updates, actionType) => {
     console.log(`🚀 Starting ${actionType} operation for message:`, messageId);
     
@@ -299,16 +309,10 @@ const ContactMessagesManager = () => {
     }));
 
     try {
-      // Import Supabase with service key for admin operations
-      const { createClient } = await import('@supabase/supabase-js');
+      // Use authenticated Supabase client for admin operations
+      const supabaseAdmin = getAdminSupabaseClient();
       
-      // Create admin client with service key (bypasses RLS)
-      const supabaseAdmin = createClient(
-        process.env.REACT_APP_SUPABASE_URL,
-        process.env.REACT_APP_SUPABASE_SERVICE_ROLE_KEY
-      );
-      
-      console.log('🔐 Using service key for admin operations');
+      console.log('🔐 Using authenticated admin access');
       
       // Add timestamp for specific actions
       const timestampedUpdates = { ...updates };
@@ -429,16 +433,10 @@ const ContactMessagesManager = () => {
     }));
 
     try {
-      // Import Supabase with service key for admin operations
-      const { createClient } = await import('@supabase/supabase-js');
+      // Use authenticated Supabase client for admin operations
+      const supabaseAdmin = getAdminSupabaseClient();
       
-      // Create admin client with service key (bypasses RLS)
-      const supabaseAdmin = createClient(
-        process.env.REACT_APP_SUPABASE_URL,
-        process.env.REACT_APP_SUPABASE_SERVICE_ROLE_KEY
-      );
-      
-      console.log('🔐 Using service key for delete operation');
+      console.log('🔐 Using authenticated admin access for delete operation');
       
       // Hard delete the message (permanent removal)
       const { error } = await supabaseAdmin
@@ -500,16 +498,10 @@ const ContactMessagesManager = () => {
     }));
 
     try {
-      // Import Supabase with service key for admin operations
-      const { createClient } = await import('@supabase/supabase-js');
+      // Use authenticated Supabase client for admin operations
+      const supabaseAdmin = getAdminSupabaseClient();
       
-      // Create admin client with service key (bypasses RLS)
-      const supabaseAdmin = createClient(
-        process.env.REACT_APP_SUPABASE_URL,
-        process.env.REACT_APP_SUPABASE_SERVICE_ROLE_KEY
-      );
-      
-      console.log('🔐 Using service key for bulk operations');
+      console.log('🔐 Using authenticated admin access for bulk operations');
 
       let updateData = {};
       let actionType = operation;
@@ -759,25 +751,31 @@ const ContactMessagesManager = () => {
     return text.substring(0, maxLength).trim() + '...';
   }, []);
 
-  const handleDownloadAttachment = useCallback(async (attachmentUrl, fileName) => {
-    if (!attachmentUrl) return;
+  const handleOpenAttachment = useCallback(async (attachment) => {
+    if (!attachment?.path) return;
+
+    setAttachmentState({
+      loadingKey: attachment.key,
+      error: null
+    });
     
     try {
-      // Create a temporary link to trigger download
-      const link = document.createElement('a');
-      link.href = attachmentUrl;
-      link.download = fileName || 'attachment';
-      link.target = '_blank';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      console.log('📥 Download initiated for:', fileName);
+      const result = await createContactAttachmentSignedUrl(attachment.path, 300);
+      window.open(result.signedUrl, '_blank', 'noopener,noreferrer');
+      console.log('📥 Secure attachment link opened for:', attachment.name);
     } catch (error) {
-      console.error('💥 Download error:', error);
-      // Fallback: open in new tab
-      window.open(attachmentUrl, '_blank');
+      console.error('💥 Attachment open error:', error);
+      setAttachmentState({
+        loadingKey: null,
+        error: error.message || 'Failed to open attachment'
+      });
+      return;
     }
+
+    setAttachmentState({
+      loadingKey: null,
+      error: null
+    });
   }, []);
 
   // ============================================================================
@@ -1230,7 +1228,7 @@ const ContactMessagesManager = () => {
                           🚫
                         </span>
                       )}
-                      {message.attachment_url && (
+                      {normalizeContactAttachments(message).length > 0 && (
                         <span className="contactmgr-status-indicator contactmgr-attachment-indicator" title="Has attachment">
                           📎
                         </span>
@@ -1373,33 +1371,46 @@ const ContactMessagesManager = () => {
                       </div>
 
                       {/* Attachments */}
-                      {message.attachment_url && (
+                      {normalizeContactAttachments(message).length > 0 && (
                         <div className="contactmgr-attachments">
-                          <h5 className="contactmgr-attachments-title">Attachments</h5>
-                          <div className="contactmgr-attachment-item">
-                            <div className="contactmgr-attachment-info">
-                              <span className="contactmgr-attachment-icon">📎</span>
-                              <div className="contactmgr-attachment-details">
-                                <span className="contactmgr-attachment-name">
-                                  {message.attachment_name || 'attachment'}
-                                </span>
-                                {message.attachment_size && (
-                                  <span className="contactmgr-attachment-size">
-                                    {formatFileSize(message.attachment_size)}
-                                  </span>
-                                )}
-                              </div>
+                          <h5 className="contactmgr-attachments-title">Private Attachments</h5>
+                          {attachmentState.error && (
+                            <div className="contactmgr-status-message error" role="alert">
+                              <span className="contactmgr-status-icon">⚠️</span>
+                              {attachmentState.error}
                             </div>
-                            <button
-                              className="contactmgr-download-btn"
-                              onClick={() => handleDownloadAttachment(message.attachment_url, message.attachment_name)}
-                              type="button"
-                              title="Download attachment"
-                            >
-                              <span className="contactmgr-download-icon">📥</span>
-                              Download
-                            </button>
-                          </div>
+                          )}
+                          {normalizeContactAttachments(message).map((attachment) => (
+                            <div className="contactmgr-attachment-item" key={attachment.key}>
+                              <div className="contactmgr-attachment-info">
+                                <span className="contactmgr-attachment-icon">📎</span>
+                                <div className="contactmgr-attachment-details">
+                                  <span className="contactmgr-attachment-name">
+                                    {attachment.name}
+                                  </span>
+                                  {attachment.size && (
+                                    <span className="contactmgr-attachment-size">
+                                      {formatFileSize(attachment.size)}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <button
+                                className="contactmgr-download-btn"
+                                onClick={() => handleOpenAttachment(attachment)}
+                                disabled={attachmentState.loadingKey === attachment.key}
+                                type="button"
+                                title="Open private attachment with a short-lived signed link"
+                              >
+                                {attachmentState.loadingKey === attachment.key ? (
+                                  <LoadingSpinner size="small" />
+                                ) : (
+                                  <span className="contactmgr-download-icon">📥</span>
+                                )}
+                                Open Securely
+                              </button>
+                            </div>
+                          ))}
                         </div>
                       )}
 

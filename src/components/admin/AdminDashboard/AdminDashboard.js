@@ -7,7 +7,6 @@ import LoadingSpinner from '../../common/LoadingSpinner';
 import ThemeToggle from '../../common/ThemeToggle';
 import logoImage from '../../../assets/images/logo.png';
 import analyticsService from '../../../services/analyticsService';
-import routeNavigation from '../../../utils/routeNavigation'; // 🔐 NEW IMPORT
 import './AdminDashboard.css';
 
 import HeroContentManager from './sections/HeroContentManager';
@@ -23,6 +22,7 @@ import AchievementsManager from './sections/AchievementsManager';
 import LeadershipManager from './sections/LeadershipManager';
 import ContactMessagesManager from './sections/ContactMessagesManager';
 import AnalyticsDashboard from '../Analytics/AnalyticsDashboard';
+import MediaUpload from '../MediaUpload/MediaUpload';
 
 const AdminDashboard = () => {
   const { signOut } = useAuth();
@@ -31,6 +31,7 @@ const AdminDashboard = () => {
   const [activeSection, setActiveSection] = useState('dashboard');
   const [showPreview, setShowPreview] = useState(false);
   const [portfolioStats, setPortfolioStats] = useState(null);
+  const [portfolioHealth, setPortfolioHealth] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(null);
   
@@ -42,10 +43,6 @@ const AdminDashboard = () => {
   // Enhanced Preview State
   const [previewMode, setPreviewMode] = useState('desktop');
   const [previewUrl, setPreviewUrl] = useState('/');
-
-  // 🔐 NEW: Encrypted navigation state
-  const [encryptedRoutes, setEncryptedRoutes] = useState({});
-  const [navigationReady, setNavigationReady] = useState(false);
 
   // Dashboard sections configuration
   const dashboardSections = [
@@ -62,6 +59,7 @@ const AdminDashboard = () => {
     { id: 'achievements', name: 'Achievements', icon: '🥇', color: 'lime', shortcut: 'm' },
     { id: 'leadership', name: 'Leadership', icon: '👑', color: 'violet', shortcut: 'l' },
     { id: 'contact', name: 'Contact Messages', icon: '📧', color: 'rose', shortcut: '3' },
+    { id: 'media', name: 'Media Library', icon: '🗂️', color: 'cyan', shortcut: 'u' },
     { id: 'analytics', name: 'Analytics', icon: '📈', color: 'emerald', shortcut: 'b' }
   ];
 
@@ -77,36 +75,6 @@ const AdminDashboard = () => {
     });
     return initialStates;
   });
-
-  // 🔐 NEW: Initialize encrypted navigation on mount
-  useEffect(() => {
-    const setupEncryptedNavigation = async () => {
-      try {
-        console.log('🔐 Setting up encrypted navigation for dashboard...');
-        
-        const routeResult = routeNavigation.getCurrentAdminRoutes();
-        
-        if (routeResult.success) {
-          setEncryptedRoutes(routeResult.routes);
-          console.log('✅ Encrypted routes loaded for dashboard');
-        } else {
-          console.warn('⚠️ Using fallback routes for dashboard');
-          setEncryptedRoutes({
-            adminlogin: '/adminlogin',
-            admindashboard: '/admindashboard',
-            adminsignout: '/adminsignout'
-          });
-        }
-        
-        setNavigationReady(true);
-      } catch (error) {
-        console.error('❌ Failed to setup encrypted navigation:', error);
-        setNavigationReady(true);
-      }
-    };
-
-    setupEncryptedNavigation();
-  }, []);
 
   // Load section data function
   const loadSectionData = useCallback(async (sectionId) => {
@@ -129,9 +97,6 @@ const AdminDashboard = () => {
     try {
       setSectionLoading(true);
       setActiveSection(sectionId);
-
-      // Track section navigation
-      routeNavigation.storeNavigationHistory('/admindashboard', sectionId);
 
       // Analytics tracking
       try {
@@ -169,9 +134,9 @@ const AdminDashboard = () => {
       
       setHasUnsavedChanges(false);
       
-      const newUrl = sectionId === 'dashboard' 
-        ? encryptedRoutes.admindashboard || '/admindashboard'
-        : `${encryptedRoutes.admindashboard || '/admindashboard'}?section=${sectionId}`;
+      const newUrl = sectionId === 'dashboard'
+        ? '/admindashboard'
+        : `/admindashboard?section=${sectionId}`;
       
       window.history.pushState({ section: sectionId }, '', newUrl);
       
@@ -185,7 +150,7 @@ const AdminDashboard = () => {
     } finally {
       setSectionLoading(false);
     }
-  }, [hasUnsavedChanges, sectionStates, loadSectionData, encryptedRoutes]);
+  }, [hasUnsavedChanges, sectionStates, loadSectionData, activeSection]);
 
   // Enhanced quick save handler
   const handleQuickSave = useCallback(() => {
@@ -235,19 +200,18 @@ const AdminDashboard = () => {
   }, [hasUnsavedChanges, activeSection, handleQuickSave]);
 
   // Enhanced preview toggle
-  const togglePreview = () => {
+  const togglePreview = useCallback(() => {
     setShowPreview(prevShowPreview => !prevShowPreview);
     if (!showPreview) {
       setPreviewUrl(`/?preview=${Date.now()}`);
     }
-  };
+  }, [showPreview]);
 
   // Enhanced preview mode handlers
   const handlePreviewModeChange = (mode) => {
     setPreviewMode(mode);
   };
 
-  // 🔐 UPDATED: Enhanced sign out with encrypted navigation
   const handleSignOut = async () => {
     if (hasUnsavedChanges) {
       const confirmed = window.confirm(
@@ -283,17 +247,10 @@ const AdminDashboard = () => {
     
     try {
       await signOut();
-      
-      // Use encrypted navigation for sign out
-      const navResult = routeNavigation.navigateToAdminSignOut({ replace: true });
-      
-      if (!navResult.success) {
-        // Fallback navigation
-        window.location.href = '/adminsignout';
-      }
+      window.location.href = '/adminlogin';
     } catch (error) {
       console.error('Error during sign out:', error);
-      window.location.href = '/adminsignout';
+      window.location.href = '/adminlogin';
     }
   };
 
@@ -310,12 +267,16 @@ const AdminDashboard = () => {
     setSectionLoading(true);
     try {
       if (activeSection === 'dashboard') {
-        const stats = await getPortfolioStats();
+        const [stats, health] = await Promise.all([
+          getPortfolioStats(),
+          analyticsService.getPortfolioHealth()
+        ]);
         setPortfolioStats(stats);
+        setPortfolioHealth(health);
         setLastUpdated(new Date().toLocaleString());
         setSectionStates(prev => ({
           ...prev,
-          dashboard: { ...prev.dashboard, data: stats, loaded: true }
+          dashboard: { ...prev.dashboard, data: { stats, health }, loaded: true }
         }));
       } else {
         await loadSectionData(activeSection);
@@ -337,12 +298,16 @@ const AdminDashboard = () => {
     const loadDashboardData = async () => {
       setIsLoading(true);
       try {
-        const stats = await getPortfolioStats();
+        const [stats, health] = await Promise.all([
+          getPortfolioStats(),
+          analyticsService.getPortfolioHealth()
+        ]);
         setPortfolioStats(stats);
+        setPortfolioHealth(health);
         setLastUpdated(new Date().toLocaleString());
         setSectionStates(prev => ({
           ...prev,
-          dashboard: { ...prev.dashboard, data: stats, loaded: true }
+          dashboard: { ...prev.dashboard, data: { stats, health }, loaded: true }
         }));
       } catch (error) {
         console.error('Error loading initial dashboard data:', error);
@@ -407,6 +372,7 @@ const AdminDashboard = () => {
           case 'r': e.preventDefault(); handleSectionChange('recommendations'); break;
           case 'm': e.preventDefault(); handleSectionChange('achievements'); break;
           case 'l': e.preventDefault(); handleSectionChange('leadership'); break;
+          case 'u': e.preventDefault(); handleSectionChange('media'); break;
           case 'p': e.preventDefault(); togglePreview(); break;
           default: break;
         }
@@ -428,18 +394,22 @@ const AdminDashboard = () => {
     return () => clearInterval(autoSaveInterval);
   }, [hasUnsavedChanges, handleAutoSave]);
 
-  // Show loading if navigation not ready
-  if (!navigationReady) {
-    return (
-      <div className="admin-loading">
-        <LoadingSpinner />
-        <p>Setting up secure dashboard...</p>
-      </div>
-    );
-  }
-
   // Render enhanced dashboard overview
-  const renderDashboardOverview = () => (
+  const renderDashboardOverview = () => {
+    const healthSummary = portfolioHealth?.summary;
+    const healthSections = portfolioHealth?.sections || [];
+    const attentionSections = healthSections
+      .filter(section => (section.completeness || 0) < 90)
+      .sort((a, b) => (a.completeness || 0) - (b.completeness || 0))
+      .slice(0, 4);
+    const topIssues = healthSummary?.topIssues || [];
+    const healthStatusLabel = {
+      ready: 'Ready',
+      improving: 'Improving',
+      needs_attention: 'Needs Attention'
+    }[healthSummary?.status] || 'Checking';
+
+    return (
     <div className="dashboard-overview">
       <div className="overview-header">
         <h2 className="overview-title">
@@ -447,6 +417,87 @@ const AdminDashboard = () => {
         </h2>
         <p className="overview-subtitle">Your portfolio command center</p>
       </div>
+
+      <section className={`portfolio-health-panel portfolio-health-panel--${healthSummary?.status || 'loading'}`}>
+        <div className="health-panel-header">
+          <div>
+            <p className="health-kicker">Today's Portfolio Health</p>
+            <h3 className="health-title">{healthStatusLabel}</h3>
+            <p className="health-subtitle">
+              Based on live Supabase content fields, required sections, proof links, image coverage, and description quality.
+            </p>
+          </div>
+          <div className="health-score-card">
+            <span className="health-score">{healthSummary ? healthSummary.score : '...'}</span>
+            <span className="health-score-label">Health Score</span>
+          </div>
+        </div>
+
+        {portfolioHealth?.error ? (
+          <div className="health-empty-state">
+            Portfolio health could not be checked: {portfolioHealth.error}
+          </div>
+        ) : healthSummary ? (
+          <>
+            <div className="health-metrics-row">
+              <div className="health-metric">
+                <span className="health-metric-value">{healthSummary.completedSections}</span>
+                <span className="health-metric-label">Strong Sections</span>
+              </div>
+              <div className="health-metric">
+                <span className="health-metric-value">{healthSummary.issueCounts.critical}</span>
+                <span className="health-metric-label">Critical Gaps</span>
+              </div>
+              <div className="health-metric">
+                <span className="health-metric-value">{healthSummary.issueCounts.warning}</span>
+                <span className="health-metric-label">Warnings</span>
+              </div>
+              <div className="health-metric">
+                <span className="health-metric-value">{healthSummary.issueCounts.info}</span>
+                <span className="health-metric-label">Quality Notes</span>
+              </div>
+            </div>
+
+            <div className="health-detail-grid">
+              <div className="health-focus-list">
+                <h4>Focus Sections</h4>
+                {attentionSections.length > 0 ? (
+                  attentionSections.map(section => (
+                    <div key={section.name} className="health-section-row">
+                      <div className="health-section-name">
+                        <span>{section.name}</span>
+                        <small>{section.activeItems}/{section.totalItems} active</small>
+                      </div>
+                      <div className="health-section-bar">
+                        <span style={{ width: `${section.completeness || 0}%` }}></span>
+                      </div>
+                      <strong>{section.completeness || 0}%</strong>
+                    </div>
+                  ))
+                ) : (
+                  <p className="health-empty-state">All checked sections are in strong shape.</p>
+                )}
+              </div>
+
+              <div className="health-issues-list">
+                <h4>Top Fixes</h4>
+                {topIssues.length > 0 ? (
+                  topIssues.slice(0, 4).map((issue, index) => (
+                    <div key={`${issue.section}-${issue.type}-${index}`} className={`health-issue health-issue--${issue.severity}`}>
+                      <span className="health-issue-severity">{issue.severity}</span>
+                      <p>{issue.message}</p>
+                    </div>
+                  ))
+                ) : (
+                  <p className="health-empty-state">No content quality issues found.</p>
+                )}
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="health-empty-state">Checking portfolio health...</div>
+        )}
+      </section>
 
       <div className="stats-grid">
         {isLoading && !portfolioStats ? (
@@ -633,6 +684,13 @@ const AdminDashboard = () => {
           </button>
           <button 
             className="action-btn primary-action"
+            onClick={() => handleSectionChange('media')}
+          >
+            <span className="btn-icon">🗂️</span>
+            Open Media Library
+          </button>
+          <button 
+            className="action-btn primary-action"
             onClick={() => handleSectionChange('analytics')}
           >
             <span className="btn-icon">📈</span>
@@ -647,7 +705,8 @@ const AdminDashboard = () => {
         </div>
       )}
     </div>
-  );
+    );
+  };
 
   // Render section content
   const renderSectionContent = () => {
@@ -693,6 +752,8 @@ const AdminDashboard = () => {
         return <LeadershipManager />;
       case 'contact':
         return <ContactMessagesManager />;
+      case 'media':
+        return <MediaUpload />;
       case 'analytics':
         return <AnalyticsDashboard />;
       default:

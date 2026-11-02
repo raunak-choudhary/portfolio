@@ -107,14 +107,14 @@ const ContentAnalytics = ({ dateRange = '30d' }) => {
   }, [dateRange, getTrendType]);
 
   // Calculate overall performance score
-  const calculatePerformanceScore = useCallback((section) => {
+  const calculatePerformanceScore = useCallback((section, allSections = []) => {
     if (!section.views && !section.engagement && !section.completeness) return 0;
     
     const viewsWeight = 0.4;
     const engagementWeight = 0.3;
     const completenessWeight = 0.3;
     
-    const maxViews = Math.max(...sectionPerformance.map(s => s.views || 0));
+    const maxViews = Math.max(...allSections.map(s => s.views || 0), 0);
     const viewsScore = maxViews > 0 ? (section.views / maxViews) * 100 : 0;
     const engagementScore = (section.engagement / 10) * 100;
     const completenessScore = section.completeness || 0;
@@ -124,7 +124,7 @@ const ContentAnalytics = ({ dateRange = '30d' }) => {
       (engagementScore * engagementWeight) + 
       (completenessScore * completenessWeight)
     );
-  }, [sectionPerformance]);
+  }, []);
 
   // Process content engagement insights
   const processPerformanceInsights = useCallback((contentAnalytics, sectionData, topContentData) => {
@@ -227,7 +227,7 @@ const ContentAnalytics = ({ dateRange = '30d' }) => {
       // Process section performance with calculated scores
       const processedSections = (sectionData || []).map(section => ({
         ...section,
-        performance: calculatePerformanceScore(section)
+        performance: calculatePerformanceScore(section, sectionData || [])
       })).sort((a, b) => b.performance - a.performance);
       setSectionPerformance(processedSections);
 
@@ -258,7 +258,7 @@ const ContentAnalytics = ({ dateRange = '30d' }) => {
   // Load data when component mounts or dateRange changes
   useEffect(() => {
     loadContentData();
-  }, [dateRange]);
+  }, [loadContentData]);
 
   // Render loading state
   if (isLoading) {

@@ -2,7 +2,11 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSupabase } from '../../../../hooks/useSupabase';
 import LoadingSpinner from '../../../common/LoadingSpinner';
 import './SkillsManager.css';
-import { triggerPublicRefresh } from '../../../../services/adminDataService';
+import {
+  getAdminSupabaseClient,
+  removeAdminStorageFiles,
+  triggerPublicRefresh
+} from '../../../../services/adminDataService';
 
 const SkillsManager = () => {
   // ============================================================================
@@ -544,11 +548,7 @@ const SkillsManager = () => {
 
     try {
       // Import Supabase client for file upload
-      const { createClient } = await import('@supabase/supabase-js');
-      const supabaseAdmin = createClient(
-        process.env.REACT_APP_SUPABASE_URL,
-        process.env.REACT_APP_SUPABASE_SERVICE_ROLE_KEY
-      );
+      const supabaseAdmin = getAdminSupabaseClient();
 
       const skillId = selectedSkill?.id || `temp-${Date.now()}`;
       const skillName = formData.skill_name || 'skill';
@@ -781,16 +781,10 @@ const SkillsManager = () => {
 
       console.log('📤 Sending data to save:', saveData);
       
-      // Import Supabase with service key for admin operations
-      const { createClient } = await import('@supabase/supabase-js');
+      // Use authenticated Supabase client for admin operations
+      const supabaseAdmin = getAdminSupabaseClient();
       
-      // Create admin client with service key (bypasses RLS)
-      const supabaseAdmin = createClient(
-        process.env.REACT_APP_SUPABASE_URL,
-        process.env.REACT_APP_SUPABASE_SERVICE_ROLE_KEY
-      );
-      
-      console.log('🔐 Using service key for admin operations');
+      console.log('🔐 Using authenticated admin access');
       
       let result;
       
@@ -933,11 +927,7 @@ const SkillsManager = () => {
     if (!skillToDelete) return;
 
     try {
-      const { createClient } = await import('@supabase/supabase-js');
-      const supabaseAdmin = createClient(
-        process.env.REACT_APP_SUPABASE_URL,
-        process.env.REACT_APP_SUPABASE_SERVICE_ROLE_KEY
-      );
+      const supabaseAdmin = getAdminSupabaseClient();
 
       // Delete associated files first
       if (skillToDelete.icon_url || (skillToDelete.certifications && skillToDelete.certifications.length > 0)) {
@@ -946,11 +936,7 @@ const SkillsManager = () => {
         // Delete icon if exists
         if (skillToDelete.icon_url) {
           try {
-            const urlParts = skillToDelete.icon_url.split('/storage/v1/object/public/skill-icons/');
-            const filePath = urlParts.length > 1 ? urlParts[1] : null;
-            if (filePath) {
-              await supabaseAdmin.storage.from('skill-icons').remove([filePath]);
-            }
+            await removeAdminStorageFiles('skill-icons', skillToDelete.icon_url);
           } catch (storageError) {
             console.warn('⚠️ Failed to delete icon from storage:', storageError);
           }
@@ -959,17 +945,7 @@ const SkillsManager = () => {
         // Delete certificates if exist
         if (skillToDelete.certifications && skillToDelete.certifications.length > 0) {
           try {
-            const filePaths = skillToDelete.certifications
-              .filter(url => url.includes('supabase'))
-              .map(url => {
-                const urlParts = url.split('/storage/v1/object/public/skill-icons/');
-                return urlParts.length > 1 ? urlParts[1] : null;
-              })
-              .filter(Boolean);
-            
-            if (filePaths.length > 0) {
-              await supabaseAdmin.storage.from('skill-icons').remove(filePaths);
-            }
+            await removeAdminStorageFiles('skill-icons', skillToDelete.certifications);
           } catch (storageError) {
             console.warn('⚠️ Failed to delete certificates from storage:', storageError);
           }
@@ -1051,11 +1027,7 @@ const SkillsManager = () => {
       const [targetCategory, targetPriority] = sortedCategories[newIndex];
       
       // Import Supabase client
-      const { createClient } = await import('@supabase/supabase-js');
-      const supabaseAdmin = createClient(
-        process.env.REACT_APP_SUPABASE_URL,
-        process.env.REACT_APP_SUPABASE_SERVICE_ROLE_KEY
-      );
+      const supabaseAdmin = getAdminSupabaseClient();
       
       // Update both categories
       const { error: error1 } = await supabaseAdmin

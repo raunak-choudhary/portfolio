@@ -4,7 +4,11 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSupabase } from '../../../../hooks/useSupabase';
 import LoadingSpinner from '../../../common/LoadingSpinner';
 import './InternshipsManager.css';
-import { triggerPublicRefresh } from '../../../../services/adminDataService';
+import {
+  getAdminSupabaseClient,
+  removeAdminStorageFiles,
+  triggerPublicRefresh
+} from '../../../../services/adminDataService';
 
 const InternshipsManager = () => {
   // ============================================================================
@@ -419,11 +423,7 @@ const InternshipsManager = () => {
 
     try {
       // Import Supabase client for file upload
-      const { createClient } = await import('@supabase/supabase-js');
-      const supabaseAdmin = createClient(
-        process.env.REACT_APP_SUPABASE_URL,
-        process.env.REACT_APP_SUPABASE_SERVICE_ROLE_KEY
-      );
+      const supabaseAdmin = getAdminSupabaseClient();
 
       const timestamp = Date.now();
       const fileExtension = file.name.split('.').pop();
@@ -476,25 +476,10 @@ const InternshipsManager = () => {
     if (!formData.company_logo_url) return;
 
     try {
-      // Import Supabase client for file deletion
-      const { createClient } = await import('@supabase/supabase-js');
-      const supabaseAdmin = createClient(
-        process.env.REACT_APP_SUPABASE_URL,
-        process.env.REACT_APP_SUPABASE_SERVICE_ROLE_KEY
-      );
-
-      // Extract file path from URL
-      const filePath = formData.company_logo_url.split('/storage/v1/object/public/organization-logos/')[1];
-      
-      if (filePath) {
-        // Delete file from storage
-        const { error: storageError } = await supabaseAdmin.storage
-          .from('organization-logos')
-          .remove([filePath]);
-
-        if (storageError) {
-          console.warn('⚠️ Could not delete logo file from storage:', storageError);
-        }
+      try {
+        await removeAdminStorageFiles('organization-logos', formData.company_logo_url);
+      } catch (storageError) {
+        console.warn('⚠️ Could not delete logo file from storage:', storageError);
       }
 
       // Remove logo URL from form
@@ -578,11 +563,7 @@ const InternshipsManager = () => {
     setUploadProgress(0);
 
     try {
-      const { createClient } = await import('@supabase/supabase-js');
-      const supabaseAdmin = createClient(
-        process.env.REACT_APP_SUPABASE_URL,
-        process.env.REACT_APP_SUPABASE_SERVICE_ROLE_KEY
-      );
+      const supabaseAdmin = getAdminSupabaseClient();
 
       const uploadPromises = Array.from(files).map(async (file, index) => {
         const timestamp = Date.now();
@@ -652,25 +633,10 @@ const InternshipsManager = () => {
     if (!certificateToDelete) return;
 
     try {
-      // Import Supabase client for file deletion
-      const { createClient } = await import('@supabase/supabase-js');
-      const supabaseAdmin = createClient(
-        process.env.REACT_APP_SUPABASE_URL,
-        process.env.REACT_APP_SUPABASE_SERVICE_ROLE_KEY
-      );
-
-      // Extract file path from URL
-      const filePath = certificateToDelete.url.split('/storage/v1/object/public/documents/')[1];
-      
-      if (filePath) {
-        // Delete file from storage
-        const { error: storageError } = await supabaseAdmin.storage
-          .from('documents')
-          .remove([filePath]);
-
-        if (storageError) {
-          console.warn('⚠️ Could not delete certificate file from storage:', storageError);
-        }
+      try {
+        await removeAdminStorageFiles('documents', certificateToDelete.url);
+      } catch (storageError) {
+        console.warn('⚠️ Could not delete certificate file from storage:', storageError);
       }
 
       // Remove certificate URL from form array
@@ -820,16 +786,10 @@ const InternshipsManager = () => {
 
       console.log('📤 Sending data to save:', saveData);
       
-      // Import Supabase with service key for admin operations
-      const { createClient } = await import('@supabase/supabase-js');
+      // Use authenticated Supabase client for admin operations
+      const supabaseAdmin = getAdminSupabaseClient();
       
-      // Create admin client with service key (bypasses RLS)
-      const supabaseAdmin = createClient(
-        process.env.REACT_APP_SUPABASE_URL,
-        process.env.REACT_APP_SUPABASE_SERVICE_ROLE_KEY
-      );
-      
-      console.log('🔐 Using service key for admin operations');
+      console.log('🔐 Using authenticated admin access');
       
       let result;
       
@@ -974,11 +934,14 @@ const InternshipsManager = () => {
    if (!internshipToDelete) return;
 
    try {
-     const { createClient } = await import('@supabase/supabase-js');
-     const supabaseAdmin = createClient(
-       process.env.REACT_APP_SUPABASE_URL,
-       process.env.REACT_APP_SUPABASE_SERVICE_ROLE_KEY
-     );
+     const supabaseAdmin = getAdminSupabaseClient();
+
+     try {
+       await removeAdminStorageFiles('organization-logos', internshipToDelete.company_logo_url);
+       await removeAdminStorageFiles('documents', internshipToDelete.certificate_urls || []);
+     } catch (storageError) {
+       console.warn('⚠️ Some internship files may not have been deleted from storage:', storageError);
+     }
 
      const { error } = await supabaseAdmin
        .from('internships')

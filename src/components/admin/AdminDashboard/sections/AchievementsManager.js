@@ -2,7 +2,11 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSupabase } from '../../../../hooks/useSupabase';
 import LoadingSpinner from '../../../common/LoadingSpinner';
 import './AchievementsManager.css';
-import { triggerPublicRefresh } from '../../../../services/adminDataService';
+import {
+  getAdminSupabaseClient,
+  removeAdminStorageFiles,
+  triggerPublicRefresh
+} from '../../../../services/adminDataService';
 
 const AchievementsManager = () => {
   // ============================================================================
@@ -354,11 +358,7 @@ const AchievementsManager = () => {
 
     try {
       // Import Supabase client for file upload
-      const { createClient } = await import('@supabase/supabase-js');
-      const supabaseAdmin = createClient(
-        process.env.REACT_APP_SUPABASE_URL,
-        process.env.REACT_APP_SUPABASE_SERVICE_ROLE_KEY
-      );
+      const supabaseAdmin = getAdminSupabaseClient();
 
       const timestamp = Date.now();
       const fileExtension = file.name.split('.').pop();
@@ -422,25 +422,10 @@ const AchievementsManager = () => {
     if (!formData.certificate_url) return;
 
     try {
-      // Import Supabase client for file deletion
-      const { createClient } = await import('@supabase/supabase-js');
-      const supabaseAdmin = createClient(
-        process.env.REACT_APP_SUPABASE_URL,
-        process.env.REACT_APP_SUPABASE_SERVICE_ROLE_KEY
-      );
-
-      // Extract file path from URL
-      const filePath = formData.certificate_url.split('/storage/v1/object/public/achievement-images/')[1];
-      
-      if (filePath) {
-        // Delete file from storage
-        const { error: storageError } = await supabaseAdmin.storage
-          .from('achievement-images')
-          .remove([filePath]);
-
-        if (storageError) {
-          console.warn('⚠️ Could not delete file from storage:', storageError);
-        }
+      try {
+        await removeAdminStorageFiles('achievement-images', formData.certificate_url);
+      } catch (storageError) {
+        console.warn('⚠️ Could not delete file from storage:', storageError);
       }
 
       // Remove certificate URL from form
@@ -587,16 +572,10 @@ const AchievementsManager = () => {
 
       console.log('📤 Sending data to save:', saveData);
       
-      // Import Supabase with service key for admin operations
-      const { createClient } = await import('@supabase/supabase-js');
+      // Use authenticated Supabase client for admin operations
+      const supabaseAdmin = getAdminSupabaseClient();
       
-      // Create admin client with service key (bypasses RLS)
-      const supabaseAdmin = createClient(
-        process.env.REACT_APP_SUPABASE_URL,
-        process.env.REACT_APP_SUPABASE_SERVICE_ROLE_KEY
-      );
-      
-      console.log('🔐 Using service key for admin operations');
+      console.log('🔐 Using authenticated admin access');
       
       let result;
       
@@ -737,22 +716,13 @@ const AchievementsManager = () => {
     if (!achievementToDelete) return;
 
     try {
-      const { createClient } = await import('@supabase/supabase-js');
-      const supabaseAdmin = createClient(
-        process.env.REACT_APP_SUPABASE_URL,
-        process.env.REACT_APP_SUPABASE_SERVICE_ROLE_KEY
-      );
+      const supabaseAdmin = getAdminSupabaseClient();
 
       // Delete associated certificate file if exists
       if (achievementToDelete.certificate_url) {
         try {
-          const filePath = achievementToDelete.certificate_url.split('/storage/v1/object/public/achievement-images/')[1];
-          if (filePath) {
-            await supabaseAdmin.storage
-              .from('achievement-images')
-              .remove([filePath]);
-            console.log('🗑️ Associated certificate file deleted');
-          }
+          await removeAdminStorageFiles('achievement-images', achievementToDelete.certificate_url);
+          console.log('🗑️ Associated certificate file deleted');
         } catch (fileError) {
           console.warn('⚠️ Could not delete associated certificate file:', fileError);
         }

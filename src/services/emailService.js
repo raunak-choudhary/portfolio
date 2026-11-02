@@ -77,18 +77,12 @@ export const uploadAttachments = async (files) => {
         throw new Error(`Upload failed for ${file.name}: ${uploadError.message}`);
       }
 
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from('contact-attachments')
-        .getPublicUrl(filePath);
-
       console.log(`✅ File uploaded successfully: ${file.name}`);
 
       return {
         originalName: file.name,
         fileName: fileName,
         filePath: filePath,
-        url: urlData.publicUrl,
         size: file.size,
         type: file.type
       };
@@ -120,8 +114,8 @@ export const storeContactMessage = async (formData, uploadedFiles = []) => {
     
     // ✅ Use anonymous client with proper RLS policies
     
-    // Store uploaded file URLs
-    const attachmentUrls = uploadedFiles.map(file => file.url);
+    // Store private storage paths. The Edge Function turns these into temporary signed URLs.
+    const attachmentPaths = uploadedFiles.map(file => file.filePath);
     const attachmentNames = uploadedFiles.map(file => file.originalName);
     
     const contactData = {
@@ -133,12 +127,12 @@ export const storeContactMessage = async (formData, uploadedFiles = []) => {
       subject: formData.subject.trim(),
       message: formData.message.trim(),
       
-      // ✅ Store actual file URLs from Supabase Storage
-      attachment_urls: attachmentUrls,
+      // Store private file paths, not public URLs. The attachment bucket stays private.
+      attachment_urls: attachmentPaths,
       attachment_names: attachmentNames,
       
       // ✅ LEGACY: Keep first attachment in original fields for backward compatibility
-      attachment_url: attachmentUrls.length > 0 ? attachmentUrls[0] : null,
+      attachment_url: attachmentPaths.length > 0 ? attachmentPaths[0] : null,
       attachment_name: uploadedFiles.length > 0 ? uploadedFiles[0].originalName : null,
       attachment_size: uploadedFiles.length > 0 ? uploadedFiles[0].size : null,
       
@@ -156,16 +150,14 @@ export const storeContactMessage = async (formData, uploadedFiles = []) => {
 
     console.log('📝 Contact data to store:', {
       ...contactData,
-      attachment_count: attachmentUrls.length,
-      attachment_files: uploadedFiles.map(f => ({ name: f.originalName, url: f.url }))
+      attachment_count: attachmentPaths.length,
+      attachment_files: uploadedFiles.map(f => ({ name: f.originalName, filePath: f.filePath }))
     });
 
     // ✅ Use anonymous client - this requires RLS policy allowing public inserts
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('contact_messages')
-      .insert([contactData])
-      .select()
-      .single();
+      .insert([contactData]);
 
     if (error) {
       console.error('❌ Database insertion error:', error);
@@ -173,14 +165,12 @@ export const storeContactMessage = async (formData, uploadedFiles = []) => {
     }
 
     console.log('✅ Contact message stored successfully with attachments:', {
-      id: data.id,
-      message_number: data.message_number,
-      attachment_count: data.attachment_urls?.length || 0
+      attachment_count: attachmentPaths.length
     });
 
     return {
       success: true,
-      data: data,
+      data: null,
       message: 'Contact message stored successfully'
     };
 
@@ -211,7 +201,7 @@ export const sendRealEmail = async (formData, uploadedFiles = []) => {
       attachmentCount: uploadedFiles.length,
       attachments: uploadedFiles.map(file => ({
         name: file.originalName,
-        url: file.url,
+        filePath: file.filePath,
         size: file.size,
         type: file.type
       }))
@@ -322,7 +312,7 @@ export const sendContactEmail = async (formData) => {
       };
     }
 
-    console.log('✅ Step 2 completed: Message stored in database with ID:', storeResult.data.id);
+    console.log('✅ Step 2 completed: Message stored in database');
 
     // Step 3: Send real email with attachment download links
     console.log('🔄 Step 3: Sending real email with attachment links...');
@@ -336,8 +326,8 @@ export const sendContactEmail = async (formData) => {
         message: 'Message and files saved but email delivery failed. Please try again or contact directly.',
         error: emailResult.error,
         data: {
-          messageId: storeResult.data.id,
-          messageNumber: storeResult.data.message_number,
+          messageId: null,
+          messageNumber: null,
           attachmentCount: uploadedFiles.length,
           emailSent: false,
           timestamp: new Date().toISOString()
@@ -352,10 +342,10 @@ export const sendContactEmail = async (formData) => {
       success: true,
       message: 'Thank you for reaching out to me, I will reply to you as soon as possible!!',
       data: {
-        messageId: storeResult.data.id,
-        messageNumber: storeResult.data.message_number,
+        messageId: null,
+        messageNumber: null,
         attachmentCount: uploadedFiles.length,
-        attachmentUrls: uploadedFiles.map(f => f.url),
+        attachmentPaths: uploadedFiles.map(f => f.filePath),
         emailSent: true,
         emailId: emailResult.data?.emailId,
         timestamp: new Date().toISOString(),
