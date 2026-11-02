@@ -1,4 +1,4 @@
-// src/components/common/Header.js
+// src/components/common/Header.js - Updated for /home navigation
 
 import React, { useState } from 'react';
 import visitorTracking from '../../services/visitorTrackingService';
@@ -11,11 +11,12 @@ const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // UPDATED: Changed all paths from '/' to '/home'
   const navItems = [
-    { name: 'Home', path: '/', section: 'hero' },
-    { name: 'About', path: '/#about', section: 'about' },
-    { name: 'Explore Portfolio', path: '/#navigation', section: 'navigation' },
-    { name: 'Contact Me', path: '/#contact', section: 'contact' }
+    { name: 'Home', path: '/home', section: 'hero' },
+    { name: 'About', path: '/home#about', section: 'about' },
+    { name: 'Explore Portfolio', path: '/home#navigation', section: 'navigation' },
+    { name: 'Contact Me', path: '/home#contact', section: 'contact' }
   ];
 
   const handleNavTrack = (itemName, itemPath, isMobile = false) => {
@@ -24,7 +25,8 @@ const Header = () => {
   };
 
   const handleBrandTrack = () => {
-    visitorTracking.trackClick('header_brand', 'logo_click', '/');
+    // UPDATED: Track home navigation instead of root
+    visitorTracking.trackClick('header_brand', 'logo_click', '/home');
   };
 
   const handleMobileMenuTrack = (action) => {
@@ -45,15 +47,18 @@ const Header = () => {
   };
 
   const isActivePath = (path) => {
-    if (path === '/') {
-      // Home is active only when on root path with no hash
-      return location.pathname === '/' && !location.hash;
+    // UPDATED: Check for both '/' and '/home' as home paths
+    if (path === '/home') {
+      // Home is active when on /home path with no hash, OR on root path
+      return (location.pathname === '/home' && !location.hash) || 
+             (location.pathname === '/' && !location.hash);
     }
     
     if (path.includes('#')) {
       // For hash-based navigation (About, Explore Portfolio, Contact Me)
       const targetHash = path.split('#')[1];
-      return location.hash === `#${targetHash}`;
+      const isOnHomePage = location.pathname === '/home' || location.pathname === '/';
+      return isOnHomePage && location.hash === `#${targetHash}`;
     }
     
     // For regular routes
@@ -66,26 +71,30 @@ const Header = () => {
 
     closeMenu();
     
-    if (item.path === '/') {
+    // UPDATED: Handle /home navigation
+    if (item.path === '/home') {
       // Navigate to home and scroll to top
-      navigate('/');
+      navigate('/home');
       setTimeout(() => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }, 100);
     } else if (item.path.includes('#')) {
       const sectionId = item.section;
       
-      if (location.pathname === '/') {
+      // UPDATED: Check if on home page (either '/home' or '/')
+      const isOnHomePage = location.pathname === '/home' || location.pathname === '/';
+      
+      if (isOnHomePage) {
         // Already on landing page, just scroll to section
         const element = document.getElementById(sectionId);
         if (element) {
           element.scrollIntoView({ behavior: 'smooth' });
           // Update URL hash using navigate to trigger location change
-          navigate(`/#${sectionId}`);
+          navigate(`/home#${sectionId}`);
         }
       } else {
-        // Navigate to landing page then scroll to section
-        navigate(`/#${sectionId}`);
+        // Navigate to home page then scroll to section
+        navigate(`/home#${sectionId}`);
         setTimeout(() => {
           const element = document.getElementById(sectionId);
           if (element) {

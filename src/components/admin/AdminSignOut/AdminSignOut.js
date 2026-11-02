@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import routeNavigation from '../../../utils/routeNavigation';
+import { signOutAdmin } from '../../../services/authService';
 import './AdminSignOut.css';
 
 const AdminSignOut = () => {
@@ -15,11 +15,8 @@ const AdminSignOut = () => {
   const [animationPhase, setAnimationPhase] = useState('typing');
   const [showFloatingElements, setShowFloatingElements] = useState(false);
 
-  // Navigation state
-  const [targetLoginRoute, setTargetLoginRoute] = useState('/adminlogin');
-
   // Multi-language farewell messages
-  const farewellMessages = [
+  const farewellMessages = React.useMemo(() => [
     {
       language: 'Hindi',
       message: 'अलविदा! धन्यवाद!',
@@ -69,35 +66,12 @@ const AdminSignOut = () => {
       color: '#00ff88',
       flag: '🇺🇸'
     }
-  ];
+  ], []);
 
   const currentMessage = farewellMessages[currentLanguageIndex];
 
-  // Initialize encrypted navigation on mount
   useEffect(() => {
-    const setupNavigation = async () => {
-      try {
-        // Clean up current session
-        const cleanupResult = routeNavigation.cleanupAdminSession();
-        
-        if (cleanupResult.success) {
-          console.log('Session cleaned up successfully');
-        }
-
-        // Get fresh login route for redirect
-        const routeResult = routeNavigation.getCurrentAdminRoutes();
-        
-        if (routeResult.success && routeResult.routes.adminlogin) {
-          setTargetLoginRoute(routeResult.routes.adminlogin);
-        }
-      } catch (error) {
-        console.error('Navigation setup failed:', error);
-        // Fallback to standard route
-        setTargetLoginRoute('/adminlogin');
-      }
-    };
-
-    setupNavigation();
+    signOutAdmin();
   }, []);
 
   // Scene 1: Developer typing animation + typewriter effect
@@ -135,13 +109,7 @@ const AdminSignOut = () => {
                     console.warn('Analytics cleanup failed:', error);
                   }
 
-                  // Navigate to encrypted login route
-                  const navResult = routeNavigation.safeAdminNavigate(navigate, '/adminlogin', { replace: true });
-                  
-                  if (!navResult.success) {
-                    // Fallback navigation
-                    navigate('/adminlogin', { replace: true });
-                  }
+                  navigate('/adminlogin', { replace: true });
                 }, 3000);
               }
             }, 1500);
@@ -153,7 +121,7 @@ const AdminSignOut = () => {
 
       return () => clearTimeout(typingDelay);
     }
-  }, [currentLanguageIndex, animationPhase, currentMessage.message, navigate]);
+  }, [currentLanguageIndex, animationPhase, currentMessage.message, farewellMessages.length, navigate]);
 
   // Cursor blinking effect
   useEffect(() => {

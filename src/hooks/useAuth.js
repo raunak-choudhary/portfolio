@@ -1,39 +1,29 @@
-// src/hooks/useAuth.js
+// src/hooks/useAuth.js - Supabase Auth based admin state
 
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
-  signInAdmin,
+  requestAdminLoginOtp,
   signOutAdmin,
-  getCurrentAdmin,
-  verifyAdminSession,
-  isAdmin,
-  requireAdminAuth
+  verifyAdminSession
 } from '../services/authService';
+import { supabase } from '../services/supabaseClient';
 
-/**
- * Custom hook for admin authentication management
- * Provides authentication state and methods for React components
- */
+const initialAuthState = {
+  user: null,
+  isAuthenticated: false,
+  isLoading: true,
+  error: null,
+  sessionChecked: false
+};
+
 export const useAuth = () => {
-  // Authentication state
-  const [authState, setAuthState] = useState({
-    user: null,
-    isAuthenticated: false,
-    isLoading: true,
-    error: null,
-    sessionChecked: false
-  });
-
-  // Loading states for different operations
+  const [authState, setAuthState] = useState(initialAuthState);
   const [loadingStates, setLoadingStates] = useState({
     signIn: false,
     signOut: false,
     sessionVerification: false
   });
 
-  /**
-   * Set loading state for specific operation
-   */
   const setOperationLoading = useCallback((operation, isLoading) => {
     setLoadingStates(prev => ({
       ...prev,
@@ -41,301 +31,154 @@ export const useAuth = () => {
     }));
   }, []);
 
-  /**
-   * Update authentication state
-   */
-  const updateAuthState = useCallback((newState) => {
-    setAuthState(prev => ({
-      ...prev,
-      ...newState,
-      isLoading: false
-    }));
+  const setSignedOut = useCallback((error = null) => {
+    setAuthState({
+      user: null,
+      isAuthenticated: false,
+      isLoading: false,
+      error,
+      sessionChecked: true
+    });
   }, []);
 
-  /**
-   * Check and restore existing session on component mount
-   */
-  const checkExistingSession = useCallback(async () => {
+  const refreshSession = useCallback(async () => {
     try {
       setOperationLoading('sessionVerification', true);
-      
-      const currentAdmin = getCurrentAdmin();
-      
-      if (currentAdmin) {
-        // Verify session is still valid
-        const verification = await verifyAdminSession();
-        
-        if (verification.success) {
-          updateAuthState({
-            user: currentAdmin.user,
-            isAuthenticated: true,
-            error: null,
-            sessionChecked: true
-          });
-        } else {
-          updateAuthState({
-            user: null,
-            isAuthenticated: false,
-            error: verification.error,
-            sessionChecked: true
-          });
-        }
-      } else {
-        updateAuthState({
-          user: null,
-          isAuthenticated: false,
-          error: null,
-          sessionChecked: true
-        });
+      const admin = await verifyAdminSession();
+
+      if (!admin.success) {
+        setSignedOut(admin.error);
+        return;
       }
-    } catch (error) {
-      console.error('Session check error:', error);
-      updateAuthState({
-        user: null,
-        isAuthenticated: false,
-        error: {
-          code: 'SESSION_CHECK_ERROR',
-          message: 'Failed to verify session',
-          details: error.message
-        },
+
+      setAuthState({
+        user: admin.data.user,
+        isAuthenticated: true,
+        isLoading: false,
+        error: null,
         sessionChecked: true
+      });
+    } catch (error) {
+      setSignedOut({
+        code: 'SESSION_CHECK_ERROR',
+        message: 'Failed to verify admin session',
+        details: error.message
       });
     } finally {
       setOperationLoading('sessionVerification', false);
     }
-  }, [updateAuthState, setOperationLoading]);
+  }, [setOperationLoading, setSignedOut]);
 
-  /**
-   * Sign in admin user
-   */
-  const signIn = useCallback(async (username, password) => {
+  const signIn = useCallback(async (email) => {
     try {
       setOperationLoading('signIn', true);
-      updateAuthState({ error: null });
+      setAuthState(prev => ({ ...prev, error: null }));
 
-      const result = await signInAdmin(username, password);
+      const result = await requestAdminLoginOtp(email);
 
-      if (result.success) {
-        updateAuthState({
-          user: result.data.user,
-          isAuthenticated: true,
-          error: null
-        });
-
-        return {
-          success: true,
-          data: result.data
-        };
-      } else {
-        updateAuthState({
-          user: null,
-          isAuthenticated: false,
+      if (!result.success) {
+        setAuthState(prev => ({
+          ...prev,
+          isLoading: false,
           error: result.error
-        });
-
-        return {
-          success: false,
-          error: result.error
-        };
+        }));
       }
-    } catch (error) {
-      const errorObj = {
-        code: 'SIGN_IN_ERROR',
-        message: 'Sign in failed',
-        details: error.message
-      };
 
-      updateAuthState({
-        user: null,
-        isAuthenticated: false,
-        error: errorObj
-      });
-
-      return {
-        success: false,
-        error: errorObj
-      };
+      return result;
     } finally {
       setOperationLoading('signIn', false);
     }
-  }, [updateAuthState, setOperationLoading]);
+  }, [setOperationLoading]);
 
-  /**
-   * Sign out admin user
-   */
   const signOut = useCallback(async () => {
     try {
       setOperationLoading('signOut', true);
-
       const result = await signOutAdmin();
-
-      updateAuthState({
-        user: null,
-        isAuthenticated: false,
-        error: null
-      });
-
-      return {
-        success: true,
-        data: result.data
-      };
-    } catch (error) {
-      console.error('Sign out error:', error);
-      
-      // Force update state even on error
-      updateAuthState({
-        user: null,
-        isAuthenticated: false,
-        error: null
-      });
-
-      return {
-        success: true,
-        data: { message: 'Logged out successfully' }
-      };
+      setSignedOut(result.success ? null : result.error);
+      return result;
     } finally {
       setOperationLoading('signOut', false);
     }
-  }, [updateAuthState, setOperationLoading]);
+  }, [setOperationLoading, setSignedOut]);
 
-  /**
-   * Refresh current session
-   */
-  const refreshSession = useCallback(async () => {
-    await checkExistingSession();
-  }, [checkExistingSession]);
-
-  /**
-   * Clear authentication error
-   */
   const clearError = useCallback(() => {
-    updateAuthState({ error: null });
-  }, [updateAuthState]);
-
-  /**
-   * Check if user has admin privileges
-   */
-  const hasAdminRole = useCallback(() => {
-    return authState.isAuthenticated && isAdmin();
-  }, [authState.isAuthenticated]);
-
-  /**
-   * Require admin authentication for protected operations
-   */
-  const requireAuth = useCallback(async () => {
-    return await requireAdminAuth();
+    setAuthState(prev => ({ ...prev, error: null }));
   }, []);
 
-  // Initialize authentication state on mount
+  const requireAuth = useCallback(async () => {
+    return verifyAdminSession();
+  }, []);
+
   useEffect(() => {
-    checkExistingSession();
-  }, [checkExistingSession]);
+    refreshSession();
 
-  // Auto-refresh session periodically (every 5 minutes)
-  useEffect(() => {
-    if (authState.isAuthenticated) {
-      const interval = setInterval(() => {
-        refreshSession();
-      }, 5 * 60 * 1000); // 5 minutes
+    const {
+      data: { subscription }
+    } = supabase.auth.onAuthStateChange(() => {
+      refreshSession();
+    });
 
-      return () => clearInterval(interval);
-    }
-  }, [authState.isAuthenticated, refreshSession]);
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [refreshSession]);
 
-  // Return authentication state and methods
+  const hasAdminRole = authState.isAuthenticated;
+
   return {
-    // Authentication state
     user: authState.user,
     isAuthenticated: authState.isAuthenticated,
     isLoading: authState.isLoading,
     error: authState.error,
     sessionChecked: authState.sessionChecked,
-
-    // Loading states for different operations
     isSigningIn: loadingStates.signIn,
     isSigningOut: loadingStates.signOut,
     isVerifyingSession: loadingStates.sessionVerification,
-
-    // Authentication methods
     signIn,
     signOut,
     refreshSession,
     clearError,
-
-    // Utility methods
-    hasAdminRole,
+    hasAdminRole: () => hasAdminRole,
     requireAuth,
-    isAdmin: hasAdminRole,
-
-    // Authentication status helpers
+    isAdmin: () => hasAdminRole,
     isFullyLoaded: authState.sessionChecked && !authState.isLoading,
-    canAccessAdmin: authState.isAuthenticated && hasAdminRole()
+    canAccessAdmin: authState.isAuthenticated && hasAdminRole
   };
 };
 
-/**
- * Hook for components that require admin authentication
- * Automatically redirects or shows error if not authenticated
- */
 export const useRequireAuth = (redirectOnFail = true) => {
   const auth = useAuth();
-  const [authRequired, setAuthRequired] = useState(false);
 
   useEffect(() => {
-    if (auth.sessionChecked && !auth.isLoading) {
-      if (!auth.isAuthenticated) {
-        setAuthRequired(true);
-        if (redirectOnFail && typeof window !== 'undefined') {
-          // Redirect to admin login
-          window.location.href = '/adminlogin';
-        }
-      } else {
-        setAuthRequired(false);
-      }
+    if (
+      redirectOnFail &&
+      auth.sessionChecked &&
+      !auth.isLoading &&
+      !auth.isAuthenticated &&
+      typeof window !== 'undefined'
+    ) {
+      window.location.href = '/adminlogin';
     }
   }, [auth.sessionChecked, auth.isLoading, auth.isAuthenticated, redirectOnFail]);
 
   return {
     ...auth,
-    authRequired,
+    authRequired: auth.sessionChecked && !auth.isAuthenticated,
     isReady: auth.sessionChecked && !auth.isLoading && auth.isAuthenticated
   };
 };
 
-/**
- * Hook for protected admin operations
- * Provides methods that automatically check authentication
- */
 export const useProtectedOperations = () => {
   const auth = useAuth();
 
-  /**
-   * Execute operation with automatic auth check
-   */
   const executeProtected = useCallback(async (operation) => {
-    try {
-      // Check authentication first
-      const authCheck = await auth.requireAuth();
-      
-      if (!authCheck.success) {
-        return {
-          success: false,
-          error: authCheck.error
-        };
-      }
+    const authCheck = await auth.requireAuth();
 
-      // Execute the protected operation
-      return await operation();
-    } catch (error) {
-      return {
-        success: false,
-        error: {
-          code: 'PROTECTED_OPERATION_ERROR',
-          message: 'Protected operation failed',
-          details: error.message
-        }
-      };
+    if (!authCheck.success) {
+      return authCheck;
     }
+
+    return operation();
   }, [auth]);
 
   return {

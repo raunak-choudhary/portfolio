@@ -26,9 +26,9 @@ if (!supabaseUrl || !supabaseAnonKey) {
 // ✅ SIMPLIFIED: Basic client configuration for production
 const supabaseConfig = {
   auth: {
-    autoRefreshToken: false,
-    persistSession: false,
-    detectSessionInUrl: false
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true
   },
   db: {
     schema: 'public'
@@ -43,41 +43,11 @@ const supabaseConfig = {
 // ✅ Create main Supabase client (anonymous/public)
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, supabaseConfig);
 
-// ✅ FALLBACK: Admin client for admin operations only (if service role available)
-let supabaseAdmin = null;
-const supabaseServiceRoleKey = process.env.REACT_APP_SUPABASE_SERVICE_ROLE_KEY;
-
 export const getSupabaseAdmin = () => {
-  // ✅ Only create admin client if service role key is available
-  if (!supabaseServiceRoleKey) {
-    console.warn('Service role key not available. Using anonymous client for all operations.');
-    return supabase; // ✅ Fallback to anonymous client
-  }
-
-  if (!supabaseAdmin) {
-    try {
-      supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false
-        },
-        db: {
-          schema: 'public'
-        },
-        global: {
-          headers: {
-            'x-application-name': 'dynamic-portfolio-admin'
-          }
-        }
-      });
-      console.log('✅ Admin client created successfully');
-    } catch (error) {
-      console.error('❌ Failed to create admin client:', error);
-      return supabase; // ✅ Fallback to anonymous client
-    }
-  }
-
-  return supabaseAdmin;
+  console.warn(
+    'Browser admin client is disabled. Use Supabase Auth or Edge Functions for admin operations.'
+  );
+  return supabase;
 };
 
 // ✅ Test connection function
@@ -140,11 +110,9 @@ export const testContactFormAccess = async () => {
       status: 'unread'
     };
 
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('contact_messages')
-      .insert([testData])
-      .select()
-      .single();
+      .insert([testData]);
 
     if (error) {
       console.error('❌ Contact form access test failed:', error);
@@ -157,18 +125,10 @@ export const testContactFormAccess = async () => {
 
     console.log('✅ Contact form access test successful');
     
-    // Clean up test data
-    if (data?.id) {
-      await supabase
-        .from('contact_messages')
-        .delete()
-        .eq('id', data.id);
-    }
-
     return { 
       success: true, 
       message: 'Contact form access confirmed',
-      data: data
+      data: null
     };
   } catch (error) {
     console.error('❌ Contact form access test error:', error);
@@ -246,7 +206,6 @@ export const handleSupabaseError = (error, context = 'Operation') => {
 export const config = {
   url: supabaseUrl,
   hasAnonKey: !!supabaseAnonKey,
-  hasServiceKey: !!supabaseServiceRoleKey,
   environment: process.env.NODE_ENV
 };
 
