@@ -1,6 +1,6 @@
 import { assert, assertEquals, assertStringIncludes } from 'jsr:@std/assert@1';
 import { ATTACHMENT_PREFIX, MAX_BODY_BYTES } from './lib.ts';
-import { type HandlerDeps, handleRequest } from './handler.ts';
+import { DEFAULT_RECIPIENT, type HandlerDeps, handleRequest } from './handler.ts';
 
 const ORIGIN = 'https://www.raunakchoudhary.com';
 const PUBLIC_KEY = 'sb_publishable_test';
@@ -163,6 +163,14 @@ Deno.test('reports configuration and delivery failures without leaking details',
   assertEquals(response.status, 502);
   assertEquals(result.error, 'Failed to send email');
   assertEquals(JSON.stringify(result).includes('422'), false);
+});
+
+Deno.test('delivers to the default recipient when no override is configured', async () => {
+  const { deps, sent } = makeDeps();
+  delete deps.env.CONTACT_RECIPIENT_EMAIL;
+  const response = await handleRequest(post(body()), deps);
+  assertEquals(response.status, 200);
+  assertEquals((sent[0] as { to: string[] }).to, [DEFAULT_RECIPIENT]);
 });
 
 Deno.test('rejects methods other than POST', async () => {

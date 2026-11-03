@@ -36,6 +36,12 @@ export interface HandlerDeps {
 /** Default sender: Resend's shared test address, which delivers only to the account owner. */
 const DEFAULT_SENDER = 'Portfolio Contact <onboarding@resend.dev>';
 
+/**
+ * Default recipient: the owner's address, which the site already publishes
+ * on its Contact section. CONTACT_RECIPIENT_EMAIL overrides it.
+ */
+export const DEFAULT_RECIPIENT = 'raunakchoudhary17@gmail.com';
+
 const json = (status: number, body: unknown, headers: Record<string, string> = {}) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', ...headers } });
 
@@ -100,10 +106,7 @@ export async function handleRequest(request: Request, deps: HandlerDeps): Promis
     return json(500, { success: false, error: 'Email service not configured' }, cors);
   }
 
-  const recipient = deps.env.CONTACT_RECIPIENT_EMAIL;
-  if (!recipient) {
-    return json(500, { success: false, error: 'Recipient not configured' }, cors);
-  }
+  const recipient = deps.env.CONTACT_RECIPIENT_EMAIL || DEFAULT_RECIPIENT;
 
   const attachments = await signAttachments(validation.data, deps);
   const receivedAt = receivedAtLabel((deps.now ?? (() => new Date()))());
