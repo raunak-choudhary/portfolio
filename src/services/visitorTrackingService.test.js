@@ -1,7 +1,9 @@
 import { supabase } from './supabaseClient';
 import {
+  deviceClassFor,
   initializeVisitorTracking,
   isAnalyticsEnabled,
+  referrerHostFor,
   trackClick,
   trackContactSubmission,
   trackPageView,
@@ -101,6 +103,19 @@ describe('trackers with analytics enabled', () => {
     });
   });
 
+  it('stores only coarse visitor context: device class, referrer host, returning flag', async () => {
+    const insert = mockInsertResult();
+
+    await trackPageView('skills-context', 'Skills');
+
+    const [[rows]] = insert.mock.calls;
+    const visitorInfo = rows[0].metadata.visitor_info;
+    expect(Object.keys(visitorInfo).sort()).toEqual(['deviceClass', 'isReturningVisitor', 'referrer']);
+    expect(['phone', 'tablet', 'desktop']).toContain(visitorInfo.deviceClass);
+    expect(visitorInfo.referrer).toBe('direct');
+    expect(JSON.stringify(rows[0])).not.toMatch(/userAgent|screenWidth|timezone|language/);
+  });
+
   it('records the same page only once per session and day', async () => {
     const insert = mockInsertResult();
 
@@ -143,5 +158,25 @@ describe('trackers with analytics enabled', () => {
     supabase.from.mockReturnValue({ insert: jest.fn().mockRejectedValue(new Error('network down')) });
 
     await expect(trackPageView('home-network-failure', 'Home')).resolves.toBeUndefined();
+  });
+});
+
+describe('visitor context helpers', () => {
+  it('deviceClassFor follows the site breakpoints and treats bad input as phone', () => {
+    expect(deviceClassFor(375)).toBe('phone');
+    expect(deviceClassFor(767)).toBe('phone');
+    expect(deviceClassFor(768)).toBe('tablet');
+    expect(deviceClassFor(1279)).toBe('tablet');
+    expect(deviceClassFor(1280)).toBe('desktop');
+    expect(deviceClassFor(undefined)).toBe('phone');
+    expect(deviceClassFor(NaN)).toBe('phone');
+  });
+
+  it('referrerHostFor keeps only the host and never the path or query', () => {
+    expect(referrerHostFor('https://www.linkedin.com/in/someone?trk=abc')).toBe('www.linkedin.com');
+    expect(referrerHostFor('https://github.com/')).toBe('github.com');
+    expect(referrerHostFor('')).toBe('direct');
+    expect(referrerHostFor(undefined)).toBe('direct');
+    expect(referrerHostFor('not a url')).toBe('direct');
   });
 });

@@ -53,17 +53,40 @@ const generateVisitorSessionId = () => {
 };
 
 // Get visitor info (privacy-friendly)
-const getVisitorInfo = () => {
-  return {
-    userAgent: navigator.userAgent,
-    language: navigator.language,
-    screenWidth: window.screen.width,
-    screenHeight: window.screen.height,
-    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    referrer: document.referrer || 'direct',
-    isReturningVisitor: localStorage.getItem('portfolio_visited') !== null
-  };
+/**
+ * Buckets a viewport width into the three classes the site's breakpoints use.
+ * Stored instead of the exact screen size so an event cannot identify a device.
+ */
+export const deviceClassFor = (width) => {
+  if (!Number.isFinite(width) || width < 768) return 'phone';
+  return width < 1280 ? 'tablet' : 'desktop';
 };
+
+/**
+ * Reduces a referrer URL to its host ('direct' when absent or unparseable).
+ * The path and query of a referrer can carry search terms or identifiers.
+ */
+export const referrerHostFor = (referrer) => {
+  if (!referrer) return 'direct';
+  try {
+    return new URL(referrer).hostname || 'direct';
+  } catch {
+    return 'direct';
+  }
+};
+
+/**
+ * Coarse visitor context stored with each event. Deliberately no user agent,
+ * screen size, language or timezone: together those fingerprint a device,
+ * and the portfolio only needs the kind of device and where the visit came
+ * from (owner decision, 2026-11-03). The stored history was reduced to the
+ * same shape by the migration of the same date.
+ */
+const getVisitorInfo = () => ({
+  deviceClass: deviceClassFor(window.innerWidth),
+  referrer: referrerHostFor(document.referrer),
+  isReturningVisitor: localStorage.getItem('portfolio_visited') !== null,
+});
 
 // Track page view
 export const trackPageView = async (page, title = '') => {
