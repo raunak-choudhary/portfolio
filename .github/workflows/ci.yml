@@ -1,0 +1,121 @@
+# Continuous integration for every pull request and every push to main.
+#
+# Jobs:
+#   tests     unit and module tests (Jest via react-scripts) and tooling tests (node:test)
+#   secrets   gitleaks over the full git history
+#   browser   production build for tests, bundle scan, Playwright browser suite on fixtures
+#   ci        single required check that passes only when every job above passed
+#
+# Actions are pinned to full commit SHAs; the comment beside each names the release.
+# The Supabase URL and public key are repository variables, not secrets: both are
+# compiled into the public bundle by design. The browser suite answers every
+# Supabase request from recorded fixtures, so CI never reads or writes the live
+# database, and analytics are compiled off.
+
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  NODE_VERSION: '22.12'
+
+jobs:
+  tests:
+    name: Unit, module and tooling tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - name: App unit and module tests
+        run: npm test -- --watchAll=false
+        env:
+          CI: 'true'
+      - name: Tooling unit tests
+        run: npm run test:tools
+
+  secrets:
+    name: Secret scan (full history)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_CONFIG: .gitleaks.toml
+          GITLEAKS_ENABLE_COMMENTS: 'false'
+
+  browser:
+    name: Build, bundle scan and browser suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - name: Build for tests
+        run: npm run build:e2e
+        env:
+          REACT_APP_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          REACT_APP_SUPABASE_ANON_KEY: ${{ vars.SUPABASE_PUBLIC_KEY }}
+      - name: Scan the bundle for secrets and retired code
+        run: node scripts/scan-bundle.mjs --root build
+      - name: Cache Playwright browsers
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Browser suite
+        run: npm run e2e
+        env:
+          CI: 'true'
+      - name: Upload browser report
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+
+  ci:
+    name: ci
+    if: always()
+    needs: [tests, secrets, browser]
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Require every job to pass
+        run: |
+          echo "tests=${{ needs.tests.result }} secrets=${{ needs.secrets.result }} browser=${{ needs.browser.result }}"
+          test "${{ needs.tests.result }}" = success
+          test "${{ needs.secrets.result }}" = success
+          test "${{ needs.browser.result }}" = success

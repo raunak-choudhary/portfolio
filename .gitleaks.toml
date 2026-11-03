@@ -1,0 +1,13 @@
+# Gitleaks configuration: default rules plus one allowlist.
+#
+# Supabase publishable keys (sb_publishable_...) are public by design: they
+# ship in every page bundle and only reach what Row Level Security allows.
+# They are allowed so CI can carry the key once it replaces the legacy anon
+# key. Secret keys (sb_secret_...) are never allowed.
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Public Supabase publishable keys"
+regexes = ['''sb_publishable_[A-Za-z0-9_-]+''']
