@@ -1,0 +1,42 @@
+[
+  {
+    "shot": "adminlogin-1440",
+    "kind": "*",
+    "reason": "the hardened build replaces the 2025 username and password form with the Supabase Auth email-link login"
+  },
+  {
+    "shot": "home-dark-1440",
+    "kind": "aria",
+    "reason": "the Contact section no longer renders the phone link (owner decision 2026-11-02)"
+  },
+  {
+    "shot": "home-light-1440",
+    "kind": "aria",
+    "reason": "the Contact section no longer renders the phone link (owner decision 2026-11-02)"
+  },
+  {
+    "shot": "home-cube-expanded-1440",
+    "kind": "aria",
+    "reason": "the Contact section no longer renders the phone link (owner decision 2026-11-02)"
+  },
+  {
+    "shot": "home-dark-375",
+    "kind": "aria",
+    "reason": "the Contact section no longer renders the phone link (owner decision 2026-11-02)"
+  },
+  {
+    "shot": "home-dark-375",
+    "kind": "height",
+    "reason": "the removed phone link freed one contact row at phone width (about 70px)"
+  },
+  {
+    "shot": "home-dark-768",
+    "kind": "aria",
+    "reason": "the Contact section no longer renders the phone link (owner decision 2026-11-02)"
+  },
+  {
+    "shot": "home-dark-768",
+    "kind": "height",
+    "reason": "the removed phone link freed one contact row at tablet width (about 71px)"
+  }
+]
