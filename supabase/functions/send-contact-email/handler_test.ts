@@ -133,6 +133,19 @@ Deno.test('answers preflight from an allowed origin with CORS headers', async ()
   assertStringIncludes(preflight.headers.get('Access-Control-Allow-Headers') ?? '', 'apikey');
 });
 
+Deno.test('preflight echoes the headers the browser intends to send, lower-cased', async () => {
+  const { deps } = makeDeps();
+  const preflight = await handleRequest(
+    new Request('https://fn.example/x', {
+      method: 'OPTIONS',
+      headers: { origin: ORIGIN, 'access-control-request-headers': 'Content-Type, apikey, X-Application-Name' },
+    }),
+    deps,
+  );
+  assertEquals(preflight.status, 204);
+  assertEquals(preflight.headers.get('Access-Control-Allow-Headers'), 'content-type, apikey, x-application-name');
+});
+
 Deno.test('rejects oversized bodies before parsing', async () => {
   const { deps, sent } = makeDeps();
   const huge = JSON.stringify({ ...body(), message: 'x'.repeat(MAX_BODY_BYTES) });

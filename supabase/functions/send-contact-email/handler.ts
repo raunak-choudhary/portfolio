@@ -71,7 +71,9 @@ export async function handleRequest(request: Request, deps: HandlerDeps): Promis
   const origin = request.headers.get('origin');
   const allowedOrigins = allowedOriginsFrom(deps.env.ALLOWED_ORIGINS);
   const originAllowed = isAllowedOrigin(origin, allowedOrigins);
-  const cors = originAllowed ? corsHeadersFor(origin as string) : {};
+  const cors = originAllowed
+    ? corsHeadersFor(origin as string, request.headers.get('access-control-request-headers'))
+    : {};
 
   if (request.method === 'OPTIONS') {
     return new Response(null, { status: originAllowed ? 204 : 403, headers: cors });

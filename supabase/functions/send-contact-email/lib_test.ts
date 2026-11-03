@@ -78,6 +78,11 @@ Deno.test('origin checks use the configured list or the defaults', () => {
     'https://b.example',
   ]);
   assertEquals(corsHeadersFor('https://a.example')['Access-Control-Allow-Origin'], 'https://a.example');
+  assertStringIncludes(corsHeadersFor('https://a.example')['Access-Control-Allow-Headers'], 'x-application-name');
+  assertEquals(
+    corsHeadersFor('https://a.example', 'X-Custom, Apikey')['Access-Control-Allow-Headers'],
+    'x-custom, apikey',
+  );
 });
 
 Deno.test('acceptedPublicKeys merges publishable keys and the legacy anon key', () => {

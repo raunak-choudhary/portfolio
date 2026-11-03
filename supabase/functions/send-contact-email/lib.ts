@@ -136,13 +136,26 @@ export function allowedOriginsFrom(setting: string | undefined): string[] {
   return parsed.length > 0 ? parsed : DEFAULT_ALLOWED_ORIGINS;
 }
 
-/** Response headers for a request from an allowed origin. */
-export function corsHeadersFor(origin: string): Record<string, string> {
+/** Request headers the function accepts when the browser names none. */
+export const DEFAULT_ALLOWED_REQUEST_HEADERS = 'authorization, x-client-info, apikey, content-type, x-application-name';
+
+/**
+ * Response headers for a request from an allowed origin.
+ *
+ * On preflight the browser lists the headers it intends to send; echoing
+ * that list back (lower-cased) keeps the function compatible with client
+ * libraries that add their own headers, such as the site's
+ * `x-application-name`. Only the origin is restricted; header names carry no
+ * security weight here, since the handler authorises on the key and origin.
+ */
+export function corsHeadersFor(origin: string, requestedHeaders?: string | null): Record<string, string> {
+  const allowHeaders = requestedHeaders?.trim() ? requestedHeaders.toLowerCase() : DEFAULT_ALLOWED_REQUEST_HEADERS;
   return {
     'Access-Control-Allow-Origin': origin,
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Headers': allowHeaders,
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    Vary: 'Origin',
+    'Access-Control-Max-Age': '86400',
+    Vary: 'Origin, Access-Control-Request-Headers',
   };
 }
 
