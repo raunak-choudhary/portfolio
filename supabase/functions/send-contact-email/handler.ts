@@ -17,6 +17,7 @@ import {
   type ContactRequest,
   corsHeadersFor,
   isAllowedOrigin,
+  looksLikePublicKey,
   MAX_BODY_BYTES,
   renderEmail,
   SIGNED_URL_TTL_SECONDS,
@@ -91,11 +92,16 @@ export async function handleRequest(request: Request, deps: HandlerDeps): Promis
   const bearer = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ?? '';
   const apiKey = request.headers.get('apikey') || bearer;
   const keyAccepted = Boolean(apiKey) &&
-    (acceptedPublicKeys(deps.env).has(apiKey) || (deps.verifyKey ? await deps.verifyKey(apiKey) : false));
+    (acceptedPublicKeys(deps.env).has(apiKey) ||
+      (looksLikePublicKey(apiKey) && deps.verifyKey ? await deps.verifyKey(apiKey) : false));
   if (!keyAccepted) {
     return json(401, { success: false, error: 'Missing or unknown API key' }, cors);
   }
 
+  const declaredLength = Number(request.headers.get('content-length') ?? 0);
+  if (declaredLength > MAX_BODY_BYTES) {
+    return json(413, { success: false, error: 'Request body too large' }, cors);
+  }
   const rawBody = await request.text();
   if (new TextEncoder().encode(rawBody).byteLength > MAX_BODY_BYTES) {
     return json(413, { success: false, error: 'Request body too large' }, cors);

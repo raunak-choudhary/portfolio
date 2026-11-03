@@ -140,8 +140,9 @@ describe('authService secure admin auth', () => {
         .toBe('This login link has expired or was already used. Request a new one below.');
     });
 
-    it('falls back to the description or a generic sentence for other errors', () => {
-      expect(readAuthErrorFromUrl('?error_code=server_error&error_description=Unexpected+failure')).toBe('Unexpected failure');
+    it('never shows the free-text description from the URL, only fixed sentences', () => {
+      expect(readAuthErrorFromUrl('?error_code=server_error&error_description=Sign+in+at+evil.example'))
+        .toBe('The login link could not be used. Request a new one below.');
       expect(readAuthErrorFromUrl('#error=access_denied')).toBe('The login link could not be used. Request a new one below.');
     });
 
