@@ -32,8 +32,18 @@ const storage = serviceKey && env.SUPABASE_URL
   ? createClient(env.SUPABASE_URL, serviceKey.key, { auth: { persistSession: false, autoRefreshToken: false } }).storage
   : null;
 
+/** Keys already confirmed by Supabase Auth, for the life of this isolate. */
+const verifiedKeys = new Map<string, boolean>();
+
 const deps: HandlerDeps = {
   env,
+  verifyKey: async (key) => {
+    if (!env.SUPABASE_URL) return false;
+    if (verifiedKeys.has(key)) return verifiedKeys.get(key) as boolean;
+    const response = await fetch(`${env.SUPABASE_URL}/auth/v1/settings`, { headers: { apikey: key } });
+    verifiedKeys.set(key, response.ok);
+    return response.ok;
+  },
   signUrl: async (path, ttlSeconds) => {
     if (!storage) return { error: 'service key unavailable' };
     const { data, error } = await storage.from(ATTACHMENT_BUCKET).createSignedUrl(path, ttlSeconds);
