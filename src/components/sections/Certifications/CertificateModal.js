@@ -4,6 +4,7 @@
 // =====================================================
 
 import React, { useEffect, useRef, useState } from 'react';
+import { openPrintWindow } from '../../../utils/printWindow';
 
 const CertificateModal = ({ certification, onClose }) => {
   console.log('📄 Rendering CertificateModal for:', certification?.title);
@@ -121,25 +122,22 @@ const CertificateModal = ({ certification, onClose }) => {
       // For PDF, open in new window for printing
       window.open(certification.certificate_pdf_url, '_blank');
     } else if (fileType === 'image') {
-      // For images, open in new window for printing
-      const printWindow = window.open('', '_blank');
-      printWindow.document.write(`
-        <html>
-          <head>
-            <title>Print Certificate - ${certification.title}</title>
-            <style>
-              body { margin: 0; padding: 20px; text-align: center; }
-              img { max-width: 100%; height: auto; }
-              @media print { body { padding: 0; } }
-            </style>
-          </head>
-          <body>
-            <img src="${certification.certificate_pdf_url}" alt="${certification.title}" />
-            <script>window.onload = () => window.print();</script>
-          </body>
-        </html>
-      `);
-      printWindow.document.close();
+      // Images print from a popup filled through DOM APIs; the security
+      // policy forbids the inline print script the old markup relied on.
+      openPrintWindow({
+        title: `Print Certificate - ${certification.title}`,
+        styles: [
+          'body { margin: 0; padding: 20px; text-align: center; }',
+          'img { max-width: 100%; height: auto; }',
+          '@media print { body { padding: 0; } }',
+        ].join('\n'),
+        render: (doc, body) => {
+          const image = doc.createElement('img');
+          image.src = certification.certificate_pdf_url;
+          image.alt = certification.title;
+          body.appendChild(image);
+        },
+      });
     }
   };
 

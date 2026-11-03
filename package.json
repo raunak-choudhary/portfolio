@@ -26,7 +26,8 @@
     "capture": "node scripts/capture-site.mjs",
     "compare": "node scripts/compare-captures.mjs",
     "fixtures:record": "node --env-file=.env.development.local scripts/record-fixtures.mjs",
-    "scan:bundle": "node scripts/scan-bundle.mjs --root build"
+    "scan:bundle": "node scripts/scan-bundle.mjs --root build",
+    "check:csp": "node scripts/check-csp.mjs"
   },
   "eslintConfig": {
     "extends": [

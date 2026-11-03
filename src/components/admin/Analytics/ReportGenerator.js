@@ -1,6 +1,7 @@
 // src/components/admin/Analytics/ReportGenerator.js
 import React, { useState, useEffect } from 'react';
 import analyticsService from '../../../services/analyticsService';
+import { openPrintWindow } from '../../../utils/printWindow';
 import './ReportGenerator.css';
 
 const ReportGenerator = ({ dateRange = '30d' }) => {
@@ -245,25 +246,21 @@ Report Type: ${reportTypes.find(t => t.id === reportType)?.name}
           format: 'pdf'
         };
         
-        // Create a printable HTML version
-        const printWindow = window.open('', '_blank');
-        printWindow.document.write(`
-          <html>
-            <head>
-              <title>RC Portfolio Analytics Report</title>
-              <style>
-                body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
-                h1 { color: #333; border-bottom: 2px solid #333; }
-                h2 { color: #666; margin-top: 30px; }
-                pre { background: #f5f5f5; padding: 15px; border-radius: 5px; }
-              </style>
-            </head>
-            <body>
-              <pre>${reportContent}</pre>
-              <script>window.print();</script>
-            </body>
-          </html>
-        `);
+        // Printable version in a popup filled through DOM APIs: the security
+        // policy forbids the inline print script, and textContent keeps the
+        // report text from being parsed as HTML.
+        await openPrintWindow({
+          title: 'RC Portfolio Analytics Report',
+          styles: [
+            'body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }',
+            'pre { background: #f5f5f5; padding: 15px; border-radius: 5px; white-space: pre-wrap; }',
+          ].join('\n'),
+          render: (doc, body) => {
+            const report = doc.createElement('pre');
+            report.textContent = reportContent;
+            body.appendChild(report);
+          },
+        });
       } else {
         // For CSV/JSON, use existing export functionality
         exportResult = await analyticsService.exportAnalyticsData(

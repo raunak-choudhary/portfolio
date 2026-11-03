@@ -79,19 +79,12 @@ const Contact = () => {
                 <span className="link-icon">💼</span>
                 <span>LinkedIn</span>
               </a>
-              <a 
-                href="mailto:raunakchoudhary17@gmail.com" 
+              <a
+                href="mailto:raunakchoudhary17@gmail.com"
                 className="contact-link email"
               >
                 <span className="link-icon">📧</span>
                 <span>Direct Email</span>
-              </a>
-              <a 
-                href="tel:+19292894648" 
-                className="contact-link phone"
-              >
-                <span className="link-icon">📱</span>
-                <span>Phone</span>
               </a>
             </div>
           </div>

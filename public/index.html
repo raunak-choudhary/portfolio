@@ -7,9 +7,8 @@
   <!-- FIXED VIEWPORT TAG - This fixes the zoom issue between localhost and production -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, minimum-scale=1.0, user-scalable=yes, viewport-fit=cover" />
   
-  <!-- 🚀 FIX FOR WEBSOCKET CSP ERROR - ADD THIS LINE -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https: blob:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://emaaaeooafqawdvdreaz.supabase.co wss://emaaaeooafqawdvdreaz.supabase.co https://api.emailjs.com; object-src 'none'; base-uri 'self'; form-action 'self';" />
-  
+  <!-- The Content Security Policy is sent as a response header from public/.htaccess, never duplicated here: two policies would intersect and drift. -->
+
   <!-- Critical CSS to prevent viewport scaling issues -->
   <style>
     html {
@@ -115,12 +114,11 @@
     "name": "Raunak Choudhary",
     "url": "https://www.raunakchoudhary.com",
     "sameAs": [
-      "https://linkedin.com/in/raunakchoudhary",
-      "https://github.com/raunakchoudhary"
+      "https://www.linkedin.com/in/raunak-choudhary",
+      "https://github.com/raunak-choudhary"
     ],
     "jobTitle": "Full Stack Developer & AWS Developer",
     "description": "Professional Full Stack Developer and AWS Developer with expertise in React, Python, AWS cloud solutions, and modern web technologies.",
-    "email": "raunakchoudhary17@gmail.com",
     "knowsAbout": [
       "React.js",
       "Python",
@@ -151,18 +149,6 @@
   </noscript>
   
   <div id="root"></div>
-  
-  <!-- Add loaded class after DOM is ready to prevent flash -->
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      document.body.classList.add('loaded');
-    });
-    
-    // Additional viewport fix for Safari and Chrome
-    if (window.navigator.userAgent.includes('Safari') || window.navigator.userAgent.includes('Chrome')) {
-      document.documentElement.style.zoom = '1';
-      document.body.style.zoom = '1';
-    }
-  </script>
+  <!-- No inline script: the security policy allows only external scripts. The app bundle marks the body as loaded (src/index.js). -->
 </body>
 </html>

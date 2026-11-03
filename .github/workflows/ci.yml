@@ -49,6 +49,8 @@ jobs:
           CI: 'true'
       - name: Tooling unit tests
         run: npm run test:tools
+      - name: Security headers match the assets the site uses
+        run: npm run check:csp
 
   secrets:
     name: Secret scan (full history)
@@ -88,8 +90,8 @@ jobs:
         env:
           REACT_APP_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
           REACT_APP_SUPABASE_ANON_KEY: ${{ vars.SUPABASE_PUBLIC_KEY }}
-      - name: Scan the bundle for secrets and retired code
-        run: node scripts/scan-bundle.mjs --root build
+      - name: Scan the bundle for secrets, retired code and inline scripts
+        run: node scripts/scan-bundle.mjs --root build --reject-inline-scripts
       - name: Cache Playwright browsers
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
