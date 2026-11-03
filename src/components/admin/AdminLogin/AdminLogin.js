@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthContext } from '../../../contexts/AuthContext';
+import { LOGIN_LINK_SENT_MESSAGE } from '../../../services/authService';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import './AdminLogin.css';
 
@@ -43,7 +44,9 @@ const AdminLogin = () => {
     const result = await signIn(trimmedEmail);
 
     if (result.success) {
-      setSuccessMessage('Secure admin login link sent. Check your email, then return here.');
+      // Same wording for admin and unknown addresses: the screen never
+      // confirms which addresses can log in.
+      setSuccessMessage(result.data?.message || LOGIN_LINK_SENT_MESSAGE);
       setEmail('');
     } else {
       setFormError(result.error?.message || 'Admin login failed.');
@@ -66,7 +69,7 @@ const AdminLogin = () => {
               <img src="/logo.png" alt="RC Portfolio" className="header-logo" />
               <div>
                 <h1>Admin Login</h1>
-                <p>Secure email OTP access for portfolio management</p>
+                <p>Sign in with a one-time link sent to the admin email address</p>
               </div>
             </div>
           </div>

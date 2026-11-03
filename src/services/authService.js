@@ -20,6 +20,50 @@ const authError = (code, message, details = null) => ({
   details
 });
 
+/**
+ * Message shown after every login request, whether or not the address is an
+ * admin. The login screen must not confirm which addresses are admins, so an
+ * unknown address gets the same reply as a real send.
+ */
+export const LOGIN_LINK_SENT_MESSAGE =
+  'If this address belongs to the portfolio admin, a login link is on its way. Check your email.';
+
+/** Message shown when Supabase refuses to send another email yet. */
+export const LOGIN_RATE_LIMITED_MESSAGE =
+  'Too many login emails were requested recently. Wait a minute and try again.';
+
+/**
+ * Supabase Auth error codes returned when the address has no account and
+ * account creation is off. They must look like success to the caller.
+ */
+const UNKNOWN_ACCOUNT_ERROR_CODES = new Set(['otp_disabled', 'signup_disabled']);
+
+/** Error codes and statuses that mean the email sender is throttled. */
+const RATE_LIMIT_ERROR_CODES = new Set(['over_email_send_rate_limit', 'over_request_rate_limit']);
+
+/** True when a Supabase Auth error means "no such account" rather than a failure. */
+export const isUnknownAccountError = (error) =>
+  Boolean(error) && (UNKNOWN_ACCOUNT_ERROR_CODES.has(error.code) || error.status === 422);
+
+/** True when a Supabase Auth error means the request was rate limited. */
+export const isRateLimitError = (error) =>
+  Boolean(error) && (RATE_LIMIT_ERROR_CODES.has(error.code) || error.status === 429);
+
+/**
+ * Requests a magic-link email for the admin.
+ *
+ * Account creation is off: only an address that already has a Supabase Auth
+ * account receives a link. Project sign-ups are disabled in the dashboard as
+ * well, so this is defence in depth rather than the only barrier.
+ *
+ * Note that the raw auth endpoint still answers differently for unknown
+ * addresses (HTTP 422) and anyone calling it directly can tell them apart.
+ * That is accepted: sign-ups are closed and admin writes require a second
+ * factor, so knowing the admin's address gains an attacker nothing.
+ *
+ * @param {string} email address typed into the login form.
+ * @returns {Promise<{success: boolean, data?: object, error?: object}>}
+ */
 export const requestAdminLoginOtp = async (email) => {
   const normalizedEmail = normalizeEmail(email);
 
@@ -34,12 +78,19 @@ export const requestAdminLoginOtp = async (email) => {
     const { error } = await supabase.auth.signInWithOtp({
       email: normalizedEmail,
       options: {
-        shouldCreateUser: true,
+        shouldCreateUser: false,
         emailRedirectTo: getRedirectUrl()
       }
     });
 
-    if (error) {
+    if (error && isRateLimitError(error)) {
+      return {
+        success: false,
+        error: authError('OTP_RATE_LIMITED', LOGIN_RATE_LIMITED_MESSAGE, error)
+      };
+    }
+
+    if (error && !isUnknownAccountError(error)) {
       return {
         success: false,
         error: authError('OTP_REQUEST_FAILED', error.message, error)
@@ -50,7 +101,7 @@ export const requestAdminLoginOtp = async (email) => {
       success: true,
       data: {
         email: normalizedEmail,
-        message: 'Admin login link sent. Check your email to continue.'
+        message: LOGIN_LINK_SENT_MESSAGE
       }
     };
   } catch (error) {
@@ -58,6 +109,24 @@ export const requestAdminLoginOtp = async (email) => {
       success: false,
       error: authError('OTP_REQUEST_ERROR', 'Failed to request admin login link', error.message)
     };
+  }
+};
+
+/**
+ * Reads whether the current session has passed the second factor.
+ *
+ * The assurance level lives in the access token, not on the user object;
+ * supabase-js decodes it locally without a network call. Any failure counts
+ * as "not verified", which is the safe direction.
+ *
+ * @returns {Promise<boolean>} true only at assurance level 2.
+ */
+export const hasSecondFactorSession = async () => {
+  try {
+    const { data, error } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    return !error && data?.currentLevel === 'aal2';
+  } catch (error) {
+    return false;
   }
 };
 
@@ -113,7 +182,7 @@ export const getCurrentAdmin = async () => {
       token,
       expiresAt,
       isAuthenticated: true,
-      twoFactorVerified: data.session.user?.aal === 'aal2'
+      twoFactorVerified: await hasSecondFactorSession()
     };
   } catch (error) {
     return null;
@@ -203,6 +272,7 @@ export const initializeAuth = () => {};
 
 const authService = {
   requestAdminLoginOtp,
+  hasSecondFactorSession,
   signInAdmin,
   signOutAdmin,
   getCurrentAdmin,
