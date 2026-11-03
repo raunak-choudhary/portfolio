@@ -56,6 +56,19 @@ describe('checkSecurityHeaders', () => {
     assert.ok(problems.includes("script-src must not include 'unsafe-eval'"));
   });
 
+  it('rejects repeated directives, which browsers resolve to the first copy', () => {
+    const policy = `${GOOD_POLICY}; script-src 'self'`;
+    const problems = checkSecurityHeaders(input({ htaccess: htaccessWith(policy) }));
+    assert.equal(problems.length, 1);
+    assert.match(problems[0], /malformed.*script-src appears more than once/);
+  });
+
+  it('rejects wildcard and scheme-only script sources', () => {
+    const policy = GOOD_POLICY.replace("script-src 'self'", "script-src 'self' https: *");
+    const problems = checkSecurityHeaders(input({ htaccess: htaccessWith(policy) }));
+    assert.deepEqual(problems, ['script-src must not include *', 'script-src must not include https:']);
+  });
+
   it('reports an image host the policy does not allow', () => {
     const problems = checkSecurityHeaders(input({ imageHosts: [HOST, 'images.unsplash.com'] }));
     assert.deepEqual(problems, ['img-src does not allow image host images.unsplash.com']);

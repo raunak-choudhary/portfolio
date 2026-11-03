@@ -32,16 +32,27 @@ const storage = serviceKey && env.SUPABASE_URL
   ? createClient(env.SUPABASE_URL, serviceKey.key, { auth: { persistSession: false, autoRefreshToken: false } }).storage
   : null;
 
-/** Keys already confirmed by Supabase Auth, for the life of this isolate. */
-const verifiedKeys = new Map<string, boolean>();
+/**
+ * Keys confirmed by Supabase Auth, remembered for a short time so a disabled
+ * key stops working within minutes, and capped so unknown keys cannot grow
+ * memory. Failures are never cached: each refused key costs one request,
+ * and the shape check in the handler already filters random strings.
+ */
+const VERIFIED_KEY_TTL_MS = 10 * 60 * 1000;
+const VERIFIED_KEY_CAP = 32;
+const verifiedKeys = new Map<string, number>();
 
 const deps: HandlerDeps = {
   env,
   verifyKey: async (key) => {
     if (!env.SUPABASE_URL) return false;
-    if (verifiedKeys.has(key)) return verifiedKeys.get(key) as boolean;
+    const confirmedAt = verifiedKeys.get(key);
+    if (confirmedAt && Date.now() - confirmedAt < VERIFIED_KEY_TTL_MS) return true;
     const response = await fetch(`${env.SUPABASE_URL}/auth/v1/settings`, { headers: { apikey: key } });
-    verifiedKeys.set(key, response.ok);
+    if (response.ok) {
+      if (verifiedKeys.size >= VERIFIED_KEY_CAP) verifiedKeys.delete(verifiedKeys.keys().next().value as string);
+      verifiedKeys.set(key, Date.now());
+    }
     return response.ok;
   },
   signUrl: async (path, ttlSeconds) => {

@@ -23,8 +23,8 @@ const REQUIRED_DIRECTIVES = {
   'frame-ancestors': [],
 };
 
-/** Keywords that must never appear in script-src. */
-const FORBIDDEN_SCRIPT_SOURCES = ["'unsafe-inline'", "'unsafe-eval'"];
+/** Sources that must never appear in script-src: inline, eval, wildcards and whole schemes. */
+const FORBIDDEN_SCRIPT_SOURCES = ["'unsafe-inline'", "'unsafe-eval'", '*', 'https:', 'http:', 'data:', 'blob:'];
 
 /**
  * Parses a policy string into a map of directive name to source list.
@@ -35,7 +35,11 @@ export function parseCsp(policy) {
   const directives = new Map();
   for (const part of String(policy).split(';')) {
     const [name, ...sources] = part.trim().split(/\s+/).filter(Boolean);
-    if (name) directives.set(name.toLowerCase(), sources);
+    if (!name) continue;
+    const key = name.toLowerCase();
+    // Browsers enforce the first occurrence; a repeat is a mistake at best.
+    if (directives.has(key)) throw new Error(`directive ${key} appears more than once`);
+    directives.set(key, sources);
   }
   return directives;
 }
@@ -67,7 +71,12 @@ export function checkSecurityHeaders({ htaccess, indexHtml, supabaseHost, imageH
   if (!policy) {
     problems.push('Content-Security-Policy header is missing from public/.htaccess');
   } else {
-    const csp = parseCsp(policy);
+    let csp;
+    try {
+      csp = parseCsp(policy);
+    } catch (error) {
+      return [...problems, `Content-Security-Policy is malformed: ${error.message}`];
+    }
 
     for (const [name, required] of Object.entries(REQUIRED_DIRECTIVES)) {
       const sources = csp.get(name);
@@ -80,8 +89,10 @@ export function checkSecurityHeaders({ htaccess, indexHtml, supabaseHost, imageH
       }
     }
 
-    for (const forbidden of FORBIDDEN_SCRIPT_SOURCES) {
-      if (csp.get('script-src')?.includes(forbidden)) problems.push(`script-src must not include ${forbidden}`);
+    for (const directive of ['script-src', 'default-src', 'object-src']) {
+      for (const forbidden of FORBIDDEN_SCRIPT_SOURCES) {
+        if (csp.get(directive)?.includes(forbidden)) problems.push(`${directive} must not include ${forbidden}`);
+      }
     }
 
     for (const host of imageHosts) {

@@ -9,12 +9,20 @@ import {
   inquiryLabel,
   isAllowedAttachmentPath,
   isAllowedOrigin,
+  looksLikePublicKey,
   MAX_ATTACHMENTS,
   normalizeAttachmentPath,
   renderEmail,
   selectServiceKey,
   validateContactRequest,
 } from './lib.ts';
+
+/** Builds a JWT-shaped token at runtime so no key-like literal sits in the source (keeps secret scanners quiet). */
+const jwtShaped = (claims: Record<string, unknown>) =>
+  [{ alg: 'HS256', typ: 'JWT' }, claims]
+    .map((part) => btoa(JSON.stringify(part)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''))
+    .concat('c2lnbmF0dXJlLWZpbGxlci12YWx1ZQ')
+    .join('.');
 
 const validBody = () => ({
   name: 'Ada Lovelace',
@@ -147,6 +155,20 @@ Deno.test('validateContactRequest refuses attachments outside the upload prefix,
   });
   assertFalse(huge.ok);
   assertMatch(huge.errors[0], /size/);
+});
+
+Deno.test('looksLikePublicKey accepts publishable keys and legacy JWTs only', () => {
+  assert(looksLikePublicKey('sb_publishable_abcDEF123456'));
+  assert(looksLikePublicKey(jwtShaped({ role: 'anon' })));
+  assertFalse(looksLikePublicKey('random-garbage'));
+  assertFalse(looksLikePublicKey('sb_secret_abcDEF123456'));
+});
+
+Deno.test('validateContactRequest rejects control characters and query-style emails', () => {
+  const crlf = validateContactRequest({ ...validBody(), subject: 'Hello\r\nBcc: x' });
+  assertFalse(crlf.ok);
+  const query = validateContactRequest({ ...validBody(), email: 'a@b.co?cc=x%40evil.com' });
+  assertFalse(query.ok);
 });
 
 Deno.test('validateContactRequest rejects non-object bodies', () => {
