@@ -1,7 +1,7 @@
 // src/components/admin/AdminLogin/AdminLogin.js - secure Supabase OTP login
 
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuthContext } from '../../../contexts/AuthContext';
 import { LOGIN_LINK_SENT_MESSAGE } from '../../../services/authService';
 import LoadingSpinner from '../../common/LoadingSpinner';
@@ -9,6 +9,7 @@ import './AdminLogin.css';
 
 const AdminLogin = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const {
     clearError,
     error,
@@ -19,7 +20,7 @@ const AdminLogin = () => {
   } = useAuthContext();
 
   const [email, setEmail] = useState('');
-  const [formError, setFormError] = useState('');
+  const [formError, setFormError] = useState(location.state?.authError || '');
   const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {

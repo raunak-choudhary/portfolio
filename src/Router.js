@@ -6,6 +6,7 @@ import Header from './components/common/Header';
 import Footer from './components/common/Footer';
 import LoadingSpinner from './components/common/LoadingSpinner';
 import { AuthProvider, useAuthContext } from './contexts/AuthContext';
+import { readAuthErrorFromUrl } from './services/authService';
 
 import LandingPage from './pages/LandingPage';
 import ProjectsPage from './pages/ProjectsPage';
@@ -33,7 +34,9 @@ const ProtectedAdminRoute = ({ children }) => {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/adminlogin" replace />;
+    // A failed magic link lands here with its error in the URL fragment;
+    // carry it to the login page so the visitor learns why.
+    return <Navigate to="/adminlogin" replace state={{ authError: readAuthErrorFromUrl(window.location.hash) }} />;
   }
 
   return children;
