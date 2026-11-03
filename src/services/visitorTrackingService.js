@@ -3,6 +3,24 @@
 
 import { supabase } from './supabaseClient';
 
+/**
+ * Whether visitor analytics may write to the database.
+ *
+ * Tracking is opt-in: it runs only when REACT_APP_ANALYTICS_ENABLED is the
+ * exact string "true". Anything else, including an unset variable, disables
+ * it. Defaulting to off keeps local development, unit tests, the browser
+ * suite and CI from inserting fake visitors into `analytics_events`; the
+ * production environment file sets the flag explicitly.
+ *
+ * The variable is read on every call rather than once at module load so
+ * tests can toggle it without re-importing the module. Create React App
+ * inlines the value at build time, so in a production bundle this is a
+ * constant comparison.
+ *
+ * @returns {boolean} true when trackers should write events.
+ */
+export const isAnalyticsEnabled = () => process.env.REACT_APP_ANALYTICS_ENABLED === 'true';
+
 // =====================================================
 // REAL VISITOR TRACKING SERVICE
 // Tracks actual visitors to your live portfolio
@@ -49,6 +67,7 @@ const getVisitorInfo = () => {
 
 // Track page view
 export const trackPageView = async (page, title = '') => {
+  if (!isAnalyticsEnabled()) return;
   try {
     // Create unique session key
     const sessionKey = getSessionKey('page', page);
@@ -102,6 +121,7 @@ export const trackPageView = async (page, title = '') => {
 
 // Track section view (when user scrolls to or clicks on a section)
 export const trackSectionView = async (sectionType, sectionId = 'main', timeSpent = 0) => {
+  if (!isAnalyticsEnabled()) return;
   try {
     // Create unique session key
     const sessionKey = getSessionKey('section', `${sectionType}_${sectionId}`);
@@ -156,6 +176,7 @@ export const trackSectionView = async (sectionType, sectionId = 'main', timeSpen
 
 // Track contact form submission
 export const trackContactSubmission = async (contactType, subject) => {
+  if (!isAnalyticsEnabled()) return;
   try {
     const sessionId = generateVisitorSessionId();
     
@@ -193,6 +214,7 @@ export const trackContactSubmission = async (contactType, subject) => {
 
 // Track click events (portfolio navigation, external links, etc.)
 export const trackClick = async (elementType, elementId, targetUrl = '') => {
+  if (!isAnalyticsEnabled()) return;
   try {
     const sessionId = generateVisitorSessionId();
     
@@ -279,6 +301,7 @@ export const useTimeTracking = (sectionType, sectionId = 'main') => {
 
 // Initialize visitor tracking
 export const initializeVisitorTracking = () => {
+  if (!isAnalyticsEnabled()) return;
   // Track initial page load
   const currentPath = window.location.pathname;
   let pageName = 'home';
@@ -300,6 +323,7 @@ export const initializeVisitorTracking = () => {
 
 // Create the service object
 const visitorTrackingService = {
+  isAnalyticsEnabled,
   trackPageView,
   trackSectionView,
   trackContactSubmission,
