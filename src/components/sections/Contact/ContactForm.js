@@ -224,20 +224,6 @@ const ContactForm = () => {
     }
   };
 
-  // Collect browser and tracking information
-  const collectBrowserInfo = () => {
-    const browserInfo = {
-      senderIP: null, // Will be collected server-side
-      userAgent: navigator.userAgent,
-      referrerUrl: document.referrer || window.location.href,
-      utmSource: new URLSearchParams(window.location.search).get('utm_source'),
-      utmMedium: new URLSearchParams(window.location.search).get('utm_medium'),
-      utmCampaign: new URLSearchParams(window.location.search).get('utm_campaign')
-    };
-    
-    return browserInfo;
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -257,13 +243,10 @@ const ContactForm = () => {
     try {
       console.log('🚀 Submitting contact form...');
       
-      // Collect browser information
-      const browserInfo = collectBrowserInfo();
-      
-      // Prepare submission data
+      // Prepare submission data. Browser details (user agent, referrer,
+      // campaign parameters) are deliberately not collected.
       const submissionData = {
         ...formData,
-        ...browserInfo,
         // Convert file objects to be handled by API
         attachments: formData.attachments.length > 0 ? formData.attachments : null
       };

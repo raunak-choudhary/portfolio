@@ -139,14 +139,11 @@ export const storeContactMessage = async (formData, uploadedFiles = []) => {
       attachment_url: attachmentPaths.length > 0 ? attachmentPaths[0] : null,
       attachment_name: uploadedFiles.length > 0 ? uploadedFiles[0].originalName : null,
       attachment_size: uploadedFiles.length > 0 ? uploadedFiles[0].size : null,
-      
-      // Browser info
-      user_agent: navigator.userAgent,
-      referrer_url: document.referrer || window.location.href,
-      utm_source: new URLSearchParams(window.location.search).get('utm_source'),
-      utm_medium: new URLSearchParams(window.location.search).get('utm_medium'),
-      utm_campaign: new URLSearchParams(window.location.search).get('utm_campaign'),
-      
+
+      // No browser information is stored with a message: the user agent,
+      // referrer and campaign parameters are not needed to answer it
+      // (owner decision, 2026-11-03), and the columns no longer exist.
+
       // Default values
       priority: 'normal',
       status: 'unread'
