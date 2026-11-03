@@ -350,16 +350,31 @@ export class ViewportFixer {
   }
 }
 
+// Single shared instance. Held in module scope rather than on `window` so a
+// production build exposes no debugging handle to page scripts; development
+// builds still publish it as `window.viewportFixer` for console debugging.
+let viewportFixerInstance = null;
+
+/**
+ * Returns the shared ViewportFixer, if one has been created.
+ * @returns {ViewportFixer|null}
+ */
+export const getViewportFixer = () => viewportFixerInstance;
+
 // Utility functions for easy access
 export const viewportUtils = {
   /**
-   * Initialize viewport fixer
+   * Create the shared viewport fixer on first call; later calls return it.
+   * @returns {ViewportFixer}
    */
   init() {
-    if (!window.viewportFixer) {
-      window.viewportFixer = new ViewportFixer();
+    if (!viewportFixerInstance) {
+      viewportFixerInstance = new ViewportFixer();
+      if (process.env.NODE_ENV === 'development') {
+        window.viewportFixer = viewportFixerInstance;
+      }
     }
-    return window.viewportFixer;
+    return viewportFixerInstance;
   },
 
   /**
@@ -383,8 +398,8 @@ export const viewportUtils = {
    * Debug current viewport state
    */
   debug() {
-    if (window.viewportFixer) {
-      window.viewportFixer.debugViewport();
+    if (viewportFixerInstance) {
+      viewportFixerInstance.debugViewport();
     } else {
       console.log('ViewportFixer not initialized. Run viewportUtils.init() first.');
     }
@@ -394,8 +409,8 @@ export const viewportUtils = {
    * Force complete reset
    */
   reset() {
-    if (window.viewportFixer) {
-      window.viewportFixer.forceReset();
+    if (viewportFixerInstance) {
+      viewportFixerInstance.forceReset();
     } else {
       this.quickFix();
     }
