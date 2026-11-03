@@ -1,0 +1,7 @@
+[
+  {
+    "shot": "adminlogin-1440",
+    "kind": "*",
+    "reason": "the hardened build replaces the 2025 username and password form with the Supabase Auth email-link login"
+  }
+]
