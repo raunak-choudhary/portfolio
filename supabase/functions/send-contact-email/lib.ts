@@ -198,7 +198,21 @@ export function selectServiceKey(
   return null;
 }
 
-const isEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) && value.length <= FIELD_LIMITS.email;
+/**
+ * Shapes a public key may take: a publishable key, or a legacy Supabase JWT
+ * during the cutover. Anything else is refused before any verification call,
+ * so random strings cannot trigger outbound requests.
+ */
+export function looksLikePublicKey(key: string): boolean {
+  return /^sb_publishable_[A-Za-z0-9_-]{10,100}$/.test(key) ||
+    /^eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}$/.test(key);
+}
+
+/** True when a single-line field carries control characters (header injection guard). */
+const hasControlCharacters = (value: string) => /[\u0000-\u001f\u007f]/.test(value);
+
+const isEmail = (value: string) =>
+  /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(value) && value.length <= FIELD_LIMITS.email;
 
 const text = (value: unknown, limit: number): string | null => {
   if (value === undefined || value === null) return '';
@@ -228,6 +242,14 @@ export function validateContactRequest(
   const subject = text(input.subject, FIELD_LIMITS.subject);
   const message = text(input.message, FIELD_LIMITS.message);
 
+  for (
+    const [label, value] of [['name', name], ['organization', organization], ['role', role], [
+      'inquiryType',
+      inquiryType,
+    ], ['subject', subject]] as const
+  ) {
+    if (value && hasControlCharacters(value)) errors.push(`${label} contains control characters`);
+  }
   if (!name) errors.push('name is required and at most 120 characters');
   if (!email || !isEmail(email)) errors.push('email must be a valid address');
   if (organization === null) errors.push('organization is too long');

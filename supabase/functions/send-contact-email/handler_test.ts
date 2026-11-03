@@ -4,6 +4,8 @@ import { DEFAULT_RECIPIENT, type HandlerDeps, handleRequest } from './handler.ts
 
 const ORIGIN = 'https://www.raunakchoudhary.com';
 const PUBLIC_KEY = 'sb_publishable_test';
+/** A JWT-shaped legacy key that is not among the injected ones. */
+const LEGACY_SHAPED = 'eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiYW5vbiIsInJlZiI6InByb2oifQ.c2lnbmF0dXJlLWZpbGxlci12YWx1ZQ';
 
 const body = () => ({
   name: 'Ada Lovelace',
@@ -89,14 +91,33 @@ Deno.test('accepts a key the project verifier confirms, and only asks it for unk
   const { deps } = makeDeps({
     verifyKey: (key) => {
       asked.push(key);
-      return Promise.resolve(key === 'legacy.anon.jwt.not.injected');
+      return Promise.resolve(key === LEGACY_SHAPED);
     },
   });
   delete deps.env.SUPABASE_ANON_KEY;
-  assertEquals((await handleRequest(post(body(), { apikey: 'legacy.anon.jwt.not.injected' }), deps)).status, 200);
+  assertEquals((await handleRequest(post(body(), { apikey: LEGACY_SHAPED }), deps)).status, 200);
   assertEquals((await handleRequest(post(body(), { apikey: PUBLIC_KEY }), deps)).status, 200);
-  assertEquals((await handleRequest(post(body(), { apikey: 'sb_publishable_forged' }), deps)).status, 401);
-  assertEquals(asked, ['legacy.anon.jwt.not.injected', 'sb_publishable_forged']);
+  assertEquals((await handleRequest(post(body(), { apikey: 'sb_publishable_forgedkey0001' }), deps)).status, 401);
+  assertEquals(asked, [LEGACY_SHAPED, 'sb_publishable_forgedkey0001']);
+});
+
+Deno.test('never asks the verifier about keys that do not look like Supabase keys', async () => {
+  const asked: string[] = [];
+  const { deps } = makeDeps({
+    verifyKey: (key) => {
+      asked.push(key);
+      return Promise.resolve(true);
+    },
+  });
+  assertEquals((await handleRequest(post(body(), { apikey: 'random-garbage' }), deps)).status, 401);
+  assertEquals((await handleRequest(post(body(), { apikey: 'x'.repeat(5000) }), deps)).status, 401);
+  assertEquals(asked, []);
+});
+
+Deno.test('rejects a declared oversized body without reading it', async () => {
+  const { deps } = makeDeps();
+  const response = await handleRequest(post(body(), { 'content-length': String(MAX_BODY_BYTES + 1) }), deps);
+  assertEquals(response.status, 413);
 });
 
 Deno.test('refuses requests without a known public key', async () => {

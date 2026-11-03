@@ -9,6 +9,7 @@ import {
   inquiryLabel,
   isAllowedAttachmentPath,
   isAllowedOrigin,
+  looksLikePublicKey,
   MAX_ATTACHMENTS,
   normalizeAttachmentPath,
   renderEmail,
@@ -147,6 +148,20 @@ Deno.test('validateContactRequest refuses attachments outside the upload prefix,
   });
   assertFalse(huge.ok);
   assertMatch(huge.errors[0], /size/);
+});
+
+Deno.test('looksLikePublicKey accepts publishable keys and legacy JWTs only', () => {
+  assert(looksLikePublicKey('sb_publishable_abcDEF123456'));
+  assert(looksLikePublicKey('eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiYW5vbiJ9.c2lnbmF0dXJlLXNpZ25hdHVyZQ'));
+  assertFalse(looksLikePublicKey('random-garbage'));
+  assertFalse(looksLikePublicKey('sb_secret_abcDEF123456'));
+});
+
+Deno.test('validateContactRequest rejects control characters and query-style emails', () => {
+  const crlf = validateContactRequest({ ...validBody(), subject: 'Hello\r\nBcc: x' });
+  assertFalse(crlf.ok);
+  const query = validateContactRequest({ ...validBody(), email: 'a@b.co?cc=x%40evil.com' });
+  assertFalse(query.ok);
 });
 
 Deno.test('validateContactRequest rejects non-object bodies', () => {

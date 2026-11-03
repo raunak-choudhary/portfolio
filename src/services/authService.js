@@ -122,13 +122,13 @@ export const requestAdminLoginOtp = async (email) => {
  */
 export const readAuthErrorFromUrl = (fragment) => {
   const params = new URLSearchParams(String(fragment || '').replace(/^[#?]/, ''));
-  const code = params.get('error_code');
-  const description = params.get('error_description');
-  if (!code && !description && !params.get('error')) return null;
-  if (code === 'otp_expired') {
+  if (!params.get('error') && !params.get('error_code')) return null;
+  // Only fixed sentences: the URL is attacker-controllable, so its free-text
+  // description is never shown on the login page.
+  if (params.get('error_code') === 'otp_expired') {
     return 'This login link has expired or was already used. Request a new one below.';
   }
-  return description ? description.replace(/\+/g, ' ') : 'The login link could not be used. Request a new one below.';
+  return 'The login link could not be used. Request a new one below.';
 };
 
 /**
