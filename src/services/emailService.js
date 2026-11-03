@@ -4,8 +4,12 @@
 
 import { supabase } from './supabaseClient'; // ✅ Use anonymous client instead of admin
 
-// ✅ NEW: Edge Function URL for real email delivery
-const EDGE_FUNCTION_URL = 'https://emaaaeooafqawdvdreaz.supabase.co/functions/v1/send-contact-email';
+/**
+ * Name of the Edge Function that emails the owner. Invoked through the
+ * Supabase client so the URL comes from REACT_APP_SUPABASE_URL and the public
+ * key travels in the headers the gateway expects; nothing is hardcoded.
+ */
+export const CONTACT_EMAIL_FUNCTION = 'send-contact-email';
 
 // Enhanced validation for new form structure
 const validateContactForm = (formData) => {
@@ -184,6 +188,24 @@ export const storeContactMessage = async (formData, uploadedFiles = []) => {
   }
 };
 
+/**
+ * Extracts a human-readable reason from a failed function invocation.
+ * supabase-js attaches the HTTP response as `context`; the function replies
+ * with JSON `{ success: false, error }`. Falls back to the error message.
+ */
+export const readFunctionError = async (invokeError) => {
+  try {
+    const response = invokeError?.context;
+    if (response && typeof response.json === 'function') {
+      const body = await response.json();
+      if (body?.error) return body.error;
+    }
+  } catch (parseError) {
+    // The body was not JSON; the generic message below is used.
+  }
+  return invokeError?.message || '';
+};
+
 // ✅ Send real email with attachment download links
 export const sendRealEmail = async (formData, uploadedFiles = []) => {
   try {
@@ -215,21 +237,22 @@ export const sendRealEmail = async (formData, uploadedFiles = []) => {
       attachmentNames: emailData.attachments.map(a => a.name)
     });
 
-    // Call Edge Function
-    const response = await fetch(EDGE_FUNCTION_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.REACT_APP_SUPABASE_ANON_KEY}`
-      },
-      body: JSON.stringify(emailData)
+    // Call the Edge Function through the client: it derives the URL from the
+    // configured project and sends the public key as `apikey`.
+    const { data: result, error: invokeError } = await supabase.functions.invoke(CONTACT_EMAIL_FUNCTION, {
+      body: emailData
     });
 
-    const result = await response.json();
+    if (invokeError) {
+      // A non-2xx reply surfaces here; its body may carry a reason.
+      const detail = await readFunctionError(invokeError);
+      console.error('❌ Edge Function error:', detail);
+      throw new Error(detail || 'Failed to send email via Edge Function');
+    }
 
-    if (!response.ok || !result.success) {
+    if (!result?.success) {
       console.error('❌ Edge Function error:', result);
-      throw new Error(result.error || 'Failed to send email via Edge Function');
+      throw new Error(result?.error || 'Failed to send email via Edge Function');
     }
 
     console.log('✅ Email sent successfully with attachment links:', result.data);

@@ -9,10 +9,10 @@ export const APP_INFO = {
     author: 'Raunak Choudhary'
   };
   
-  // Contact Information
+  // Contact Information. No phone number: a public site should not carry one,
+  // and the contact form, email and LinkedIn are the supported channels.
   export const CONTACT_INFO = {
     email: 'raunakchoudhary17@gmail.com',
-    phone: '+1 (929) 289-4648',
     location: 'New York, USA',
     linkedin: 'https://www.linkedin.com/in/raunak-choudhary',
     github: 'https://github.com/raunak-choudhary'
