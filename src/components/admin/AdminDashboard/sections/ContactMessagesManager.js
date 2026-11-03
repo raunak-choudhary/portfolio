@@ -1424,46 +1424,6 @@ const ContactMessagesManager = () => {
                         </div>
                       )}
 
-                      {/* Technical Details */}
-                      <div className="contactmgr-technical-details">
-                        <h5 className="contactmgr-tech-title">Technical Information</h5>
-                        <div className="contactmgr-tech-grid">
-                          {message.sender_ip && (
-                            <div className="contactmgr-tech-item">
-                              <span className="contactmgr-tech-label">IP Address:</span>
-                              <span className="contactmgr-tech-value">{message.sender_ip}</span>
-                            </div>
-                          )}
-                          {message.user_agent && (
-                            <div className="contactmgr-tech-item">
-                              <span className="contactmgr-tech-label">User Agent:</span>
-                              <span className="contactmgr-tech-value contactmgr-user-agent">
-                                {truncateText(message.user_agent, 60)}
-                              </span>
-                            </div>
-                          )}
-                          {message.referrer_url && (
-                            <div className="contactmgr-tech-item">
-                              <span className="contactmgr-tech-label">Referrer:</span>
-                              <span className="contactmgr-tech-value">
-                                <a href={message.referrer_url} target="_blank" rel="noopener noreferrer" className="contactmgr-tech-link">
-                                  {truncateText(message.referrer_url, 40)}
-                                </a>
-                              </span>
-                            </div>
-                          )}
-                          {(message.utm_source || message.utm_medium || message.utm_campaign) && (
-                            <div className="contactmgr-tech-item contactmgr-utm-params">
-                              <span className="contactmgr-tech-label">UTM Parameters:</span>
-                              <div className="contactmgr-utm-values">
-                                {message.utm_source && <span>Source: {message.utm_source}</span>}
-                                {message.utm_medium && <span>Medium: {message.utm_medium}</span>}
-                                {message.utm_campaign && <span>Campaign: {message.utm_campaign}</span>}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
                     </div>
 
                     {/* Expanded Actions */}
