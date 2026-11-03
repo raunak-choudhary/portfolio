@@ -78,6 +78,12 @@ Deno.test('accepts the legacy anon key until the cutover', async () => {
   assertEquals(response.status, 200);
 });
 
+Deno.test('accepts the key as a bearer token, as the build live until the cutover sends it', async () => {
+  const { deps } = makeDeps();
+  const response = await handleRequest(post(body(), { apikey: '', authorization: 'Bearer legacy.anon.jwt' }), deps);
+  assertEquals(response.status, 200);
+});
+
 Deno.test('refuses requests without a known public key', async () => {
   const { deps, sent } = makeDeps();
   const missing = await handleRequest(post(body(), { apikey: '' }), deps);
