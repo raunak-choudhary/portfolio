@@ -8,7 +8,7 @@
 //   SUPABASE_URL, SUPABASE_SECRET_KEYS or SUPABASE_SERVICE_ROLE_KEY  injected
 //   SUPABASE_PUBLISHABLE_KEYS or SUPABASE_ANON_KEY                   injected
 //   RESEND_API_KEY            secret, required
-//   CONTACT_RECIPIENT_EMAIL   secret, required: where messages are delivered
+//   CONTACT_RECIPIENT_EMAIL   optional: overrides the default recipient in handler.ts
 //   CONTACT_SENDER            optional: "Name <address>" of a verified sender
 //   ALLOWED_ORIGINS           optional: comma-separated list; defaults in lib.ts
 //
