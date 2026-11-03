@@ -4,6 +4,7 @@ import {
   getCurrentAdmin,
   hasSecondFactorSession,
   isRateLimitError,
+  readAuthErrorFromUrl,
   isUnknownAccountError,
   requireAdminAuth,
   requestAdminLoginOtp,
@@ -130,6 +131,24 @@ describe('authService secure admin auth', () => {
       expect(isRateLimitError(authApiError(429, 'over_email_send_rate_limit'))).toBe(true);
       expect(isRateLimitError(authApiError(500, 'unexpected_failure'))).toBe(false);
       expect(isRateLimitError(undefined)).toBe(false);
+    });
+  });
+
+  describe('readAuthErrorFromUrl', () => {
+    it('explains a used or expired magic link', () => {
+      expect(readAuthErrorFromUrl('#error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired'))
+        .toBe('This login link has expired or was already used. Request a new one below.');
+    });
+
+    it('falls back to the description or a generic sentence for other errors', () => {
+      expect(readAuthErrorFromUrl('?error_code=server_error&error_description=Unexpected+failure')).toBe('Unexpected failure');
+      expect(readAuthErrorFromUrl('#error=access_denied')).toBe('The login link could not be used. Request a new one below.');
+    });
+
+    it('returns null when the URL carries no auth error', () => {
+      expect(readAuthErrorFromUrl('')).toBeNull();
+      expect(readAuthErrorFromUrl('#access_token=abc&type=magiclink')).toBeNull();
+      expect(readAuthErrorFromUrl(undefined)).toBeNull();
     });
   });
 

@@ -47,7 +47,8 @@ export const useAuth = () => {
       const admin = await verifyAdminSession();
 
       if (!admin.success) {
-        setSignedOut(admin.error);
+        // No session is the normal signed-out state, not an error to display.
+        setSignedOut(admin.error?.code === 'NO_SESSION' ? null : admin.error);
         return;
       }
 

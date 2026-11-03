@@ -113,6 +113,25 @@ export const requestAdminLoginOtp = async (email) => {
 };
 
 /**
+ * Turns the error Supabase appends to the redirect URL after a failed magic
+ * link (for example `#error=access_denied&error_code=otp_expired`) into a
+ * sentence for the login page. Returns null when the URL carries no error.
+ *
+ * @param {string} fragment `window.location.hash` or `.search`.
+ * @returns {string|null}
+ */
+export const readAuthErrorFromUrl = (fragment) => {
+  const params = new URLSearchParams(String(fragment || '').replace(/^[#?]/, ''));
+  const code = params.get('error_code');
+  const description = params.get('error_description');
+  if (!code && !description && !params.get('error')) return null;
+  if (code === 'otp_expired') {
+    return 'This login link has expired or was already used. Request a new one below.';
+  }
+  return description ? description.replace(/\+/g, ' ') : 'The login link could not be used. Request a new one below.';
+};
+
+/**
  * Reads whether the current session has passed the second factor.
  *
  * The assurance level lives in the access token, not on the user object;
@@ -272,6 +291,7 @@ export const initializeAuth = () => {};
 
 const authService = {
   requestAdminLoginOtp,
+  readAuthErrorFromUrl,
   hasSecondFactorSession,
   signInAdmin,
   signOutAdmin,
