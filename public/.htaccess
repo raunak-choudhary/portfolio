@@ -1,24 +1,24 @@
-# Apache and LiteSpeed configuration for raunakchoudhary.com on Hostinger.
+# Apache and LiteSpeed configuration for www.raunakchoudhary.com on Hostinger.
+#
 # Create React App copies this file into build/, so the deployed site always
-# carries the same rules the browser suite tested (scripts/static-server.mjs
-# reads the Header lines below and applies them locally).
+# carries the same rules the browser suite tested: scripts/static-server.mjs
+# reads the Header lines below and applies them locally, and
+# scripts/check-csp.mjs asserts the policy allows every asset host the site
+# uses and forbids inline and eval script.
 #
-# Sections:
-#   1. Canonical origin: https and www.
-#   2. Single-page app routing: real files are served, every other path
-#      falls back to index.html so client-side routes work on reload.
-#   3. Security headers, including the Content Security Policy. The policy is
-#      the single source of truth: there is deliberately no CSP meta tag in
-#      index.html, because a meta copy can only tighten the header and drift.
-#   4. Caching: hashed assets are immutable; index.html is always revalidated
-#      so a new deploy is picked up immediately.
-#
-# scripts/check-csp.mjs asserts the policy below allows every asset host the
-# site uses and forbids inline and eval script.
+# Reconciled on 2026-11-03 with the file that served the June 2025 build.
+# Kept from it: the canonical redirects, the root-to-/home redirect, the MIME
+# fixes for Safari, compression, directory and dotfile protection. Dropped:
+# the user-agent block list (it refused curl, wget, python and java clients,
+# including uptime monitors and some crawlers), the HEAD-method block (breaks
+# header checks), the obsolete X-XSS-Protection header, the one-hour HTML
+# cache (a new deploy must be picked up at once) and the Expires rules that
+# duplicated Cache-Control.
 
-# 1. Canonical origin
+# 1. Canonical origin and single-page app routing
 <IfModule mod_rewrite.c>
   RewriteEngine On
+  RewriteBase /
 
   RewriteCond %{HTTPS} off
   RewriteRule ^ https://www.raunakchoudhary.com%{REQUEST_URI} [R=301,L]
@@ -26,14 +26,34 @@
   RewriteCond %{HTTP_HOST} ^raunakchoudhary\.com$ [NC]
   RewriteRule ^ https://www.raunakchoudhary.com%{REQUEST_URI} [R=301,L]
 
-  # 2. Single-page app routing
-  RewriteBase /
+  # The site's home route is /home; send the bare root there.
+  RewriteCond %{QUERY_STRING} ^$
+  RewriteRule ^$ /home [R=301,L]
+
+  # Block methods the site never uses. HEAD stays allowed for monitors.
+  RewriteCond %{REQUEST_METHOD} ^(TRACE|TRACK|DELETE|PUT|PATCH) [NC]
+  RewriteRule ^ - [F,L]
+
+  # Every path that is not a real file or folder is a client-side route.
   RewriteRule ^index\.html$ - [L]
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteCond %{REQUEST_FILENAME} !-l
   RewriteRule . /index.html [L]
 </IfModule>
+
+# 2. Content types (Safari served scripts with the wrong type without these)
+<IfModule mod_mime.c>
+  AddType application/javascript .js .mjs
+  AddType text/css .css
+  AddType application/json .json
+  AddType application/manifest+json .webmanifest
+  AddType font/woff .woff
+  AddType font/woff2 .woff2
+  AddType image/svg+xml .svg
+  AddType image/webp .webp
+</IfModule>
+AddDefaultCharset UTF-8
 
 # 3. Security headers
 <IfModule mod_headers.c>
@@ -45,11 +65,46 @@
   Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
   Header always set Cross-Origin-Opener-Policy "same-origin-allow-popups"
 
-  # 4. Caching
+  # Explicit types on static assets, kept from the Safari fix.
+  <FilesMatch "\.(js|mjs)$">
+    Header set Content-Type "application/javascript"
+  </FilesMatch>
+  <FilesMatch "\.css$">
+    Header set Content-Type "text/css"
+  </FilesMatch>
+
+  # 4. Caching: the page is always revalidated, hashed assets never are.
   <FilesMatch "^index\.html$">
     Header always set Cache-Control "no-cache"
   </FilesMatch>
   <FilesMatch "\.[0-9a-f]{8}\.(js|css)$">
     Header always set Cache-Control "public, max-age=31536000, immutable"
   </FilesMatch>
+  <FilesMatch "\.(png|jpg|jpeg|gif|svg|webp|ico|woff|woff2|ttf)$">
+    Header set Cache-Control "public, max-age=2592000"
+  </FilesMatch>
+  <FilesMatch "\.(json|webmanifest|txt)$">
+    Header set Cache-Control "public, max-age=86400"
+  </FilesMatch>
 </IfModule>
+
+# 5. Compression
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/plain text/css text/javascript text/xml
+  AddOutputFilterByType DEFLATE application/javascript application/x-javascript application/json application/xml application/manifest+json
+  AddOutputFilterByType DEFLATE image/svg+xml image/x-icon
+  AddOutputFilterByType DEFLATE font/ttf font/otf font/opentype application/vnd.ms-fontobject
+</IfModule>
+
+# 6. Files that must never be served
+Options -Indexes
+<FilesMatch "^\.">
+  Require all denied
+</FilesMatch>
+RedirectMatch 404 /\.git
+RedirectMatch 404 /\.env
+RedirectMatch 404 /package\.json
+RedirectMatch 404 /README\.md
+
+# Unknown routes are the app's own 404 page.
+ErrorDocument 404 /index.html
