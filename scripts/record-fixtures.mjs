@@ -23,21 +23,19 @@ const FIXTURE_DIR = path.resolve('e2e/fixtures');
 /**
  * Columns that are readable through the public API but must never be
  * committed to the repository. Their values are replaced with null.
- * `work_experience.salary_range` is personal data the site never renders;
- * the security phase revokes anonymous read access to it.
+ * Empty since 2026-11-03: the salary column was dropped (Unit 2.5b). The
+ * mechanism stays so a future private column can be kept out of fixtures.
  */
-export const REDACTED_COLUMNS = Object.freeze({
-  work_experience: ['salary_range'],
-});
+export const REDACTED_COLUMNS = Object.freeze({});
 
 /** Returns a copy of the object with keys in alphabetical order. */
 export const sortKeys = (row) =>
   Object.fromEntries(Object.keys(row).sort().map((key) => [key, row[key]]));
 
 /** Returns a copy of the row with the table's redacted columns set to null. */
-export const redactRow = (table, row) => {
+export const redactRow = (table, row, columns = REDACTED_COLUMNS) => {
   const redacted = { ...row };
-  for (const column of REDACTED_COLUMNS[table] ?? []) {
+  for (const column of columns[table] ?? []) {
     if (column in redacted) redacted[column] = null;
   }
   return redacted;
