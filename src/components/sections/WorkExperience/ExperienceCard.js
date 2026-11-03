@@ -52,8 +52,6 @@ const ExperienceCard = ({ workExperience }) => {
       achievements.length > 0 ||
       technologies.length > 0 ||
       clientsServed.length > 0 ||
-      workExperience.reason_for_leaving ||
-      workExperience.salary_range ||
       workExperience.team_size ||
       workExperience.department
     );
@@ -215,16 +213,6 @@ const ExperienceCard = ({ workExperience }) => {
             </div>
           </div>
 
-          {/* Performance Rating */}
-          {workExperience.performance_rating && (
-            <div className="rating-section">
-              <div className="rating-item">
-                <span className="rating-label">Performance:</span>
-                <span className="rating-value">{workExperience.performance_rating}</span>
-              </div>
-            </div>
-          )}
-
           {/* Card Footer */}
           <div className="card-footer">
             {canFlip ? (
@@ -333,28 +321,11 @@ const ExperienceCard = ({ workExperience }) => {
               </div>
             )}
 
-            {/* Reason for Leaving */}
-            {workExperience.reason_for_leaving && (
-              <div className="detail-section">
-                <div className="detail-header">
-                  <span className="detail-icon">🚪</span>
-                  <span className="detail-title">Reason for Leaving</span>
-                </div>
-                <p className="detail-text">{workExperience.reason_for_leaving}</p>
-              </div>
-            )}
           </div>
 
           {/* Fixed Bottom Section */}
           <div className="back-fixed-section">
             <div className="fixed-details-grid">
-              {workExperience.salary_range && (
-                <div className="fixed-detail-item">
-                  <span className="fixed-detail-label">💰 Salary:</span>
-                  <span className="fixed-detail-value">{workExperience.salary_range}</span>
-                </div>
-              )}
-              
               {workExperience.team_size && (
                 <div className="fixed-detail-item">
                   <span className="fixed-detail-label">👥 Team Size:</span>

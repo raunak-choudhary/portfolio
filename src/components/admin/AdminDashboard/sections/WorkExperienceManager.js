@@ -52,10 +52,7 @@ const WorkExperienceManager = () => {
     technologies: [],
     team_size: '',
     clients_served: [],
-    salary_range: '',
     department: '',
-    performance_rating: '',
-    reason_for_leaving: '',
     order_index: null,
     status: 'active'
   });
@@ -98,21 +95,6 @@ const WorkExperienceManager = () => {
     'Hybrid'
   ], []);
 
-  // Performance rating options
-  const performanceRatings = [
-    'Exceeds Expectations',
-    'Meets Expectations',
-    'Below Expectations',
-    'Outstanding',
-    'Excellent',
-    'Good',
-    'Satisfactory',
-    'Needs Improvement',
-    'Top 5%',
-    'Top 10%',
-    'Top 25%'
-  ];
-
   // ============================================================================
   // MEMOIZED VALUES FOR PERFORMANCE
   // ============================================================================
@@ -123,8 +105,6 @@ const WorkExperienceManager = () => {
     location: formData.location.length,
     description: formData.description.length,
     department: formData.department.length,
-    salaryRange: formData.salary_range.length,
-    reasonForLeaving: formData.reason_for_leaving.length,
     responsibilitiesCount: formData.key_responsibilities.length,
     achievementsCount: formData.achievements.length,
     technologiesCount: formData.technologies.length,
@@ -176,10 +156,7 @@ const WorkExperienceManager = () => {
         formData.is_current !== (selectedWorkExperience.is_current || false) ||
         formData.description !== (selectedWorkExperience.description || '') ||
         formData.team_size !== (selectedWorkExperience.team_size || '') ||
-        formData.salary_range !== (selectedWorkExperience.salary_range || '') ||
         formData.department !== (selectedWorkExperience.department || '') ||
-        formData.performance_rating !== (selectedWorkExperience.performance_rating || '') ||
-        formData.reason_for_leaving !== (selectedWorkExperience.reason_for_leaving || '') ||
         formData.status !== (selectedWorkExperience.status || 'active') ||
         JSON.stringify(formData.key_responsibilities) !== JSON.stringify(selectedWorkExperience.key_responsibilities || []) ||
         JSON.stringify(formData.achievements) !== JSON.stringify(selectedWorkExperience.achievements || []) ||
@@ -214,10 +191,7 @@ const WorkExperienceManager = () => {
         technologies: Array.isArray(selectedWorkExperience.technologies) ? [...selectedWorkExperience.technologies] : [],
         team_size: selectedWorkExperience.team_size || '',
         clients_served: Array.isArray(selectedWorkExperience.clients_served) ? [...selectedWorkExperience.clients_served] : [],
-        salary_range: selectedWorkExperience.salary_range || '',
         department: selectedWorkExperience.department || '',
-        performance_rating: selectedWorkExperience.performance_rating || '',
-        reason_for_leaving: selectedWorkExperience.reason_for_leaving || '',
         order_index: selectedWorkExperience.order_index,
         status: selectedWorkExperience.status || 'active'
       };
@@ -263,10 +237,7 @@ const WorkExperienceManager = () => {
         technologies: [],
         team_size: '',
         clients_served: [],
-        salary_range: '',
         department: '',
-        performance_rating: '',
-        reason_for_leaving: '',
         order_index: null,
         status: 'active'
       });
@@ -586,14 +557,8 @@ const WorkExperienceManager = () => {
     }
 
     // Salary range validation (optional, max 50 chars)
-    if (formData.salary_range && formData.salary_range.length > 50) {
-      errors.salary_range = 'Salary range must be less than 50 characters';
-    }
 
     // Reason for leaving validation (optional, max 500 chars)
-    if (formData.reason_for_leaving && formData.reason_for_leaving.length > 500) {
-      errors.reason_for_leaving = 'Reason for leaving must be less than 500 characters';
-    }
 
     // Date validation
     if (formData.start_date && formData.end_date && !formData.is_current) {
@@ -664,10 +629,7 @@ const WorkExperienceManager = () => {
         technologies: formData.technologies,
         team_size: formData.team_size ? parseInt(formData.team_size) : null,
         clients_served: formData.clients_served,
-        salary_range: formData.salary_range.trim() || null,
         department: formData.department.trim() || null,
-        performance_rating: formData.performance_rating || null,
-        reason_for_leaving: formData.reason_for_leaving.trim() || null,
         order_index: formData.order_index,
         status: formData.status
       };
@@ -1464,45 +1426,8 @@ const WorkExperienceManager = () => {
                     )}
                   </div>
 
-                  <div className="workexmgr-form-group">
-                    <div className="workexmgr-form-label-wrapper">
-                      <label htmlFor="workexmgr-performance-rating" className="workexmgr-form-label">
-                        Performance Rating
-                      </label>
-                    </div>
-                    <select
-                      id="workexmgr-performance-rating"
-                      value={formData.performance_rating}
-                      onChange={(e) => handleInputChange('performance_rating', e.target.value)}
-                      className="workexmgr-form-select"
-                    >
-                      <option value="">Select Performance Rating</option>
-                      {performanceRatings.map(rating => (
-                        <option key={rating} value={rating}>{rating}</option>
-                      ))}
-                    </select>
-                  </div>
                 </div>
 
-                <div className="workexmgr-form-group">
-                  <div className="workexmgr-form-label-wrapper">
-                    <label htmlFor="workexmgr-salary-range" className="workexmgr-form-label">
-                      Salary Range
-                    </label>
-                    <span className="workexmgr-char-count">
-                      {characterCounts.salaryRange}/50
-                    </span>
-                  </div>
-                  <input
-                    id="workexmgr-salary-range"
-                    type="text"
-                    value={formData.salary_range}
-                    onChange={(e) => handleInputChange('salary_range', e.target.value)}
-                    className="workexmgr-form-input"
-                    placeholder="e.g., ₹8-12 LPA"
-                    maxLength={50}
-                  />
-                </div>
               </div>
 
               {/* Company Logo Section */}
@@ -1785,30 +1710,6 @@ const WorkExperienceManager = () => {
                   Additional Details
                 </h4>
                 
-                <div className="workexmgr-form-group">
-                  <div className="workexmgr-form-label-wrapper">
-                    <label htmlFor="workexmgr-reason-for-leaving" className="workexmgr-form-label">
-                      Reason for Leaving
-                    </label>
-                    <span className="workexmgr-char-count">
-                      {characterCounts.reasonForLeaving}/500
-                    </span>
-                  </div>
-                  <textarea
-                    id="workexmgr-reason-for-leaving"
-                    value={formData.reason_for_leaving}
-                    onChange={(e) => handleInputChange('reason_for_leaving', e.target.value)}
-                    className={`workexmgr-form-textarea ${validationErrors.reason_for_leaving ? 'workexmgr-error' : ''}`}
-                    placeholder="e.g., Pursuing higher education, Career advancement..."
-                    rows={3}
-                    maxLength={500}
-                  />
-                  {validationErrors.reason_for_leaving && (
-                    <span className="workexmgr-error-text" role="alert">
-                      {validationErrors.reason_for_leaving}
-                    </span>
-                  )}
-                </div>
               </div>
 
               {/* Work Experience Settings Section */}
@@ -1929,20 +1830,12 @@ const WorkExperienceManager = () => {
                         </span>
                       </div>
                     </div>
-                    {(formData.team_size || formData.performance_rating) && (
+                    {formData.team_size && (
                       <div className="workexmgr-preview-meta-row">
-                        {formData.team_size && (
-                          <div className="workexmgr-preview-meta-item">
-                            <span className="workexmgr-meta-label">Team Size</span>
-                            <span className="workexmgr-meta-value">{formData.team_size}</span>
-                          </div>
-                        )}
-                        {formData.performance_rating && (
-                          <div className="workexmgr-preview-meta-item">
-                            <span className="workexmgr-meta-label">Performance</span>
-                            <span className="workexmgr-meta-value">{formData.performance_rating}</span>
-                          </div>
-                        )}
+                        <div className="workexmgr-preview-meta-item">
+                          <span className="workexmgr-meta-label">Team Size</span>
+                          <span className="workexmgr-meta-value">{formData.team_size}</span>
+                        </div>
                       </div>
                     )}
                   </div>

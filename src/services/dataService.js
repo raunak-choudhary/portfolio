@@ -2583,10 +2583,7 @@ export const createWorkExperience = async (workData) => {
       technologies: workData.technologies || [],
       team_size: workData.team_size || null,
       clients_served: workData.clients_served || [],
-      salary_range: workData.salary_range || null,
       department: workData.department || null,
-      performance_rating: workData.performance_rating || null,
-      reason_for_leaving: workData.reason_for_leaving || null,
       order_index: workData.order_index || null,
       status: workData.status || 'active'
     };
@@ -2651,10 +2648,7 @@ export const updateWorkExperience = async (id, workData) => {
       technologies: workData.technologies || [],
       team_size: workData.team_size,
       clients_served: workData.clients_served || [],
-      salary_range: workData.salary_range,
       department: workData.department,
-      performance_rating: workData.performance_rating,
-      reason_for_leaving: workData.reason_for_leaving,
       order_index: workData.order_index,
       status: workData.status,
       updated_at: new Date().toISOString()
