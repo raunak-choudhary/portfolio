@@ -1,0 +1,20 @@
+[
+  {
+    "created_at": "2025-05-29T20:19:15.87286",
+    "cta_link": "#navigation",
+    "cta_text": "View My Work",
+    "description": "Passionate about crafting intelligent, scalable, and cloud-native solutions that blend the best of AI and engineering. With around 3 years of experience in AWS cloud development and a strong foundation in machine learning, I thrive at the intersection of infrastructure, innovation, and impact. Currently pursuing my MS in Computer Science at NYU, I’m exploring full-stack apps and deep learning techniques.",
+    "highlights": [
+      "AWS Certified Cloud Practitioner",
+      "AWS Certified Data Analytics – Specialty",
+      "MS Computer Science @ NYU Tandon (GPA: 3.9/4.0)",
+      "3+ Years AWS Developer Experience",
+      "Top 10% Performer at TCS"
+    ],
+    "id": "5ca13aff-3090-4780-a640-cfa67c99b943",
+    "is_active": true,
+    "subtitle": "AWS Cloud Developer • Full-Stack Engineer • ML & DL Enthusiast",
+    "title": "Hi, I'm Raunak Choudhary",
+    "updated_at": "2026-09-10T17:46:16.557292"
+  }
+]
