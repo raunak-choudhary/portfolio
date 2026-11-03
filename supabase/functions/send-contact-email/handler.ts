@@ -70,7 +70,11 @@ export async function handleRequest(request: Request, deps: HandlerDeps): Promis
     return json(405, { success: false, error: 'Method not allowed' }, cors);
   }
 
-  const apiKey = request.headers.get('apikey') ?? '';
+  // The current site sends the key as `apikey`; the build that is live until
+  // the security deploy sends it only as a bearer token. Both are accepted so
+  // the contact form keeps working through the cutover.
+  const bearer = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ?? '';
+  const apiKey = request.headers.get('apikey') || bearer;
   if (!apiKey || !acceptedPublicKeys(deps.env).has(apiKey)) {
     return json(401, { success: false, error: 'Missing or unknown API key' }, cors);
   }
