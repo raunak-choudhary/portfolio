@@ -27,7 +27,8 @@
     "compare": "node scripts/compare-captures.mjs",
     "fixtures:record": "node --env-file=.env.development.local scripts/record-fixtures.mjs",
     "scan:bundle": "node scripts/scan-bundle.mjs --root build",
-    "check:csp": "node scripts/check-csp.mjs"
+    "check:csp": "node scripts/check-csp.mjs",
+    "test:functions": "cd supabase/functions && deno test && deno lint"
   },
   "eslintConfig": {
     "extends": [
