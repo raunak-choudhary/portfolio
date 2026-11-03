@@ -83,3 +83,6 @@ graphify-out/
 # Secrets (baseline): every env file except the example
 .env.*
 !.env.example
+
+# Agent source of truth (local only)
+CLAUDE.md
