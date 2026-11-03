@@ -25,7 +25,8 @@
     "e2e": "playwright test e2e/contract.spec.mjs",
     "capture": "node scripts/capture-site.mjs",
     "compare": "node scripts/compare-captures.mjs",
-    "fixtures:record": "node --env-file=.env.development.local scripts/record-fixtures.mjs"
+    "fixtures:record": "node --env-file=.env.development.local scripts/record-fixtures.mjs",
+    "scan:bundle": "node scripts/scan-bundle.mjs --root build"
   },
   "eslintConfig": {
     "extends": [
