@@ -84,6 +84,21 @@ Deno.test('accepts the key as a bearer token, as the build live until the cutove
   assertEquals(response.status, 200);
 });
 
+Deno.test('accepts a key the project verifier confirms, and only asks it for unknown keys', async () => {
+  const asked: string[] = [];
+  const { deps } = makeDeps({
+    verifyKey: (key) => {
+      asked.push(key);
+      return Promise.resolve(key === 'legacy.anon.jwt.not.injected');
+    },
+  });
+  delete deps.env.SUPABASE_ANON_KEY;
+  assertEquals((await handleRequest(post(body(), { apikey: 'legacy.anon.jwt.not.injected' }), deps)).status, 200);
+  assertEquals((await handleRequest(post(body(), { apikey: PUBLIC_KEY }), deps)).status, 200);
+  assertEquals((await handleRequest(post(body(), { apikey: 'sb_publishable_forged' }), deps)).status, 401);
+  assertEquals(asked, ['legacy.anon.jwt.not.injected', 'sb_publishable_forged']);
+});
+
 Deno.test('refuses requests without a known public key', async () => {
   const { deps, sent } = makeDeps();
   const missing = await handleRequest(post(body(), { apikey: '' }), deps);

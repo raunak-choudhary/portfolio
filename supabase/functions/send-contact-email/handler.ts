@@ -26,6 +26,13 @@ import {
 
 export interface HandlerDeps {
   env: Record<string, string | undefined>;
+  /**
+   * Confirms a public key belongs to this project when it is not among the
+   * injected keys. In production this asks Supabase Auth, which answers 200
+   * only for a valid key of the project, so both the legacy anon key and the
+   * publishable key are recognised without relying on runtime variables.
+   */
+  verifyKey?: (key: string) => Promise<boolean>;
   signUrl: (path: string, ttlSeconds: number) => Promise<{ url: string } | { error: string }>;
   sendEmail: (
     message: { from: string; to: string[]; replyTo: string[]; subject: string; html: string; text: string },
@@ -81,7 +88,9 @@ export async function handleRequest(request: Request, deps: HandlerDeps): Promis
   // the contact form keeps working through the cutover.
   const bearer = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ?? '';
   const apiKey = request.headers.get('apikey') || bearer;
-  if (!apiKey || !acceptedPublicKeys(deps.env).has(apiKey)) {
+  const keyAccepted = Boolean(apiKey) &&
+    (acceptedPublicKeys(deps.env).has(apiKey) || (deps.verifyKey ? await deps.verifyKey(apiKey) : false));
+  if (!keyAccepted) {
     return json(401, { success: false, error: 'Missing or unknown API key' }, cors);
   }
 
