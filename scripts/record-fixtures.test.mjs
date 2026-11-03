@@ -7,25 +7,30 @@ describe('record-fixtures helpers', () => {
     assert.deepEqual(Object.keys(sortKeys({ b: 1, a: 2, c: 3 })), ['a', 'b', 'c']);
   });
 
-  it('redacts configured columns and leaves others untouched', () => {
-    assert.ok(REDACTED_COLUMNS.work_experience.includes('salary_range'));
+  it('redacts the configured columns of a table and leaves other tables untouched', () => {
+    const columns = { work_experience: ['private_note'] };
     assert.deepEqual(
-      redactRow('work_experience', { id: 1, salary_range: 'private', title: 'Engineer' }),
-      { id: 1, salary_range: null, title: 'Engineer' },
+      redactRow('work_experience', { id: 1, private_note: 'private', title: 'Engineer' }, columns),
+      { id: 1, private_note: null, title: 'Engineer' },
     );
-    assert.deepEqual(redactRow('projects', { id: 1, salary_range: 'kept' }), { id: 1, salary_range: 'kept' });
+    assert.deepEqual(redactRow('projects', { id: 1, private_note: 'kept' }, columns), { id: 1, private_note: 'kept' });
   });
 
-  it('normalises rows: redacted, ordered by id, keys sorted, input not mutated', () => {
+  it('redacts nothing by default: every private column has been dropped from the database', () => {
+    assert.deepEqual(REDACTED_COLUMNS, {});
+    assert.deepEqual(redactRow('work_experience', { id: 1, title: 'Engineer' }), { id: 1, title: 'Engineer' });
+  });
+
+  it('normalises rows: ordered by id, keys sorted, input not mutated', () => {
     const input = [
-      { title: 'B', id: 'b', salary_range: 'x' },
-      { title: 'A', id: 'a', salary_range: 'y' },
+      { title: 'B', id: 'b', team_size: 'x' },
+      { title: 'A', id: 'a', team_size: 'y' },
     ];
     const output = normaliseRows(input, 'work_experience');
     assert.deepEqual(output, [
-      { id: 'a', salary_range: null, title: 'A' },
-      { id: 'b', salary_range: null, title: 'B' },
+      { id: 'a', team_size: 'y', title: 'A' },
+      { id: 'b', team_size: 'x', title: 'B' },
     ]);
-    assert.equal(input[0].salary_range, 'x');
+    assert.equal(input[0].title, 'B');
   });
 });
