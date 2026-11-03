@@ -19,7 +19,13 @@
     "eject": "react-scripts eject",
     "serve": "npx serve -s build -l 3000",
     "analyze": "npm run build && npx source-map-explorer 'build/static/js/*.js'",
-    "optimize": "npm run build && npm run analyze"
+    "optimize": "npm run build && npm run analyze",
+    "build:e2e": "INLINE_RUNTIME_CHUNK=false REACT_APP_ANALYTICS_ENABLED=false react-scripts build",
+    "test:tools": "node --test \"scripts/**/*.test.mjs\" \"e2e/**/*.test.mjs\"",
+    "e2e": "playwright test e2e/contract.spec.mjs",
+    "capture": "node scripts/capture-site.mjs",
+    "compare": "node scripts/compare-captures.mjs",
+    "fixtures:record": "node --env-file=.env.development.local scripts/record-fixtures.mjs"
   },
   "eslintConfig": {
     "extends": [
@@ -38,5 +44,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@playwright/test": "1.58.0"
   }
 }

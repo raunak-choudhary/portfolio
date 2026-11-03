@@ -1,0 +1,66 @@
+[
+  {
+    "about_me_content": "I am a Full Stack Developer and AWS Cloud Specialist with around 3 years of experience at Tata Consultancy Services, where I led major infrastructure migrations and received the \"Star of the Quarter\" award. I’m currently pursuing my Master's in Computer Science at NYU Tandon School of Engineering with a GPA of 3.9/4.0.\n\nMy expertise spans building scalable cloud-native applications, architecting end-to-end infrastructure, and applying deep learning techniques to solve real-world challenges. At TCS, I led infrastructure teams and delivered high-impact cloud solutions across global projects.\n\nAt NYU, I’m expanding my focus on machine learning and AI, exploring topics like parameter-efficient LLM fine-tuning and adversarial robustness. I’m passionate about using technology to drive innovation, enhance system reliability, and create practical solutions with lasting impact.",
+    "about_me_title": "About Me",
+    "basic_info": [
+      {
+        "key": "pronouns",
+        "value": "He/Him",
+        "order_index": 0
+      },
+      {
+        "key": "birthDate",
+        "value": "17 March 1998",
+        "order_index": 1
+      },
+      {
+        "key": "currentResidence",
+        "value": "New York, United States",
+        "order_index": 2
+      },
+      {
+        "key": "timeZoneRelocate",
+        "value": "EST (Willing to relocate globally)",
+        "order_index": 3
+      },
+      {
+        "key": "nationality",
+        "value": "Indian",
+        "order_index": 4
+      },
+      {
+        "key": "permanentResidence",
+        "value": "Rajasthan, India",
+        "order_index": 5
+      },
+      {
+        "key": "visaStatus",
+        "value": "F-1 Student Visa, requires sponsorship for full-time roles",
+        "order_index": 6
+      },
+      {
+        "key": "languages",
+        "value": "English, Hindi",
+        "order_index": 7
+      },
+      {
+        "key": "workAuthorization",
+        "value": "Obtained EAD (Employment Authorization Document)",
+        "order_index": 8
+      },
+      {
+        "key": "availability",
+        "value": "Available for internships, full time jobs and other opportunities",
+        "order_index": 9
+      }
+    ],
+    "basic_info_title": "Basic Info",
+    "created_at": "2025-05-25T21:04:31.233243",
+    "id": "5f81733f-0b73-4d12-b4b0-a31dc558df7c",
+    "is_active": true,
+    "profile_image_about": "https://emaaaeooafqawdvdreaz.supabase.co/storage/v1/object/public/profile-images/about/about-me-profile-clean-upright-v2.jpg",
+    "profile_image_info": "https://emaaaeooafqawdvdreaz.supabase.co/storage/v1/object/public/profile-images/about/basic-info-profile-clean.jpg",
+    "profile_image_url": null,
+    "updated_at": "2026-09-10T17:48:39.046801"
+  }
+]

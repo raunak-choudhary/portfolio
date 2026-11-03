@@ -1,0 +1,273 @@
+[
+  {
+    "achievements": [
+      "Built 3 full-stack responsive projects",
+      "Reduced average load time across websites by 35%",
+      "Received MTA certification in HTML5 Application Development Fundamentals",
+      "Achieved 95% manager satisfaction based on project reviews"
+    ],
+    "certificate_urls": [
+      "https://emaaaeooafqawdvdreaz.supabase.co/storage/v1/object/public/documents/internships/web-development-intern-certificate-1749276302553-1.pdf",
+      "https://emaaaeooafqawdvdreaz.supabase.co/storage/v1/object/public/documents/internships/web-development-intern-certificate-1749276305908-1.pdf",
+      "https://emaaaeooafqawdvdreaz.supabase.co/storage/v1/object/public/documents/internships/web-development-intern-certificate-1749276319327-1.jpg"
+    ],
+    "company": "InMovidu Technologies Pvt. Ltd.",
+    "company_logo_url": "https://emaaaeooafqawdvdreaz.supabase.co/storage/v1/object/public/organization-logos/internships/company-logo-1749275952355.png",
+    "created_at": "2025-06-07T06:05:37.358133",
+    "description": "Successfully completed a certified internship program in Web Development (HTML and CSS), conducted remotely by InMovidu Technologies Pvt. Ltd. in collaboration with Oasis BITS Pilani and Zebo.ai. The program focused on foundational web development concepts including responsive design, UI structuring, and semantic markup. Throughout the internship, I worked on multiple practice-based assignments and case studies that reinforced the application of HTML5, CSS3, and JavaScript in building visually structured and accessible web pages. The experience concluded with the successful completion of the MTA: HTML5 Application Development Fundamentals certification, validating my technical proficiency.",
+    "duration": "1 month",
+    "end_date": "2020-08-11",
+    "id": "2bf60899-b812-428b-8c39-09f1ab7090a8",
+    "internship_number": null,
+    "internship_type": "Remote",
+    "key_responsibilities": [
+      "Developed interactive web applications using HTML5, CSS3, and JavaScript",
+      "Built 3 responsive websites with mobile-first design",
+      "Integrated RESTful APIs and backend features using PHP and MySQL",
+      "Implemented optimization techniques to reduce page load time",
+      "Practiced frontend frameworks and database-driven content rendering"
+    ],
+    "location": "Remote",
+    "order_index": null,
+    "skills_gained": [
+      "Web Design and Development",
+      "Frontend and Backend Integration",
+      "Mobile-Responsive UI",
+      "Code Optimization",
+      "Project Deployment"
+    ],
+    "start_date": "2020-07-12",
+    "status": "active",
+    "technologies": [
+      "HTML5",
+      "CSS3",
+      "JavaScript",
+      "Bootstrap",
+      "PHP",
+      "MySQL",
+      "XAMPP"
+    ],
+    "title": "Web Development Intern",
+    "updated_at": "2025-06-07T06:05:37.358133"
+  },
+  {
+    "achievements": [
+      "Built 5 production-grade Android applications",
+      "Achieved 92% app performance benchmarks",
+      "Received 94% user satisfaction score for UI/UX",
+      "Demonstrated 96% proficiency in Android component integration"
+    ],
+    "certificate_urls": [
+      "https://emaaaeooafqawdvdreaz.supabase.co/storage/v1/object/public/documents/internships/android-development-summer-intern-certificate-1749274744576-1.jpg",
+      "https://emaaaeooafqawdvdreaz.supabase.co/storage/v1/object/public/documents/internships/android-development-summer-intern-certificate-1749274750206-1.pdf"
+    ],
+    "company": "Azure Skynet Solutions Pvt. Ltd.",
+    "company_logo_url": "https://emaaaeooafqawdvdreaz.supabase.co/storage/v1/object/public/organization-logos/internships/company-logo-1749274509542.png",
+    "created_at": "2025-06-07T05:39:21.895693",
+    "description": "Successfully completed a 4-week internship focused on Android App Development in collaboration with ELAN & NVISION – IIT Hyderabad. Received hands-on training in Java-based Android app creation, guided by Mr. Rakesh Rohilla. Built multiple mobile applications, learned to manage Android lifecycles, and incorporated real-world features such as GPS, camera, and offline storage.",
+    "duration": "4 Weeks",
+    "end_date": "2020-03-31",
+    "id": "439eefe6-5f9e-4382-aff4-d6aaeceb9156",
+    "internship_number": null,
+    "internship_type": "Remote",
+    "key_responsibilities": [
+      "Developed 5 Android apps using Java and Android Studio",
+      "Integrated features like GPS, camera, and local storage",
+      "Utilized key Android components: Activities, Fragments, Broadcast Receivers",
+      "Applied Material Design principles for responsive UI/UX",
+      "Followed Android lifecycle and state management best practices"
+    ],
+    "location": "Remote",
+    "order_index": null,
+    "skills_gained": [
+      "Android Development",
+      "Mobile App Architecture",
+      "Java Programming",
+      "UI/UX Design",
+      "App Debugging and Testing"
+    ],
+    "start_date": "2020-03-02",
+    "status": "active",
+    "technologies": [
+      "Java",
+      "Android Studio",
+      "SQLite",
+      "XML",
+      "Material Design",
+      "Git"
+    ],
+    "title": "Android Development Summer Intern",
+    "updated_at": "2025-06-07T05:39:21.895693"
+  },
+  {
+    "achievements": [
+      "Successfully simulated 15+ enterprise-grade network environments with up to 95% accuracy in performance validation",
+      "Scored over 90% accuracy in routing and VLAN-based scenario testing",
+      "Demonstrated a 96% understanding in protocol suite concepts and Layer 2/3 device handling",
+      "Cleared MTA: Networking Fundamentals (98-366) with distinction, validating foundational and applied knowledge",
+      "Recognized by the HPE internship team for consistency in simulation-based tasks and timely delivery of weekly assignments"
+    ],
+    "certificate_urls": [
+      "https://emaaaeooafqawdvdreaz.supabase.co/storage/v1/object/public/documents/internships/ccna-networking-intern-certificate-1749278237046-1.pdf"
+    ],
+    "company": "Hewlett Packard Enterprise (HPE)",
+    "company_logo_url": "https://emaaaeooafqawdvdreaz.supabase.co/storage/v1/object/public/organization-logos/internships/company-logo-1749278025799.jpg",
+    "created_at": "2025-06-07T06:37:32.459828",
+    "description": "Completed a 4-week intensive virtual internship at Hewlett-Packard Enterprise focused on CCNA (Cisco Certified Network Associate) curriculum and hands-on networking design. The program emphasized core networking principles, architecture design, security configurations, and network troubleshooting using Cisco Packet Tracer and theoretical simulation labs. The internship provided real-world exposure to infrastructure layout, performance optimization, and protocol analysis across multiple networking layers. Additionally, I earned the Microsoft Technology Associate (MTA) certification in Networking Fundamentals during this tenure.",
+    "duration": "4 weeks",
+    "end_date": "2020-08-17",
+    "id": "515dbefb-2732-405d-99dd-32aff1ca1e14",
+    "internship_number": null,
+    "internship_type": "Remote",
+    "key_responsibilities": [
+      "Designed and simulated over 15 network topologies using Cisco Packet Tracer, incorporating routers, switches, VLANs, and end devices.",
+      "Configured and verified routing protocols such as OSPF, EIGRP, and RIP, simulating real-time enterprise network environments.",
+      "Implemented network segmentation using VLANs, trunking, and inter-VLAN routing to ensure traffic isolation and security.",
+      "Applied Access Control Lists (ACLs) and basic firewall rules to restrict unauthorized traffic and enforce security policies.",
+      "Conducted IP subnetting exercises and calculated IPv4/IPv6 address ranges for scalable network design.",
+      "Troubleshot Layer 2 and Layer 3 connectivity issues using packet trace, ping, and routing table inspection tools."
+    ],
+    "location": "Remote",
+    "order_index": null,
+    "skills_gained": [
+      "Deep understanding of the TCP/IP model, OSI layers, and network communication flow",
+      "Hands-on configuration of switching and routing protocols including static and dynamic routes",
+      "Implementation of NAT, DHCP, IP addressing, and network segmentation",
+      "Introduction to network hardening practices and logical access control",
+      "Proficiency with Cisco Packet Tracer for simulation, visualization, and debugging",
+      "Prepared for real-world enterprise-level network setup and monitoring practices"
+    ],
+    "start_date": "2020-07-13",
+    "status": "active",
+    "technologies": [
+      "Cisco Packet Tracer",
+      "OSPF",
+      "EIGRP",
+      "VLAN",
+      "ACL",
+      "TCP/IP",
+      "DHCP",
+      "NAT",
+      "ARP",
+      "ICMP"
+    ],
+    "title": "CCNA Networking Intern",
+    "updated_at": "2025-06-07T06:37:32.459828"
+  },
+  {
+    "achievements": [
+      "Achieved high model accuracy using SVM and Decision Trees on ASD dataset",
+      "Demonstrated performance evaluation using cross-validation and F-beta scoring",
+      "Earned MTA: Python Programming (98-381) certification from Microsoft"
+    ],
+    "certificate_urls": [
+      "https://emaaaeooafqawdvdreaz.supabase.co/storage/v1/object/public/documents/internships/machine-learning-intern-certificate-1749133971115-1.jpeg",
+      "https://emaaaeooafqawdvdreaz.supabase.co/storage/v1/object/public/documents/internships/machine-learning-intern-certificate-1749133979297-1.jpeg",
+      "https://emaaaeooafqawdvdreaz.supabase.co/storage/v1/object/public/documents/internships/machine-learning-intern-certificate-1749272374480-1.jpg"
+    ],
+    "company": "Verzeo Edutech Ltd.",
+    "company_logo_url": "https://emaaaeooafqawdvdreaz.supabase.co/storage/v1/object/public/organization-logos/internships/company-logo-1749272352305.png",
+    "created_at": "2025-06-05T11:41:23.89531",
+    "description": "Completed a Machine Learning internship in collaboration with Microsoft Technology Associate (MTA), focusing on core ML techniques, data preprocessing, and evaluation metrics. Concluded with a practical implementation of a classification model on real-world datasets.",
+    "duration": "2 months",
+    "end_date": "2019-08-31",
+    "id": "6e79bea8-56ab-4d52-a7b3-90b1abd05f06",
+    "internship_number": null,
+    "internship_type": "On-site",
+    "key_responsibilities": [
+      "Understood ML lifecycle and core algorithms like SVM, Logistic Regression, and KNN",
+      "Cleaned and processed real-world health-related datasets using Python and pandas",
+      "Performed feature engineering, scaling, and one-hot encoding",
+      "Built classification models and evaluated performance using F-beta score and ROC-AUC",
+      "Documented model performance with visualizations and cross-validation"
+    ],
+    "location": "Bengaluru, Karnataka, India",
+    "order_index": null,
+    "skills_gained": [
+      "Machine Learning fundamentals",
+      "Supervised learning models",
+      "Data preprocessing & feature scaling",
+      "Model evaluation & hyperparameter tuning",
+      "Cross-validation & result interpretation",
+      "Python programming for ML",
+      "Hands-on ML implementation with scikit-learn"
+    ],
+    "start_date": "2019-07-01",
+    "status": "active",
+    "technologies": [
+      "Python",
+      "Pandas",
+      "NumPy",
+      "Matplotlib",
+      "Scikit-learn",
+      "Jupyter Notebook"
+    ],
+    "title": "Machine Learning Intern",
+    "updated_at": "2025-06-07T04:59:39.676256"
+  },
+  {
+    "achievements": [
+      "Successfully delivered 3 end-to-end mini projects with independent problem-solving",
+      "Project 1 (Amazon E-commerce): Extracted marketing insights, payment patterns, and domain trends from 10,000+ purchase records",
+      "Project 2 (Insurance Analysis): Statistically modeled healthcare costs based on lifestyle and demographic attributes",
+      "Project 3 (LaLiga Dataset): Computed team performance rankings, winning percentages, and best-position summaries across 60+ teams",
+      "Reduced average EDA time by 20% through concise logic-based filtering and lambda optimization",
+      "Improved data quality by 30% through custom cleaning rules for invalid entries",
+      "Discovered that smoking status is the most impactful factor on healthcare charges, validating with p-value < 0.001",
+      "Built reusable EDA and aggregation modules used across all three projects",
+      "Achieved highest-level certification evaluation score for clarity of insights and interpretation depth"
+    ],
+    "certificate_urls": [
+      "https://emaaaeooafqawdvdreaz.supabase.co/storage/v1/object/public/documents/internships/data-science-intern-certificate-1749277626502-1.pdf"
+    ],
+    "company": "Great Learning Pvt. Ltd.",
+    "company_logo_url": "https://emaaaeooafqawdvdreaz.supabase.co/storage/v1/object/public/organization-logos/internships/company-logo-1749277066592.jpg",
+    "created_at": "2025-06-07T06:27:17.540224",
+    "description": "Completed a remote internship in \"Data Science\" at Great Learning, where I conducted three independent data analysis and statistical research projects spanning the domains of E-commerce, Healthcare Insurance, and Sports Analytics. Leveraged Python libraries such as Pandas, NumPy, Seaborn, and SciPy to perform advanced exploratory data analysis, hypothesis testing, and insight generation. Each project involved real-world datasets and concluded with actionable business recommendations or performance insights that demonstrated the value of data-driven decisions.",
+    "duration": "9 weeks",
+    "end_date": "2020-08-16",
+    "id": "e43d6db4-cafd-403d-a23a-dceae42dcd33",
+    "internship_number": null,
+    "internship_type": "Remote",
+    "key_responsibilities": [
+      "Cleaned, preprocessed, and structured large real-world datasets from Amazon purchases, insurance records, and LaLiga match data.",
+      "Conducted EDA using visualizations like violin plots, heatmaps, and countplots to reveal data distribution and category trends.",
+      "Performed hypothesis testing using: T-tests to compare smoker vs non-smoker medical charges",
+      "Performed hypothesis testing using: ANOVA for BMI variation analysis.",
+      "Performed hypothesis testing using: Chi-square to assess categorical dependencies like smoking status vs gender.",
+      "Engineered new statistical metrics such as winning percentage and goal difference in football data using custom Python functions.",
+      "Utilized single-line logic operations and lambda functions to solve business queries in E-commerce datasets.",
+      "Explored and analyzed over 1 million data points across three real-world datasets using efficient Pandas workflows.",
+      "Simulated stakeholder reporting by creating concise, insight-driven visual presentations.",
+      "Cleaned malformed entries (e.g., dash replacements in LaLiga CSV), ensuring data compatibility for aggregation and modeling."
+    ],
+    "location": "Remote",
+    "order_index": null,
+    "skills_gained": [
+      "Real-world dataset handling and domain-based EDA",
+      "Hypothesis testing and statistical thinking (p-values, distributions, variance)",
+      "Data storytelling and insight articulation through visualizations",
+      "Writing reusable Python functions for data transformation and aggregation",
+      "Handling messy data: outliers, inconsistent entries, missing values",
+      "Mapping data trends to business decisions and sports performance KPIs",
+      "Report writing with supporting evidence from analysis (PDF submissions + GitHub)"
+    ],
+    "start_date": "2020-06-15",
+    "status": "active",
+    "technologies": [
+      "Python",
+      "Pandas",
+      "NumPy",
+      "Matplotlib",
+      "Seaborn",
+      "T-tests",
+      "ANOVA",
+      "Chi-square",
+      "Scikit-learn",
+      "Jupyter Notebook",
+      "GitHub"
+    ],
+    "title": "Data Science Intern",
+    "updated_at": "2025-06-07T06:27:17.540224"
+  }
+]

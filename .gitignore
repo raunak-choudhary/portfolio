@@ -86,3 +86,8 @@ graphify-out/
 
 # Agent source of truth (local only)
 CLAUDE.md
+
+# Browser suite output
+test-results/
+playwright-report/
+captures/
