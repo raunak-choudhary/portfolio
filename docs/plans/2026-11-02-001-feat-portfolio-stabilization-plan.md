@@ -513,6 +513,32 @@ This document, reviewed and approved. No implementation unit.
 **Verification:**
 - Column list of `admin_users` shows only `id`, `email`, `is_active`, timestamps and `last_login`; security advisor unchanged or better; `npm audit` output and exceptions recorded.
 
+- [ ] **Unit 2.5b: Personal data audit and removal**
+
+**Goal:** Nothing in the database holds personal data that has no place on a public portfolio, and nothing public-facing can read it.
+
+**Requirements:** R2
+
+**Dependencies:** Unit 2.7 (runs with Unit 2.5, after the security deploy)
+
+**Files:**
+- Create: `supabase/migrations/<timestamp>_remove_non_portfolio_personal_data.sql`, `docs/data-inventory.md` (every table and column, what it holds, whether visitors see it, why it exists)
+- Modify: the admin managers, `src/services/dataService.js` and `scripts/record-fixtures.mjs` wherever a removed column is referenced; `e2e/fixtures/*.json` (re-recorded)
+- Test: unit tests for every changed manager form and service; the browser suite; a rolled-back SQL check that anonymous reads no longer return the removed columns
+
+**Approach:**
+- Inventory every column in every table (public, storage metadata, analytics) and classify it: shown to visitors, admin-only, or not needed. Candidates already known: `work_experience.salary_range` (income, readable by anyone through the API today), `work_experience.reason_for_leaving`, `work_experience.performance_rating` (keep only if the owner wants it shown), `contact_messages.sender_ip` and `user_agent` (not needed to answer a message), the 2025 `admin_users` login columns (covered by Unit 2.5), any phone number, home address or date of birth anywhere, and the full user agent, screen size and timezone stored in `analytics_events.metadata.visitor_info`.
+- Owner reviews the inventory and approves each removal. Removal is a column drop (permanent, after a backup export kept outside the repo), never just hiding it in the UI. Code references are removed first, in the same pull request, so nothing breaks.
+- Where a field is kept but must not be public, anonymous access to that column is revoked instead.
+
+**Test scenarios:**
+- Happy path: after the migration, anonymous selects on each touched table succeed and return none of the removed columns.
+- Integration: every admin manager that used a removed field saves and loads without errors; the public pages render unchanged (browser suite and capture comparison).
+- Error path: the migration fails loudly if a view, function or policy still references a dropped column.
+
+**Verification:**
+- `docs/data-inventory.md` approved by the owner; migration applied; fixtures re-recorded with no redaction needed; the security advisor unchanged or better.
+
 - [ ] **Unit 2.6: Postgres platform upgrade (owner-approved window)**
 
 **Goal:** Clear the only remaining security advisor warning.
