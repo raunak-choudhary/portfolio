@@ -418,3 +418,9 @@ s3_secret_key = "env(S3_SECRET_KEY)"
 # declarative_schema_path = "./database"
 # JSON string passed through to pg-delta SQL formatting.
 # format_options = "{\"keywordCase\":\"upper\",\"indent\":2,\"maxWidth\":80,\"commaStyle\":\"trailing\"}"
+
+# The contact email function authorises in code (public key header plus
+# origin check) because the site sends a publishable key, which is not a JWT
+# the gateway could verify. See supabase/functions/send-contact-email/index.ts.
+[functions.send-contact-email]
+verify_jwt = false
