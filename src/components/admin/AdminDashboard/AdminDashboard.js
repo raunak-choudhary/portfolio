@@ -22,13 +22,19 @@ import AchievementsManager from './sections/AchievementsManager';
 import LeadershipManager from './sections/LeadershipManager';
 import ContactMessagesManager from './sections/ContactMessagesManager';
 import AnalyticsDashboard from '../Analytics/AnalyticsDashboard';
+import MfaEnrollment from '../Security/MfaEnrollment';
 import MediaUpload from '../MediaUpload/MediaUpload';
 
-const AdminDashboard = () => {
+/**
+ * @param {boolean} requireSecurityEnrollment true while no authenticator app is
+ *   enrolled: the sidebar shows only Security and every other section is held
+ *   back until the first authenticator is confirmed.
+ */
+const AdminDashboard = ({ requireSecurityEnrollment = false }) => {
   const { signOut } = useAuth();
   
   // Core dashboard state
-  const [activeSection, setActiveSection] = useState('dashboard');
+  const [activeSection, setActiveSection] = useState(requireSecurityEnrollment ? 'security' : 'dashboard');
   const [showPreview, setShowPreview] = useState(false);
   const [portfolioStats, setPortfolioStats] = useState(null);
   const [portfolioHealth, setPortfolioHealth] = useState(null);
@@ -60,7 +66,8 @@ const AdminDashboard = () => {
     { id: 'leadership', name: 'Leadership', icon: '👑', color: 'violet', shortcut: 'l' },
     { id: 'contact', name: 'Contact Messages', icon: '📧', color: 'rose', shortcut: '3' },
     { id: 'media', name: 'Media Library', icon: '🗂️', color: 'cyan', shortcut: 'u' },
-    { id: 'analytics', name: 'Analytics', icon: '📈', color: 'emerald', shortcut: 'b' }
+    { id: 'analytics', name: 'Analytics', icon: '📈', color: 'emerald', shortcut: 'b' },
+    { id: 'security', name: 'Security', icon: '🛡️', color: 'green', shortcut: 'k' }
   ];
 
   // Section-specific state management
@@ -373,6 +380,7 @@ const AdminDashboard = () => {
           case 'm': e.preventDefault(); handleSectionChange('achievements'); break;
           case 'l': e.preventDefault(); handleSectionChange('leadership'); break;
           case 'u': e.preventDefault(); handleSectionChange('media'); break;
+          case 'k': e.preventDefault(); handleSectionChange('security'); break;
           case 'p': e.preventDefault(); togglePreview(); break;
           default: break;
         }
@@ -710,6 +718,11 @@ const AdminDashboard = () => {
 
   // Render section content
   const renderSectionContent = () => {
+    // Until an authenticator is enrolled nothing but the Security screen opens,
+    // whatever the active section says (keyboard shortcuts included).
+    if (requireSecurityEnrollment || activeSection === 'security') {
+      return <MfaEnrollment enrollmentRequired={requireSecurityEnrollment} />;
+    }
     if (activeSection === 'dashboard') {
       return renderDashboardOverview();
     }
@@ -907,7 +920,7 @@ const AdminDashboard = () => {
         
         <aside className="admin-sidebar">
           <nav className="sidebar-nav">
-            {dashboardSections.map(section => (
+            {dashboardSections.filter(section => !requireSecurityEnrollment || section.id === 'security').map(section => (
               <button
                 key={section.id}
                 className={`nav-item ${activeSection === section.id ? 'active' : ''}`}
