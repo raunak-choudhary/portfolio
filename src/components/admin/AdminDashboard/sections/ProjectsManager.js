@@ -7,6 +7,7 @@ import './ProjectsManager.css';
 import { getAdminSupabaseClient, triggerPublicRefresh } from '../../../../services/adminDataService';
 
 import { deleteProjectImage } from '../../../../services/dataService';
+import { teamLabel } from '../../../sections/Projects/projectFormat';
 
 // UUID generation utility
 const generateUUID = () => {
@@ -63,6 +64,7 @@ const ProjectsManager = () => {
     project_type: '',
     duration: '',
     team_size: 1,
+    awards: '',
     key_features: [],
     challenges: '',
     learnings: '',
@@ -164,6 +166,7 @@ const ProjectsManager = () => {
         formData.project_type !== (selectedProject.project_type || '') ||
         formData.duration !== (selectedProject.duration || '') ||
         formData.team_size !== (selectedProject.team_size || 1) ||
+        formData.awards !== (selectedProject.awards || '') ||
         formData.challenges !== (selectedProject.challenges || '') ||
         formData.learnings !== (selectedProject.learnings || '') ||
         formData.featured !== (selectedProject.featured || false) ||
@@ -247,6 +250,7 @@ const ProjectsManager = () => {
         project_type: selectedProject.project_type || '',
         duration: selectedProject.duration || '',
         team_size: selectedProject.team_size || 1,
+        awards: selectedProject.awards || '',
         key_features: Array.isArray(selectedProject.key_features) ? [...selectedProject.key_features] : [],
         challenges: selectedProject.challenges || '',
         learnings: selectedProject.learnings || '',
@@ -296,6 +300,7 @@ const ProjectsManager = () => {
         project_type: '',
         duration: '',
         team_size: 1,
+        awards: '',
         key_features: [],
         challenges: '',
         learnings: '',
@@ -734,6 +739,7 @@ const ProjectsManager = () => {
         project_type: formData.project_type.trim() || null,
         duration: formData.duration.trim() || null,
         team_size: formData.team_size,
+        awards: formData.awards.trim() || null,
         key_features: formData.key_features,
         challenges: formData.challenges.trim() || null,
         learnings: formData.learnings.trim() || null,
@@ -1228,7 +1234,7 @@ const ProjectsManager = () => {
                                   <span className="meta-item">📅 {project.duration}</span>
                                 )}
                                 {project.team_size && (
-                                  <span className="meta-item">👥 {project.team_size} member{project.team_size > 1 ? 's' : ''}</span>
+                                  <span className="meta-item">👥 {teamLabel(project.team_size)}</span>
                                 )}
                               </div>
                             </div>
@@ -1480,6 +1486,24 @@ const ProjectsManager = () => {
                       </span>
                     )}
                   </div>
+                </div>
+
+                <div className="form-group">
+                  <div className="form-label-wrapper">
+                    <label htmlFor="awards" className="form-label">
+                      Awards
+                    </label>
+                    <span className="char-count">{formData.awards.length}/200</span>
+                  </div>
+                  <input
+                    id="awards"
+                    type="text"
+                    value={formData.awards}
+                    onChange={(e) => handleInputChange('awards', e.target.value)}
+                    className="form-input"
+                    placeholder="Leave empty unless the project won or placed, e.g. First Prize, Example Hackathon"
+                    maxLength={200}
+                  />
                 </div>
               </div>
 
@@ -1920,7 +1944,7 @@ const ProjectsManager = () => {
                     <div className="preview-meta-row">
                       <div className="preview-meta-item">
                         <span className="meta-label">Team</span>
-                        <span className="meta-value">{formData.team_size} member{formData.team_size > 1 ? 's' : ''}</span>
+                        <span className="meta-value">{teamLabel(formData.team_size)}</span>
                       </div>
                       <div className="preview-meta-item">
                         <span className="meta-label">Status</span>
