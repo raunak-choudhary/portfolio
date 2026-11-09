@@ -26,7 +26,37 @@ const authError = (code, message, details = null) => ({
  * unknown address gets the same reply as a real send.
  */
 export const LOGIN_LINK_SENT_MESSAGE =
-  'If this address belongs to the portfolio admin, a login link is on its way. Check your email.';
+  'If this address belongs to the portfolio admin, a six-digit code is on its way. Check your email.';
+
+/** Length of every one-time code the login accepts (email code and authenticator code). */
+export const ONE_TIME_CODE_LENGTH = 6;
+
+/** Seconds the login page waits before offering to resend the email code. */
+export const RESEND_COOLDOWN_SECONDS = 60;
+
+/** Friendly name used for the owner's first authenticator; a backup gets its own name. */
+export const PRIMARY_FACTOR_NAME = 'Primary authenticator';
+
+/** True for exactly six ASCII digits, the only shape a code can have. */
+export const isValidOneTimeCode = (value) => /^[0-9]{6}$/.test(String(value ?? ''));
+
+/** Keeps only the digits of what was typed or pasted, capped at the code length. */
+export const sanitizeCodeInput = (value) => String(value ?? '').replace(/\D/g, '').slice(0, ONE_TIME_CODE_LENGTH);
+
+/**
+ * Hides most of an address for display on the code step
+ * ("raunakchoudhary17@gmail.com" becomes "rau•••••@gmail.com"). The page
+ * shows only what the visitor typed themselves, but masking keeps the
+ * address off a shoulder-surfer's screen.
+ */
+export const maskEmail = (email) => {
+  const normalized = normalizeEmail(email);
+  const at = normalized.indexOf('@');
+  if (at <= 0) return '';
+  const local = normalized.slice(0, at);
+  const visible = local.slice(0, Math.min(3, Math.max(1, local.length - 1)));
+  return `${visible}•••••${normalized.slice(at)}`;
+};
 
 /** Message shown when Supabase refuses to send another email yet. */
 export const LOGIN_RATE_LIMITED_MESSAGE =
@@ -129,6 +159,210 @@ export const readAuthErrorFromUrl = (fragment) => {
     return 'This login link has expired or was already used. Request a new one below.';
   }
   return 'The login link could not be used. Request a new one below.';
+};
+
+/**
+ * Exchanges the six-digit code from the login email for a session.
+ *
+ * The code is single use and expires on the server (Supabase Auth setting,
+ * kept at 10 minutes). A wrong or stale code gets one fixed sentence; the
+ * server's own rate limit decides how many attempts are allowed.
+ *
+ * @param {string} email the address the code was sent to.
+ * @param {string} code  the six digits from the email.
+ * @returns {Promise<{success: boolean, data?: object, error?: object}>}
+ */
+export const verifyEmailCode = async (email, code) => {
+  const normalizedEmail = normalizeEmail(email);
+  if (!normalizedEmail || !isValidOneTimeCode(code)) {
+    return { success: false, error: authError('INVALID_CODE', 'Enter the six-digit code from the email.') };
+  }
+  try {
+    const { data, error } = await supabase.auth.verifyOtp({
+      email: normalizedEmail,
+      token: String(code),
+      type: 'email'
+    });
+    if (error) {
+      if (isRateLimitError(error)) {
+        return { success: false, error: authError('CODE_RATE_LIMITED', 'Too many attempts. Wait a minute and try again.', error) };
+      }
+      return {
+        success: false,
+        error: authError('CODE_REJECTED', 'That code is wrong or has expired. Check the email or request a new code.', error)
+      };
+    }
+    if (!data?.session) {
+      return { success: false, error: authError('NO_SESSION_AFTER_CODE', 'The code was accepted but no session was created. Try again.') };
+    }
+    return { success: true, data: { session: data.session } };
+  } catch (error) {
+    return { success: false, error: authError('CODE_VERIFY_ERROR', 'Could not verify the code. Try again.', error.message) };
+  }
+};
+
+/** Shapes a Supabase MFA error into the fixed sentences the screens show. */
+const describeMfaError = (error, fallback) => {
+  if (isRateLimitError(error)) {
+    return authError('MFA_RATE_LIMITED', 'Too many attempts. Wait a minute and try again.', error);
+  }
+  if (error?.code === 'mfa_factor_name_conflict') {
+    return authError('MFA_NAME_CONFLICT', 'An authenticator with that name already exists. Choose another name.', error);
+  }
+  if (error?.code === 'mfa_verification_failed' || error?.status === 422 || error?.status === 400) {
+    return authError('MFA_CODE_REJECTED', 'That code is wrong or has expired. Enter the current code from your app.', error);
+  }
+  return authError('MFA_ERROR', fallback, error);
+};
+
+/**
+ * Lists the authenticator-app factors on the account, split by state.
+ * Supabase keeps a factor as "unverified" until its first code is accepted.
+ */
+export const listTotpFactors = async () => {
+  try {
+    const { data, error } = await supabase.auth.mfa.listFactors();
+    if (error) return { success: false, error: describeMfaError(error, 'Could not read your authenticators.') };
+    const totp = Array.isArray(data?.totp) ? data.totp : [];
+    return {
+      success: true,
+      data: {
+        verified: totp.filter((factor) => factor.status === 'verified'),
+        unverified: totp.filter((factor) => factor.status !== 'verified')
+      }
+    };
+  } catch (error) {
+    return { success: false, error: authError('MFA_LIST_ERROR', 'Could not read your authenticators.', error.message) };
+  }
+};
+
+/**
+ * Removes factors left behind by an abandoned enrolment, so a new enrolment
+ * with the same friendly name does not collide. Only unverified factors are
+ * touched; verified ones are removed solely through unenrollFactor.
+ */
+export const removeUnverifiedFactors = async () => {
+  const listed = await listTotpFactors();
+  if (!listed.success) return listed;
+  const results = await Promise.all(
+    listed.data.unverified.map((factor) => supabase.auth.mfa.unenroll({ factorId: factor.id }))
+  );
+  const failed = results.find((result) => result.error);
+  if (failed) return { success: false, error: describeMfaError(failed.error, 'Could not clean up an unfinished enrolment.') };
+  return { success: true, data: { removed: listed.data.unverified.length } };
+};
+
+/**
+ * Starts enrolling an authenticator app. Returns the QR code (an SVG data
+ * URL built by Supabase), the setup key for manual entry and the factor id
+ * that verifyTotpEnrollment needs. Nothing is active until the first code
+ * is accepted.
+ */
+export const enrollTotp = async (friendlyName = PRIMARY_FACTOR_NAME) => {
+  const name = String(friendlyName || '').trim().slice(0, 60) || PRIMARY_FACTOR_NAME;
+  try {
+    const { data, error } = await supabase.auth.mfa.enroll({ factorType: 'totp', friendlyName: name });
+    if (error) return { success: false, error: describeMfaError(error, 'Could not start the enrolment.') };
+    return {
+      success: true,
+      data: {
+        factorId: data.id,
+        friendlyName: name,
+        qrCode: data.totp?.qr_code || '',
+        secret: data.totp?.secret || '',
+        uri: data.totp?.uri || ''
+      }
+    };
+  } catch (error) {
+    return { success: false, error: authError('MFA_ENROLL_ERROR', 'Could not start the enrolment.', error.message) };
+  }
+};
+
+/**
+ * Confirms a new authenticator with its first code. On success Supabase marks
+ * the factor verified and upgrades the current session to level 2.
+ */
+export const verifyTotpEnrollment = async (factorId, code) => {
+  if (!factorId || !isValidOneTimeCode(code)) {
+    return { success: false, error: authError('INVALID_CODE', 'Enter the six-digit code from your authenticator app.') };
+  }
+  try {
+    const challenge = await supabase.auth.mfa.challenge({ factorId });
+    if (challenge.error) return { success: false, error: describeMfaError(challenge.error, 'Could not start the check.') };
+    const verified = await supabase.auth.mfa.verify({ factorId, challengeId: challenge.data.id, code: String(code) });
+    if (verified.error) return { success: false, error: describeMfaError(verified.error, 'Could not verify the code.') };
+    return { success: true, data: { factorId } };
+  } catch (error) {
+    return { success: false, error: authError('MFA_VERIFY_ERROR', 'Could not verify the code.', error.message) };
+  }
+};
+
+/**
+ * Login step 3: checks an authenticator code against a verified factor and
+ * upgrades the session to level 2. Tries the given factor only; the caller
+ * picks it from listTotpFactors.
+ */
+export const verifyTotpChallenge = async (factorId, code) => {
+  if (!factorId || !isValidOneTimeCode(code)) {
+    return { success: false, error: authError('INVALID_CODE', 'Enter the six-digit code from your authenticator app.') };
+  }
+  try {
+    const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId, code: String(code) });
+    if (error) return { success: false, error: describeMfaError(error, 'Could not verify the code.') };
+    return { success: true, data: { factorId } };
+  } catch (error) {
+    return { success: false, error: authError('MFA_VERIFY_ERROR', 'Could not verify the code.', error.message) };
+  }
+};
+
+/** Removes an authenticator. The screen confirms first and warns when it is the last one. */
+export const unenrollFactor = async (factorId) => {
+  if (!factorId) return { success: false, error: authError('INVALID_FACTOR', 'No authenticator selected.') };
+  try {
+    const { error } = await supabase.auth.mfa.unenroll({ factorId });
+    if (error) return { success: false, error: describeMfaError(error, 'Could not remove the authenticator.') };
+    return { success: true, data: { factorId } };
+  } catch (error) {
+    return { success: false, error: authError('MFA_UNENROLL_ERROR', 'Could not remove the authenticator.', error.message) };
+  }
+};
+
+/**
+ * The session's position in the two-step login, for routing:
+ *   currentLevel      'aal1' after the email code, 'aal2' after the authenticator code
+ *   hasVerifiedFactor whether an authenticator is enrolled and confirmed
+ *   needsSecondFactor an authenticator exists but this session has not used it yet
+ *   needsEnrollment   no authenticator exists yet, so the dashboard shows only the setup screen
+ * Any failure reads as the most restrictive state.
+ */
+export const getAssuranceState = async () => {
+  const restrictive = {
+    currentLevel: 'aal1',
+    nextLevel: 'aal1',
+    hasVerifiedFactor: false,
+    needsSecondFactor: false,
+    needsEnrollment: true,
+    checked: true
+  };
+  try {
+    const [levels, factors] = await Promise.all([
+      supabase.auth.mfa.getAuthenticatorAssuranceLevel(),
+      listTotpFactors()
+    ]);
+    if (levels.error || !factors.success) return restrictive;
+    const currentLevel = levels.data?.currentLevel || 'aal1';
+    const hasVerifiedFactor = factors.data.verified.length > 0;
+    return {
+      currentLevel,
+      nextLevel: levels.data?.nextLevel || currentLevel,
+      hasVerifiedFactor,
+      needsSecondFactor: hasVerifiedFactor && currentLevel !== 'aal2',
+      needsEnrollment: !hasVerifiedFactor,
+      checked: true
+    };
+  } catch (error) {
+    return restrictive;
+  }
 };
 
 /**
@@ -291,8 +525,16 @@ export const initializeAuth = () => {};
 
 const authService = {
   requestAdminLoginOtp,
+  verifyEmailCode,
   readAuthErrorFromUrl,
   hasSecondFactorSession,
+  getAssuranceState,
+  listTotpFactors,
+  enrollTotp,
+  verifyTotpEnrollment,
+  verifyTotpChallenge,
+  unenrollFactor,
+  removeUnverifiedFactors,
   signInAdmin,
   signOutAdmin,
   getCurrentAdmin,
