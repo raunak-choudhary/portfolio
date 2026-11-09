@@ -20,13 +20,18 @@ const authError = (code, message, details = null) => ({
   details
 });
 
+/** Message shown once the code email has been sent to the admin address. */
+export const LOGIN_LINK_SENT_MESSAGE = 'A six-digit code is on its way to your inbox.';
+
 /**
- * Message shown after every login request, whether or not the address is an
- * admin. The login screen must not confirm which addresses are admins, so an
- * unknown address gets the same reply as a real send.
+ * Message shown for any other address. Owner decision 2026-11-09: the admin
+ * address is already published on the site's Contact section, so naming it
+ * here reveals nothing, and a clear message is more useful to the owner.
  */
-export const LOGIN_LINK_SENT_MESSAGE =
-  'If this address belongs to the portfolio admin, a six-digit code is on its way. Check your email.';
+export const NOT_ADMIN_EMAIL_MESSAGE = 'That is not the admin email address.';
+
+/** Edge Function that emails the owner when another address is tried. */
+export const LOGIN_ALERT_FUNCTION = 'admin-login-alert';
 
 /** Length of every one-time code the login accepts (email code and authenticator code). */
 export const ONE_TIME_CODE_LENGTH = 6;
@@ -80,16 +85,25 @@ export const isRateLimitError = (error) =>
   Boolean(error) && (RATE_LIMIT_ERROR_CODES.has(error.code) || error.status === 429);
 
 /**
- * Requests a magic-link email for the admin.
+ * Reports an attempt with a non-admin address so the owner gets an alert
+ * email (throttled server-side). Best effort: a failure here never changes
+ * what the login page shows, and the function stores nothing personal.
+ */
+export const reportUnknownLoginAttempt = async (email) => {
+  try {
+    await supabase.functions.invoke(LOGIN_ALERT_FUNCTION, { body: { attemptedEmail: normalizeEmail(email) } });
+  } catch (error) {
+    // Deliberately ignored: alerting must never block or expose the login.
+  }
+};
+
+/**
+ * Requests the six-digit login code for the admin.
  *
- * Account creation is off: only an address that already has a Supabase Auth
- * account receives a link. Project sign-ups are disabled in the dashboard as
- * well, so this is defence in depth rather than the only barrier.
- *
- * Note that the raw auth endpoint still answers differently for unknown
- * addresses (HTTP 422) and anyone calling it directly can tell them apart.
- * That is accepted: sign-ups are closed and admin writes require a second
- * factor, so knowing the admin's address gains an attacker nothing.
+ * Account creation is off: only the address that already has a Supabase Auth
+ * account receives a code. Project sign-ups are disabled in the dashboard as
+ * well, so this is defence in depth rather than the only barrier. Any other
+ * address is told so and reported to the owner.
  *
  * @param {string} email address typed into the login form.
  * @returns {Promise<{success: boolean, data?: object, error?: object}>}
@@ -120,10 +134,18 @@ export const requestAdminLoginOtp = async (email) => {
       };
     }
 
-    if (error && !isUnknownAccountError(error)) {
+    if (error && isUnknownAccountError(error)) {
+      reportUnknownLoginAttempt(normalizedEmail);
       return {
         success: false,
-        error: authError('OTP_REQUEST_FAILED', error.message, error)
+        error: authError('NOT_ADMIN_EMAIL', NOT_ADMIN_EMAIL_MESSAGE, error)
+      };
+    }
+
+    if (error) {
+      return {
+        success: false,
+        error: authError('OTP_REQUEST_FAILED', 'The code could not be sent. Try again in a moment.', error)
       };
     }
 
@@ -525,6 +547,7 @@ export const initializeAuth = () => {};
 
 const authService = {
   requestAdminLoginOtp,
+  reportUnknownLoginAttempt,
   verifyEmailCode,
   readAuthErrorFromUrl,
   hasSecondFactorSession,
