@@ -58,6 +58,9 @@ export const validateSeed = (seed) => {
     project.github_urls.forEach((url) => {
       if (!GITHUB_URL.test(url)) throw new Error(`${label}: GitHub URL must be a full https address: ${url}`);
     });
+    if (project.live_url != null && !/^https:\/\/[^\s]+$/.test(project.live_url)) {
+      throw new Error(`${label}: live_url must be a full https address: ${project.live_url}`);
+    }
     const features = project.key_features ?? [];
     if (features.length < 3 || features.length > 5) throw new Error(`${label}: needs 3 to 5 key features`);
     if (project.awards != null && String(project.awards).length > 200) {
