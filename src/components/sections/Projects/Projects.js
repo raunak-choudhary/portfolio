@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import ProjectCard from './ProjectCard';
+import { sortProjects } from './projectFormat';
 import { getProjects } from '../../../services/dataService';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import './Projects.css';
@@ -24,48 +25,8 @@ const Projects = () => {
           console.log('✅ Projects fetched successfully:', response.data?.length || 0, 'projects');
           const projectsData = Array.isArray(response.data) ? response.data : [];
           
-          // Sort projects: featured projects first, then by other criteria
-          const sortedProjects = [...projectsData].sort((a, b) => {
-            // Primary sort: featured projects first
-            // The 'featured' property is checked on each project object.
-            if (a.featured && !b.featured) return -1; // a (featured) comes before b (not featured)
-            if (!a.featured && b.featured) return 1;  // b (featured) comes before a (not featured)
-
-            // Secondary sort: by creation date (newest first), similar to recommendations
-            // This assumes projects might have a 'created_at' field like recommendations.
-            if (a.created_at && b.created_at) {
-              try {
-                const dateA = new Date(a.created_at);
-                const dateB = new Date(b.created_at);
-                // Check if dates are valid before attempting to compare
-                if (!isNaN(dateA) && !isNaN(dateB)) {
-                  // Sort by date descending (newest first)
-                  return dateB.getTime() - dateA.getTime(); 
-                }
-              } catch (e) {
-                console.warn("Could not parse created_at for sorting projects:", e);
-              }
-            }
-            
-            // Fallback secondary sort: by project ID (descending, assuming higher ID is newer)
-            // The ProjectCard component uses 'project.id' as a key, suggesting its availability.
-            if (a.id && b.id) {
-              // Ensure IDs are numbers if they are numeric strings
-              const idA = typeof a.id === 'string' ? parseInt(a.id, 10) : a.id;
-              const idB = typeof b.id === 'string' ? parseInt(b.id, 10) : b.id;
-              if (!isNaN(idA) && !isNaN(idB)) {
-                 return idB - idA; // Higher ID (newer) first
-              }
-            }
-
-            // Further fallback: by title alphabetically if other criteria are not available or equal
-            // The 'project.title' is a primary display field.
-            if (a.title && b.title) {
-              return a.title.localeCompare(b.title); // Sort by title ascending
-            }
-
-            return 0; // Keep original relative order if no other criteria met
-          });
+          // Featured first, then newest build first (see sortProjects).
+          const sortedProjects = sortProjects(projectsData);
           
           setProjects(sortedProjects);
         } else {

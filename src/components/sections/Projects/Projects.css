@@ -118,7 +118,7 @@
 /* Card Wrapper & Base Structure */
 .projects-section .project-card-wrapper {
   perspective: 1200px;
-  height: 600px;
+  height: 680px; /* was 600px; fits fuller descriptions and the award line (2026-11-09) */
   cursor: pointer;
   transition: transform var(--duration-normal) var(--ease-in-out);
   position: relative;
@@ -1637,7 +1637,7 @@
   }
 
   .projects-section .project-card-wrapper {
-    height: 650px;
+    height: 730px; /* was 650px; tablet-landscape cards are narrower (2026-11-09) */
   }
 
   .projects-section .projects-grid {
@@ -1676,7 +1676,9 @@
   }
 
   .projects-section .project-card-wrapper {
-    height: 550px;
+    /* 600px, not 550px: fits the fuller descriptions and the award line
+       without clipping the card footer at tablet width (2026-11-09). */
+    height: 600px;
   }
 
   .projects-section .card-front,
@@ -1779,7 +1781,7 @@
   }
 
   .projects-section .project-card-wrapper {
-    height: 700px;
+    height: 720px; /* was 700px (2026-11-09) */
   }
 
   .projects-section .card-front,
@@ -2032,7 +2034,7 @@
   }
 
   .projects-section .project-card-wrapper {
-    height: 650px;
+    height: 680px; /* was 650px (2026-11-09) */
   }
 }
 
@@ -2525,3 +2527,38 @@
 }
 
 /* =================== END LIGHT THEME OVERRIDE =================== */
+/* Award line under the project title (shown only when a project has one) */
+.projects-section .project-award {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-xs, 6px);
+  margin: 0 0 var(--spacing-sm, 8px);
+  padding: 4px 10px;
+  border-radius: var(--radius-md, 8px);
+  border: 1px solid rgba(255, 193, 7, 0.45);
+  background: rgba(255, 193, 7, 0.12);
+  color: var(--text-secondary);
+  font-size: var(--text-xs, 0.75rem);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+[data-theme="light"] .projects-section .project-award {
+  border-color: rgba(180, 130, 0, 0.45);
+  background: rgba(255, 193, 7, 0.16);
+  color: #5a4300;
+}
+
+/* Repository buttons show the full address, so long addresses must wrap */
+.projects-section .github-url-btn {
+  height: auto;
+  min-height: 36px;
+  text-align: left;
+}
+
+.projects-section .github-url-text {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: normal;
+  font-size: var(--text-xs, 0.75rem);
+}
