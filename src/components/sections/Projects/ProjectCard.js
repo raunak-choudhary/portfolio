@@ -15,6 +15,8 @@ const ProjectCard = ({ project }) => {
                     (project.githubUrl ? [project.githubUrl] :
                     (project.github_url ? [project.github_url] : []));
   const githubUrls = rawGithubUrls.map(toHttpsUrl).filter(Boolean);
+  // Live demo link, held to the same full-https rule as repository links.
+  const liveUrl = toHttpsUrl(project.live_url);
 
   // Handle multiple images
   const imageUrls = Array.isArray(project.image_urls) ? project.image_urls : 
@@ -405,9 +407,9 @@ const ProjectCard = ({ project }) => {
             <div className="action-section">
               
               {/* Live Demo */}
-              {project.live_url && (
+              {liveUrl && (
                 <a 
-                  href={project.live_url} 
+                  href={liveUrl} 
                   target="_blank" 
                   rel="noopener noreferrer" 
                   className="action-btn demo-btn"
