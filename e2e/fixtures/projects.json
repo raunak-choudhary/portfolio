@@ -1,10 +1,11 @@
 [
   {
-    "challenges": "Maintaining parameter efficiency while achieving high classification accuracy was a primary challenge. Optimizing the LoRA rank (r=6) and alpha (α=24) parameters to stay within a 1 million trainable parameter budget required iterative experimentation. Misclassification between Business and Sci/Tech categories due to semantic overlap was another challenge addressed through detailed evaluation of class-wise metrics and confusion matrices.",
+    "awards": null,
+    "challenges": null,
     "created_at": "2025-06-09T06:48:29.244198",
-    "detailed_description": "This project implemented a text classification model using the RoBERTa-base architecture, fine-tuned with Low-Rank Adaptation (LoRA) for parameter-efficient training. Conducted as part of the Deep Learning course at NYU in Spring 2025, the model was trained on the AG News dataset, which contains approximately 120,000 articles across four categories: World, Sports, Business, and Sci/Tech. The LoRA configuration focused on adapting the query, key, and value matrices within attention layers while freezing the rest of the model. We utilized a warmup-based linear learning rate scheduler, early stopping mechanism, and PyTorch-based DataLoader pipelines. The final model achieved a test accuracy of 94.59% with only 925,444 trainable parameters, amounting to 0.737% of the full model size. Evaluation involved visualizing training metrics, confusion matrices, and F1 scores per class, followed by Kaggle test submission.",
-    "duration": "2 weeks",
-    "featured": true,
+    "detailed_description": "LoRA adapters on the query, key and value projections keep trainable parameters at 925K out of 125M, under a one-million budget that the code checks rather than assumes. Results are reported with accuracy, macro F1 and a confusion matrix on both validation and test sets.",
+    "duration": "Apr–May 2025",
+    "featured": false,
     "github_urls": [
       "https://github.com/raunak-choudhary/RoBERTa-LoRA-News-Classification"
     ],
@@ -15,48 +16,35 @@
       "https://emaaaeooafqawdvdreaz.supabase.co/storage/v1/object/public/project-images/projects/00c52682-f93b-4dfa-b149-c5a568356490/project-1749451628185-3.png"
     ],
     "key_features": [
-      "Parameter-efficient fine-tuning using LoRA adapters",
-      "RoBERTa-base architecture with frozen base weights",
-      "Targeted adaptation of query, key, value matrices",
-      "Early stopping based on validation loss",
-      "Linear LR scheduling with 10% warmup steps",
-      "Visualization of training/validation metrics and confusion matrix",
-      "Class-wise F1 score analysis and normalized confusion matrix"
+      "94.59% test accuracy on AG News",
+      "925K trainable of 125M total parameters",
+      "Parameter budget enforced in code",
+      "Macro F1 and confusion matrix evaluation"
     ],
-    "learnings": "Learned to implement LoRA with the PEFT library for targeted attention adaptation. Gained insights into configuring AdamW optimizer, learning rate warmup, and linear decay. Developed understanding of data preprocessing for text classification tasks, including tokenization, attention masking, and max-length truncation. Practiced model evaluation using F1 scores and confusion matrices. Understood how to reduce memory footprint through selective fine-tuning of transformer layers. Also gained hands-on experience with Hugging Face datasets and integrating the Transformers library in PyTorch.",
+    "learnings": null,
     "live_url": null,
-    "order_index": null,
+    "order_index": 14,
     "project_number": null,
-    "project_type": "Deep Learning Project",
-    "short_description": "Efficient text classification using RoBERTa fine-tuned with LoRA on the AG News dataset, achieving high accuracy with minimal trainable parameters.",
+    "project_type": "Deep Learning",
+    "short_description": "Parameter-efficient fine-tuning of RoBERTa for news topic classification: LoRA adapters train only 0.74% of the model's weights yet reach 94.59% test accuracy on AG News.",
     "status": "active",
     "team_size": 2,
     "technologies": [
       "Python",
       "PyTorch",
-      "Transformers (Hugging Face)",
-      "PEFT Library",
-      "Low-Rank Adaptation (LoRA)",
-      "RoBERTa-base",
-      "Scikit-learn",
-      "Matplotlib",
-      "Pickle",
-      "AdamW Optimizer",
-      "Linear LR Scheduler",
-      "CUDA",
-      "F1 Score Evaluation",
-      "Confusion Matrix Visualization",
-      "Parameter-efficient Fine-tuning",
-      "Early Stopping"
+      "Hugging Face Transformers",
+      "PEFT",
+      "scikit-learn"
     ],
-    "title": "RoBERTa-LoRA News Classification",
-    "updated_at": "2025-06-09T06:48:29.244198"
+    "title": "LoRA Fine-Tuning of RoBERTa for News Classification",
+    "updated_at": "2026-11-09T19:11:21.204377"
   },
   {
-    "challenges": "Configuring secure session management for different user roles and implementing normalized relational queries were key challenges. Initial complexity in database design required multiple iterations to maintain data consistency.",
+    "awards": null,
+    "challenges": null,
     "created_at": "2025-06-08T07:42:53.598303",
-    "detailed_description": "Developed as part of the Database Management Systems course in the 5th semester of my undergraduate program, Easylance is a full-stack web platform that streamlines freelance job hiring. The application allows freelancers to sign up, maintain profiles, and apply to jobs posted by companies. Simultaneously, companies can register, post opportunities, and view freelancer applications. The system features role-based access, secure session handling, and dynamic dashboard interfaces for both user types. The backend was built with Node.js and Express.js, while MySQL was used to design a normalized relational database (3NF) that supports all core modules. Modular routing and middleware were implemented for clean structure and maintainability.",
-    "duration": "Sept 2019 - Nov 2019",
+    "detailed_description": "An Express server renders EJS views for two user types routed by a single role flag, with separate signup flows that collect different profile fields. The MySQL schema links every listing and profile back to its login record with cascading foreign keys, so removing an account cleans up everything it owns.",
+    "duration": "Oct–Nov 2019",
     "featured": false,
     "github_urls": [
       "https://github.com/raunak-choudhary/Freelancer-Hiring-System-DBMS"
@@ -73,45 +61,115 @@
       "https://emaaaeooafqawdvdreaz.supabase.co/storage/v1/object/public/project-images/projects/02e5c805-fa62-42e4-9e4d-e119470c657f/project-1749368552083-1.png"
     ],
     "key_features": [
-      "Dual-role system for Freelancers and Companies",
-      "Role-specific dashboards",
-      "Secure login and session management",
-      "Freelancer profile creation",
-      "Job listing and application system",
-      "Relational database with normalized schema",
-      "Backend routing with Express.js",
-      "Dynamic UI using EJS templates",
-      "MySQL with foreign key constraints",
-      "Scalable modular backend structure"
+      "Role-specific dashboards for companies and freelancers",
+      "Separate signup flows per role",
+      "Relational schema with cascading foreign keys",
+      "Session-based authentication"
     ],
-    "learnings": "Gained strong command over full-stack development using Node.js and MySQL, improved database design and normalization understanding, and practiced modular coding techniques and middleware usage in Express.",
+    "learnings": null,
     "live_url": null,
-    "order_index": null,
+    "order_index": 2,
     "project_number": null,
-    "project_type": "Full Stack Web Application",
-    "short_description": "Developed a full-stack web-based hiring platform that connects freelancers with companies through role-based dashboards and secure login authentication.",
+    "project_type": "Full-Stack Web Application",
+    "short_description": "A two-sided freelance job board where companies post listings and freelancers browse and apply, each working from a dashboard built for their role. Accounts, listings and profiles live in a relational MySQL schema.",
     "status": "active",
     "team_size": 1,
     "technologies": [
-      "HTML",
-      "CSS",
-      "JavaScript",
       "Node.js",
-      "Express.js",
-      "MySQL",
-      "DBMS",
+      "Express",
       "EJS",
-      "Xampp"
+      "MySQL",
+      "Bootstrap",
+      "JavaScript"
     ],
-    "title": "Easylance",
-    "updated_at": "2025-06-08T07:42:53.598303"
+    "title": "Role-Based Freelancer Hiring Platform",
+    "updated_at": "2026-11-09T19:11:21.204377"
   },
   {
-    "challenges": "The primary challenges included handling missing values across multiple categorical and numerical fields, developing a custom preprocessing pipeline for embedding textual descriptions, and managing class imbalance using SMOTE. Additionally, tuning hyperparameters across multiple models, particularly SVM and XGBoost, required significant experimentation and computational time. Ensuring the interpretability of complex ensemble outputs while maintaining model performance was another notable hurdle.",
-    "created_at": "2025-06-09T03:12:54.612261",
-    "detailed_description": "This project, developed as part of the Machine Learning course at NYU Tandon, focuses on predicting investment behavior on Shark Tank US using historical data of over 1,360 startup pitches from 16 seasons. The goal was to analyze investor preferences and develop machine learning models capable of predicting both the likelihood and the amount of investment by individual sharks. The project involved preprocessing a complex dataset with missing values, handling class imbalance using SMOTE, and applying feature engineering techniques such as OpenAI embedding models for textual fields. Multiple classification (Logistic Regression, SVM, Random Forest, XGBoost) and regression (Random Forest Regressor, XGBoost Regressor) models were developed, tuned, and evaluated using metrics like accuracy, F1-score, RMSE, and R². XGBoost emerged as the best-performing model. Visualizations, industry trend analysis, and shark-specific patterns further enriched the insights provided by the models.",
-    "duration": "2 months",
+    "awards": null,
+    "challenges": null,
+    "created_at": "2026-11-09T19:11:21.204377",
+    "detailed_description": "A Spring Boot backend on PostgreSQL delivers flag updates over WebSockets and runs scheduled rollouts that watch error rates. Experiments use two-proportion significance testing that withholds a verdict until the planned sample size is reached. 381 passing tests, enforced coverage floors and 20 CI jobs guard every change.",
+    "duration": "Jul 2025–Aug 2026",
     "featured": true,
+    "github_urls": [
+      "https://github.com/raunak-choudhary/Real-time-Feature-Flag-Experimentation-Platform"
+    ],
+    "id": "0526e081-45fe-497f-8c5a-bf063eda5cb6",
+    "image_urls": [],
+    "key_features": [
+      "Real-time flag delivery over WebSockets",
+      "Scheduled staged rollouts with automatic rollback",
+      "A/B testing with sample-size-aware significance",
+      "381 tests with enforced coverage floors",
+      "Next.js dashboard for flags and experiments"
+    ],
+    "learnings": null,
+    "live_url": null,
+    "order_index": 29,
+    "project_number": null,
+    "project_type": "Backend Platform",
+    "short_description": "A feature flag and experimentation service that pushes configuration changes to connected clients within milliseconds, advances staged rollouts on a schedule and rolls itself back when error rates spike.",
+    "status": "active",
+    "team_size": 1,
+    "technologies": [
+      "Java",
+      "Spring Boot",
+      "PostgreSQL",
+      "WebSocket",
+      "Next.js",
+      "TypeScript",
+      "Testcontainers"
+    ],
+    "title": "Feature Flag and A/B Experimentation Platform",
+    "updated_at": "2026-11-09T19:11:21.204377"
+  },
+  {
+    "awards": null,
+    "challenges": null,
+    "created_at": "2026-11-09T19:11:21.204377",
+    "detailed_description": "Posts stream from Bluesky into Kafka and pass through nine independent NLP enrichment stages, each consuming one topic and producing the next, covering sentiment, topics, entities, language, toxicity, rumor and anomaly detection. Results land in MongoDB and are served to a Next.js dashboard.",
+    "duration": "Dec 2025",
+    "featured": true,
+    "github_urls": [
+      "https://github.com/raunak-choudhary/SocialPulse"
+    ],
+    "id": "1d908dd7-e16e-42fd-ad1b-47a0850cb998",
+    "image_urls": [],
+    "key_features": [
+      "Live ingestion of the Bluesky firehose into Kafka",
+      "Nine independent NLP enrichment stages",
+      "Toxicity and rumor detection with transformer models",
+      "Isolation-forest anomaly detection",
+      "Real-time Next.js analytics dashboard"
+    ],
+    "learnings": null,
+    "live_url": null,
+    "order_index": 19,
+    "project_number": null,
+    "project_type": "Streaming Data Pipeline",
+    "short_description": "A real-time analytics pipeline that ingests the live Bluesky firehose and surfaces sentiment, trending topics, toxicity, rumors and anomalies on a live dashboard as posts arrive.",
+    "status": "active",
+    "team_size": 5,
+    "technologies": [
+      "Python",
+      "Apache Kafka",
+      "MongoDB",
+      "spaCy",
+      "Hugging Face Transformers",
+      "Next.js",
+      "Docker"
+    ],
+    "title": "Social Pulse: Real-Time NLP on the Bluesky Firehose",
+    "updated_at": "2026-11-09T19:11:21.204377"
+  },
+  {
+    "awards": null,
+    "challenges": null,
+    "created_at": "2025-06-09T03:12:54.612261",
+    "detailed_description": "Each investor is modelled as an independent prediction problem. Pitch descriptions are turned into OpenAI text embeddings and combined with structured deal terms, while fields that reveal the outcome are removed to prevent leakage. Classifiers and regressors are tuned and compared on a held-out test split.",
+    "duration": "Sep–Dec 2024",
+    "featured": false,
     "github_urls": [
       "https://github.com/raunak-choudhary/Shark-Tank-US-Investment-Prediction-ML"
     ],
@@ -126,49 +184,73 @@
       "https://emaaaeooafqawdvdreaz.supabase.co/storage/v1/object/public/project-images/projects/224cd646-1b99-4b2e-8629-095c06fc8988/project-1749438673013-5.png"
     ],
     "key_features": [
-      "Predict investment decision by individual sharks",
-      "Estimate investment amounts using regression models",
-      "SMOTE to handle class imbalance",
-      "Shark-specific investment trend visualizations",
-      "Classification using Logistic Regression, SVM, Random Forest, and XGBoost",
-      "Regression using XGBRegressor and RandomForestRegressor",
-      "Dimensionality reduction via PCA and t-SNE",
-      "Hyperparameter tuning with GridSearchCV",
-      "Industry-specific funding preference analysis"
+      "Per-investor investment and amount prediction",
+      "Text embeddings combined with structured deal terms",
+      "Leakage-aware feature selection",
+      "Model comparison with tuned ensembles"
     ],
-    "learnings": "This project provided practical experience in end-to-end machine learning pipelines, from raw data cleaning and embedding to classification and regression modeling. It deepened our understanding of SMOTE for class imbalance, OpenAI-based text embeddings, and ensemble model optimization using GridSearchCV. We also gained experience evaluating multi-output classification, interpreting model precision/recall trade-offs, and generating data-driven insights into investment trends.",
+    "learnings": null,
     "live_url": null,
-    "order_index": null,
+    "order_index": 11,
     "project_number": null,
-    "project_type": "Machine Learning Project",
-    "short_description": "A machine learning project that analyzes 16 seasons of Shark Tank US to predict which investors will fund a startup and estimate the investment amount using classification and regression models.",
+    "project_type": "Machine Learning",
+    "short_description": "A machine learning study that predicts, for each of the six Shark Tank investors, whether they will back a pitch and how much they will invest. Trained on 1,365 US pitches with both text and deal terms.",
     "status": "active",
     "team_size": 3,
     "technologies": [
-      "Machine Learning",
       "Python",
-      "Pandas",
-      "NumPy",
-      "Matplotlib",
+      "scikit-learn",
       "XGBoost",
-      "SMOTE",
-      "t-SNE",
-      "PCA",
-      "Jupyter Notebook",
-      "Logistic Regression",
-      "Support Vector Machine",
-      "Random Forest",
-      "Regression Analysis",
-      "Classification Metrics"
+      "pandas",
+      "OpenAI Embeddings",
+      "Jupyter"
     ],
-    "title": "Shark Tank US Data Analysis and Prediction",
-    "updated_at": "2025-06-09T03:12:54.612261"
+    "title": "Shark Tank Investor Deal Prediction",
+    "updated_at": "2026-11-09T19:11:21.204377"
   },
   {
-    "challenges": "Ensuring proper use of statistical tests based on assumptions like normality and independence. Managing outliers without distorting core insights. Handling multiple categorical columns while preparing for pairplots.",
+    "awards": null,
+    "challenges": null,
+    "created_at": "2026-11-09T19:11:21.204377",
+    "detailed_description": "The whole simulation, including the economy, the bots and every battle outcome, runs inside SpacetimeDB as a TypeScript module compiled to WebAssembly, so the server is the single source of truth. Game rules live in a separate pure logic package, and the client is built with React and Phaser.",
+    "duration": "Jun 2026",
+    "featured": false,
+    "github_urls": [
+      "https://github.com/raunak-choudhary/suicide_squad"
+    ],
+    "id": "28f12824-2e48-4d2e-8835-5d70b839dc97",
+    "image_urls": [],
+    "key_features": [
+      "Server-authoritative simulation inside the database",
+      "Market that reprices every five seconds",
+      "One-versus-one duels each round until one player remains",
+      "Pure, testable game logic package"
+    ],
+    "learnings": null,
+    "live_url": null,
+    "order_index": 28,
+    "project_number": null,
+    "project_type": "Hackathon Project",
+    "short_description": "A real-time multiplayer battle royale with no map and no avatar: a single resource is the player's score, currency and combat strength at once, spent in a live market and staked in duels until one player remains.",
+    "status": "active",
+    "team_size": 3,
+    "technologies": [
+      "TypeScript",
+      "SpacetimeDB",
+      "WebAssembly",
+      "React",
+      "Phaser",
+      "Vite"
+    ],
+    "title": "Suicide Squad: Server-Authoritative Battle Royale on SpacetimeDB",
+    "updated_at": "2026-11-09T19:11:21.204377"
+  },
+  {
+    "awards": null,
+    "challenges": null,
     "created_at": "2025-06-08T20:51:07.050502",
-    "detailed_description": "This project focused on analyzing a healthcare insurance dataset using statistical learning. Tasks included exploratory data analysis, distribution and skewness examination, outlier detection via boxplots, and hypothesis testing through t-tests, ANOVA, and chi-square. Key comparisons were made to identify how smoking status, gender, age, number of children, and region influence insurance charges. Label encoding and visualizations were applied before conducting full correlation and pairplot analysis.",
-    "duration": "1 week",
+    "detailed_description": "The analysis profiles each variable's distribution, skewness and outliers, then applies two-sample t-tests, chi-square tests of independence and one-way ANOVA to decide which differences are statistically real. Visual exploration with seaborn supports each test and shows where charges diverge.",
+    "duration": "Jun–Aug 2020",
     "featured": false,
     "github_urls": [
       "https://github.com/raunak-choudhary/Insurance-Cost-Statistical-Analysis-Data-Science-Internship-2020"
@@ -180,94 +262,72 @@
       "https://emaaaeooafqawdvdreaz.supabase.co/storage/v1/object/public/project-images/projects/295e1e05-d72c-47dc-9e25-d44797bd8816/project-1749415856632-3.png"
     ],
     "key_features": [
-      "Exploratory Data Analysis with statistical plots",
-      "Skewness and outlier detection in BMI, Age, and Charges",
-      "Violin plots and swarm plots for gender and region insights",
-      "Hypothesis testing using t-tests and ANOVA",
-      "Chi-square test to examine smoker-gender correlation",
-      "Pairplot analysis of all numerical features",
-      "Label encoding for categorical data handling",
-      "Quantitative interpretation of health cost drivers",
-      "Performed EDA on 1300+ entries"
+      "t-test, chi-square and ANOVA hypothesis testing",
+      "Distribution, skewness and outlier analysis",
+      "Visual exploration with seaborn",
+      "Clear accept or reject decision for each hypothesis"
     ],
-    "learnings": "Applied statistical tests such as t-test, ANOVA, and chi-square in real data scenarios. Understood feature impact on medical costs across different demographics. Improved statistical storytelling using violin plots and EDA techniques.",
+    "learnings": null,
     "live_url": null,
-    "order_index": null,
+    "order_index": 5,
     "project_number": null,
-    "project_type": "Data Science Project",
-    "short_description": "Exploratory and inferential statistics project analyzing health insurance cost factors.",
+    "project_type": "Statistical Analysis",
+    "short_description": "A statistical investigation into what actually drives medical insurance charges, testing smoking status, sex, region and BMI with formal hypothesis tests instead of eyeballed charts. Built on 1,338 policyholder records.",
     "status": "active",
     "team_size": 1,
     "technologies": [
       "Python",
-      "Pandas",
-      "NumPy",
+      "pandas",
+      "SciPy",
+      "seaborn",
       "Matplotlib",
-      "Seaborn",
-      "Scipy",
-      "Sklearn",
-      "Label Encoding",
-      "Hypothesis Testing",
-      "ANOVA",
-      "Chi-Square Test",
-      "Violin Plots",
-      "Box Plots",
-      "Histograms",
-      "Pairplot",
-      "Descriptive Statistics"
+      "Jupyter"
     ],
-    "title": "Insurance Cost Statistical Analysis",
-    "updated_at": "2025-06-08T20:51:07.050502"
+    "title": "Insurance Cost Drivers: Statistical Hypothesis Testing",
+    "updated_at": "2026-11-09T19:11:21.204377"
   },
   {
-    "challenges": "Designing a stable connection between the sensors and database posed initial issues. We also had to balance limited hardware resources while maintaining real-time responsiveness and data accuracy.",
-    "created_at": "2025-06-08T07:29:07.185842",
-    "detailed_description": "As second-year undergraduate Computer Science students, my team of three participated in the IIoT v5 National Convention held in October 2019, organized by SMVITM in collaboration with IEEE Mangalore Sub Section. We designed and implemented a Smart Energy Meter aimed at monitoring household electricity consumption in real-time. The system featured basic sensors to measure voltage and current, a microcontroller for data processing, and a web interface that displayed consumption statistics. Real-time data was uploaded to a lightweight online database, allowing users to track and manage energy usage effectively. The project emphasized reliability and simplicity, and the successful demonstration earned us second prize in the competition.",
-    "duration": "2 months",
+    "awards": null,
+    "challenges": null,
+    "created_at": "2026-11-09T19:11:21.204377",
+    "detailed_description": "Six linked D3 visualizations examine trips across 260 taxi zones and five boroughs by geography, fare policy and time of week. The conclusion is that yellow cab service behaves as several overlapping systems rather than one, and pre-aggregated extracts keep every view fast in the browser.",
+    "duration": "Jan–May 2026",
     "featured": false,
-    "github_urls": [],
-    "id": "46ec6c0c-277d-4971-8ba6-bfdd16ac5396",
+    "github_urls": [
+      "https://github.com/raunak-choudhary/nyc-taxi-mobility-visualization"
+    ],
+    "id": "337d6650-5dc2-47ec-b3eb-7c5478770d69",
     "image_urls": [],
     "key_features": [
-      "Real-time energy consumption monitoring",
-      "Sensor integration for voltage and current",
-      "Web dashboard for user access",
-      "Live database connectivity",
-      "Basic power analytics",
-      "Responsive UI for data display",
-      "Compact breadboard setup",
-      "Plug-and-play demo unit",
-      "Event-based alert triggers"
+      "Six interactive D3 visualizations",
+      "197 million trips across 260 taxi zones",
+      "Analysis by geography, fare policy and time of week",
+      "Pre-aggregated extracts for fast in-browser rendering"
     ],
-    "learnings": "Enhanced understanding of sensor interfacing and real-time data handling. Strengthened teamwork and debugging skills during time-sensitive project development.",
+    "learnings": null,
     "live_url": null,
-    "order_index": null,
+    "order_index": 23,
     "project_number": null,
-    "project_type": "IoT Project",
-    "short_description": "We developed a prototype IoT-based energy monitoring system that enables real-time data tracking. We also secured second prize at a national-level project exhibition.",
+    "project_type": "Data Visualization",
+    "short_description": "An interactive analysis of about 197 million New York City yellow taxi trips from 2021 to 2025, testing whether yellow cab service is really one citywide utility.",
     "status": "active",
-    "team_size": 4,
+    "team_size": 3,
     "technologies": [
-      "Arduino",
-      "Voltage Sensor",
-      "Current Sensor",
-      "ESP8266",
-      "C++ Programming",
-      "HTML",
-      "CSS",
       "JavaScript",
-      "Internet of Things",
-      "Web Dashboard",
-      "Power Monitoring"
+      "D3.js",
+      "Observable",
+      "HTML",
+      "CSS"
     ],
-    "title": "Smart Energy Meter",
-    "updated_at": "2025-06-08T07:29:07.185842"
+    "title": "NYC Taxi Mobility: Interactive Analysis of 197M Trips",
+    "updated_at": "2026-11-09T19:11:21.204377"
   },
   {
-    "challenges": "Normalizing data formats across multiple columns with string-numeric hybrids. Maintaining data integrity while replacing missing values. Handling inconsistencies in team history formats (e.g., date formats, multiple entries per club).",
+    "awards": null,
+    "challenges": null,
     "created_at": "2025-06-08T20:55:39.526856",
-    "detailed_description": "This project involved analyzing a comprehensive dataset of LaLiga football clubs over several seasons. The objective was to derive statistical metrics like goal difference, win percentage, and point distribution to identify potential future tournament winners. The dataset included over 20 columns per team and required extensive cleaning, type casting, and arithmetic operations. Tasks included grouping based on best historical positions, calculating performance differentials, and determining statistical outliers.",
-    "duration": "1 week",
+    "detailed_description": "Raw historical columns arrive as inconsistent text and are converted into clean numeric fields before analysis. Grouped aggregation and derived metrics such as win rate then compare clubs across their entire top-flight history and answer questions about consistency and dominance.",
+    "duration": "Jun–Aug 2020",
     "featured": false,
     "github_urls": [
       "https://github.com/raunak-choudhary/LaLiga-Statistics-Analysis-Data-Science-Internship-2020"
@@ -275,40 +335,34 @@
     "id": "52a8fbc9-200c-4cc1-b9db-86de9ddffa95",
     "image_urls": [],
     "key_features": [
-      "Replaced dashes with zeroes for numerical consistency",
-      "Calculated goal difference for all teams",
-      "Ranked teams by win percentage and goal advantage",
-      "Grouped teams by 'Best Position' to analyze performance clusters",
-      "Created custom functions for repeated operations",
-      "Mapped total points to historical rankings"
+      "Cleaning of inconsistent historical records",
+      "Derived win-rate and performance metrics",
+      "Grouped aggregation across club history",
+      "Club rankings by points and win rate"
     ],
-    "learnings": "Applied grouping and aggregation to sports data. Improved on statistical calculation methods like goal differential and win rates. Understood how performance metrics can help predict sports tournament outcomes.",
+    "learnings": null,
     "live_url": null,
-    "order_index": null,
+    "order_index": 6,
     "project_number": null,
-    "project_type": "Data Science Project",
-    "short_description": "Historical analysis of LaLiga football dataset using applied statistics to predict future winners.",
+    "project_type": "Data Analysis",
+    "short_description": "Cleaning and analysis of historical La Liga club records to rank teams by total points, win rate and long-term top-flight performance. The final project of a three-part Great Learning internship.",
     "status": "active",
     "team_size": 1,
     "technologies": [
       "Python",
-      "Pandas",
+      "pandas",
       "NumPy",
-      "Data Cleaning",
-      "Data Transformation",
-      "Data Grouping",
-      "Feature Engineering",
-      "EDA",
-      "Statistics"
+      "Jupyter"
     ],
-    "title": "LaLiga Statistics Analysis",
-    "updated_at": "2025-06-08T20:55:39.526856"
+    "title": "La Liga Performance Statistics Analysis",
+    "updated_at": "2026-11-09T19:11:21.204377"
   },
   {
-    "challenges": "Balancing parameter count under 5M while integrating complex modules like CBAM and Transformers. Fine-tuning data augmentations and loss functions to minimize overfitting and maximize generalization. Managing high GPU memory usage during training due to advanced model architecture and augmentations.",
+    "awards": null,
+    "challenges": null,
     "created_at": "2025-06-09T03:45:21.745889",
-    "detailed_description": "As part of a deep learning project at New York University, we designed and implemented a custom ResNet-based image classifier targeting the CIFAR-10 dataset. The primary aim was to achieve state-of-the-art accuracy within a parameter constraint of 5 million. Our architecture combined Pre-Activation ResNet blocks with Mish activation, CBAM attention modules, and Squeeze-and-Excitation (SE) blocks. We integrated a transformer block for capturing global dependencies and employed strong regularization methods like label smoothing and CutMix. Training utilized the AdamW optimizer and a OneCycleLR scheduler across 200+ epochs. With advanced augmentations and test-time augmentation (TTA), our model achieved a 95.60% validation accuracy. This project solidified practical skills in deep model engineering, data augmentation, and scalable PyTorch training pipelines.",
-    "duration": "1 month",
+    "detailed_description": "The architecture combines pre-activation residual blocks, squeeze-and-excitation and CBAM attention, Mish activation and a transformer stage, all implemented by hand. Training adds CutMix, label smoothing and a SAM optimizer over 400 epochs on a GPU cluster, with per-class accuracy reported for every category.",
+    "duration": "Spring 2025",
     "featured": false,
     "github_urls": [
       "https://github.com/raunak-choudhary/Resnet-CIFAR10-Classifier"
@@ -324,89 +378,112 @@
       "https://emaaaeooafqawdvdreaz.supabase.co/storage/v1/object/public/project-images/projects/530b60f5-2438-430f-a477-f6bcc1f024d0/project-1749440712137-1.png"
     ],
     "key_features": [
-      "Custom Pre-Activation ResNet under 5M parameters",
-      "Mish activation for better gradient flow",
-      "CBAM and SE attention modules for enhanced spatial and channel focus",
-      "Integrated Transformer block for long-range spatial dependencies",
-      "Advanced data augmentation including CutMix and TTA",
-      "OneCycleLR for faster convergence",
-      "Label smoothing loss for better generalization",
-      "Training loop with dynamic learning rate and gradient clipping",
-      "Per-class accuracy reporting and confusion matrix visualization",
-      "Best validation accuracy achieved: 95.60%"
+      "95.60% validation accuracy on CIFAR-10",
+      "4.97M parameters against a 5M ceiling",
+      "Hand-implemented attention, CutMix and SAM",
+      "Per-class accuracy analysis"
     ],
-    "learnings": "Hands-on expertise in custom model architecture design using PyTorch. In-depth knowledge of attention mechanisms and regularization techniques. Proficiency in end-to-end deep learning workflow including training, evaluation, and inference on image datasets.",
+    "learnings": null,
     "live_url": null,
-    "order_index": null,
+    "order_index": 13,
     "project_number": null,
-    "project_type": "Deep Learning Project",
-    "short_description": "Developed a custom ResNet-based deep learning model from scratch for high-accuracy image classification on CIFAR-10.",
+    "project_type": "Deep Learning",
+    "short_description": "A custom residual network trained from scratch that reaches 95.60% validation accuracy on CIFAR-10 while staying inside a strict five-million-parameter budget, using 98.4% of it.",
     "status": "active",
-    "team_size": 6,
+    "team_size": 3,
     "technologies": [
       "Python",
       "PyTorch",
-      "Torchvision",
+      "torchvision",
       "NumPy",
-      "Pandas",
-      "Matplotlib",
-      "Mish Activation",
-      "CBAM",
-      "Squeeze-and-Excitation Blocks",
-      "Transformers",
-      "CutMix",
-      "Label Smoothing",
-      "OneCycleLR Scheduler",
-      "AdamW Optimizer",
-      "Batch Normalization",
-      "Random Erasing",
-      "Color Jitter"
+      "Matplotlib"
     ],
-    "title": "ResNet-CIFAR10 Image Classifier",
-    "updated_at": "2025-06-09T03:45:21.745889"
+    "title": "CIFAR-10 Image Classifier Under a 5M Parameter Budget",
+    "updated_at": "2026-11-09T19:11:21.204377"
   },
   {
-    "challenges": "Learning Unity's interface and game object hierarchy for the first time. Tuning movement physics to feel smooth within the maze. Configuring scene lighting and fog to create immersive visual depth without performance lags.",
-    "created_at": "2025-06-08T21:15:42.074606",
-    "detailed_description": "This project was developed during the COVID-19 lockdown as a foundational attempt to understand game development and VR design principles using Unity. MazeWalk is a simple 3D first-person navigation game where players explore a structured maze from a ground-level view. The purpose of this project was to experiment with Unity's game engine, scene building, environment lighting, and user movement mechanics using a VR-like experience. The game features modular wall blocks, ambient lighting, a foggy maze environment, and basic collision physics. Though not built for full deployment, it served as a fun learning project to gain hands-on experience with Unity, C# scripting, and environment design workflows.",
-    "duration": "2 weeks",
-    "featured": false,
+    "awards": null,
+    "challenges": null,
+    "created_at": "2026-11-09T19:11:21.204377",
+    "detailed_description": "The system is a 21-package Python workspace in which Slack, Gmail, Jira, OpenAI and Gemini each sit behind a swappable interface, so any provider can be replaced without touching the rest. Strict typing, 179 unit, integration and end-to-end tests and CircleCI keep every package independently verifiable.",
+    "duration": "Sep–Dec 2025",
+    "featured": true,
     "github_urls": [
-      "https://github.com/raunak-choudhary/MazeWalk_Unity_Game"
+      "https://github.com/raunak-choudhary/Slackops-ai-ticket-orchestrator"
     ],
-    "id": "672fe9f0-86b7-4a5d-83cf-b474357ab165",
+    "id": "632bc4ee-2b21-4bdc-9e67-4ad3f4d3ce1c",
     "image_urls": [],
     "key_features": [
-      "3D maze navigation from a first-person perspective",
-      "Fog-filled maze environment with ambient lighting",
-      "Collision-based player movement system",
-      "Modular wall block construction using prefabs",
-      "Simple UI elements for immersive experience"
+      "Natural-language ticket operations from Slack",
+      "Swappable provider interfaces for Slack, Gmail, Jira and AI",
+      "21 independently declared workspace packages",
+      "179 unit, integration and end-to-end tests",
+      "Strict mypy typing and CI on every change"
     ],
-    "learnings": "Gained introductory experience with Unity Editor, C# scripting, and 3D game environments. Learned to build simple VR-like interactions using first-person mechanics. Explored modular scene design and basic visual effects in Unity.",
+    "learnings": null,
     "live_url": null,
-    "order_index": null,
+    "order_index": 18,
     "project_number": null,
-    "project_type": "VR Game Prototype",
-    "short_description": "A beginner-level 3D maze exploration game developed in Unity to explore virtual reality environments.",
+    "project_type": "AI Platform",
+    "short_description": "A Slack-first operations platform where people make requests in plain language and an AI reasoning layer turns them into validated ticket operations in Jira, with email and chat handled in the same flow.",
+    "status": "active",
+    "team_size": 4,
+    "technologies": [
+      "Python",
+      "Slack API",
+      "OpenAI API",
+      "Gemini API",
+      "Jira API",
+      "pytest",
+      "CircleCI",
+      "AWS"
+    ],
+    "title": "SlackOps: AI Ticket Orchestration Platform",
+    "updated_at": "2026-11-09T19:11:21.204377"
+  },
+  {
+    "awards": null,
+    "challenges": null,
+    "created_at": "2026-11-09T19:11:21.204377",
+    "detailed_description": "Live search results are extracted into structured card data by Azure OpenAI and cached in Supabase for thirty days. Ranking is done by deterministic TypeScript scoring rather than the model, so the recommendation is explainable and repeatable.",
+    "duration": "Jun 2026",
+    "featured": false,
+    "github_urls": [
+      "https://github.com/raunak-choudhary/pointspilot-azure"
+    ],
+    "id": "63989a9e-866b-4a84-9f9b-3576addf28cd",
+    "image_urls": [],
+    "key_features": [
+      "Live-web reward rate lookup",
+      "Structured extraction with Azure OpenAI",
+      "Deterministic, explainable card ranking",
+      "Thirty-day reward data cache"
+    ],
+    "learnings": null,
+    "live_url": null,
+    "order_index": 27,
+    "project_number": null,
+    "project_type": "Hackathon Project",
+    "short_description": "A credit card rewards assistant that reads current reward rates from the live web instead of trusting a model's memory, then ranks the cards in your wallet for each purchase with transparent math.",
     "status": "active",
     "team_size": 1,
     "technologies": [
-      "Unity",
-      "C#",
-      "Unity GameObjects",
-      "Basic VR Simulation",
-      "Scene Lighting",
-      "3D Modeling"
+      "TypeScript",
+      "Next.js",
+      "React",
+      "Azure OpenAI",
+      "Tavily",
+      "Supabase"
     ],
-    "title": "MazeWalk: Unity VR Game",
-    "updated_at": "2025-06-08T21:15:42.074606"
+    "title": "PointsPilot: Credit Card Rewards Optimization Assistant",
+    "updated_at": "2026-11-09T19:11:21.204377"
   },
   {
-    "challenges": "Low correlation between available features and rating made prediction difficult. Dealing with highly skewed numeric variables like Installs and Reviews. Standardizing diverse categorical values across genres, versions, and types.",
+    "awards": null,
+    "challenges": null,
     "created_at": "2025-06-08T21:26:54.709122",
-    "detailed_description": "This project was developed as a fun collaborative experiment during the COVID-19 lockdown, aiming to explore the predictive capabilities of machine learning models on real-world app metadata. The dataset, scraped from the Google Play Store, included attributes such as app category, number of reviews, installs, size, type (free or paid), and content rating. The team performed rigorous data cleaning, transforming variables to reduce skewness and encoding categorical features. Exploratory visualizations were used to analyze trends across genres and price types. A linear regression model was trained to predict app ratings. While the model’s R² scores (0.074 on train and 0.063 on test) indicated limited predictive power, the project served as a practical implementation of data preprocessing, feature engineering, and model evaluation using regression techniques.",
-    "duration": "2 weeks",
+    "detailed_description": "The cleaning stage converts sizes, install counts and prices from text into numbers, removes invalid records and encodes categories and genres. Exploratory analysis checks what correlates with rating, and a linear regression baseline shows that listing metadata alone explains little of the variance, a result the analysis reports plainly.",
+    "duration": "Dec 2020",
     "featured": false,
     "github_urls": [
       "https://github.com/raunak-choudhary/Google-App-Rating-Prediction"
@@ -420,44 +497,74 @@
       "https://emaaaeooafqawdvdreaz.supabase.co/storage/v1/object/public/project-images/projects/6a2c4433-f082-427d-b94f-7593e4acbb29/project-1749417976791-5.png"
     ],
     "key_features": [
-      "Regression-based prediction of app ratings",
-      "Scraped dataset with 96 engineered features and 8496 rows",
-      "Handled missing values and transformed inconsistent formats",
-      "Dummy encoded multiple categorical variables",
-      "Used log transformation to handle skewed features",
-      "Built and evaluated a linear regression model",
-      "Generated insights on top-rated categories and adult-targeted apps"
+      "Cleaning and type conversion of scraped listing data",
+      "Exploratory analysis of rating correlates",
+      "Category and genre encoding into 96 features",
+      "Linear regression baseline with R-squared evaluation"
     ],
-    "learnings": "Learned how to clean and prepare real-world noisy datasets for machine learning. Gained practical experience in applying regression algorithms and interpreting evaluation metrics. Developed skills in exploratory data analysis, visualization, and categorical feature transformation.",
+    "learnings": null,
     "live_url": null,
-    "order_index": null,
+    "order_index": 7,
     "project_number": null,
-    "project_type": "Machine Learning Project",
-    "short_description": "A regression-based machine learning project to predict Google Play Store app ratings using structured app metadata.",
+    "project_type": "Machine Learning",
+    "short_description": "Predicts Google Play Store app ratings from listing metadata such as category, size, installs, price and content rating. 10,841 scraped listings are cleaned into a 96-feature model-ready dataset.",
     "status": "active",
-    "team_size": 2,
+    "team_size": 1,
     "technologies": [
       "Python",
-      "Pandas",
+      "pandas",
       "NumPy",
-      "Matplotlib",
-      "Seaborn",
-      "Scikit-learn",
-      "Linear Regression",
-      "Log Transformation",
-      "Data Visualization",
-      "Feature Engineering",
-      "Jupyter Notebook",
-      "Statistical Observation"
+      "scikit-learn",
+      "seaborn",
+      "Jupyter"
     ],
-    "title": "Google App Rating Prediction",
-    "updated_at": "2025-06-08T21:26:54.709122"
+    "title": "Google Play Store App Rating Prediction",
+    "updated_at": "2026-11-09T19:11:21.204377"
   },
   {
-    "challenges": "Faced initial difficulty handling categorical features and integrating different encodings; tuning models with small datasets posed challenges in avoiding overfitting. Evaluating multiple ML models for clinical data added complexity.",
+    "awards": null,
+    "challenges": null,
+    "created_at": "2026-11-09T19:11:21.204377",
+    "detailed_description": "Three Gemini agents built with Google ADK split the work of dispatching the question, analysing HMDA mortgage data and investigating individual lenders, with data access exposed through an MCP server and cached in BigQuery. Results render as a choropleth on Google Maps while the agent explains them aloud.",
+    "duration": "Mar 2026",
+    "featured": false,
+    "github_urls": [
+      "https://github.com/raunak-choudhary/redline-reveal-gdg-hackathon-2026"
+    ],
+    "id": "6b4fd8a3-0b31-4a3e-8e66-5266b8d8ca0a",
+    "image_urls": [],
+    "key_features": [
+      "Spoken questions answered with live choropleth maps",
+      "Multi-agent analysis with Google ADK and Gemini",
+      "Data access through a Model Context Protocol server",
+      "Drill-down from neighbourhood to individual lenders"
+    ],
+    "learnings": null,
+    "live_url": null,
+    "order_index": 20,
+    "project_number": null,
+    "project_type": "Hackathon Project",
+    "short_description": "A voice-controlled civic journalism tool: ask a spoken question about a New York City neighbourhood and get a live map of real federal mortgage denial data, narrated back with the lenders responsible.",
+    "status": "active",
+    "team_size": 1,
+    "technologies": [
+      "Python",
+      "FastAPI",
+      "Google ADK",
+      "Gemini",
+      "FastMCP",
+      "BigQuery",
+      "Google Maps API"
+    ],
+    "title": "Redline Reveal: Voice-Driven Mortgage Discrimination Explorer",
+    "updated_at": "2026-11-09T19:11:21.204377"
+  },
+  {
+    "awards": null,
+    "challenges": null,
     "created_at": "2025-06-08T07:13:10.19665",
-    "detailed_description": "This was the capstone project for my Machine Learning Internship at Verzeo in 2019. The goal was to develop a screening system for Autism Spectrum Disorder (ASD) by applying machine learning techniques to behavioral and screening-related data. I built a model that leveraged the ASD Screening Adult Dataset to predict ASD likelihood based on input attributes. I applied several preprocessing steps, feature encoding, model training, evaluation, and visualization. Key steps involved converting categorical features, removing non-contributing data, and evaluating multiple classifiers, including Random Forest, Decision Tree, SVM, and Logistic Regression. The project emphasized real-world medical applications of ML for early diagnosis assistance.",
-    "duration": "2 weeks",
+    "detailed_description": "The pipeline cleans missing values, scales numeric fields and one-hot encodes demographics into 94 features before evaluating each model with 10-fold cross-validation, ROC-AUC and F-beta scoring. A GridSearchCV pass tunes the SVM. The analysis also identifies target leakage in the dataset's aggregate score column, which explains the perfect scores some models reach.",
+    "duration": "Jul–Aug 2019",
     "featured": false,
     "github_urls": [
       "https://github.com/raunak-choudhary/Verzeo_ML_Internship_2019"
@@ -465,45 +572,41 @@
     "id": "7363f74c-0052-4096-9389-4c99b7b143b4",
     "image_urls": [],
     "key_features": [
-      "Behavioral dataset analysis",
-      "Model comparison (SVM, RF, LR, DT)",
-      "Comprehensive data preprocessing",
-      "Confusion matrix evaluation",
-      "Accuracy & recall tracking",
-      "One-hot and label encoding",
-      "Medical domain application",
-      "Visualizations using Seaborn",
-      "Data-driven diagnosis assistance"
+      "Four classifiers compared under one evaluation harness",
+      "10-fold cross-validated accuracy, ROC-AUC and F-beta",
+      "Hyperparameter tuning with GridSearchCV",
+      "Target leakage identified and explained"
     ],
-    "learnings": "Gained hands-on experience with real-world medical datasets, learned end-to-end ML pipeline from data cleaning to deployment-ready output, improved understanding of evaluation metrics like precision, recall, and confusion matrix visualization.",
+    "learnings": null,
     "live_url": null,
-    "order_index": null,
+    "order_index": 1,
     "project_number": null,
-    "project_type": "Machine Learning (ML) Application",
-    "short_description": "Developed an ASD Model using machine learning models trained on behavioral data, enabling early diagnosis assistance.",
+    "project_type": "Machine Learning",
+    "short_description": "A comparative study of four classical classifiers, SVM, KNN, logistic regression and decision trees, for adult autism screening on the UCI dataset. Every model is judged under the same cross-validated evaluation so the comparison is fair.",
     "status": "active",
-    "team_size": 2,
+    "team_size": 1,
     "technologies": [
       "Python",
-      "Pandas",
+      "pandas",
       "NumPy",
+      "scikit-learn",
       "Matplotlib",
-      "Seaborn",
-      "Scikit-learn",
-      "Machine Learning"
+      "seaborn",
+      "Jupyter"
     ],
-    "title": "ASD (Autism Spectrum Disorder) Model",
-    "updated_at": "2025-06-08T07:13:10.19665"
+    "title": "Autism Screening Classification Study",
+    "updated_at": "2026-11-09T19:11:21.204377"
   },
   {
-    "challenges": "Integrating the RAG system to extract document-specific answers reliably was a key challenge. Aligning frontend and backend flows without latency, setting up Supabase rules for secure storage, and conducting an unbiased usability study using standardized tools like SUS and NASA-TLX required meticulous coordination. Managing AI chat fallback responses and participant expectations also demanded careful tuning.",
+    "awards": null,
+    "challenges": null,
     "created_at": "2025-06-09T07:28:37.123409",
-    "detailed_description": "CareVault is a full-stack healthcare management platform developed to unify medical document storage, scheduling, and health analytics. The system employs a Retrieval-Augmented Generation (RAG) pipeline to provide users with intelligent responses to medical queries based on their uploaded documents. Developed using React for frontend and Python for backend, the platform integrates Supabase for file storage and PostgreSQL database management. Features include document upload, metadata parsing, appointment tracking, and health insights through an interactive AI chatbot. A usability study with 10 NYU students showed CareVault significantly outperformed the Jane App in task completion time, usability (SUS score: 86.2), and reduced cognitive workload (NASA-TLX score: 36.1).",
-    "duration": "2 months",
-    "featured": true,
+    "detailed_description": "A Flask backend on Supabase handles authentication, storage and data, while a retrieval-augmented assistant built on RAGFlow and OpenAI reads uploaded records and images. In a controlled user study the platform beat a commercial product on task time, error rate, usability and cognitive workload.",
+    "duration": "Mar–May 2025",
+    "featured": false,
     "github_urls": [
-      "https://github.com/raunak-choudhary/Carevault_Frontend_Repo",
-      "https://github.com/raunak-choudhary/Carevault_Backend_Repo"
+      "https://github.com/raunak-choudhary/carevault-frontend",
+      "https://github.com/raunak-choudhary/carevault-backend"
     ],
     "id": "7a7638dd-129e-406c-98d2-2be82819efea",
     "image_urls": [
@@ -519,47 +622,39 @@
       "https://emaaaeooafqawdvdreaz.supabase.co/storage/v1/object/public/project-images/projects/7a7638dd-129e-406c-98d2-2be82819efea/project-1749453950382-2.png"
     ],
     "key_features": [
-      "RAG-based AI system for document query and summarization",
-      "Secure document upload with Supabase bucket integration",
-      "Appointment tracking and scheduling",
-      "Health metrics dashboard with visual summaries",
-      "AI chatbot interface for natural query handling",
-      "Comparison usability study against Jane App",
-      "SUS and NASA-TLX data integration for user experience evaluation",
-      "Interactive feedback collection with NVivo-coded themes",
-      "Modular frontend-backend separation"
+      "AI assistant grounded in the user's medical documents",
+      "Unified records, appointments, medications and metrics",
+      "Image and PDF analysis of uploaded records",
+      "38.7% faster tasks than a commercial product in a user study",
+      "71% fewer errors and an excellent usability score"
     ],
-    "learnings": "Through CareVault, we gained a deep, practical understanding of building Retrieval-Augmented Generation systems and integrating them into production pipelines. We also improved our knowledge in designing usability studies, analyzing quantitative and qualitative feedback, and incorporating user-centric AI features into full-stack apps. Our team also became proficient in Supabase storage and PostgreSQL schema optimization.",
+    "learnings": null,
     "live_url": null,
-    "order_index": null,
+    "order_index": 15,
     "project_number": null,
-    "project_type": "Full Stack Web Application",
-    "short_description": "An intelligent healthcare platform for managing medical documents, appointments, and queries using a RAG-based AI assistant.",
+    "project_type": "Full-Stack Web Application",
+    "short_description": "A healthcare management platform that brings medical records, appointments, medications and health metrics into one place, with an AI assistant that answers questions grounded in the user's own documents.",
     "status": "active",
     "team_size": 2,
     "technologies": [
-      "React.js",
+      "React",
       "Python",
+      "Flask",
       "Supabase",
       "PostgreSQL",
-      "Retrieval-Augmented Generation (RAG)",
-      "REST API",
-      "CSS3",
-      "JavaScript",
-      "Figma",
-      "Git",
-      "Supabase Buckets",
-      "NASA-TLX"
+      "OpenAI API",
+      "RAGFlow"
     ],
-    "title": "CareVault: AI-Powered Healthcare Management Platform",
-    "updated_at": "2025-06-09T07:28:37.123409"
+    "title": "CareVault: AI Healthcare Management Platform",
+    "updated_at": "2026-11-09T19:11:21.204377"
   },
   {
-    "challenges": "Building functional group dashboards posed a complexity in ensuring correct data visibility and access control among collaborators. Deploying the project on AWS within the project timeline presented hurdles in configuring EC2 instances and handling production stability. Additionally, some planned features like AI-driven subtask generation and an integrated chatbot assistant, could not be implemented due to time limitations.",
+    "awards": null,
+    "challenges": null,
     "created_at": "2025-06-09T02:57:19.633242",
-    "detailed_description": "SynergyPro is a full-stack task management and productivity platform developed as part of the Software Engineering course at NYU Tandon School of Engineering. The platform was designed for professionals, students, and remote teams to manage their schedules, tasks, and collaboration efficiently. Core functionalities include task creation, assignment, categorization, progress tracking, file uploads, and real-time collaboration features. Group-based dashboards, Calendar integration, and dynamic task filtering support users in both individual and team productivity goals. Although the AI-powered features for subtask recommendations and productivity chatbots were planned, they were not implemented due to time constraints. The platform also integrated deployment on AWS, used SQLite during development, and followed agile Scrum methodology throughout the semester project.",
-    "duration": "4 months",
-    "featured": true,
+    "detailed_description": "Built on Django 5 with Django Channels, the platform delivers live team chat over WebSockets backed by Redis. Accounts use two-step verification, tasks support categories, comments and file attachments, and an analytics view tracks progress. The codebase is split by feature into separate model and view modules.",
+    "duration": "Sep–Nov 2024",
+    "featured": false,
     "github_urls": [
       "https://github.com/raunak-choudhary/SynergyPro_NYU_SE_Project"
     ],
@@ -576,46 +671,40 @@
       "https://emaaaeooafqawdvdreaz.supabase.co/storage/v1/object/public/project-images/projects/7b22d7a9-4a88-42f8-9aa2-8bb524201269/project-1749437833064-1.png"
     ],
     "key_features": [
-      "User authentication and secure login/logout",
-      "Task creation and editing with calendar view",
-      "Recurring tasks and file uploads per task",
-      "Group dashboards with shared task visibility",
-      "Real-time task status tracking and filters",
-      "Categorization using tags and labels",
-      "Progress analytics and visual dashboards"
+      "Task management for individuals and teams",
+      "Real-time team chat over WebSockets",
+      "Two-step account verification",
+      "Task analytics and progress tracking",
+      "Personalised article feed"
     ],
-    "learnings": "Developing SynergyPro provided extensive learning opportunities in both technical and project management domains. The project deepened our understanding of Django's backend structure and the model-view-template pattern. It also strengthened our grasp on collaborative software development using Git and GitHub. We adopted Scrum methodology for effective sprint planning, daily stand-ups, and task tracking through burndown charts. The deployment phase introduced us to AWS services such as EC2.",
+    "learnings": null,
     "live_url": null,
-    "order_index": null,
+    "order_index": 10,
     "project_number": null,
-    "project_type": "Web Application",
-    "short_description": "A hybrid productivity platform integrating task management with personalized study scheduling, built as a Django-based academic project.",
+    "project_type": "Full-Stack Web Application",
+    "short_description": "A productivity platform that serves both individual and team work from one account, combining task management with real-time team chat, analytics and a personalised article feed.",
     "status": "active",
     "team_size": 5,
     "technologies": [
       "Python",
       "Django",
-      "HTML5",
-      "CSS3",
-      "JavaScript",
-      "Bootstrap",
+      "Django Channels",
+      "Redis",
       "SQLite",
-      "AWS (deployment)",
-      "GitHub",
-      "Agile Scrum"
+      "JavaScript"
     ],
-    "title": "SynergyPro",
-    "updated_at": "2025-06-09T02:57:19.633242"
+    "title": "SynergyPro: Real-Time Team Task Management Platform",
+    "updated_at": "2026-11-09T19:11:21.204377"
   },
   {
-    "challenges": "Integrating real-time APIs (weather, location, OTP) with secure and responsive backend systems. Ensuring data integrity and multi-role authentication for farmers, buyers, and drivers. Designing an accessible interface suitable for low-digital-literacy users while maintaining advanced features.",
+    "awards": null,
+    "challenges": null,
     "created_at": "2025-06-08T21:52:29.267781",
-    "detailed_description": "Tapship is an innovative full-stack platform developed as a final-year Bachelor of Engineering project at SMVITM under VTU. It addresses core challenges faced by Indian farmers such as middlemen exploitation, delayed payments, crop wastage, and lack of transportation by offering a secure digital e-mandi system. Farmers can list their crops, accept bids from buyers across India, and coordinate transportation through a bidding-based logistics module for truck drivers. The platform includes OTP verification, SQL injection protection, and URL encoding for security. Additionally, real-time analytics such as Minimum Export Price (MEP) graphs, weather forecasts, and a knowledge/help zone empower digitally less literate farmers. Machine learning components recommend crops to customers and shipment jobs to transporters based on past history and location. Designed to be scalable and kiosk-friendly, Tapship is one of the most impactful and technically diverse projects built in Raunak’s academic journey.",
-    "duration": "9 months",
-    "featured": true,
+    "detailed_description": "The platform is a role-based PHP web application with separate areas for farmers, customers, drivers and administrators, an API layer, and Python scripts for data processing. Each role sees only the actions it needs, from listing produce to accepting a transport bid.",
+    "duration": "Aug 2020–Jun 2021",
+    "featured": false,
     "github_urls": [
-      "https://github.com/raunak-choudhary/Tapship_Undergrad_Final_Project",
-      "https://github.com/raunak-choudhary/Tapship-android-version"
+      "https://github.com/raunak-choudhary/Tapship_Undergrad_Final_Project"
     ],
     "id": "85751c11-901c-4dbe-a83f-f631332e3581",
     "image_urls": [
@@ -631,53 +720,72 @@
       "https://emaaaeooafqawdvdreaz.supabase.co/storage/v1/object/public/project-images/projects/85751c11-901c-4dbe-a83f-f631332e3581/project-1749419511421-6.png"
     ],
     "key_features": [
-      "Farmer crop listing and bidding module",
-      "Buyer dashboard for crop discovery and price negotiation",
-      "Driver-side bidding for shipment logistics",
-      "OTP-based secure login system",
-      "Location-based job recommendations for drivers",
-      "Crop recommendation engine for buyers",
-      "Live weather forecast and MEP-based price analytics",
-      "Knowledge/help zones to assist digitally illiterate users",
-      "SQL injection prevention and secure URL encoding",
-      "Admin panel for user and crop management"
+      "Separate portals for farmers, buyers, drivers and admin",
+      "Bidding on crops and on delivery jobs",
+      "Transport matching for completed sales",
+      "Admin oversight of users and transactions"
     ],
-    "learnings": "Built a scalable multi-user platform handling real-time transactions and logistics. Mastered integration of third-party APIs, secure backend development, and full-stack deployment workflows. Developed practical solutions for real-world problems in the agriculture and transportation sectors.",
+    "learnings": null,
     "live_url": null,
-    "order_index": null,
+    "order_index": 9,
     "project_number": null,
-    "project_type": "Full Stack Web + Android Platform",
-    "short_description": "A full-stack agriculture-logistics platform enabling farmers to sell crops directly and connect with customers and transporters.",
+    "project_type": "Full-Stack Web Application",
+    "short_description": "A digital marketplace that connects farmers, buyers and truck drivers. Farmers list crops and accept buyer bids, then drivers bid on the delivery jobs those sales create, cutting out intermediaries end to end.",
     "status": "active",
     "team_size": 4,
     "technologies": [
-      "HTML5",
-      "CSS3",
-      "JavaScript",
       "PHP",
-      "Bootstrap5",
-      "Python",
       "MySQL",
-      "XAMPP",
-      "phpMyAdmin",
-      "GitHub",
-      "Bing Maps API",
-      "OpenWeatherMap API",
-      "Twilio OTP API",
-      "AJAX",
-      "jQuery",
-      "SQL Injection Protection",
-      "URL Encoding",
-      "Logistics Recommendation System"
+      "JavaScript",
+      "Python",
+      "HTML",
+      "CSS"
     ],
-    "title": "Tapship – Tap to Ship",
-    "updated_at": "2025-06-08T21:52:29.267781"
+    "title": "Tapship: Farm-to-Consumer Marketplace with Logistics Matching",
+    "updated_at": "2026-11-09T19:11:21.204377"
   },
   {
-    "challenges": "Ensuring accurate one-liner queries for complex filters and aggregations. Identifying and resolving ambiguities in string-based fields such as email and job titles. Avoiding incorrect matches due to whitespace or formatting inconsistencies.",
+    "awards": null,
+    "challenges": null,
+    "created_at": "2026-11-09T19:11:21.204377",
+    "detailed_description": "Each study is a set of interactive D3 charts paired with written analysis that argues for the encoding it chose and names the alternatives it rejected. Together they cover 13 charts and over 7,000 words of design rationale.",
+    "duration": "Jan–May 2026",
+    "featured": false,
+    "github_urls": [
+      "https://github.com/raunak-choudhary/d3-geo-and-network-visualizations"
+    ],
+    "id": "8c8579cc-9bae-459b-b1b2-148c7a380b81",
+    "image_urls": [],
+    "key_features": [
+      "78,849 USGS earthquakes mapped over a decade",
+      "Artist co-occurrence network from Spotify data",
+      "13 interactive charts",
+      "Written design rationale for every encoding"
+    ],
+    "learnings": null,
+    "live_url": null,
+    "order_index": 22,
+    "project_number": null,
+    "project_type": "Data Visualization",
+    "short_description": "Two D3 visualization studies: one maps 78,849 global earthquakes across space, time, depth and released energy, and the other reveals artist collaboration and genre-bridging networks from Spotify playlists.",
+    "status": "active",
+    "team_size": 1,
+    "technologies": [
+      "JavaScript",
+      "D3.js",
+      "Observable",
+      "HTML",
+      "CSS"
+    ],
+    "title": "D3 Geospatial and Network Visualization Studies",
+    "updated_at": "2026-11-09T19:11:21.204377"
+  },
+  {
+    "awards": null,
+    "challenges": null,
     "created_at": "2025-06-08T20:45:44.930553",
-    "detailed_description": "This project involved a comprehensive data exploration exercise using a dataset of 10,000 Amazon purchases. The analysis aimed to extract meaningful insights about consumer behavior, preferred job roles, purchase times, and credit card patterns. Tasks included calculating averages, filtering for specific patterns (e.g., language usage, purchase price thresholds), extracting domain-based insights (email providers, job title frequency), and verifying identities via credit card metadata. Each problem was solved using single-line pandas expressions, emphasizing data querying, indexing, and transformation skills.",
-    "duration": "1 week",
+    "detailed_description": "Each question is answered with concise pandas querying, filtering and aggregation over the purchase table, covering purchase time of day, browser language, occupation, card provider and price bands. The notebook favours precise one-line queries over long scripts, which keeps every answer easy to verify.",
+    "duration": "Jun–Aug 2020",
     "featured": false,
     "github_urls": [
       "https://github.com/raunak-choudhary/Amazon-Ecommerce-Purchase-Analysis-Data-Science-Internship-2020"
@@ -685,71 +793,34 @@
     "id": "a9a4027d-67c2-4a40-8580-b36dfc0a5003",
     "image_urls": [],
     "key_features": [
-      "Queried over 10,000 purchase records using pandas",
-      "Analyzed email domains and job titles",
-      "Filtered purchases by credit card type and price",
-      "Explored consumer behavior based on AM/PM",
-      "Identified top professions and purchase habits",
-      "Retrieved user metadata from credit card details",
-      "Applied conditional filtering with high precision"
+      "Customer profiling by occupation, language and card provider",
+      "Purchase time and price distribution analysis",
+      "Concise, verifiable pandas queries"
     ],
-    "learnings": "Hands-on experience with advanced pandas indexing and filtering techniques. Gained confidence in transforming and querying large CSV-based datasets. Improved ability to write compact, efficient data analysis code blocks.",
+    "learnings": null,
     "live_url": null,
-    "order_index": null,
+    "order_index": 4,
     "project_number": null,
-    "project_type": "Data Science Project",
-    "short_description": "Brief analytical study of consumer trends using an Amazon purchase dataset with 10,000 entries.",
+    "project_type": "Data Analysis",
+    "short_description": "Exploratory analysis of 10,000 e-commerce purchase records that answers targeted business questions about who buys, when they buy and how much they spend. Part of a three-project Great Learning data science internship.",
     "status": "active",
     "team_size": 1,
     "technologies": [
       "Python",
-      "Pandas",
+      "pandas",
       "NumPy",
-      "Jupyter Notebook",
-      "Data Aggregation",
-      "Basic Statistics"
+      "Jupyter"
     ],
-    "title": "Amazon E-commerce Purchase Analysis",
-    "updated_at": "2025-06-08T20:45:44.930553"
+    "title": "Amazon E-Commerce Purchase Analysis",
+    "updated_at": "2026-11-09T19:11:21.204377"
   },
   {
-    "challenges": "Faced issues with real-time communication between hardware and web interface, and limited experience with embedded systems.",
-    "created_at": "2025-06-08T06:56:29.92257",
-    "detailed_description": "Built as part of the Industrial Internet of Things (IIoT) v4 national-level event in 2018, this project was developed by a team of four first-year Computer Science students. The goal was to create a basic Smart Home Automation system controlled via a website. Despite our limited exposure to hardware and communication protocols at the time, we managed to design a simple prototype that integrated a website with basic sensor inputs and simulated device control. However, due to challenges in real-time hardware-software integration and lack of experience, the final output was a prototype demonstration rather than a fully functional product.",
-    "duration": "1 month",
-    "featured": false,
-    "github_urls": [],
-    "id": "b50862d2-8557-44b8-9a52-fa952724a73b",
-    "image_urls": [],
-    "key_features": [
-      "Website-based appliance control",
-      "Sensor integration",
-      "IoT prototype"
-    ],
-    "learnings": "Gained foundational knowledge of IoT systems, teamwork, and project prototyping under real-world constraints.",
-    "live_url": null,
-    "order_index": null,
-    "project_number": null,
-    "project_type": "IoT Prototype",
-    "short_description": "A beginner-level Internet of Things (IoT) project using a web interface to control home appliances, built during a national-level tech event.",
-    "status": "active",
-    "team_size": 4,
-    "technologies": [
-      "HTML",
-      "CSS",
-      "JavaScript",
-      "Arduino",
-      "Sensors"
-    ],
-    "title": "Smart Home Automation",
-    "updated_at": "2025-06-08T07:29:20.789545"
-  },
-  {
-    "challenges": "Key challenges included maintaining valid pixel ranges during iterative attacks and tuning hyperparameters like epsilon, alpha, and momentum for effective performance. The Patch attack introduced high computational overhead due to multiple optimization restarts. Ensuring consistent evaluation required careful handling of model determinism. Visualizing subtle perturbations clearly and assessing transferability across architectures like ResNet and DenseNet also added complexity, particularly when aligning each attack's constraints with model behavior.",
+    "awards": null,
+    "challenges": null,
     "created_at": "2025-06-09T07:05:32.797251",
-    "detailed_description": "This research-driven project evaluated the adversarial vulnerability of deep neural network classifiers, specifically ResNet-34 and DenseNet-121, using four types of attacks: Fast Gradient Sign Method (FGSM), Projected Gradient Descent (PGD), Momentum Iterative FGSM (MI-FGSM), and Patch attacks. Experiments were conducted on a subset of the ImageNet-1K dataset with 500 images spanning 100 classes. Each attack was designed and implemented in PyTorch using torchvision pre-trained models. Evaluation included both white-box and black-box scenarios to test transferability of attacks. The project revealed significant degradation in model accuracy, with PGD reducing ResNet-34 Top-1 accuracy from 77.40% to 0.00%. Patch attacks demonstrated strong transferability despite localized perturbations. The project also included detailed visualizations and comparison plots to showcase the impact and effectiveness of adversarial techniques.",
-    "duration": "2 weeks",
-    "featured": true,
+    "detailed_description": "FGSM, PGD, MI-FGSM and a localized patch attack are implemented without any robustness library and evaluated on 500 ImageNet images at a measured perturbation budget. Transferring the attacks to DenseNet-121 shows that the strongest white-box attack is the weakest once it crosses architectures.",
+    "duration": "May 2025",
+    "featured": false,
     "github_urls": [
       "https://github.com/raunak-choudhary/DeepModel-AdversarialAttacks-ResNet-DenseNet"
     ],
@@ -764,53 +835,35 @@
       "https://emaaaeooafqawdvdreaz.supabase.co/storage/v1/object/public/project-images/projects/b8f32f76-bbc9-43d0-9af8-aad2f6803072/project-1749452507826-5.png"
     ],
     "key_features": [
-      "Implemented FGSM, PGD, MI-FGSM, and Patch attacks in PyTorch",
-      "Evaluated adversarial robustness on ResNet-34 and DenseNet-121",
-      "Used ImageNet-1K subset with 500 images across 100 classes",
-      "Visualized adversarial examples and perturbations",
-      "Measured Top-1 and Top-5 accuracies for clean and perturbed images",
-      "Analyzed attack transferability between architectures",
-      "Utilized momentum in iterative attacks for improved transferability",
-      "Patch attack with strategic restarts and localized perturbation",
-      "Hyperparameter tuning for effective attack strength",
-      "Comprehensive comparative results across attack types"
+      "Four attacks implemented without robustness libraries",
+      "ResNet-34 accuracy reduced from 77.4% to 0%",
+      "Imperceptible perturbations at epsilon 0.02",
+      "Cross-architecture transferability analysis"
     ],
-    "learnings": "We gained practical experience implementing adversarial attacks using PyTorch and analyzing model vulnerabilities in deep learning. The project deepened our understanding of hyperparameter tuning, image preprocessing, and top-k evaluation metrics. We also developed skills in visualizing adversarial effects and understanding how attacks transfer between different architectures, reinforcing the need for robust model design.",
+    "learnings": null,
     "live_url": null,
-    "order_index": null,
+    "order_index": 16,
     "project_number": null,
-    "project_type": "Deep Learning Project",
-    "short_description": "Explored adversarial robustness of ResNet-34 and DenseNet-121 using FGSM, PGD, MI-FGSM, and Patch attacks on ImageNet subset.",
+    "project_type": "Deep Learning",
+    "short_description": "A robustness study of image classifiers: four adversarial attacks built from scratch drive a pretrained ResNet-34 from 77.4% to 0% top-1 accuracy with changes invisible to the human eye.",
     "status": "active",
     "team_size": 2,
     "technologies": [
       "Python",
       "PyTorch",
-      "TorchVision",
+      "torchvision",
       "NumPy",
-      "Matplotlib",
-      "Pillow",
-      "ImageNet",
-      "ResNet-34",
-      "DenseNet-121",
-      "FGSM",
-      "PGD",
-      "MI-FGSM",
-      "Patch Attack",
-      "Adversarial Examples",
-      "CNN Evaluation",
-      "Top-1 Accuracy",
-      "Top-5 Accuracy",
-      "Transfer Learning"
+      "Matplotlib"
     ],
-    "title": "Adversarial Attacks on ResNet and DenseNet",
-    "updated_at": "2025-06-09T07:05:32.797251"
+    "title": "Adversarial Attack Transferability on ImageNet Classifiers",
+    "updated_at": "2026-11-09T19:11:21.204377"
   },
   {
-    "challenges": "Maintaining session security and user access restrictions. Designing a modular backend system to handle interdependent hostel activities. Ensuring seamless integration between UI elements and backend PHP logic.",
+    "awards": null,
+    "challenges": null,
     "created_at": "2025-06-08T21:07:05.909475",
-    "detailed_description": "This project was developed as a mini-project during the Web Technology course to address the inefficiencies of manual hostel administration in educational institutions. The system automates core activities such as student registration, room allotment, mess schedule display, complaint logging, and outpass application. Designed with scalability in mind, the system integrates a centralized database to handle hostel records securely and supports administrative functions such as notifications and performance tracking. The backend was implemented using PHP with MySQL, while the frontend was designed with HTML, CSS, Bootstrap, and JavaScript. It aimed to provide a unified digital platform that ensures data integrity, enhances usability, and minimizes time and resource overhead in managing hostel operations.",
-    "duration": "2 months",
+    "detailed_description": "The server-rendered PHP application runs on a normalized six-table MySQL schema with foreign keys between students, hostels, rooms, applications and messages. Allocating a room updates the application, the student and the room together, and vacating reverses the same steps.",
+    "duration": "Dec 2020–Mar 2021",
     "featured": false,
     "github_urls": [
       "https://github.com/raunak-choudhary/Hostel-Management-System"
@@ -828,42 +881,114 @@
       "https://emaaaeooafqawdvdreaz.supabase.co/storage/v1/object/public/project-images/projects/d447350b-7e8d-4f7c-9b58-fc0fad5bccb2/project-1749416806971-9.png"
     ],
     "key_features": [
-      "Student registration and login functionality",
-      "Complaint logging and status tracking module",
-      "Online hostel fee status checking",
-      "Room allotment management",
-      "Outpass request and approval system",
-      "Admin-side performance tracking",
-      "Secure login with data protection",
-      "Centralized database for efficient data handling"
+      "Student, manager and admin role panels",
+      "Room allocation and vacate lifecycle",
+      "Normalized six-table MySQL schema",
+      "Internal messaging between roles"
     ],
-    "learnings": "Gained full-stack web development experience with a focus on real-world administrative workflows. Learned to implement user authentication, session management, and secure data handling. Understood the challenges of integrating multiple functional modules within a unified UI.",
+    "learnings": null,
     "live_url": null,
-    "order_index": null,
+    "order_index": 8,
     "project_number": null,
-    "project_type": "Full Stack Web Application",
-    "short_description": "An online web application designed to automate and streamline hostel facility management processes.",
+    "project_type": "Full-Stack Web Application",
+    "short_description": "A hostel management portal with three roles: students apply for rooms, hostel managers allocate and vacate them, and an admin appoints the managers. An internal messaging system connects all three.",
+    "status": "active",
+    "team_size": 2,
+    "technologies": [
+      "PHP",
+      "MySQL",
+      "Bootstrap",
+      "jQuery",
+      "HTML",
+      "CSS"
+    ],
+    "title": "Hostel Allocation and Messaging Portal",
+    "updated_at": "2026-11-09T19:11:21.204377"
+  },
+  {
+    "awards": "First Prize, Code 4 City Hackathon at NYU Tandon, against 42 teams",
+    "challenges": null,
+    "created_at": "2026-11-09T19:11:21.204377",
+    "detailed_description": "Failures propagate across the infrastructure graph with weighted breadth-first traversal, Dijkstra finds reroutes around failed nodes, and betweenness centrality highlights the most critical links. Four domain agents coordinate live alerts, Claude writes situation briefings, and YOLOv8 reads city traffic cameras, all shown on a live map.",
+    "duration": "Apr–May 2026",
+    "featured": true,
+    "github_urls": [
+      "https://github.com/raunak-choudhary/cascadeos"
+    ],
+    "id": "e9eb411d-4458-4f92-b35f-c4007408a3ba",
+    "image_urls": [],
+    "key_features": [
+      "Cascading failure prediction over a city-wide graph",
+      "Dijkstra rerouting around failed nodes",
+      "Four coordinated domain agents with live alerts",
+      "AI-written situation briefings",
+      "Traffic camera analysis with YOLOv8"
+    ],
+    "learnings": null,
+    "live_url": null,
+    "order_index": 24,
+    "project_number": null,
+    "project_type": "Hackathon Project",
+    "short_description": "An operations dashboard that models New York City's water, transit, health and emergency systems as one graph and predicts how a failure in any part cascades through the rest.",
     "status": "active",
     "team_size": 1,
     "technologies": [
-      "HTML5",
-      "CSS3",
-      "Bootstrap5",
-      "JavaScript",
-      "PHP",
-      "MySQL",
-      "XAMPP Server",
-      "Responsive Web Design",
-      "VS Code"
+      "Python",
+      "FastAPI",
+      "NetworkX",
+      "Claude API",
+      "YOLOv8",
+      "React",
+      "deck.gl"
     ],
-    "title": "Hostel Management System",
-    "updated_at": "2025-06-08T21:07:05.909475"
+    "title": "CascadeOS: Multi-Agent Infrastructure Failure Prediction",
+    "updated_at": "2026-11-09T19:11:21.204377"
   },
   {
-    "challenges": "The most significant challenge was building a complete AI pipeline for personalized content generation and recommendation using Claude AI within the constrained 36-hour hackathon window. Integrating location services, Claude AI responses, and real-time user preferences into a smooth UI flow also required rapid prototyping and refinement.",
+    "awards": null,
+    "challenges": null,
+    "created_at": "2026-11-09T19:11:21.204377",
+    "detailed_description": "Each spending event is hashed into a signed, externally timestamped Merkle log, built on 13 million real federal transactions cleaned with Spark. The analyst answers through guarded SQL, cites the records behind each answer, and the visitor's browser verifies every proof independently.",
+    "duration": "Oct–Nov 2026",
+    "featured": true,
+    "github_urls": [
+      "https://github.com/raunak-choudhary/tallyproof"
+    ],
+    "id": "ecac74f6-8fc4-44d2-bec3-61144244e001",
+    "image_urls": [],
+    "key_features": [
+      "Signed, externally timestamped Merkle log",
+      "AI analyst that cites every record it uses",
+      "Proofs verified in the visitor's browser",
+      "13 million federal transactions cleaned with Spark",
+      "Streaming ingestion with schema validation"
+    ],
+    "learnings": null,
+    "live_url": null,
+    "order_index": 30,
+    "project_number": null,
+    "project_type": "Data Platform",
+    "short_description": "A tamper-evident ledger of real U.S. federal contract spending with an AI analyst that never types a number itself: every figure comes from the ledger and every claim can be proven.",
+    "status": "active",
+    "team_size": 1,
+    "technologies": [
+      "Python",
+      "Django",
+      "PostgreSQL",
+      "Redpanda",
+      "PySpark",
+      "TypeScript",
+      "Ed25519"
+    ],
+    "title": "Tallyproof: Tamper-Evident Federal Spending Ledger",
+    "updated_at": "2026-11-09T19:11:21.204377"
+  },
+  {
+    "awards": null,
+    "challenges": null,
     "created_at": "2025-06-09T03:29:17.566624",
-    "detailed_description": "Roam.AI is an intelligent travel assistant built during the Tech@NYU Startup Week Buildathon, where participants had 36 hours to design innovative products under themed tracks. The platform redefines travel by offering curated, unbiased exploration experiences based on user preferences, real-time location, and interaction patterns. Roam.AI offers users an interactive map, content discovery feed, gamified leaderboard, and personalized itinerary suggestions powered by Claude AI. It avoids subjective reviews by promoting community-driven discoveries. The backend was developed using Flask and integrated Claude AI APIs for content generation and recommendation logic, while the frontend used React.js and Material-UI with Google Maps integration. The entire stack was hosted using AWS.",
-    "duration": "36 hours",
+    "detailed_description": "A Flask API asks Claude to generate itineraries sized to the time available and stores places and community content in SQLite. The React frontend renders the plan on Google Maps so each stop can be explored in context.",
+    "duration": "Mar 2025",
     "featured": false,
     "github_urls": [
       "https://github.com/raunak-choudhary/Roam.AI"
@@ -871,48 +996,114 @@
     "id": "f126b288-dc65-409d-8cdd-8227b578e5c0",
     "image_urls": [],
     "key_features": [
-      "AI-generated personalized itineraries using Claude AI",
-      "Responsive design for seamless experience across devices",
-      "Gamified leaderboard to incentivize contributions",
-      "Interactive Google Maps-based exploration interface",
-      "Content feed adapting to engagement patterns",
-      "Custom itinerary suggestions based on time and interests",
-      "Community-driven recommendation model",
-      "Location-aware content delivery",
-      "Rating system for content and creators"
+      "AI-generated itineraries sized to available time",
+      "Interactive Google Maps interface",
+      "Community feed of traveller-submitted places"
     ],
-    "learnings": "We gained deep insights into designing and deploying an AI-powered travel solution under time pressure. The team learned how user engagement patterns can enhance recommendation relevance and how to integrate Claude AI effectively with Flask. We also learned to build highly responsive UIs using React.js and Material-UI and understood the importance of community-driven features in enhancing platform engagement. Real-time feedback helped improve design thinking and team coordination.",
+    "learnings": null,
     "live_url": null,
-    "order_index": null,
+    "order_index": 12,
     "project_number": null,
     "project_type": "Hackathon Project",
-    "short_description": "An AI-powered travel companion developed during a 36-hour hackathon to provide personalized, location-aware itineraries and recommendations using Claude AI.",
+    "short_description": "A travel companion that turns a location and an amount of free time into a sequenced, time-aware itinerary on an interactive map, alongside a community feed of places submitted by other travellers.",
     "status": "active",
     "team_size": 4,
     "technologies": [
       "Python",
       "Flask",
-      "SQLAlchemy",
-      "SQLite",
-      "Claude AI API",
-      "React.js",
-      "Material-UI",
+      "React",
+      "Claude API",
       "Google Maps API",
-      "AWS (For Deployment)",
-      "JavaScript",
-      "Responsive Design",
-      "GitHub",
-      "REST APIs",
-      "Google Map API"
+      "SQLite"
     ],
-    "title": "Roam.AI",
-    "updated_at": "2025-06-09T03:31:16.17032"
+    "title": "Roam.AI: Time-Aware AI Travel Itinerary Planner",
+    "updated_at": "2026-11-09T19:11:21.204377"
   },
   {
-    "challenges": "Designing stable collision logic and implementing a reliable countdown timer were key technical challenges. Ensuring modular structure for game states and transitions also required careful function management.",
+    "awards": null,
+    "challenges": null,
+    "created_at": "2026-11-09T19:11:21.204377",
+    "detailed_description": "Each deck runs on its own isolated audio context with a Tone.js effects chain, and WebAssembly analysis detects BPM and musical key. The Electron app adds waveform views, a track library, scratch simulation driven by tunable physics and typed IPC between processes, across about 10,900 lines of TypeScript.",
+    "duration": "Apr 2026",
+    "featured": true,
+    "github_urls": [
+      "https://github.com/raunak-choudhary/dj-buddy"
+    ],
+    "id": "f30fbb1f-0a70-4dc0-a09c-24e581dddaaf",
+    "image_urls": [],
+    "key_features": [
+      "Two isolated decks with separate output routing",
+      "WebAssembly BPM and key detection",
+      "Tone.js effects chain with EQ, filter, reverb and delay",
+      "Physics-based scratch simulation",
+      "Builds for macOS, Windows and Linux"
+    ],
+    "learnings": null,
+    "live_url": null,
+    "order_index": 21,
+    "project_number": null,
+    "project_type": "Desktop Application",
+    "short_description": "A cross-platform desktop DJ application with two fully independent decks that can be routed to separate audio outputs, so the next track can be cued silently in headphones while the audience hears the mix.",
+    "status": "active",
+    "team_size": 1,
+    "technologies": [
+      "Electron",
+      "React",
+      "TypeScript",
+      "Tone.js",
+      "Essentia.js",
+      "WebAssembly",
+      "Zustand"
+    ],
+    "title": "DJ Buddy: Dual-Deck Desktop DJ Application",
+    "updated_at": "2026-11-09T19:11:21.204377"
+  },
+  {
+    "awards": null,
+    "challenges": null,
+    "created_at": "2026-11-09T19:11:21.204377",
+    "detailed_description": "Incoming messages are validated and deduplicated, then checked against both fixed thresholds and statistical baselines to catch unusual readings. A server-enforced workflow moves each alert through acknowledgement, assignment and resolution with an append-only audit trail, backed by 223 passing tests and 97% backend coverage.",
+    "duration": "May–Jun 2026",
+    "featured": true,
+    "github_urls": [
+      "https://github.com/raunak-choudhary/knaq-iot-triage"
+    ],
+    "id": "f55279c2-9c94-4a38-99b6-ca29d2c57b2f",
+    "image_urls": [],
+    "key_features": [
+      "Validation and deduplication of raw sensor messages",
+      "Threshold and statistical anomaly detection",
+      "Server-enforced triage from alert to resolution",
+      "Append-only audit trail",
+      "223 tests with 97% backend coverage"
+    ],
+    "learnings": null,
+    "live_url": null,
+    "order_index": 25,
+    "project_number": null,
+    "project_type": "Full-Stack Web Application",
+    "short_description": "An operations platform that ingests raw sensor messages from building equipment such as elevators, escalators and HVAC units, flags problems and guides facility teams from first alert to resolution.",
+    "status": "active",
+    "team_size": 1,
+    "technologies": [
+      "Python",
+      "FastAPI",
+      "SQLAlchemy",
+      "Next.js",
+      "React",
+      "TypeScript",
+      "Redux Toolkit",
+      "Docker"
+    ],
+    "title": "Knaq: Multi-Tenant IoT Alert Triage Platform",
+    "updated_at": "2026-11-09T19:11:21.204377"
+  },
+  {
+    "awards": null,
+    "challenges": null,
     "created_at": "2025-06-08T18:40:46.818984",
-    "detailed_description": "This project was developed during the 6th semester as part of the Computer Graphics and Visualization Laboratory course at SMVITM. The game simulates a maze navigation experience, where the player must move a yellow marker from the green start point to the red endpoint using keyboard arrow keys. Developed using OpenGL in C with Dev-Cpp, the game includes three difficulty levels: Easy (90s), Medium (60s), and Hard (30s), with real-time countdown and interactive win/loss feedback. The maze walls are implemented using 2D graphical transformations, and user movements are restricted from crossing walls. The project applied concepts of translation, rendering, coordinate geometry, and modular programming to simulate dynamic real-time interactivity in a game environment.",
-    "duration": "Mar 2020 - Apr 2020",
+    "detailed_description": "Rendering uses immediate-mode OpenGL through GLUT, with keyboard input moving the player and axis-aligned collision checks against every wall. The game screens are driven by a single state machine, and a clock-based countdown decides between the win and time-over endings.",
+    "duration": "Mar–May 2020",
     "featured": false,
     "github_urls": [
       "https://github.com/raunak-choudhary/2D-Path-Finding-Game-OpenGL"
@@ -930,70 +1121,100 @@
       "https://emaaaeooafqawdvdreaz.supabase.co/storage/v1/object/public/project-images/projects/f6023f0d-8285-4b81-ad68-7e93ecc8ad93/project-1749408035219-5.png"
     ],
     "key_features": [
-      "3 difficulty levels with timers",
-      "Real-time maze navigation",
-      "Keyboard-controlled movement",
-      "Win/Loss feedback system",
-      "Restricted movement via wall collision logic",
-      "Modular OpenGL function structure"
+      "Countdown-timed keyboard navigation",
+      "Collision detection against hand-built maze walls",
+      "Menu, instructions, win and time-over screens",
+      "Screen flow driven by a single state machine"
     ],
-    "learnings": "Applied OpenGL concepts such as coordinate transformation, object rendering, and animation. Strengthened skills in modular C programming and real-time user interaction. Learned to manage game logic, timing constraints, and graphical flow in a desktop application.",
+    "learnings": null,
     "live_url": null,
-    "order_index": null,
+    "order_index": 3,
     "project_number": null,
-    "project_type": "Computer Graphics  Project",
-    "short_description": "A computer graphics-based maze game built using OpenGL and C, where players navigate through levels using keyboard controls under time constraints.",
+    "project_type": "Computer Graphics",
+    "short_description": "A countdown-timed maze game in C++ and OpenGL: the player steers through hand-built maze geometry and must reach the exit before time runs out. It includes a full menu, instructions, win and time-over flow.",
     "status": "active",
     "team_size": 2,
     "technologies": [
-      "C Programming",
+      "C++",
       "OpenGL",
       "GLUT",
-      "GL",
-      "GLU",
-      "Dev-Cpp",
-      "TDM-GCC 4.9.2",
-      "Windows 7/10"
+      "GLU"
     ],
-    "title": "2D Path Finding Game",
-    "updated_at": "2025-06-08T18:40:46.818984"
+    "title": "OpenGL Maze Navigation Game",
+    "updated_at": "2026-11-09T19:11:21.204377"
   },
   {
-    "challenges": "Optimizing facial detection under varied lighting and webcam quality within limited time. Integrating SMS API in a lightweight setup without full deployment infrastructure was also a constraint.",
-    "created_at": "2025-06-08T18:55:12.21516",
-    "detailed_description": "This project was developed in a 24-hour state-level technical hackathon by a team of four students. The core idea was to reduce road accidents by addressing drowsiness while driving. The system uses a basic webcam or USB camera to monitor the driver's eye activity. By using simple computer vision techniques, it identifies if the driver’s eyes remain closed beyond a typical blink duration. If this happens more than three times within a short span, the device sends an SMS alert to a pre-registered emergency contact, warning them of the driver’s condition. The project was designed using pre-trained facial landmark detection models available in OpenCV along with Python scripting. The alert mechanism used basic integration with an SMS API like Twilio. The focus was on demonstrating a working proof-of-concept within the limited time of a hackathon, which helped us deliver a functional prototype with real-time response.",
-    "duration": "24 Hours",
+    "awards": null,
+    "challenges": null,
+    "created_at": "2026-11-09T19:11:21.204377",
+    "detailed_description": "Gemini extracts the ingredient list from a recipe, then Amazon Nova Act browser agents sign in, search and build a cart on each delivery platform. A FastAPI backend coordinates the agents and returns a side-by-side price comparison.",
+    "duration": "Nov 2025",
     "featured": false,
-    "github_urls": [],
-    "id": "f82aa188-e765-4fd2-b7d3-5af68c553985",
+    "github_urls": [
+      "https://github.com/raunak-choudhary/Hack_Princeton_MealPilot"
+    ],
+    "id": "f8ab85cf-3375-40dd-a8c8-1e74f0132150",
     "image_urls": [],
     "key_features": [
-      "Detects prolonged eye closure",
-      "Real-time drowsiness alerting",
-      "Eye aspect ratio (EAR) based logic",
-      "3-strike alert trigger mechanism",
-      "SMS alert to emergency contact",
-      "Camera-based monitoring"
+      "Recipe-to-ingredient extraction with Gemini",
+      "Browser agents that build real carts",
+      "Price comparison across delivery platforms"
     ],
-    "learnings": "Gained hands-on experience in rapid prototyping, computer vision-based detection, and emergency alert systems. Strengthened ability to collaborate, debug, and deploy functional demos under time constraints.",
+    "learnings": null,
     "live_url": null,
-    "order_index": null,
+    "order_index": 17,
     "project_number": null,
     "project_type": "Hackathon Project",
-    "short_description": "Developed a prototype device that detects driver drowsiness using eye-blink frequency and sends alerts or emergency messages after repeated inattention.",
+    "short_description": "An agentic platform that turns a recipe name into a priced shopping basket by building real carts on Instacart and Uber Eats, so the cheapest option is found from live prices.",
     "status": "active",
     "team_size": 4,
     "technologies": [
       "Python",
-      "OpenCV",
-      "NumPy",
-      "dlib",
-      "Twilio API",
-      "Webcam Integration",
-      "Computer Vision",
-      "Eye Aspect Ratio (EAR)"
+      "FastAPI",
+      "Amazon Nova Act",
+      "Google Gemini",
+      "Supabase",
+      "TypeScript"
     ],
-    "title": "3D – Drowsiness Detection Device",
-    "updated_at": "2025-06-08T18:55:12.21516"
+    "title": "MealPilot: Agentic Grocery Price Comparison",
+    "updated_at": "2026-11-09T19:11:21.204377"
+  },
+  {
+    "awards": null,
+    "challenges": null,
+    "created_at": "2026-11-09T19:11:21.204377",
+    "detailed_description": "Every node execution is stored as a delta-compressed checkpoint and scored for semantic drift with local sentence embeddings. Bellman-Ford over a behaviour graph finds the path of greatest divergence, and a 3D interface lets the user travel along the timeline and branch from any moment.",
+    "duration": "Jun 2026",
+    "featured": false,
+    "github_urls": [
+      "https://github.com/raunak-choudhary/timewarp"
+    ],
+    "id": "fae773f1-f513-4ca6-9bed-897d09a71e6c",
+    "image_urls": [],
+    "key_features": [
+      "Checkpoint of every agent step",
+      "Semantic drift scoring with local embeddings",
+      "Divergence path found with Bellman-Ford",
+      "Rewind, edit and replay in a 3D timeline"
+    ],
+    "learnings": null,
+    "live_url": null,
+    "order_index": 26,
+    "project_number": null,
+    "project_type": "Hackathon Project",
+    "short_description": "A debugger for AI agent pipelines that records every step of a LangGraph agent, finds where its behaviour drifted, and lets you rewind, edit the prompt at that point and replay an alternate timeline.",
+    "status": "active",
+    "team_size": 1,
+    "technologies": [
+      "Python",
+      "FastAPI",
+      "LangGraph",
+      "Claude API",
+      "Supabase",
+      "pgvector",
+      "Three.js"
+    ],
+    "title": "TimeWarp: Time-Travel Debugger for AI Agent Pipelines",
+    "updated_at": "2026-11-09T19:11:21.204377"
   }
 ]
