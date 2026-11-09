@@ -1,6 +1,7 @@
 import {
   LOGIN_LINK_SENT_MESSAGE,
   LOGIN_RATE_LIMITED_MESSAGE,
+  NOT_ADMIN_EMAIL_MESSAGE,
   getCurrentAdmin,
   hasSecondFactorSession,
   isRateLimitError,
@@ -22,6 +23,7 @@ jest.mock('./supabaseClient', () => ({
         getAuthenticatorAssuranceLevel: jest.fn()
       }
     },
+    functions: { invoke: jest.fn().mockResolvedValue({ data: null, error: null }) },
     from: jest.fn()
   }
 }));
@@ -72,14 +74,34 @@ describe('authService secure admin auth', () => {
       ['HTTP 422 with otp_disabled', authApiError(422, 'otp_disabled', 'Signups not allowed for otp')],
       ['HTTP 422 with signup_disabled', authApiError(422, 'signup_disabled', 'Signups not allowed')],
       ['HTTP 422 with no code', authApiError(422, undefined, 'Unprocessable')]
-    ])('answers an unknown address (%s) exactly like a real send', async (_label, error) => {
+    ])('refuses a non-admin address (%s) with a fixed sentence and alerts the owner', async (_label, error) => {
       supabase.auth.signInWithOtp.mockResolvedValue({ error });
+
+      const result = await requestAdminLoginOtp('Stranger@Example.com');
+
+      expect(result.success).toBe(false);
+      expect(result.error.code).toBe('NOT_ADMIN_EMAIL');
+      expect(result.error.message).toBe(NOT_ADMIN_EMAIL_MESSAGE);
+      expect(supabase.functions.invoke).toHaveBeenCalledWith('admin-login-alert', {
+        body: { attemptedEmail: 'stranger@example.com' }
+      });
+    });
+
+    it('never alerts for the admin address or for a server failure', async () => {
+      supabase.auth.signInWithOtp.mockResolvedValueOnce({ error: null });
+      await requestAdminLoginOtp('admin@example.com');
+      supabase.auth.signInWithOtp.mockResolvedValueOnce({ error: authApiError(500, 'unexpected_failure', 'SMTP down') });
+      await requestAdminLoginOtp('admin@example.com');
+      expect(supabase.functions.invoke).not.toHaveBeenCalled();
+    });
+
+    it('keeps the login usable when the alert call itself fails', async () => {
+      supabase.auth.signInWithOtp.mockResolvedValue({ error: authApiError(422, 'signup_disabled') });
+      supabase.functions.invoke.mockRejectedValueOnce(new Error('function offline'));
 
       const result = await requestAdminLoginOtp('stranger@example.com');
 
-      expect(result.success).toBe(true);
-      expect(result.data.message).toBe(LOGIN_LINK_SENT_MESSAGE);
-      expect(JSON.stringify(result)).not.toContain('Signups');
+      expect(result.error.code).toBe('NOT_ADMIN_EMAIL');
     });
 
     it.each([
@@ -102,7 +124,9 @@ describe('authService secure admin auth', () => {
 
       expect(result.success).toBe(false);
       expect(result.error.code).toBe('OTP_REQUEST_FAILED');
-      expect(result.error.message).toBe('SMTP down');
+      // Server text is never shown; the page gets a fixed sentence.
+      expect(result.error.message).toBe('The code could not be sent. Try again in a moment.');
+      expect(result.error.details.message).toBe('SMTP down');
     });
 
     it('returns a generic error when the request throws', async () => {
