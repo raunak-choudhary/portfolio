@@ -200,6 +200,25 @@ const triggerPublicRefresh = (table = 'all') => {
 /**
  * Enhanced save function for admin operations
  */
+/**
+ * Explains a failed admin write in one fixed sentence and a code the managers
+ * can branch on. Row level security answers an unauthorised write with a
+ * permission error (42501), an expired token with 401 or a JWT message, and
+ * a first-level session (authenticator code not yet entered) with 403 once
+ * the second factor is enforced.
+ */
+export const describeAdminWriteError = (error) => {
+  const status = Number(error?.status ?? error?.statusCode ?? 0);
+  const text = `${error?.message ?? ''} ${error?.code ?? ''}`.toLowerCase();
+  if (status === 401 || text.includes('jwt') || text.includes('token is expired') || text.includes('invalid claim')) {
+    return { code: 'SESSION_EXPIRED', message: 'Your session expired. Sign in again in a new tab, then save.' };
+  }
+  if (status === 403 || text.includes('42501') || text.includes('permission denied') || text.includes('row-level security')) {
+    return { code: 'SECOND_FACTOR_REQUIRED', message: 'This needs your authenticator code. Open the admin area in a new tab, enter the code, then save.' };
+  }
+  return { code: 'WRITE_FAILED', message: error?.message || 'The change could not be saved.' };
+};
+
 export const saveAdminData = async (table, data, existingId = null) => {
   try {
     console.log(`💾 Admin save operation starting for ${table}:`, data);
@@ -241,7 +260,13 @@ export const saveAdminData = async (table, data, existingId = null) => {
     
   } catch (error) {
     console.error(`❌ Admin save failed for ${table}:`, error);
-    throw error;
+    // Managers show error.message and keep their form state, so the typed
+    // sentence reaches the owner and nothing typed is lost.
+    const described = describeAdminWriteError(error);
+    const typed = new Error(described.message);
+    typed.code = described.code;
+    typed.cause = error;
+    throw typed;
   }
 };
 

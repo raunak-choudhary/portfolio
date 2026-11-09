@@ -272,3 +272,24 @@ describe('adminDataService', () => {
     await expect(createContactAttachmentSignedUrl('')).rejects.toThrow('Attachment path is required');
   });
 });
+
+describe('describeAdminWriteError', () => {
+  // Imported lazily so the existing mocks above stay untouched.
+  const { describeAdminWriteError } = require('./adminDataService');
+
+  it('reads an expired or invalid token as a session problem', () => {
+    expect(describeAdminWriteError({ status: 401, message: 'JWT expired' }).code).toBe('SESSION_EXPIRED');
+    expect(describeAdminWriteError({ message: 'invalid claim: missing sub' }).code).toBe('SESSION_EXPIRED');
+  });
+
+  it('reads a policy refusal as the second factor being required', () => {
+    expect(describeAdminWriteError({ code: '42501', message: 'permission denied for table projects' }).code).toBe('SECOND_FACTOR_REQUIRED');
+    expect(describeAdminWriteError({ status: 403, message: 'forbidden' }).code).toBe('SECOND_FACTOR_REQUIRED');
+    expect(describeAdminWriteError({ message: 'new row violates row-level security policy' }).code).toBe('SECOND_FACTOR_REQUIRED');
+  });
+
+  it('passes other errors through with their own message', () => {
+    expect(describeAdminWriteError({ status: 500, message: 'boom' })).toEqual({ code: 'WRITE_FAILED', message: 'boom' });
+    expect(describeAdminWriteError(undefined).code).toBe('WRITE_FAILED');
+  });
+});
