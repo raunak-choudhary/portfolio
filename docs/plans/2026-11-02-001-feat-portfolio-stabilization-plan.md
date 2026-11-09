@@ -10,6 +10,9 @@ origin: docs/superpowers/specs/2026-11-02-portfolio-stabilization-design.md
 
 ## Overview
 
+> **Phase renumbering (owner, 2026-11-09).** A content refresh phase was added after Phase 4. Final order: Phase 4 Admin, **Phase 5 Content refresh (new)**, Phase 6 Responsive (written below as Phase 5), Phase 7 Banner (written below as Phase 6), then the single final deploy (owner decision 2026-11-03: the separate security deploy was deferred into it), then Phase 8 the new portfolio (formerly Phase 7). Unit numbers below keep their original labels.
+
+
 Replace the 2025 build that is live on Hostinger with the hardened 2026 build without changing what visitors see, kill the leaked Supabase service-role key with zero visitor downtime, bring the project data up to date from the audited catalogue, make every admin manager work behind an email link plus an authenticator-app second factor enforced in Postgres, prove the site renders at four widths in both themes with an automated contract test, and add a dismissible under-construction banner switchable from the admin dashboard. Two deploys, each behind the owner's local review: a security deploy after Phase 2 and a final deploy after Phase 6.
 
 Phase 7, the new portfolio, is out of scope and gets its own design later.
@@ -809,7 +812,20 @@ Phase 3 exit: as the origin's Phase 3 exit.
 
 Phase 4 exit: as the origin's Phase 4 exit.
 
-### Phase 5: Responsive
+### Phase 5 (new): Content refresh (added by the owner, 2026-11-09)
+
+The portfolio is where the owner sells himself to recruiters, so every section must carry current, relevant information, not only projects. Same method as Phase 3: draft from the owner's sources, review page, owner approval, one all-or-nothing import, browser check, owner sign-off on localhost.
+
+- [ ] **Unit 5.1: Content inventory and sources.** List what each section shows today (landing page and its table, About Me and its basic-info table, Skills, Certifications, Education, Work Experience, Internships, Achievements, Leadership, Recommendations), what is stale or missing, and which sources to draft from (resume, LinkedIn export, catalogue, owner answers). Owner decides what to add, update, hide or remove per section.
+- [ ] **Unit 5.2: Landing page and About Me.** Rewrite the hero headline, subtitle and highlights and the About Me text and basic-info table for recruiters: what the owner does, the strongest proof points, work authorization and availability as the owner wants them stated.
+- [ ] **Unit 5.3: The eight content sections.** Update each section's rows to match the approved inventory: professional wording, consistent dates, full https links, team and role disclosure where relevant, no unverifiable claims.
+- [ ] **Unit 5.4: Review and import.** One review page for all sections, owner approval, one import script per section family (all or nothing, never touching images), fixtures re-recorded, browser suite green, owner sign-off on localhost.
+
+Rules carried from Phase 3: titles professional and without parentheses; descriptions short but self-explanatory; every claim backed by a source; the dashboard stays the place to edit after the import; no section UI change without the owner's approval.
+
+Phase 5 (new) exit: the owner reviews every section on localhost and approves.
+
+### Phase 6 (formerly Phase 5): Responsive
 
 - [ ] **Unit 5.1: Full contract suite**
 
@@ -856,7 +872,7 @@ Phase 4 exit: as the origin's Phase 4 exit.
 
 Phase 5 exit: as the origin's Phase 5 exit.
 
-### Phase 6: Banner
+### Phase 7 (formerly Phase 6): Banner
 
 - [ ] **Unit 6.1: `site_settings` table**
 
