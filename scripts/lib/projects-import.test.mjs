@@ -59,6 +59,12 @@ describe('validateSeed', () => {
     assert.throws(() => validateSeed({ projects: [project(), project({ title: 'Other' })] }), /order_index/);
   });
   it('rejects an empty seed', () => assert.throws(() => validateSeed({ projects: [] }), /no projects/));
+  it('accepts a full https live URL or none, and rejects anything else', () => {
+    assert.equal(validateSeed({ projects: [project({ live_url: 'https://example.github.io/demo/' })] }).length, 1);
+    assert.equal(validateSeed({ projects: [project({ live_url: null })] }).length, 1);
+    rejects({ live_url: 'example.github.io/demo' }, /live_url must be a full https address/);
+    rejects({ live_url: 'http://example.com' }, /live_url must be a full https address/);
+  });
 });
 
 describe('buildImportSql', () => {
@@ -107,5 +113,6 @@ describe('buildImportSql', () => {
     assert.match(out, /expected 30 active projects/);
     assert.equal((out.match(/insert into public\.projects/g) || []).length, 14);
     assert.equal((out.match(/get diagnostics affected/g) || []).length, 16);
+    assert.equal((out.match(/live_url = 'https:/g) || []).length + (out.match(/, 'https:\/\/[^']+', null, null, 'active'\)/g) || []).length, 5);
   });
 });

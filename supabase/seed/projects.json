@@ -30,7 +30,8 @@
         "Target leakage identified and explained"
       ],
       "featured": false,
-      "awards": null
+      "awards": null,
+      "live_url": null
     },
     {
       "order_index": 2,
@@ -59,7 +60,8 @@
         "Session-based authentication"
       ],
       "featured": false,
-      "awards": null
+      "awards": null,
+      "live_url": null
     },
     {
       "order_index": 3,
@@ -86,7 +88,8 @@
         "Screen flow driven by a single state machine"
       ],
       "featured": false,
-      "awards": null
+      "awards": null,
+      "live_url": null
     },
     {
       "order_index": 4,
@@ -112,7 +115,8 @@
         "Concise, verifiable pandas queries"
       ],
       "featured": false,
-      "awards": null
+      "awards": null,
+      "live_url": null
     },
     {
       "order_index": 5,
@@ -141,7 +145,8 @@
         "Clear accept or reject decision for each hypothesis"
       ],
       "featured": false,
-      "awards": null
+      "awards": null,
+      "live_url": null
     },
     {
       "order_index": 6,
@@ -168,7 +173,8 @@
         "Club rankings by points and win rate"
       ],
       "featured": false,
-      "awards": null
+      "awards": null,
+      "live_url": null
     },
     {
       "order_index": 7,
@@ -197,7 +203,8 @@
         "Linear regression baseline with R-squared evaluation"
       ],
       "featured": false,
-      "awards": null
+      "awards": null,
+      "live_url": null
     },
     {
       "order_index": 8,
@@ -226,7 +233,8 @@
         "Internal messaging between roles"
       ],
       "featured": false,
-      "awards": null
+      "awards": null,
+      "live_url": null
     },
     {
       "order_index": 9,
@@ -255,7 +263,8 @@
         "Admin oversight of users and transactions"
       ],
       "featured": false,
-      "awards": null
+      "awards": null,
+      "live_url": null
     },
     {
       "order_index": 10,
@@ -285,7 +294,8 @@
         "Personalised article feed"
       ],
       "featured": false,
-      "awards": null
+      "awards": null,
+      "live_url": null
     },
     {
       "order_index": 11,
@@ -314,7 +324,8 @@
         "Model comparison with tuned ensembles"
       ],
       "featured": false,
-      "awards": null
+      "awards": null,
+      "live_url": null
     },
     {
       "order_index": 12,
@@ -342,7 +353,8 @@
         "Community feed of traveller-submitted places"
       ],
       "featured": false,
-      "awards": null
+      "awards": null,
+      "live_url": null
     },
     {
       "order_index": 13,
@@ -370,7 +382,8 @@
         "Per-class accuracy analysis"
       ],
       "featured": false,
-      "awards": null
+      "awards": null,
+      "live_url": null
     },
     {
       "order_index": 14,
@@ -398,7 +411,8 @@
         "Macro F1 and confusion matrix evaluation"
       ],
       "featured": false,
-      "awards": null
+      "awards": null,
+      "live_url": null
     },
     {
       "order_index": 15,
@@ -430,7 +444,8 @@
         "71% fewer errors and an excellent usability score"
       ],
       "featured": false,
-      "awards": null
+      "awards": null,
+      "live_url": null
     },
     {
       "order_index": 16,
@@ -458,7 +473,8 @@
         "Cross-architecture transferability analysis"
       ],
       "featured": false,
-      "awards": null
+      "awards": null,
+      "live_url": null
     },
     {
       "order_index": 17,
@@ -486,7 +502,8 @@
         "Price comparison across delivery platforms"
       ],
       "featured": false,
-      "awards": null
+      "awards": null,
+      "live_url": null
     },
     {
       "order_index": 18,
@@ -518,7 +535,8 @@
         "Strict mypy typing and CI on every change"
       ],
       "featured": true,
-      "awards": null
+      "awards": null,
+      "live_url": null
     },
     {
       "order_index": 19,
@@ -549,7 +567,8 @@
         "Real-time Next.js analytics dashboard"
       ],
       "featured": true,
-      "awards": null
+      "awards": null,
+      "live_url": null
     },
     {
       "order_index": 20,
@@ -579,7 +598,8 @@
         "Drill-down from neighbourhood to individual lenders"
       ],
       "featured": false,
-      "awards": null
+      "awards": null,
+      "live_url": null
     },
     {
       "order_index": 21,
@@ -610,7 +630,8 @@
         "Builds for macOS, Windows and Linux"
       ],
       "featured": true,
-      "awards": null
+      "awards": null,
+      "live_url": null
     },
     {
       "order_index": 22,
@@ -638,7 +659,8 @@
         "Written design rationale for every encoding"
       ],
       "featured": false,
-      "awards": null
+      "awards": null,
+      "live_url": "https://raunak-choudhary.github.io/d3-geo-and-network-visualizations/"
     },
     {
       "order_index": 23,
@@ -666,7 +688,8 @@
         "Pre-aggregated extracts for fast in-browser rendering"
       ],
       "featured": false,
-      "awards": null
+      "awards": null,
+      "live_url": "https://raunak-choudhary.github.io/nyc-taxi-mobility-visualization/"
     },
     {
       "order_index": 24,
@@ -697,7 +720,8 @@
         "Traffic camera analysis with YOLOv8"
       ],
       "featured": true,
-      "awards": "First Prize, Code 4 City Hackathon at NYU Tandon, against 42 teams"
+      "awards": "First Prize, Code 4 City Hackathon at NYU Tandon, against 42 teams",
+      "live_url": null
     },
     {
       "order_index": 25,
@@ -729,7 +753,8 @@
         "223 tests with 97% backend coverage"
       ],
       "featured": true,
-      "awards": null
+      "awards": null,
+      "live_url": "https://knaq-iot-triage-web.onrender.com"
     },
     {
       "order_index": 26,
@@ -759,7 +784,8 @@
         "Rewind, edit and replay in a 3D timeline"
       ],
       "featured": false,
-      "awards": null
+      "awards": null,
+      "live_url": null
     },
     {
       "order_index": 27,
@@ -788,7 +814,8 @@
         "Thirty-day reward data cache"
       ],
       "featured": false,
-      "awards": null
+      "awards": null,
+      "live_url": null
     },
     {
       "order_index": 28,
@@ -817,7 +844,8 @@
         "Pure, testable game logic package"
       ],
       "featured": false,
-      "awards": null
+      "awards": null,
+      "live_url": null
     },
     {
       "order_index": 29,
@@ -848,7 +876,8 @@
         "Next.js dashboard for flags and experiments"
       ],
       "featured": true,
-      "awards": null
+      "awards": null,
+      "live_url": "https://rex-platform-iota.vercel.app"
     },
     {
       "order_index": 30,
@@ -879,7 +908,9 @@
         "Streaming ingestion with schema validation"
       ],
       "featured": true,
-      "awards": null
+      "awards": null,
+      "live_url": "https://raunak-choudhary.github.io/tallyproof/"
     }
-  ]
+  ],
+  "live_urls_checked": "2026-11-09: projects 10 to 30 checked from each repository's website field and README; only links that answered HTTP 200 are kept. Offline at check time: Redline Reveal (Cloud Run 500/503), Suicide Squad (both Vercel links 404)."
 }
