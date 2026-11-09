@@ -1,4 +1,10 @@
-# Continuous integration for every pull request and every push to main.
+# Continuous integration, run on demand only.
+#
+# Owner decision 2026-11-09: no automatic runs. The repository is private on
+# GitHub Free, where Actions minutes are capped, and the owner will not pay for
+# CI. Every pull request is verified locally instead (see CLAUDE.md, rule 10)
+# with the same commands this workflow runs. To run it by hand: Actions tab,
+# CI, Run workflow; or `gh workflow run ci.yml --ref <branch>`.
 #
 # Jobs:
 #   tests     unit and module tests (Jest via react-scripts) and tooling tests (node:test)
@@ -15,9 +21,7 @@
 name: CI
 
 on:
-  pull_request:
-  push:
-    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
