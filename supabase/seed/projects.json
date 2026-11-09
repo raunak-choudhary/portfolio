@@ -1,0 +1,885 @@
+{
+  "generated": "2026-11-09",
+  "source": "PROJECT_CATALOG.md with owner corrections; see CLAUDE.md section 2b",
+  "projects": [
+    {
+      "order_index": 1,
+      "existing_title": "ASD (Autism Spectrum Disorder) Model",
+      "title": "Autism Screening Classification Study",
+      "github_urls": [
+        "https://github.com/raunak-choudhary/Verzeo_ML_Internship_2019"
+      ],
+      "team_size": 1,
+      "duration": "Jul–Aug 2019",
+      "project_type": "Machine Learning",
+      "short_description": "A comparative study of four classical classifiers, SVM, KNN, logistic regression and decision trees, for adult autism screening on the UCI dataset. Every model is judged under the same cross-validated evaluation so the comparison is fair.",
+      "detailed_description": "The pipeline cleans missing values, scales numeric fields and one-hot encodes demographics into 94 features before evaluating each model with 10-fold cross-validation, ROC-AUC and F-beta scoring. A GridSearchCV pass tunes the SVM. The analysis also identifies target leakage in the dataset's aggregate score column, which explains the perfect scores some models reach.",
+      "technologies": [
+        "Python",
+        "pandas",
+        "NumPy",
+        "scikit-learn",
+        "Matplotlib",
+        "seaborn",
+        "Jupyter"
+      ],
+      "key_features": [
+        "Four classifiers compared under one evaluation harness",
+        "10-fold cross-validated accuracy, ROC-AUC and F-beta",
+        "Hyperparameter tuning with GridSearchCV",
+        "Target leakage identified and explained"
+      ],
+      "featured": false,
+      "awards": null
+    },
+    {
+      "order_index": 2,
+      "existing_title": "Easylance",
+      "title": "Role-Based Freelancer Hiring Platform",
+      "github_urls": [
+        "https://github.com/raunak-choudhary/Freelancer-Hiring-System-DBMS"
+      ],
+      "team_size": 1,
+      "duration": "Oct–Nov 2019",
+      "project_type": "Full-Stack Web Application",
+      "short_description": "A two-sided freelance job board where companies post listings and freelancers browse and apply, each working from a dashboard built for their role. Accounts, listings and profiles live in a relational MySQL schema.",
+      "detailed_description": "An Express server renders EJS views for two user types routed by a single role flag, with separate signup flows that collect different profile fields. The MySQL schema links every listing and profile back to its login record with cascading foreign keys, so removing an account cleans up everything it owns.",
+      "technologies": [
+        "Node.js",
+        "Express",
+        "EJS",
+        "MySQL",
+        "Bootstrap",
+        "JavaScript"
+      ],
+      "key_features": [
+        "Role-specific dashboards for companies and freelancers",
+        "Separate signup flows per role",
+        "Relational schema with cascading foreign keys",
+        "Session-based authentication"
+      ],
+      "featured": false,
+      "awards": null
+    },
+    {
+      "order_index": 3,
+      "existing_title": "2D Path Finding Game",
+      "title": "OpenGL Maze Navigation Game",
+      "github_urls": [
+        "https://github.com/raunak-choudhary/2D-Path-Finding-Game-OpenGL"
+      ],
+      "team_size": 2,
+      "duration": "Mar–May 2020",
+      "project_type": "Computer Graphics",
+      "short_description": "A countdown-timed maze game in C++ and OpenGL: the player steers through hand-built maze geometry and must reach the exit before time runs out. It includes a full menu, instructions, win and time-over flow.",
+      "detailed_description": "Rendering uses immediate-mode OpenGL through GLUT, with keyboard input moving the player and axis-aligned collision checks against every wall. The game screens are driven by a single state machine, and a clock-based countdown decides between the win and time-over endings.",
+      "technologies": [
+        "C++",
+        "OpenGL",
+        "GLUT",
+        "GLU"
+      ],
+      "key_features": [
+        "Countdown-timed keyboard navigation",
+        "Collision detection against hand-built maze walls",
+        "Menu, instructions, win and time-over screens",
+        "Screen flow driven by a single state machine"
+      ],
+      "featured": false,
+      "awards": null
+    },
+    {
+      "order_index": 4,
+      "existing_title": "Amazon E-commerce Purchase Analysis",
+      "title": "Amazon E-Commerce Purchase Analysis",
+      "github_urls": [
+        "https://github.com/raunak-choudhary/Amazon-Ecommerce-Purchase-Analysis-Data-Science-Internship-2020"
+      ],
+      "team_size": 1,
+      "duration": "Jun–Aug 2020",
+      "project_type": "Data Analysis",
+      "short_description": "Exploratory analysis of 10,000 e-commerce purchase records that answers targeted business questions about who buys, when they buy and how much they spend. Part of a three-project Great Learning data science internship.",
+      "detailed_description": "Each question is answered with concise pandas querying, filtering and aggregation over the purchase table, covering purchase time of day, browser language, occupation, card provider and price bands. The notebook favours precise one-line queries over long scripts, which keeps every answer easy to verify.",
+      "technologies": [
+        "Python",
+        "pandas",
+        "NumPy",
+        "Jupyter"
+      ],
+      "key_features": [
+        "Customer profiling by occupation, language and card provider",
+        "Purchase time and price distribution analysis",
+        "Concise, verifiable pandas queries"
+      ],
+      "featured": false,
+      "awards": null
+    },
+    {
+      "order_index": 5,
+      "existing_title": "Insurance Cost Statistical Analysis",
+      "title": "Insurance Cost Drivers: Statistical Hypothesis Testing",
+      "github_urls": [
+        "https://github.com/raunak-choudhary/Insurance-Cost-Statistical-Analysis-Data-Science-Internship-2020"
+      ],
+      "team_size": 1,
+      "duration": "Jun–Aug 2020",
+      "project_type": "Statistical Analysis",
+      "short_description": "A statistical investigation into what actually drives medical insurance charges, testing smoking status, sex, region and BMI with formal hypothesis tests instead of eyeballed charts. Built on 1,338 policyholder records.",
+      "detailed_description": "The analysis profiles each variable's distribution, skewness and outliers, then applies two-sample t-tests, chi-square tests of independence and one-way ANOVA to decide which differences are statistically real. Visual exploration with seaborn supports each test and shows where charges diverge.",
+      "technologies": [
+        "Python",
+        "pandas",
+        "SciPy",
+        "seaborn",
+        "Matplotlib",
+        "Jupyter"
+      ],
+      "key_features": [
+        "t-test, chi-square and ANOVA hypothesis testing",
+        "Distribution, skewness and outlier analysis",
+        "Visual exploration with seaborn",
+        "Clear accept or reject decision for each hypothesis"
+      ],
+      "featured": false,
+      "awards": null
+    },
+    {
+      "order_index": 6,
+      "existing_title": "LaLiga Statistics Analysis",
+      "title": "La Liga Performance Statistics Analysis",
+      "github_urls": [
+        "https://github.com/raunak-choudhary/LaLiga-Statistics-Analysis-Data-Science-Internship-2020"
+      ],
+      "team_size": 1,
+      "duration": "Jun–Aug 2020",
+      "project_type": "Data Analysis",
+      "short_description": "Cleaning and analysis of historical La Liga club records to rank teams by total points, win rate and long-term top-flight performance. The final project of a three-part Great Learning internship.",
+      "detailed_description": "Raw historical columns arrive as inconsistent text and are converted into clean numeric fields before analysis. Grouped aggregation and derived metrics such as win rate then compare clubs across their entire top-flight history and answer questions about consistency and dominance.",
+      "technologies": [
+        "Python",
+        "pandas",
+        "NumPy",
+        "Jupyter"
+      ],
+      "key_features": [
+        "Cleaning of inconsistent historical records",
+        "Derived win-rate and performance metrics",
+        "Grouped aggregation across club history",
+        "Club rankings by points and win rate"
+      ],
+      "featured": false,
+      "awards": null
+    },
+    {
+      "order_index": 7,
+      "existing_title": "Google App Rating Prediction",
+      "title": "Google Play Store App Rating Prediction",
+      "github_urls": [
+        "https://github.com/raunak-choudhary/Google-App-Rating-Prediction"
+      ],
+      "team_size": 1,
+      "duration": "Dec 2020",
+      "project_type": "Machine Learning",
+      "short_description": "Predicts Google Play Store app ratings from listing metadata such as category, size, installs, price and content rating. 10,841 scraped listings are cleaned into a 96-feature model-ready dataset.",
+      "detailed_description": "The cleaning stage converts sizes, install counts and prices from text into numbers, removes invalid records and encodes categories and genres. Exploratory analysis checks what correlates with rating, and a linear regression baseline shows that listing metadata alone explains little of the variance, a result the analysis reports plainly.",
+      "technologies": [
+        "Python",
+        "pandas",
+        "NumPy",
+        "scikit-learn",
+        "seaborn",
+        "Jupyter"
+      ],
+      "key_features": [
+        "Cleaning and type conversion of scraped listing data",
+        "Exploratory analysis of rating correlates",
+        "Category and genre encoding into 96 features",
+        "Linear regression baseline with R-squared evaluation"
+      ],
+      "featured": false,
+      "awards": null
+    },
+    {
+      "order_index": 8,
+      "existing_title": "Hostel Management System",
+      "title": "Hostel Allocation and Messaging Portal",
+      "github_urls": [
+        "https://github.com/raunak-choudhary/Hostel-Management-System"
+      ],
+      "team_size": 2,
+      "duration": "Dec 2020–Mar 2021",
+      "project_type": "Full-Stack Web Application",
+      "short_description": "A hostel management portal with three roles: students apply for rooms, hostel managers allocate and vacate them, and an admin appoints the managers. An internal messaging system connects all three.",
+      "detailed_description": "The server-rendered PHP application runs on a normalized six-table MySQL schema with foreign keys between students, hostels, rooms, applications and messages. Allocating a room updates the application, the student and the room together, and vacating reverses the same steps.",
+      "technologies": [
+        "PHP",
+        "MySQL",
+        "Bootstrap",
+        "jQuery",
+        "HTML",
+        "CSS"
+      ],
+      "key_features": [
+        "Student, manager and admin role panels",
+        "Room allocation and vacate lifecycle",
+        "Normalized six-table MySQL schema",
+        "Internal messaging between roles"
+      ],
+      "featured": false,
+      "awards": null
+    },
+    {
+      "order_index": 9,
+      "existing_title": "Tapship – Tap to Ship",
+      "title": "Tapship: Farm-to-Consumer Marketplace with Logistics Matching",
+      "github_urls": [
+        "https://github.com/raunak-choudhary/Tapship_Undergrad_Final_Project"
+      ],
+      "team_size": 4,
+      "duration": "Aug 2020–Jun 2021",
+      "project_type": "Full-Stack Web Application",
+      "short_description": "A digital marketplace that connects farmers, buyers and truck drivers. Farmers list crops and accept buyer bids, then drivers bid on the delivery jobs those sales create, cutting out intermediaries end to end.",
+      "detailed_description": "The platform is a role-based PHP web application with separate areas for farmers, customers, drivers and administrators, an API layer, and Python scripts for data processing. Each role sees only the actions it needs, from listing produce to accepting a transport bid.",
+      "technologies": [
+        "PHP",
+        "MySQL",
+        "JavaScript",
+        "Python",
+        "HTML",
+        "CSS"
+      ],
+      "key_features": [
+        "Separate portals for farmers, buyers, drivers and admin",
+        "Bidding on crops and on delivery jobs",
+        "Transport matching for completed sales",
+        "Admin oversight of users and transactions"
+      ],
+      "featured": false,
+      "awards": null
+    },
+    {
+      "order_index": 10,
+      "existing_title": "SynergyPro",
+      "title": "SynergyPro: Real-Time Team Task Management Platform",
+      "github_urls": [
+        "https://github.com/raunak-choudhary/SynergyPro_NYU_SE_Project"
+      ],
+      "team_size": 5,
+      "duration": "Sep–Nov 2024",
+      "project_type": "Full-Stack Web Application",
+      "short_description": "A productivity platform that serves both individual and team work from one account, combining task management with real-time team chat, analytics and a personalised article feed.",
+      "detailed_description": "Built on Django 5 with Django Channels, the platform delivers live team chat over WebSockets backed by Redis. Accounts use two-step verification, tasks support categories, comments and file attachments, and an analytics view tracks progress. The codebase is split by feature into separate model and view modules.",
+      "technologies": [
+        "Python",
+        "Django",
+        "Django Channels",
+        "Redis",
+        "SQLite",
+        "JavaScript"
+      ],
+      "key_features": [
+        "Task management for individuals and teams",
+        "Real-time team chat over WebSockets",
+        "Two-step account verification",
+        "Task analytics and progress tracking",
+        "Personalised article feed"
+      ],
+      "featured": false,
+      "awards": null
+    },
+    {
+      "order_index": 11,
+      "existing_title": "Shark Tank US Data Analysis and Prediction",
+      "title": "Shark Tank Investor Deal Prediction",
+      "github_urls": [
+        "https://github.com/raunak-choudhary/Shark-Tank-US-Investment-Prediction-ML"
+      ],
+      "team_size": 3,
+      "duration": "Sep–Dec 2024",
+      "project_type": "Machine Learning",
+      "short_description": "A machine learning study that predicts, for each of the six Shark Tank investors, whether they will back a pitch and how much they will invest. Trained on 1,365 US pitches with both text and deal terms.",
+      "detailed_description": "Each investor is modelled as an independent prediction problem. Pitch descriptions are turned into OpenAI text embeddings and combined with structured deal terms, while fields that reveal the outcome are removed to prevent leakage. Classifiers and regressors are tuned and compared on a held-out test split.",
+      "technologies": [
+        "Python",
+        "scikit-learn",
+        "XGBoost",
+        "pandas",
+        "OpenAI Embeddings",
+        "Jupyter"
+      ],
+      "key_features": [
+        "Per-investor investment and amount prediction",
+        "Text embeddings combined with structured deal terms",
+        "Leakage-aware feature selection",
+        "Model comparison with tuned ensembles"
+      ],
+      "featured": false,
+      "awards": null
+    },
+    {
+      "order_index": 12,
+      "existing_title": "Roam.AI",
+      "title": "Roam.AI: Time-Aware AI Travel Itinerary Planner",
+      "github_urls": [
+        "https://github.com/raunak-choudhary/Roam.AI"
+      ],
+      "team_size": 4,
+      "duration": "Mar 2025",
+      "project_type": "Hackathon Project",
+      "short_description": "A travel companion that turns a location and an amount of free time into a sequenced, time-aware itinerary on an interactive map, alongside a community feed of places submitted by other travellers.",
+      "detailed_description": "A Flask API asks Claude to generate itineraries sized to the time available and stores places and community content in SQLite. The React frontend renders the plan on Google Maps so each stop can be explored in context.",
+      "technologies": [
+        "Python",
+        "Flask",
+        "React",
+        "Claude API",
+        "Google Maps API",
+        "SQLite"
+      ],
+      "key_features": [
+        "AI-generated itineraries sized to available time",
+        "Interactive Google Maps interface",
+        "Community feed of traveller-submitted places"
+      ],
+      "featured": false,
+      "awards": null
+    },
+    {
+      "order_index": 13,
+      "existing_title": "ResNet-CIFAR10 Image Classifier",
+      "title": "CIFAR-10 Image Classifier Under a 5M Parameter Budget",
+      "github_urls": [
+        "https://github.com/raunak-choudhary/Resnet-CIFAR10-Classifier"
+      ],
+      "team_size": 3,
+      "duration": "Spring 2025",
+      "project_type": "Deep Learning",
+      "short_description": "A custom residual network trained from scratch that reaches 95.60% validation accuracy on CIFAR-10 while staying inside a strict five-million-parameter budget, using 98.4% of it.",
+      "detailed_description": "The architecture combines pre-activation residual blocks, squeeze-and-excitation and CBAM attention, Mish activation and a transformer stage, all implemented by hand. Training adds CutMix, label smoothing and a SAM optimizer over 400 epochs on a GPU cluster, with per-class accuracy reported for every category.",
+      "technologies": [
+        "Python",
+        "PyTorch",
+        "torchvision",
+        "NumPy",
+        "Matplotlib"
+      ],
+      "key_features": [
+        "95.60% validation accuracy on CIFAR-10",
+        "4.97M parameters against a 5M ceiling",
+        "Hand-implemented attention, CutMix and SAM",
+        "Per-class accuracy analysis"
+      ],
+      "featured": false,
+      "awards": null
+    },
+    {
+      "order_index": 14,
+      "existing_title": "RoBERTa-LoRA News Classification",
+      "title": "LoRA Fine-Tuning of RoBERTa for News Classification",
+      "github_urls": [
+        "https://github.com/raunak-choudhary/RoBERTa-LoRA-News-Classification"
+      ],
+      "team_size": 2,
+      "duration": "Apr–May 2025",
+      "project_type": "Deep Learning",
+      "short_description": "Parameter-efficient fine-tuning of RoBERTa for news topic classification: LoRA adapters train only 0.74% of the model's weights yet reach 94.59% test accuracy on AG News.",
+      "detailed_description": "LoRA adapters on the query, key and value projections keep trainable parameters at 925K out of 125M, under a one-million budget that the code checks rather than assumes. Results are reported with accuracy, macro F1 and a confusion matrix on both validation and test sets.",
+      "technologies": [
+        "Python",
+        "PyTorch",
+        "Hugging Face Transformers",
+        "PEFT",
+        "scikit-learn"
+      ],
+      "key_features": [
+        "94.59% test accuracy on AG News",
+        "925K trainable of 125M total parameters",
+        "Parameter budget enforced in code",
+        "Macro F1 and confusion matrix evaluation"
+      ],
+      "featured": false,
+      "awards": null
+    },
+    {
+      "order_index": 15,
+      "existing_title": "CareVault: AI-Powered Healthcare Management Platform",
+      "title": "CareVault: AI Healthcare Management Platform",
+      "github_urls": [
+        "https://github.com/raunak-choudhary/carevault-frontend",
+        "https://github.com/raunak-choudhary/carevault-backend"
+      ],
+      "team_size": 2,
+      "duration": "Mar–May 2025",
+      "project_type": "Full-Stack Web Application",
+      "short_description": "A healthcare management platform that brings medical records, appointments, medications and health metrics into one place, with an AI assistant that answers questions grounded in the user's own documents.",
+      "detailed_description": "A Flask backend on Supabase handles authentication, storage and data, while a retrieval-augmented assistant built on RAGFlow and OpenAI reads uploaded records and images. In a controlled user study the platform beat a commercial product on task time, error rate, usability and cognitive workload.",
+      "technologies": [
+        "React",
+        "Python",
+        "Flask",
+        "Supabase",
+        "PostgreSQL",
+        "OpenAI API",
+        "RAGFlow"
+      ],
+      "key_features": [
+        "AI assistant grounded in the user's medical documents",
+        "Unified records, appointments, medications and metrics",
+        "Image and PDF analysis of uploaded records",
+        "38.7% faster tasks than a commercial product in a user study",
+        "71% fewer errors and an excellent usability score"
+      ],
+      "featured": false,
+      "awards": null
+    },
+    {
+      "order_index": 16,
+      "existing_title": "Adversarial Attacks on ResNet and DenseNet",
+      "title": "Adversarial Attack Transferability on ImageNet Classifiers",
+      "github_urls": [
+        "https://github.com/raunak-choudhary/DeepModel-AdversarialAttacks-ResNet-DenseNet"
+      ],
+      "team_size": 2,
+      "duration": "May 2025",
+      "project_type": "Deep Learning",
+      "short_description": "A robustness study of image classifiers: four adversarial attacks built from scratch drive a pretrained ResNet-34 from 77.4% to 0% top-1 accuracy with changes invisible to the human eye.",
+      "detailed_description": "FGSM, PGD, MI-FGSM and a localized patch attack are implemented without any robustness library and evaluated on 500 ImageNet images at a measured perturbation budget. Transferring the attacks to DenseNet-121 shows that the strongest white-box attack is the weakest once it crosses architectures.",
+      "technologies": [
+        "Python",
+        "PyTorch",
+        "torchvision",
+        "NumPy",
+        "Matplotlib"
+      ],
+      "key_features": [
+        "Four attacks implemented without robustness libraries",
+        "ResNet-34 accuracy reduced from 77.4% to 0%",
+        "Imperceptible perturbations at epsilon 0.02",
+        "Cross-architecture transferability analysis"
+      ],
+      "featured": false,
+      "awards": null
+    },
+    {
+      "order_index": 17,
+      "existing_title": null,
+      "title": "MealPilot: Agentic Grocery Price Comparison",
+      "github_urls": [
+        "https://github.com/raunak-choudhary/Hack_Princeton_MealPilot"
+      ],
+      "team_size": 4,
+      "duration": "Nov 2025",
+      "project_type": "Hackathon Project",
+      "short_description": "An agentic platform that turns a recipe name into a priced shopping basket by building real carts on Instacart and Uber Eats, so the cheapest option is found from live prices.",
+      "detailed_description": "Gemini extracts the ingredient list from a recipe, then Amazon Nova Act browser agents sign in, search and build a cart on each delivery platform. A FastAPI backend coordinates the agents and returns a side-by-side price comparison.",
+      "technologies": [
+        "Python",
+        "FastAPI",
+        "Amazon Nova Act",
+        "Google Gemini",
+        "Supabase",
+        "TypeScript"
+      ],
+      "key_features": [
+        "Recipe-to-ingredient extraction with Gemini",
+        "Browser agents that build real carts",
+        "Price comparison across delivery platforms"
+      ],
+      "featured": false,
+      "awards": null
+    },
+    {
+      "order_index": 18,
+      "existing_title": null,
+      "title": "SlackOps: AI Ticket Orchestration Platform",
+      "github_urls": [
+        "https://github.com/raunak-choudhary/Slackops-ai-ticket-orchestrator"
+      ],
+      "team_size": 4,
+      "duration": "Sep–Dec 2025",
+      "project_type": "AI Platform",
+      "short_description": "A Slack-first operations platform where people make requests in plain language and an AI reasoning layer turns them into validated ticket operations in Jira, with email and chat handled in the same flow.",
+      "detailed_description": "The system is a 21-package Python workspace in which Slack, Gmail, Jira, OpenAI and Gemini each sit behind a swappable interface, so any provider can be replaced without touching the rest. Strict typing, 179 unit, integration and end-to-end tests and CircleCI keep every package independently verifiable.",
+      "technologies": [
+        "Python",
+        "Slack API",
+        "OpenAI API",
+        "Gemini API",
+        "Jira API",
+        "pytest",
+        "CircleCI",
+        "AWS"
+      ],
+      "key_features": [
+        "Natural-language ticket operations from Slack",
+        "Swappable provider interfaces for Slack, Gmail, Jira and AI",
+        "21 independently declared workspace packages",
+        "179 unit, integration and end-to-end tests",
+        "Strict mypy typing and CI on every change"
+      ],
+      "featured": true,
+      "awards": null
+    },
+    {
+      "order_index": 19,
+      "existing_title": null,
+      "title": "Social Pulse: Real-Time NLP on the Bluesky Firehose",
+      "github_urls": [
+        "https://github.com/raunak-choudhary/SocialPulse"
+      ],
+      "team_size": 5,
+      "duration": "Dec 2025",
+      "project_type": "Streaming Data Pipeline",
+      "short_description": "A real-time analytics pipeline that ingests the live Bluesky firehose and surfaces sentiment, trending topics, toxicity, rumors and anomalies on a live dashboard as posts arrive.",
+      "detailed_description": "Posts stream from Bluesky into Kafka and pass through nine independent NLP enrichment stages, each consuming one topic and producing the next, covering sentiment, topics, entities, language, toxicity, rumor and anomaly detection. Results land in MongoDB and are served to a Next.js dashboard.",
+      "technologies": [
+        "Python",
+        "Apache Kafka",
+        "MongoDB",
+        "spaCy",
+        "Hugging Face Transformers",
+        "Next.js",
+        "Docker"
+      ],
+      "key_features": [
+        "Live ingestion of the Bluesky firehose into Kafka",
+        "Nine independent NLP enrichment stages",
+        "Toxicity and rumor detection with transformer models",
+        "Isolation-forest anomaly detection",
+        "Real-time Next.js analytics dashboard"
+      ],
+      "featured": true,
+      "awards": null
+    },
+    {
+      "order_index": 20,
+      "existing_title": null,
+      "title": "Redline Reveal: Voice-Driven Mortgage Discrimination Explorer",
+      "github_urls": [
+        "https://github.com/raunak-choudhary/redline-reveal-gdg-hackathon-2026"
+      ],
+      "team_size": 1,
+      "duration": "Mar 2026",
+      "project_type": "Hackathon Project",
+      "short_description": "A voice-controlled civic journalism tool: ask a spoken question about a New York City neighbourhood and get a live map of real federal mortgage denial data, narrated back with the lenders responsible.",
+      "detailed_description": "Three Gemini agents built with Google ADK split the work of dispatching the question, analysing HMDA mortgage data and investigating individual lenders, with data access exposed through an MCP server and cached in BigQuery. Results render as a choropleth on Google Maps while the agent explains them aloud.",
+      "technologies": [
+        "Python",
+        "FastAPI",
+        "Google ADK",
+        "Gemini",
+        "FastMCP",
+        "BigQuery",
+        "Google Maps API"
+      ],
+      "key_features": [
+        "Spoken questions answered with live choropleth maps",
+        "Multi-agent analysis with Google ADK and Gemini",
+        "Data access through a Model Context Protocol server",
+        "Drill-down from neighbourhood to individual lenders"
+      ],
+      "featured": false,
+      "awards": null
+    },
+    {
+      "order_index": 21,
+      "existing_title": null,
+      "title": "DJ Buddy: Dual-Deck Desktop DJ Application",
+      "github_urls": [
+        "https://github.com/raunak-choudhary/dj-buddy"
+      ],
+      "team_size": 1,
+      "duration": "Apr 2026",
+      "project_type": "Desktop Application",
+      "short_description": "A cross-platform desktop DJ application with two fully independent decks that can be routed to separate audio outputs, so the next track can be cued silently in headphones while the audience hears the mix.",
+      "detailed_description": "Each deck runs on its own isolated audio context with a Tone.js effects chain, and WebAssembly analysis detects BPM and musical key. The Electron app adds waveform views, a track library, scratch simulation driven by tunable physics and typed IPC between processes, across about 10,900 lines of TypeScript.",
+      "technologies": [
+        "Electron",
+        "React",
+        "TypeScript",
+        "Tone.js",
+        "Essentia.js",
+        "WebAssembly",
+        "Zustand"
+      ],
+      "key_features": [
+        "Two isolated decks with separate output routing",
+        "WebAssembly BPM and key detection",
+        "Tone.js effects chain with EQ, filter, reverb and delay",
+        "Physics-based scratch simulation",
+        "Builds for macOS, Windows and Linux"
+      ],
+      "featured": true,
+      "awards": null
+    },
+    {
+      "order_index": 22,
+      "existing_title": null,
+      "title": "D3 Geospatial and Network Visualization Studies",
+      "github_urls": [
+        "https://github.com/raunak-choudhary/d3-geo-and-network-visualizations"
+      ],
+      "team_size": 1,
+      "duration": "Jan–May 2026",
+      "project_type": "Data Visualization",
+      "short_description": "Two D3 visualization studies: one maps 78,849 global earthquakes across space, time, depth and released energy, and the other reveals artist collaboration and genre-bridging networks from Spotify playlists.",
+      "detailed_description": "Each study is a set of interactive D3 charts paired with written analysis that argues for the encoding it chose and names the alternatives it rejected. Together they cover 13 charts and over 7,000 words of design rationale.",
+      "technologies": [
+        "JavaScript",
+        "D3.js",
+        "Observable",
+        "HTML",
+        "CSS"
+      ],
+      "key_features": [
+        "78,849 USGS earthquakes mapped over a decade",
+        "Artist co-occurrence network from Spotify data",
+        "13 interactive charts",
+        "Written design rationale for every encoding"
+      ],
+      "featured": false,
+      "awards": null
+    },
+    {
+      "order_index": 23,
+      "existing_title": null,
+      "title": "NYC Taxi Mobility: Interactive Analysis of 197M Trips",
+      "github_urls": [
+        "https://github.com/raunak-choudhary/nyc-taxi-mobility-visualization"
+      ],
+      "team_size": 3,
+      "duration": "Jan–May 2026",
+      "project_type": "Data Visualization",
+      "short_description": "An interactive analysis of about 197 million New York City yellow taxi trips from 2021 to 2025, testing whether yellow cab service is really one citywide utility.",
+      "detailed_description": "Six linked D3 visualizations examine trips across 260 taxi zones and five boroughs by geography, fare policy and time of week. The conclusion is that yellow cab service behaves as several overlapping systems rather than one, and pre-aggregated extracts keep every view fast in the browser.",
+      "technologies": [
+        "JavaScript",
+        "D3.js",
+        "Observable",
+        "HTML",
+        "CSS"
+      ],
+      "key_features": [
+        "Six interactive D3 visualizations",
+        "197 million trips across 260 taxi zones",
+        "Analysis by geography, fare policy and time of week",
+        "Pre-aggregated extracts for fast in-browser rendering"
+      ],
+      "featured": false,
+      "awards": null
+    },
+    {
+      "order_index": 24,
+      "existing_title": null,
+      "title": "CascadeOS: Multi-Agent Infrastructure Failure Prediction",
+      "github_urls": [
+        "https://github.com/raunak-choudhary/cascadeos"
+      ],
+      "team_size": 1,
+      "duration": "Apr–May 2026",
+      "project_type": "Hackathon Project",
+      "short_description": "An operations dashboard that models New York City's water, transit, health and emergency systems as one graph and predicts how a failure in any part cascades through the rest.",
+      "detailed_description": "Failures propagate across the infrastructure graph with weighted breadth-first traversal, Dijkstra finds reroutes around failed nodes, and betweenness centrality highlights the most critical links. Four domain agents coordinate live alerts, Claude writes situation briefings, and YOLOv8 reads city traffic cameras, all shown on a live map.",
+      "technologies": [
+        "Python",
+        "FastAPI",
+        "NetworkX",
+        "Claude API",
+        "YOLOv8",
+        "React",
+        "deck.gl"
+      ],
+      "key_features": [
+        "Cascading failure prediction over a city-wide graph",
+        "Dijkstra rerouting around failed nodes",
+        "Four coordinated domain agents with live alerts",
+        "AI-written situation briefings",
+        "Traffic camera analysis with YOLOv8"
+      ],
+      "featured": true,
+      "awards": "First Prize, Code 4 City Hackathon at NYU Tandon, against 42 teams"
+    },
+    {
+      "order_index": 25,
+      "existing_title": null,
+      "title": "Knaq: Multi-Tenant IoT Alert Triage Platform",
+      "github_urls": [
+        "https://github.com/raunak-choudhary/knaq-iot-triage"
+      ],
+      "team_size": 1,
+      "duration": "May–Jun 2026",
+      "project_type": "Full-Stack Web Application",
+      "short_description": "An operations platform that ingests raw sensor messages from building equipment such as elevators, escalators and HVAC units, flags problems and guides facility teams from first alert to resolution.",
+      "detailed_description": "Incoming messages are validated and deduplicated, then checked against both fixed thresholds and statistical baselines to catch unusual readings. A server-enforced workflow moves each alert through acknowledgement, assignment and resolution with an append-only audit trail, backed by 223 passing tests and 97% backend coverage.",
+      "technologies": [
+        "Python",
+        "FastAPI",
+        "SQLAlchemy",
+        "Next.js",
+        "React",
+        "TypeScript",
+        "Redux Toolkit",
+        "Docker"
+      ],
+      "key_features": [
+        "Validation and deduplication of raw sensor messages",
+        "Threshold and statistical anomaly detection",
+        "Server-enforced triage from alert to resolution",
+        "Append-only audit trail",
+        "223 tests with 97% backend coverage"
+      ],
+      "featured": true,
+      "awards": null
+    },
+    {
+      "order_index": 26,
+      "existing_title": null,
+      "title": "TimeWarp: Time-Travel Debugger for AI Agent Pipelines",
+      "github_urls": [
+        "https://github.com/raunak-choudhary/timewarp"
+      ],
+      "team_size": 1,
+      "duration": "Jun 2026",
+      "project_type": "Hackathon Project",
+      "short_description": "A debugger for AI agent pipelines that records every step of a LangGraph agent, finds where its behaviour drifted, and lets you rewind, edit the prompt at that point and replay an alternate timeline.",
+      "detailed_description": "Every node execution is stored as a delta-compressed checkpoint and scored for semantic drift with local sentence embeddings. Bellman-Ford over a behaviour graph finds the path of greatest divergence, and a 3D interface lets the user travel along the timeline and branch from any moment.",
+      "technologies": [
+        "Python",
+        "FastAPI",
+        "LangGraph",
+        "Claude API",
+        "Supabase",
+        "pgvector",
+        "Three.js"
+      ],
+      "key_features": [
+        "Checkpoint of every agent step",
+        "Semantic drift scoring with local embeddings",
+        "Divergence path found with Bellman-Ford",
+        "Rewind, edit and replay in a 3D timeline"
+      ],
+      "featured": false,
+      "awards": null
+    },
+    {
+      "order_index": 27,
+      "existing_title": null,
+      "title": "PointsPilot: Credit Card Rewards Optimization Assistant",
+      "github_urls": [
+        "https://github.com/raunak-choudhary/pointspilot-azure"
+      ],
+      "team_size": 1,
+      "duration": "Jun 2026",
+      "project_type": "Hackathon Project",
+      "short_description": "A credit card rewards assistant that reads current reward rates from the live web instead of trusting a model's memory, then ranks the cards in your wallet for each purchase with transparent math.",
+      "detailed_description": "Live search results are extracted into structured card data by Azure OpenAI and cached in Supabase for thirty days. Ranking is done by deterministic TypeScript scoring rather than the model, so the recommendation is explainable and repeatable.",
+      "technologies": [
+        "TypeScript",
+        "Next.js",
+        "React",
+        "Azure OpenAI",
+        "Tavily",
+        "Supabase"
+      ],
+      "key_features": [
+        "Live-web reward rate lookup",
+        "Structured extraction with Azure OpenAI",
+        "Deterministic, explainable card ranking",
+        "Thirty-day reward data cache"
+      ],
+      "featured": false,
+      "awards": null
+    },
+    {
+      "order_index": 28,
+      "existing_title": null,
+      "title": "Suicide Squad: Server-Authoritative Battle Royale on SpacetimeDB",
+      "github_urls": [
+        "https://github.com/raunak-choudhary/suicide_squad"
+      ],
+      "team_size": 3,
+      "duration": "Jun 2026",
+      "project_type": "Hackathon Project",
+      "short_description": "A real-time multiplayer battle royale with no map and no avatar: a single resource is the player's score, currency and combat strength at once, spent in a live market and staked in duels until one player remains.",
+      "detailed_description": "The whole simulation, including the economy, the bots and every battle outcome, runs inside SpacetimeDB as a TypeScript module compiled to WebAssembly, so the server is the single source of truth. Game rules live in a separate pure logic package, and the client is built with React and Phaser.",
+      "technologies": [
+        "TypeScript",
+        "SpacetimeDB",
+        "WebAssembly",
+        "React",
+        "Phaser",
+        "Vite"
+      ],
+      "key_features": [
+        "Server-authoritative simulation inside the database",
+        "Market that reprices every five seconds",
+        "One-versus-one duels each round until one player remains",
+        "Pure, testable game logic package"
+      ],
+      "featured": false,
+      "awards": null
+    },
+    {
+      "order_index": 29,
+      "existing_title": null,
+      "title": "Feature Flag and A/B Experimentation Platform",
+      "github_urls": [
+        "https://github.com/raunak-choudhary/Real-time-Feature-Flag-Experimentation-Platform"
+      ],
+      "team_size": 1,
+      "duration": "Jul 2025–Aug 2026",
+      "project_type": "Backend Platform",
+      "short_description": "A feature flag and experimentation service that pushes configuration changes to connected clients within milliseconds, advances staged rollouts on a schedule and rolls itself back when error rates spike.",
+      "detailed_description": "A Spring Boot backend on PostgreSQL delivers flag updates over WebSockets and runs scheduled rollouts that watch error rates. Experiments use two-proportion significance testing that withholds a verdict until the planned sample size is reached. 381 passing tests, enforced coverage floors and 20 CI jobs guard every change.",
+      "technologies": [
+        "Java",
+        "Spring Boot",
+        "PostgreSQL",
+        "WebSocket",
+        "Next.js",
+        "TypeScript",
+        "Testcontainers"
+      ],
+      "key_features": [
+        "Real-time flag delivery over WebSockets",
+        "Scheduled staged rollouts with automatic rollback",
+        "A/B testing with sample-size-aware significance",
+        "381 tests with enforced coverage floors",
+        "Next.js dashboard for flags and experiments"
+      ],
+      "featured": true,
+      "awards": null
+    },
+    {
+      "order_index": 30,
+      "existing_title": null,
+      "title": "Tallyproof: Tamper-Evident Federal Spending Ledger",
+      "github_urls": [
+        "https://github.com/raunak-choudhary/tallyproof"
+      ],
+      "team_size": 1,
+      "duration": "Oct–Nov 2026",
+      "project_type": "Data Platform",
+      "short_description": "A tamper-evident ledger of real U.S. federal contract spending with an AI analyst that never types a number itself: every figure comes from the ledger and every claim can be proven.",
+      "detailed_description": "Each spending event is hashed into a signed, externally timestamped Merkle log, built on 13 million real federal transactions cleaned with Spark. The analyst answers through guarded SQL, cites the records behind each answer, and the visitor's browser verifies every proof independently.",
+      "technologies": [
+        "Python",
+        "Django",
+        "PostgreSQL",
+        "Redpanda",
+        "PySpark",
+        "TypeScript",
+        "Ed25519"
+      ],
+      "key_features": [
+        "Signed, externally timestamped Merkle log",
+        "AI analyst that cites every record it uses",
+        "Proofs verified in the visitor's browser",
+        "13 million federal transactions cleaned with Spark",
+        "Streaming ingestion with schema validation"
+      ],
+      "featured": true,
+      "awards": null
+    }
+  ]
+}
