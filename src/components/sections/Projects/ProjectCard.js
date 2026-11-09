@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { teamLabel, toHttpsUrl } from './projectFormat';
 
 const ProjectCard = ({ project }) => {
   console.log('🎨 Rendering Optimized ProjectCard:', project?.title);
@@ -8,10 +9,12 @@ const ProjectCard = ({ project }) => {
   const [currentFeatureIndex, setCurrentFeatureIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
 
-  // Handle multiple GitHub URLs from database
-  const githubUrls = Array.isArray(project.github_urls) ? project.github_urls : 
-                    (project.githubUrl ? [project.githubUrl] : 
+  // Repository links, normalised to full https addresses. The address itself
+  // is the visible link text, so visitors see exactly where a link goes.
+  const rawGithubUrls = Array.isArray(project.github_urls) ? project.github_urls :
+                    (project.githubUrl ? [project.githubUrl] :
                     (project.github_url ? [project.github_url] : []));
+  const githubUrls = rawGithubUrls.map(toHttpsUrl).filter(Boolean);
 
   // Handle multiple images
   const imageUrls = Array.isArray(project.image_urls) ? project.image_urls : 
@@ -228,12 +231,20 @@ const ProjectCard = ({ project }) => {
               <div className="title-underline"></div>
             </div>
 
+            {/* Award: shown only when the project has one */}
+            {project.awards && (
+              <div className="project-award">
+                <span className="project-award-icon" aria-hidden="true">🏆</span>
+                <span className="project-award-text">{project.awards}</span>
+              </div>
+            )}
+
             {/* Project Meta - Compact Grid */}
             <div className="meta-section">
               <div className="meta-row">
                 <div className="meta-item">
                   <span className="meta-label">Team</span>
-                  <span className="meta-value">{project.team_size || '1'} member{project.team_size > 1 ? 's' : ''}</span>
+                  <span className="meta-value">{teamLabel(project.team_size)}</span>
                 </div>
                 <div className="meta-item">
                   <span className="meta-label">Duration</span>
@@ -414,13 +425,12 @@ const ProjectCard = ({ project }) => {
                   href={url} 
                   target="_blank" 
                   rel="noopener noreferrer" 
-                  className="action-btn github-btn"
+                  className="action-btn github-btn github-url-btn"
+                  aria-label={`Open repository ${url} in a new tab`}
                   onClick={(e) => e.stopPropagation()}
                 >
                   <span className="btn-icon">📂</span> &nbsp;&nbsp;
-                  <span className="btn-text">
-                    GitHub{githubUrls.length > 1 ? ` ${index + 1}` : ''}
-                  </span>
+                  <span className="btn-text github-url-text">{url}</span>
                 </a>
               ))}
 
