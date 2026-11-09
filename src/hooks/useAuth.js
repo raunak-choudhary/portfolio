@@ -2,18 +2,33 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import {
+  getAssuranceState,
   requestAdminLoginOtp,
   signOutAdmin,
   verifyAdminSession
 } from '../services/authService';
 import { supabase } from '../services/supabaseClient';
 
+/**
+ * Where the session stands in the two-step login. `checked` is false until
+ * the first read completes, so protected routes can wait instead of guessing.
+ */
+const initialAssurance = {
+  currentLevel: 'aal1',
+  nextLevel: 'aal1',
+  hasVerifiedFactor: false,
+  needsSecondFactor: false,
+  needsEnrollment: false,
+  checked: false
+};
+
 const initialAuthState = {
   user: null,
   isAuthenticated: false,
   isLoading: true,
   error: null,
-  sessionChecked: false
+  sessionChecked: false,
+  assurance: initialAssurance
 };
 
 export const useAuth = () => {
@@ -37,8 +52,16 @@ export const useAuth = () => {
       isAuthenticated: false,
       isLoading: false,
       error,
-      sessionChecked: true
+      sessionChecked: true,
+      assurance: initialAssurance
     });
+  }, []);
+
+  /** Re-reads the factor and level state, for example after an enrolment or a code step. */
+  const refreshAssurance = useCallback(async () => {
+    const assurance = await getAssuranceState();
+    setAuthState(prev => ({ ...prev, assurance }));
+    return assurance;
   }, []);
 
   const refreshSession = useCallback(async () => {
@@ -52,12 +75,14 @@ export const useAuth = () => {
         return;
       }
 
+      const assurance = await getAssuranceState();
       setAuthState({
         user: admin.data.user,
         isAuthenticated: true,
         isLoading: false,
         error: null,
-        sessionChecked: true
+        sessionChecked: true,
+        assurance
       });
     } catch (error) {
       setSignedOut({
@@ -135,9 +160,11 @@ export const useAuth = () => {
     isSigningIn: loadingStates.signIn,
     isSigningOut: loadingStates.signOut,
     isVerifyingSession: loadingStates.sessionVerification,
+    assurance: authState.assurance,
     signIn,
     signOut,
     refreshSession,
+    refreshAssurance,
     clearError,
     hasAdminRole: () => hasAdminRole,
     requireAuth,

@@ -1,7 +1,7 @@
 // src/Router.js - public portfolio router
 
 import React from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import Header from './components/common/Header';
 import Footer from './components/common/Footer';
 import LoadingSpinner from './components/common/LoadingSpinner';
@@ -19,13 +19,24 @@ import RecommendationsPage from './pages/RecommendationsPage';
 import AchievementsPage from './pages/AchievementsPage';
 import LeadershipPage from './pages/LeadershipPage';
 import AdminLogin from './components/admin/AdminLogin/AdminLogin';
-import AdminDashboard from './components/admin/AdminDashboard/AdminDashboard';
+import MfaCodeStep from './components/admin/AdminLogin/MfaCodeStep';
+import AdminWelcome from './components/admin/AdminWelcome/AdminWelcome';
 import AdminSignOut from './components/admin/AdminSignOut/AdminSignOut';
 
-const ProtectedAdminRoute = ({ children }) => {
-  const { isAuthenticated, isLoading, sessionChecked } = useAuthContext();
+/** Admin pages are full-screen experiences: no site header or footer, as in the 2025 build. */
+const isAdminPath = (pathname) => /^\/admin(login|dashboard|signout)(\/|$)/.test(pathname);
 
-  if (isLoading || !sessionChecked) {
+/**
+ * Gate for the dashboard. In order: wait for the session and factor state;
+ * no session goes to the login page; a session that has not passed the
+ * authenticator code sees only the code step; everything else enters through
+ * the welcome animation. With no authenticator enrolled yet, the dashboard
+ * opens on the Security screen alone until the first one is confirmed.
+ */
+const ProtectedAdminRoute = () => {
+  const { assurance, isAuthenticated, isLoading, sessionChecked } = useAuthContext();
+
+  if (isLoading || !sessionChecked || (isAuthenticated && !assurance.checked)) {
     return (
       <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center' }}>
         <LoadingSpinner />
@@ -39,7 +50,11 @@ const ProtectedAdminRoute = ({ children }) => {
     return <Navigate to="/adminlogin" replace state={{ authError: readAuthErrorFromUrl(window.location.hash) }} />;
   }
 
-  return children;
+  if (assurance.needsSecondFactor) {
+    return <MfaCodeStep />;
+  }
+
+  return <AdminWelcome requireSecurityEnrollment={assurance.needsEnrollment} />;
 };
 
 const NotFound = () => (
@@ -63,10 +78,13 @@ const NotFound = () => (
   </div>
 );
 
-const AppRouter = () => (
-  <AuthProvider>
+const AppShell = () => {
+  const { pathname } = useLocation();
+  const adminPage = isAdminPath(pathname);
+
+  return (
     <div className="app-layout">
-      <Header />
+      {!adminPage && <Header />}
       <main className="main-content">
         <Routes>
           <Route path="/" element={<Navigate to="/home" replace />} />
@@ -81,20 +99,19 @@ const AppRouter = () => (
           <Route path="/achievements" element={<AchievementsPage />} />
           <Route path="/leadership" element={<LeadershipPage />} />
           <Route path="/adminlogin" element={<AdminLogin />} />
-          <Route
-            path="/admindashboard"
-            element={(
-              <ProtectedAdminRoute>
-                <AdminDashboard />
-              </ProtectedAdminRoute>
-            )}
-          />
+          <Route path="/admindashboard" element={<ProtectedAdminRoute />} />
           <Route path="/adminsignout" element={<AdminSignOut />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
-      <Footer />
+      {!adminPage && <Footer />}
     </div>
+  );
+};
+
+const AppRouter = () => (
+  <AuthProvider>
+    <AppShell />
   </AuthProvider>
 );
 

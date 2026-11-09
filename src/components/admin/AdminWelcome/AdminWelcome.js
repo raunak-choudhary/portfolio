@@ -4,7 +4,12 @@ import React, { useState, useEffect } from 'react';
 import AdminDashboard from '../AdminDashboard/AdminDashboard';
 import './AdminWelcome.css';
 
-const AdminWelcome = () => {
+/**
+ * Entry animation from 2025 (developer scene, then loading bar), followed by
+ * the dashboard. `requireSecurityEnrollment` is handed to the dashboard so a
+ * session without an authenticator sees only the Security screen.
+ */
+const AdminWelcome = ({ requireSecurityEnrollment = false }) => {
   
   // Animation sequence states
   const [currentScene, setCurrentScene] = useState('developer'); // developer -> loading -> dashboard
@@ -78,7 +83,7 @@ const AdminWelcome = () => {
 
   // Scene 3: Show final dashboard
   if (currentScene === 'dashboard') {
-    return <AdminDashboard />;
+    return <AdminDashboard requireSecurityEnrollment={requireSecurityEnrollment} />;
   }
 
   return (
