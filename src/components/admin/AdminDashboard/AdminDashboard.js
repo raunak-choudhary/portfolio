@@ -1,7 +1,6 @@
 // src/components/admin/AdminDashboard/AdminDashboard.js - PRODUCTION VERSION
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '../../../hooks/useAuth';
 import { getPortfolioStats } from '../../../services/dataService';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import ThemeToggle from '../../common/ThemeToggle';
@@ -31,7 +30,6 @@ import MediaUpload from '../MediaUpload/MediaUpload';
  *   back until the first authenticator is confirmed.
  */
 const AdminDashboard = ({ requireSecurityEnrollment = false }) => {
-  const { signOut } = useAuth();
   
   // Core dashboard state
   const [activeSection, setActiveSection] = useState(requireSecurityEnrollment ? 'security' : 'dashboard');
@@ -251,14 +249,12 @@ const AdminDashboard = ({ requireSecurityEnrollment = false }) => {
     }
     
     setHasUnsavedChanges(false);
-    
-    try {
-      await signOut();
-      window.location.href = '/adminlogin';
-    } catch (error) {
-      console.error('Error during sign out:', error);
-      window.location.href = '/adminlogin';
-    }
+
+    // The farewell page (2025 design) ends the Supabase session itself on
+    // mount and returns to the login page when its animation finishes.
+    // Signing out here first would drop the session before the page could
+    // load, and the protected route would bounce straight to the login.
+    window.location.assign('/adminsignout');
   };
 
   // Enhanced go back functionality
