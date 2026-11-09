@@ -105,7 +105,7 @@
       "Next.js dashboard for flags and experiments"
     ],
     "learnings": null,
-    "live_url": null,
+    "live_url": "https://rex-platform-iota.vercel.app",
     "order_index": 29,
     "project_number": null,
     "project_type": "Backend Platform",
@@ -122,7 +122,7 @@
       "Testcontainers"
     ],
     "title": "Feature Flag and A/B Experimentation Platform",
-    "updated_at": "2026-11-09T19:11:21.204377"
+    "updated_at": "2026-11-09T19:29:45.181375"
   },
   {
     "awards": null,
@@ -305,7 +305,7 @@
       "Pre-aggregated extracts for fast in-browser rendering"
     ],
     "learnings": null,
-    "live_url": null,
+    "live_url": "https://raunak-choudhary.github.io/nyc-taxi-mobility-visualization/",
     "order_index": 23,
     "project_number": null,
     "project_type": "Data Visualization",
@@ -320,7 +320,7 @@
       "CSS"
     ],
     "title": "NYC Taxi Mobility: Interactive Analysis of 197M Trips",
-    "updated_at": "2026-11-09T19:11:21.204377"
+    "updated_at": "2026-11-09T19:29:45.181375"
   },
   {
     "awards": null,
@@ -763,7 +763,7 @@
       "Written design rationale for every encoding"
     ],
     "learnings": null,
-    "live_url": null,
+    "live_url": "https://raunak-choudhary.github.io/d3-geo-and-network-visualizations/",
     "order_index": 22,
     "project_number": null,
     "project_type": "Data Visualization",
@@ -778,7 +778,7 @@
       "CSS"
     ],
     "title": "D3 Geospatial and Network Visualization Studies",
-    "updated_at": "2026-11-09T19:11:21.204377"
+    "updated_at": "2026-11-09T19:29:45.181375"
   },
   {
     "awards": null,
@@ -964,7 +964,7 @@
       "Streaming ingestion with schema validation"
     ],
     "learnings": null,
-    "live_url": null,
+    "live_url": "https://raunak-choudhary.github.io/tallyproof/",
     "order_index": 30,
     "project_number": null,
     "project_type": "Data Platform",
@@ -981,7 +981,7 @@
       "Ed25519"
     ],
     "title": "Tallyproof: Tamper-Evident Federal Spending Ledger",
-    "updated_at": "2026-11-09T19:11:21.204377"
+    "updated_at": "2026-11-09T19:29:45.181375"
   },
   {
     "awards": null,
@@ -1078,7 +1078,7 @@
       "223 tests with 97% backend coverage"
     ],
     "learnings": null,
-    "live_url": null,
+    "live_url": "https://knaq-iot-triage-web.onrender.com",
     "order_index": 25,
     "project_number": null,
     "project_type": "Full-Stack Web Application",
@@ -1096,7 +1096,7 @@
       "Docker"
     ],
     "title": "Knaq: Multi-Tenant IoT Alert Triage Platform",
-    "updated_at": "2026-11-09T19:11:21.204377"
+    "updated_at": "2026-11-09T19:29:45.181375"
   },
   {
     "awards": null,
