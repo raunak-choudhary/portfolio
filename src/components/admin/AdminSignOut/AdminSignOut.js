@@ -74,6 +74,15 @@ const AdminSignOut = () => {
     signOutAdmin();
   }, []);
 
+  // Pace of the farewell. Owner decision 2026-11-09: every language and the
+  // floating scene stay, but the whole page must finish within 20 seconds.
+  // Seven messages of about 115 characters in total give roughly 16 seconds
+  // with these values.
+  const LANGUAGE_START_DELAY_MS = 500;
+  const TYPE_INTERVAL_MS = 50;
+  const LANGUAGE_PAUSE_MS = 700;
+  const FLOATING_SCENE_MS = 2000;
+
   // Scene 1: Developer typing animation + typewriter effect
   useEffect(() => {
     if (animationPhase === 'typing') {
@@ -110,14 +119,14 @@ const AdminSignOut = () => {
                   }
 
                   navigate('/adminlogin', { replace: true });
-                }, 3000);
+                }, FLOATING_SCENE_MS);
               }
-            }, 1500);
+            }, LANGUAGE_PAUSE_MS);
           }
-        }, 120);
+        }, TYPE_INTERVAL_MS);
 
         return () => clearInterval(typeInterval);
-      }, 2000);
+      }, LANGUAGE_START_DELAY_MS);
 
       return () => clearTimeout(typingDelay);
     }
@@ -266,7 +275,7 @@ const AdminSignOut = () => {
             🔒 Session securely terminated
           </p>
           <p className="redirect-info">
-            Automatic redirect in {animationPhase === 'floating' ? '3' : '...'} seconds
+            Automatic redirect in {animationPhase === 'floating' ? String(FLOATING_SCENE_MS / 1000) : '...'} seconds
           </p>
           <p className="encryption-note">
             🔐 Redirecting to encrypted login route
