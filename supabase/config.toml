@@ -424,3 +424,7 @@ s3_secret_key = "env(S3_SECRET_KEY)"
 # the gateway could verify. See supabase/functions/send-contact-email/index.ts.
 [functions.send-contact-email]
 verify_jwt = false
+
+# Same access model as send-contact-email: the login page sends the publishable key.
+[functions.admin-login-alert]
+verify_jwt = false
