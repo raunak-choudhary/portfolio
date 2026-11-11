@@ -997,10 +997,29 @@
   animation: fadeIn 0.5s ease-out;
 }
 
-/* Buttons show ButtonSpinner (one em, inline) while they work; the text beside it stays put. */
+/* Buttons show ButtonSpinner (one em, inline) while they work. Both states share one line box
+   (the emoji icon and the spinner sit in spans with the same line-height), so the button keeps its
+   height and nothing below it moves. */
 .login-button,
 .resend-button {
   white-space: nowrap;
+}
+
+.login-button > span,
+.resend-button > span,
+.login-button .button-spinner,
+.resend-button .button-spinner {
+  line-height: 1.5;
+}
+
+/* The emoji icon is larger than the text; keep it from stretching the line box so the busy state
+   (spinner) and the idle state (icon) measure the same. */
+.login-button .button-icon {
+  display: inline-flex;
+  align-items: center;
+  height: 1em;
+  line-height: 1;
+  overflow: visible;
 }
 
 .login-button .button-spinner,
