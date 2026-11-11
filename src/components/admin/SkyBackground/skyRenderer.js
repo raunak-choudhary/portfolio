@@ -87,6 +87,7 @@ export function createSkyRenderer({ skyCanvas, liveCanvas, figures, assetBase, d
   let tiles = [], clouds = [], bgStars = [];
   const start = Date.now();
   let liveSunImage = null, liveSunStamp = 0, liveSunTimer = null;
+  let lastNow = 0;   // the animation clock, kept monotonic (see frame)
 
   // ---- images ------------------------------------------------------------
   const images = new Map();   // figure id -> HTMLImageElement once loaded
@@ -191,7 +192,7 @@ export function createSkyRenderer({ skyCanvas, liveCanvas, figures, assetBase, d
         if (now <= f.next) continue;
         f.born = now; f.life = 1200 + srnd() * 2000; f.r = srnd() * 0.8; f.a = srnd() * TAU; f.size = 0.05 + srnd() * 0.09; f.next = now + f.life + 1500 + srnd() * 5000;
       }
-      const t = (now - f.born) / f.life, env = Math.sin(Math.PI * Math.min(1, t)) ** 1.5;
+      const t = Math.min(1, Math.max(0, (now - f.born) / f.life)), env = Math.sin(Math.PI * t) ** 1.5;
       const fx = Math.cos(f.a) * f.r * R, fy = Math.sin(f.a) * f.r * R, fr = R * f.size * (0.6 + 0.4 * env);
       const g = ctx.createRadialGradient(fx, fy, 0, fx, fy, fr);
       g.addColorStop(0, `rgba(255,250,220,${0.9 * env})`); g.addColorStop(0.4, `rgba(255,200,110,${0.5 * env})`); g.addColorStop(1, 'rgba(255,160,60,0)');
@@ -225,7 +226,7 @@ export function createSkyRenderer({ skyCanvas, liveCanvas, figures, assetBase, d
       lastEject = now;
     }
     for (let i = ejecta.length - 1; i >= 0; i--) {
-      const e = ejecta[i], t = (now - e.born) / e.life;
+      const e = ejecta[i], t = Math.max(0, (now - e.born) / e.life);
       if (t >= 1) { ejecta.splice(i, 1); continue; }
       const r = R * (1.05 + e.speed * t * 1.6), ex = Math.cos(e.a) * r, ey = Math.sin(e.a) * r, er = R * 0.07 * (1 + t * 1.5);
       const g = ctx.createRadialGradient(ex, ey, 0, ex, ey, er);
@@ -325,8 +326,11 @@ export function createSkyRenderer({ skyCanvas, liveCanvas, figures, assetBase, d
       if (relayoutNeeded) relayout();
     },
     /** Paint one frame of the live layer. `now` is the animation clock in ms. */
-    frame(now) {
+    frame(rawNow) {
       if (!ctx || !W || !H) return;
+      // A frame timestamp can sit a few ms before a performance.now() read earlier in the same frame; never let time run backwards.
+      const now = Number.isFinite(rawNow) ? Math.max(lastNow, rawNow) : lastNow;
+      lastNow = now;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
       const { cx, cy, R } = lampPosition(W);
       if (theme === 'light') drawSun(cx, cy, R, now); else drawMoon(cx, cy, R, now);

@@ -46,6 +46,8 @@ export function fakeContext(calls = []) {
       if (prop === 'measureText') return (text) => ({ width: String(text).length * 6 });
       if (prop === 'getImageData') return () => ({ data: new Uint8ClampedArray(4) });
       return (...args) => {
+        // a real CanvasRenderingContext2D throws on NaN or Infinity; so does this stand-in
+        for (const arg of args) if (typeof arg === 'number' && !Number.isFinite(arg)) throw new TypeError(`${String(prop)} received a non-finite value`);
         calls.push([prop, args]);
         return String(prop).startsWith('create') ? { addColorStop() {} } : undefined;
       };
