@@ -6,6 +6,8 @@ import LoadingSpinner from '../../common/LoadingSpinner';
 import SkyBackground from '../SkyBackground/SkyBackground';
 import SkyControls from '../SkyBackground/SkyControls';
 import { SkySettingsProvider, useSkySettings } from '../SkyBackground/SkySettingsContext';
+import HeaderMenu from './HeaderMenu';
+import useMediaQuery, { PHONE_QUERY } from '../../../hooks/useMediaQuery';
 import logoImage from '../../../assets/images/logo.png';
 import analyticsService from '../../../services/analyticsService';
 import './AdminDashboard.css';
@@ -36,6 +38,8 @@ import MediaUpload from '../MediaUpload/MediaUpload';
 const AdminDashboardView = ({ requireSecurityEnrollment = false }) => {
   // The zodiac sky behind everything; "panels" off fades the body so the sky can be shown whole.
   const { settings: skySettings } = useSkySettings();
+  // Phones get the header actions behind one menu button; wider screens keep the buttons in the bar.
+  const isPhone = useMediaQuery(PHONE_QUERY);
   
   // Core dashboard state
   const [activeSection, setActiveSection] = useState(requireSecurityEnrollment ? 'security' : 'dashboard');
@@ -873,49 +877,68 @@ const AdminDashboardView = ({ requireSecurityEnrollment = false }) => {
         <div className="header-right">
           <div className="header-actions">
             <SkyControls />
-            <button 
-              className="preview-btn"
-              onClick={togglePreview}
-              title="Preview Portfolio (Ctrl/Cmd + P)"
-            >
-              <span className="btn-icon">👁️</span>
-              Preview
-            </button>
-            <button 
-              className="refresh-btn"
-              onClick={refreshSection}
-              title="Refresh Section"
-              disabled={sectionLoading}
-            >
-              <span className="btn-icon">🔄</span>
-              {sectionLoading && activeSection !== 'dashboard' ? 'Loading...' : 'Refresh'}
-            </button>
-            {hasUnsavedChanges && (
-              <button 
-                className="save-btn"
-                onClick={handleQuickSave}
-                title="Quick Save (Ctrl/Cmd + S)"
-              >
-                <span className="btn-icon">💾</span>
-                Save
-              </button>
+            {isPhone ? (
+              <HeaderMenu
+                items={[
+                  { id: 'preview', label: 'Preview portfolio', icon: '👁️', onSelect: togglePreview },
+                  { id: 'refresh', label: sectionLoading && activeSection !== 'dashboard' ? 'Loading…' : 'Refresh section', icon: '🔄', onSelect: refreshSection, disabled: sectionLoading },
+                  ...(hasUnsavedChanges ? [{ id: 'save', label: 'Save changes', icon: '💾', onSelect: handleQuickSave, tone: 'accent' }] : []),
+                  { id: 'signout', label: 'Sign out', icon: '🚪', onSelect: handleSignOut, tone: 'danger' },
+                ]}
+              />
+            ) : (
+              <>
+                <button 
+                  className="preview-btn"
+                  onClick={togglePreview}
+                  title="Preview Portfolio (Ctrl/Cmd + P)"
+                  aria-label="Preview portfolio"
+                >
+                  <span className="btn-icon">👁️</span>
+                  <span className="btn-label">Preview</span>
+                </button>
+                <button 
+                  className="refresh-btn"
+                  onClick={refreshSection}
+                  title="Refresh Section"
+                  aria-label="Refresh section"
+                  disabled={sectionLoading}
+                >
+                  <span className="btn-icon">🔄</span>
+                  <span className="btn-label">{sectionLoading && activeSection !== 'dashboard' ? 'Loading...' : 'Refresh'}</span>
+                </button>
+                {hasUnsavedChanges && (
+                  <button 
+                    className="save-btn"
+                    onClick={handleQuickSave}
+                    title="Quick Save (Ctrl/Cmd + S)"
+                    aria-label="Save changes"
+                  >
+                    <span className="btn-icon">💾</span>
+                    <span className="btn-label">Save</span>
+                  </button>
+                )}
+              </>
             )}
           </div>
           
-          <div className="admin-profile">
-            <div className="profile-info">
-              <span className="profile-name">RC</span>
-              <span className="profile-role">Administrator</span>
+          {!isPhone && (
+            <div className="admin-profile">
+              <div className="profile-info">
+                <span className="profile-name">RC</span>
+                <span className="profile-role">Administrator</span>
+              </div>
+              <button 
+                className="signout-btn"
+                onClick={handleSignOut}
+                title="Sign Out"
+                aria-label="Sign out"
+              >
+                <span className="btn-icon">🚪</span>
+                <span className="btn-label">Sign Out</span>
+              </button>
             </div>
-            <button 
-              className="signout-btn"
-              onClick={handleSignOut}
-              title="Sign Out"
-            >
-              <span className="btn-icon">🚪</span>
-              Sign Out
-            </button>
-          </div>
+          )}
         </div>
       </header>
 
