@@ -13,20 +13,17 @@ export const useTheme = () => {
 };
 
 export const ThemeProvider = ({ children }) => {
-  // Default to dark theme as per requirements
-  const [theme, setTheme] = useState('dark');
-
-  // Initialize theme from localStorage or default to dark
-  useEffect(() => {
-    const savedTheme = localStorage.getItem('portfolio-theme');
-    if (savedTheme && (savedTheme === 'light' || savedTheme === 'dark')) {
-      setTheme(savedTheme);
-    } else {
-      // Set default to dark theme
-      setTheme('dark');
-      localStorage.setItem('portfolio-theme', 'dark');
+  // The saved preference is read when the state is created (not in a mount
+  // effect) so the first paint already has the right theme and nothing set by
+  // a child provider, such as the admin sky's day and night switch, is overridden.
+  const [theme, setTheme] = useState(() => {
+    try {
+      const savedTheme = localStorage.getItem('portfolio-theme');
+      return savedTheme === 'light' || savedTheme === 'dark' ? savedTheme : 'dark';
+    } catch {
+      return 'dark';
     }
-  }, []);
+  });
 
   // Apply theme to document
   useEffect(() => {

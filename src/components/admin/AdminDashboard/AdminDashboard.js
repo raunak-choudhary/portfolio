@@ -3,7 +3,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { getPortfolioStats } from '../../../services/dataService';
 import LoadingSpinner from '../../common/LoadingSpinner';
-import ThemeToggle from '../../common/ThemeToggle';
+import SkyBackground from '../SkyBackground/SkyBackground';
+import SkyControls from '../SkyBackground/SkyControls';
+import { SkySettingsProvider, useSkySettings } from '../SkyBackground/SkySettingsContext';
 import logoImage from '../../../assets/images/logo.png';
 import analyticsService from '../../../services/analyticsService';
 import './AdminDashboard.css';
@@ -30,7 +32,9 @@ import MediaUpload from '../MediaUpload/MediaUpload';
  *   enrolled: the sidebar shows only Security and every other section is held
  *   back until the first authenticator is confirmed.
  */
-const AdminDashboard = ({ requireSecurityEnrollment = false }) => {
+const AdminDashboardView = ({ requireSecurityEnrollment = false }) => {
+  // The zodiac sky behind everything; "panels" off fades the body so the sky can be shown whole.
+  const { settings: skySettings } = useSkySettings();
   
   // Core dashboard state
   const [activeSection, setActiveSection] = useState(requireSecurityEnrollment ? 'security' : 'dashboard');
@@ -810,7 +814,8 @@ const AdminDashboard = ({ requireSecurityEnrollment = false }) => {
 
   // Main render
   return (
-    <div className="admin-dashboard">
+    <div className={`admin-dashboard${skySettings.panels ? '' : ' sky-only'}`}>
+      <SkyBackground />
       <header className="admin-header">
         <div className="header-left">
           <button className="sidebar-toggle-btn" onClick={() => {
@@ -862,7 +867,7 @@ const AdminDashboard = ({ requireSecurityEnrollment = false }) => {
 
         <div className="header-right">
           <div className="header-actions">
-            <ThemeToggle />
+            <SkyControls />
             <button 
               className="preview-btn"
               onClick={togglePreview}
@@ -1043,5 +1048,12 @@ const AdminDashboard = ({ requireSecurityEnrollment = false }) => {
     </div>
   );
 };
+
+/** The dashboard with its sky settings; the provider also drives the day and night theme from the New York clock. */
+const AdminDashboard = (props) => (
+  <SkySettingsProvider>
+    <AdminDashboardView {...props} />
+  </SkySettingsProvider>
+);
 
 export default AdminDashboard;
