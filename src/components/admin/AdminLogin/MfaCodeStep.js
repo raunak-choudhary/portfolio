@@ -14,7 +14,7 @@ import {
   sanitizeCodeInput,
   verifyTotpChallenge
 } from '../../../services/authService';
-import LoadingSpinner from '../../common/LoadingSpinner';
+import ButtonSpinner from '../../common/ButtonSpinner';
 import './AdminLogin.css';
 
 const MfaCodeStep = () => {
@@ -183,7 +183,7 @@ const MfaCodeStep = () => {
             >
               {isVerifying ? (
                 <>
-                  <LoadingSpinner size="small" />
+                  <ButtonSpinner />
                   <span>Verifying...</span>
                 </>
               ) : (

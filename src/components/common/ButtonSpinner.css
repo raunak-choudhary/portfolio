@@ -1,0 +1,24 @@
+/* src/components/common/ButtonSpinner.css */
+
+.button-spinner {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  flex: none;
+  box-sizing: border-box;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  vertical-align: -0.15em;
+  animation: button-spinner-turn 0.8s linear infinite;
+}
+
+@keyframes button-spinner-turn {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button-spinner {
+    animation-duration: 1.6s;
+  }
+}

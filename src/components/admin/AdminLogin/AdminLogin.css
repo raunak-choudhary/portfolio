@@ -997,26 +997,15 @@
   animation: fadeIn 0.5s ease-out;
 }
 
-/* ================================================= */
-/* Loading Spinner Integration                       */
-/* ================================================= */
-
-.admin-login-page .loading-spinner {
-  border-color: rgba(255, 255, 255, 0.3);
-  border-top-color: rgba(255, 255, 255, 0.9);
-  width: 20px;
-  height: 20px;
+/* Buttons show ButtonSpinner (one em, inline) while they work; the text beside it stays put. */
+.login-button,
+.resend-button {
+  white-space: nowrap;
 }
 
-.admin-login-page .loading-spinner-container {
-  background: none;
-  border: none;
-  padding: 0;
-}
-
-.admin-login-page .loading-message {
-  color: rgba(255, 102, 204, 0.8);
-  font-size: var(--text-sm);
+.login-button .button-spinner,
+.resend-button .button-spinner {
+  margin-right: 0.35em;
 }
 
 /* ================================================= */
