@@ -280,32 +280,6 @@ const AdminDashboardView = ({ requireSecurityEnrollment = false }) => {
   };
 
   // Enhanced refresh section functionality
-  const refreshSection = async () => {
-    setSectionLoading(true);
-    try {
-      if (activeSection === 'dashboard') {
-        const [stats, health] = await Promise.all([
-          getPortfolioStats(),
-          analyticsService.getPortfolioHealth()
-        ]);
-        setPortfolioStats(stats);
-        markDashboardReady();
-        setPortfolioHealth(health);
-        setLastUpdated(new Date().toLocaleString());
-        setSectionStates(prev => ({
-          ...prev,
-          dashboard: { ...prev.dashboard, data: { stats, health }, loaded: true }
-        }));
-      } else {
-        await loadSectionData(activeSection);
-      }
-    } catch (error) {
-      console.error(`Error refreshing section ${activeSection}:`, error);
-    } finally {
-      setSectionLoading(false);
-    }
-  };
-
   // Return to dashboard handler
   const returnToDashboard = () => {
     handleSectionChange('dashboard');
@@ -881,7 +855,6 @@ const AdminDashboardView = ({ requireSecurityEnrollment = false }) => {
               <HeaderMenu
                 items={[
                   { id: 'preview', label: 'Preview portfolio', icon: '👁️', onSelect: togglePreview },
-                  { id: 'refresh', label: sectionLoading && activeSection !== 'dashboard' ? 'Loading…' : 'Refresh section', icon: '🔄', onSelect: refreshSection, disabled: sectionLoading },
                   ...(hasUnsavedChanges ? [{ id: 'save', label: 'Save changes', icon: '💾', onSelect: handleQuickSave, tone: 'accent' }] : []),
                   { id: 'signout', label: 'Sign out', icon: '🚪', onSelect: handleSignOut, tone: 'danger' },
                 ]}
@@ -896,16 +869,6 @@ const AdminDashboardView = ({ requireSecurityEnrollment = false }) => {
                 >
                   <span className="btn-icon">👁️</span>
                   <span className="btn-label">Preview</span>
-                </button>
-                <button 
-                  className="refresh-btn"
-                  onClick={refreshSection}
-                  title="Refresh Section"
-                  aria-label="Refresh section"
-                  disabled={sectionLoading}
-                >
-                  <span className="btn-icon">🔄</span>
-                  <span className="btn-label">{sectionLoading && activeSection !== 'dashboard' ? 'Loading...' : 'Refresh'}</span>
                 </button>
                 {hasUnsavedChanges && (
                   <button 

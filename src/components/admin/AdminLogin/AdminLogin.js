@@ -24,7 +24,7 @@ import {
   sanitizeCodeInput,
   verifyEmailCode
 } from '../../../services/authService';
-import LoadingSpinner from '../../common/LoadingSpinner';
+import ButtonSpinner from '../../common/ButtonSpinner';
 import './AdminLogin.css';
 
 const STEP = Object.freeze({ EMAIL: 'email', CODE: 'code' });
@@ -207,7 +207,7 @@ const AdminLogin = () => {
               <button type="submit" disabled={busy} className={`login-button neon-button ${busy ? 'signing-in' : ''}`}>
                 {busy ? (
                   <>
-                    <LoadingSpinner size="small" />
+                    <ButtonSpinner />
                     <span>Sending code...</span>
                   </>
                 ) : (
@@ -269,7 +269,7 @@ const AdminLogin = () => {
                 <button type="button" onClick={handleResend} disabled={resendCooldown > 0 || busy} className="resend-button">
                   {isSigningIn ? (
                     <>
-                      <LoadingSpinner size="small" />
+                      <ButtonSpinner />
                       <span>Sending...</span>
                     </>
                   ) : resendCooldown > 0 ? (
@@ -290,7 +290,7 @@ const AdminLogin = () => {
               >
                 {isVerifying ? (
                   <>
-                    <LoadingSpinner size="small" />
+                    <ButtonSpinner />
                     <span>Verifying...</span>
                   </>
                 ) : (
