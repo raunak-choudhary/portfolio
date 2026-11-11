@@ -25,6 +25,7 @@ import ContactMessagesManager from './sections/ContactMessagesManager';
 import AnalyticsDashboard from '../Analytics/AnalyticsDashboard';
 import MfaEnrollment from '../Security/MfaEnrollment';
 import { markDashboardReady } from '../AdminWelcome/adminReadiness';
+import { recordSectionVisit, startSession } from '../../../services/adminSessionFacts';
 import MediaUpload from '../MediaUpload/MediaUpload';
 
 /**
@@ -96,7 +97,11 @@ const AdminDashboardView = ({ requireSecurityEnrollment = false }) => {
   }, []);
 
   // Enhanced section change handler with navigation tracking
+  // The sign-out credits list the sections opened this session.
+  useEffect(() => { startSession(); }, []);
+
   const handleSectionChange = useCallback(async (sectionId) => {
+    recordSectionVisit(sectionId);
     if (hasUnsavedChanges) {
       const confirmed = window.confirm(
         'You have unsaved changes. Are you sure you want to leave this section?'
