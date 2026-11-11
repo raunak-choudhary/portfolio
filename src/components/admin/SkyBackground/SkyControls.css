@@ -1,0 +1,227 @@
+/* src/components/admin/SkyBackground/SkyControls.css
+   The Sky button and its panel use the dashboard's glass variables so they
+   match the header in both themes. Mobile first; the panel is a sheet under
+   the header on phones and a dropdown from 768px up. */
+
+.sky-controls {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.sky-controls__button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--admin-glass-bg);
+  border: 1px solid var(--admin-glass-border);
+  border-radius: var(--admin-radius-md);
+  padding: var(--admin-spacing-sm) var(--admin-spacing-md);
+  color: var(--admin-text-primary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  backdrop-filter: var(--admin-glass-backdrop);
+  -webkit-backdrop-filter: var(--admin-glass-backdrop);
+  transition: border-color var(--admin-transition-normal), box-shadow var(--admin-transition-normal);
+  white-space: nowrap;
+}
+
+.sky-controls__button:hover,
+.sky-controls__button.is-open {
+  border-color: var(--admin-neon-orange);
+  box-shadow: 0 0 18px rgba(255, 140, 60, 0.25);
+}
+
+.sky-controls__icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.sky-controls__panel {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  top: 78px;
+  z-index: var(--admin-z-modal);
+  display: grid;
+  gap: 0.9rem;
+  padding: 0.9rem 1rem;
+  border-radius: var(--admin-radius-lg);
+  border: 1px solid var(--admin-glass-border);
+  /* Solid enough to read over the sky whatever the glass slider says. */
+  background: rgba(10, 16, 32, 0.9);
+  color: #e6edf7;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+  font-size: 0.85rem;
+}
+
+[data-theme="light"] .sky-controls__panel {
+  background: rgba(255, 255, 255, 0.92);
+  color: #1d2a3a;
+  box-shadow: 0 18px 50px rgba(30, 60, 100, 0.2);
+}
+
+@media (min-width: 768px) {
+  .sky-controls__panel {
+    position: absolute;
+    left: auto;
+    right: 0;
+    top: calc(100% + 10px);
+    width: 300px;
+  }
+}
+
+.sky-controls__group {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.sky-controls__heading {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.sky-controls__segments {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  padding: 3px;
+  border-radius: 10px;
+  background: rgba(127, 140, 170, 0.18);
+}
+
+.sky-controls__segment {
+  border: 0;
+  border-radius: 8px;
+  padding: 0.4rem 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.sky-controls__segment.is-active {
+  background: #58a6ff;
+  color: #04070f;
+  font-weight: 700;
+}
+
+[data-theme="light"] .sky-controls__segment.is-active {
+  background: #9c3b12;
+  color: #fff;
+}
+
+.sky-controls__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  cursor: pointer;
+}
+
+.sky-controls__toggle input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.sky-controls__switch {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  border-radius: 10px;
+  background: rgba(127, 140, 170, 0.35);
+  transition: background var(--admin-transition-fast);
+  flex-shrink: 0;
+}
+
+.sky-controls__switch::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform var(--admin-transition-fast);
+}
+
+.sky-controls__toggle input:checked + .sky-controls__switch {
+  background: #58a6ff;
+}
+
+[data-theme="light"] .sky-controls__toggle input:checked + .sky-controls__switch {
+  background: #9c3b12;
+}
+
+.sky-controls__toggle input:checked + .sky-controls__switch::after {
+  transform: translateX(16px);
+}
+
+.sky-controls__toggle input:focus-visible + .sky-controls__switch {
+  outline: 2px solid #58a6ff;
+  outline-offset: 2px;
+}
+
+.sky-controls__slider {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.sky-controls__slider span {
+  display: flex;
+  justify-content: space-between;
+}
+
+.sky-controls__slider output {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.8;
+}
+
+.sky-controls__slider input[type="range"] {
+  width: 100%;
+  accent-color: #58a6ff;
+}
+
+[data-theme="light"] .sky-controls__slider input[type="range"] {
+  accent-color: #9c3b12;
+}
+
+.sky-controls__note {
+  margin: 0;
+  font-size: 0.78rem;
+  opacity: 0.75;
+}
+
+.sky-controls__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(127, 140, 170, 0.25);
+  font-size: 0.75rem;
+  opacity: 0.85;
+}
+
+.sky-controls__reset {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+  opacity: 0.8;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sky-controls__button,
+  .sky-controls__switch,
+  .sky-controls__switch::after {
+    transition: none;
+  }
+}

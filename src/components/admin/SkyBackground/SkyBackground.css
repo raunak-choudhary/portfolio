@@ -1,0 +1,54 @@
+/* src/components/admin/SkyBackground/SkyBackground.css
+   The zodiac sky sits as the first child of .admin-dashboard, under the
+   header and the body. The glass variables it reads (--sky-glass, --sky-blur)
+   are set on <html> by SkySettingsProvider. */
+
+.sky-background {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  /* Night sky colour until the canvas paints; the day gradient takes over in light mode. */
+  background: #04070f;
+}
+
+[data-theme="light"] .sky-background {
+  background: #7fbbec;
+}
+
+.sky-background__layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* If figures.json cannot load, the plain gradient stays and nothing else is drawn. */
+.sky-background--plain {
+  background: linear-gradient(180deg, #02040c, #0d1830);
+}
+
+[data-theme="light"] .sky-background--plain {
+  background: linear-gradient(180deg, #5aa7e8, #cfe6f8);
+}
+
+/* The dashboard chrome must stack above the sky. */
+.admin-dashboard > .dashboard-body {
+  position: relative;
+  z-index: 1;
+  transition: opacity 400ms ease;
+}
+
+/* "Show panels" off: the body fades so the whole sky can be seen; the header stays for the controls. */
+.admin-dashboard.sky-only > .dashboard-body {
+  opacity: 0;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-dashboard > .dashboard-body {
+    transition: none;
+  }
+}
