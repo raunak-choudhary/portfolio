@@ -41,6 +41,7 @@ const AdminLogin = () => {
   const [notice, setNotice] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [showCode, setShowCode] = useState(false);
   const codeInputRef = useRef(null);
 
   // A visitor who already holds a session goes straight on; the protected
@@ -235,7 +236,7 @@ const AdminLogin = () => {
                     ref={codeInputRef}
                     id="admin-email-code"
                     name="code"
-                    type="text"
+                    type={showCode ? 'text' : 'password'}
                     inputMode="numeric"
                     pattern="[0-9]*"
                     autoComplete="one-time-code"
@@ -246,7 +247,21 @@ const AdminLogin = () => {
                     onChange={(event) => { setCode(sanitizeCodeInput(event.target.value)); setFormError(''); }}
                     disabled={busy}
                   />
-                  <div className="input-icon" aria-hidden="true"><span>🔐</span></div>
+                  {/* Hidden by default: the code is a secret while it is valid. The toggle reveals it on request. */}
+                  <button
+                    type="button"
+                    className="input-icon password-toggle"
+                    onClick={() => setShowCode((v) => !v)}
+                    aria-label={showCode ? 'Hide the code' : 'Show the code'}
+                    aria-pressed={showCode}
+                    disabled={busy}
+                  >
+                    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z" />
+                      <circle cx="12" cy="12" r="3" />
+                      {!showCode && <path d="M4 4l16 16" />}
+                    </svg>
+                  </button>
                 </div>
               </div>
 
