@@ -1,6 +1,7 @@
 // src/services/adminDataService.js - shared admin operations
 
 import { supabase } from './supabaseClient';
+import { recordSave } from './adminSessionFacts';
 
 export const getAdminSupabaseClient = () => supabase;
 
@@ -252,6 +253,7 @@ export const saveAdminData = async (table, data, existingId = null) => {
     }
     
     console.log(`✅ Admin save successful for ${table}:`, result);
+    recordSave();
     
     // Trigger refresh for public components
     triggerPublicRefresh(table);

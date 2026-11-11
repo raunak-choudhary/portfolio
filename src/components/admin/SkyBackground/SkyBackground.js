@@ -21,9 +21,12 @@ const STILL_REPAINT_MS = 60 * 1000;
  * @param {object} props
  * @param {string} [props.assetBase] override for tests.
  * @param {boolean} [props.liveSun] load NASA's live Sun image (default true; off in tests).
+ * @param {boolean} [props.motion] false forces a still frame regardless of the settings.
  */
-export default function SkyBackground({ assetBase = SKY_ASSET_BASE, liveSun = true }) {
-  const { settings, resolvedTheme, effectiveMotion } = useSkySettings();
+export default function SkyBackground({ assetBase = SKY_ASSET_BASE, liveSun = true, motion }) {
+  const { settings, resolvedTheme, effectiveMotion: settingsMotion } = useSkySettings();
+  // A host may force a still frame (the sign-out page does); otherwise the settings decide.
+  const effectiveMotion = typeof motion === 'boolean' ? motion && settingsMotion : settingsMotion;
   const skyRef = useRef(null), liveRef = useRef(null), rendererRef = useRef(null);
   const [figures, setFigures] = useState(null);
   const [loadFailed, setLoadFailed] = useState(false);
