@@ -211,7 +211,7 @@
 .logo-image {
   width: 45px;
   height: 45px;
-  border-radius: var(--admin-radius-sm);
+  border-radius: 50%; /* round, so the box, the ring and the star's orbit share one centre and one shape */
   /* no overflow clipping: the orbit ring and its star sit just outside the box */
   border: 2px solid var(--admin-neon-cyan);
   box-shadow: 0 0 12px rgba(0, 255, 255, 0.35);
