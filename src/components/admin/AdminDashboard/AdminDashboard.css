@@ -2669,3 +2669,44 @@
 [data-theme="light"] .sky-controls__button {
   border-color: rgba(255, 255, 255, 0.55);
 }
+
+/* ===== TEXT ON THE SKY =====
+   Headings that used to sit on a flat dark page now sit on the zodiac sky,
+   where the figures and names show through the letters. Every heading block
+   that had no panel of its own gets the same glass as the cards. */
+.overview-header,
+.analytics-header,
+.admin-section-header {
+  background: var(--admin-glass-bg);
+  border: 1px solid var(--admin-glass-border);
+  border-radius: var(--admin-radius-lg);
+  backdrop-filter: var(--admin-glass-backdrop);
+  -webkit-backdrop-filter: var(--admin-glass-backdrop);
+  box-shadow: var(--admin-glass-shadow);
+  padding: var(--admin-spacing-lg) var(--admin-spacing-xl);
+}
+
+/* The glass blurs the sky but keeps it faint; a tint underneath the text makes letters read at any glass setting. */
+.overview-header::before,
+.analytics-header::before,
+.admin-section-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgba(6, 10, 22, 0.35);
+  z-index: -1;
+}
+
+[data-theme="light"] .overview-header::before,
+[data-theme="light"] .analytics-header::before,
+[data-theme="light"] .admin-section-header::before {
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.overview-header,
+.analytics-header,
+.admin-section-header {
+  position: relative;
+  z-index: 0;
+}
