@@ -1,4 +1,5 @@
 /* eslint-disable testing-library/render-result-naming-convention */
+import fs from 'fs';
 import { createSkyRenderer } from './skyRenderer';
 import { fakeContext } from './testUtils';
 
@@ -19,6 +20,33 @@ const build = (calls = []) => createSkyRenderer({
 
 describe('createSkyRenderer', () => {
   afterEach(() => jest.useRealTimers());
+
+  it('paints a long run with the shipped figures in both themes without a single non-finite value', () => {
+    const shipped = JSON.parse(fs.readFileSync('public/admin/sky/figures.json', 'utf8')).figures;
+    const calls = [];
+    const renderer = createSkyRenderer({ skyCanvas: fakeCanvas(calls), liveCanvas: fakeCanvas(calls), figures: shipped, assetBase: '/admin/sky/', doc: fakeDocument(calls), liveSun: false });
+    renderer.resize(1460, 702, 2);
+    renderer.setSettings({ drawings: true, clouds: true, motion: true });
+    for (const theme of ['light', 'dark']) {
+      renderer.setTheme(theme);
+      for (let now = 61234.5; now < 61234.5 + 120000; now += 137) renderer.frame(now);
+    }
+    expect(renderer.status().tiles).toBe(18);
+    renderer.destroy();
+  });
+
+  it('survives a frame timestamp that steps back behind the previous one', () => {
+    // requestAnimationFrame can hand over a time slightly earlier than a performance.now() read just before it;
+    // a flare born at the later time then had a negative age, and its gradient radius became NaN
+    const renderer = build([]);
+    renderer.resize(1460, 702, 2);
+    renderer.setTheme('light');
+    renderer.setSettings({ drawings: true, clouds: true, motion: true });
+    renderer.frame(5000.8);
+    expect(() => renderer.frame(4998.2)).not.toThrow();
+    expect(() => renderer.frame(Number.NaN)).not.toThrow();
+    renderer.destroy();
+  });
 
   it('paints a frame in both themes without throwing and writes every figure name', () => {
     const calls = [];
