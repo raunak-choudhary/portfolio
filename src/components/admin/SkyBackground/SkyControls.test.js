@@ -19,7 +19,8 @@ const render = () => mount(
   </ThemeProvider>,
 );
 const state = (c) => JSON.parse(c.querySelector('[data-testid="state"]').textContent);
-const panel = (c) => c.querySelector('.sky-controls__panel');
+/** The panel is portalled into <body>, so it is looked up on the document. */
+const panel = () => document.querySelector('.sky-controls__panel');
 
 describe('SkyControls', () => {
   it('opens a labelled dialog from the Sky button and closes it on Escape', () => {
@@ -30,8 +31,19 @@ describe('SkyControls', () => {
     click(button);
     expect(button.getAttribute('aria-expanded')).toBe('true');
     expect(panel(view.container).getAttribute('role')).toBe('dialog');
+    expect(panel().parentElement).toBe(document.body);
     act(() => { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })); });
     expect(panel(view.container)).toBeNull();
+    view.unmount();
+  });
+
+  it('stays open for clicks inside the panel and closes for clicks elsewhere', () => {
+    const view = render();
+    click(view.container.querySelector('.sky-controls__button'));
+    act(() => { panel().dispatchEvent(new MouseEvent('pointerdown', { bubbles: true })); });
+    expect(panel()).not.toBeNull();
+    act(() => { document.body.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true })); });
+    expect(panel()).toBeNull();
     view.unmount();
   });
 
