@@ -1,0 +1,596 @@
+{
+ "Ari": {
+  "file": "Ari.png",
+  "width": 1400,
+  "height": 959,
+  "card": "Aries and Musca Borealis",
+  "source": "https://commons.wikimedia.org/wiki/File:Sidney_Hall_-_Urania%27s_Mirror_-_Aries_and_Musca_Borealis.jpg",
+  "refs": [
+   {
+    "name": "Hamal",
+    "x": 956.2,
+    "y": 87.3,
+    "ra": 31.793,
+    "dec": 23.462,
+    "confidence": "high"
+   },
+   {
+    "name": "Sheratan",
+    "x": 1071.1,
+    "y": 213.2,
+    "ra": 28.66,
+    "dec": 20.808,
+    "confidence": "high"
+   },
+   {
+    "name": "Mesarthim",
+    "x": 1082.6,
+    "y": 269.1,
+    "ra": 28.383,
+    "dec": 19.294,
+    "confidence": "medium"
+   }
+  ]
+ },
+ "Tau": {
+  "file": "Tau.png",
+  "width": 1400,
+  "height": 1116,
+  "card": "Taurus",
+  "source": "https://commons.wikimedia.org/wiki/File:Sidney_Hall_-_Urania%27s_Mirror_-_Taurus.jpg",
+  "refs": [
+   {
+    "name": "Aldebaran",
+    "x": 576.2,
+    "y": 493.8,
+    "ra": 68.98,
+    "dec": 16.509,
+    "confidence": "high"
+   },
+   {
+    "name": "Elnath",
+    "x": 167.9,
+    "y": 42.5,
+    "ra": 81.573,
+    "dec": 28.608,
+    "confidence": "high"
+   }
+  ]
+ },
+ "Gem": {
+  "file": "Gem.png",
+  "width": 1242,
+  "height": 1400,
+  "card": "Gemini",
+  "source": "https://commons.wikimedia.org/wiki/File:Sidney_Hall_-_Urania%27s_Mirror_-_Gemini.jpg",
+  "refs": [
+   {
+    "name": "Castor",
+    "x": 304.4,
+    "y": 304.4,
+    "ra": 113.649,
+    "dec": 31.888,
+    "confidence": "high"
+   },
+   {
+    "name": "Pollux",
+    "x": 157.5,
+    "y": 510.7,
+    "ra": 116.329,
+    "dec": 28.026,
+    "confidence": "high"
+   },
+   {
+    "name": "Alhena",
+    "x": 927.6,
+    "y": 1181.3,
+    "ra": 99.428,
+    "dec": 16.399,
+    "confidence": "medium"
+   }
+  ]
+ },
+ "Cnc": {
+  "file": "Cnc.png",
+  "width": 1010,
+  "height": 1400,
+  "card": "Cancer",
+  "source": "https://commons.wikimedia.org/wiki/File:Sidney_Hall_-_Urania%27s_Mirror_-_Cancer.jpg",
+  "refs": [
+   {
+    "name": "Acubens",
+    "x": 285.3,
+    "y": 1111.7,
+    "ra": 134.6218,
+    "dec": 11.8577,
+    "confidence": "high"
+   },
+   {
+    "name": "Tarf",
+    "x": 768.4,
+    "y": 1240.2,
+    "ra": 124.129,
+    "dec": 9.185,
+    "confidence": "medium"
+   },
+   {
+    "name": "Asellus Borealis",
+    "x": 470.8,
+    "y": 633.2,
+    "ra": 130.8214,
+    "dec": 21.4685,
+    "confidence": "high"
+   }
+  ]
+ },
+ "Leo": {
+  "file": "Leo.png",
+  "width": 1400,
+  "height": 1241,
+  "card": "Leo Major and Leo Minor",
+  "source": "https://commons.wikimedia.org/wiki/File:Sidney_Hall_-_Urania%27s_Mirror_-_Leo_Major_and_Leo_Minor.jpg",
+  "refs": [
+   {
+    "name": "Regulus",
+    "x": 885.1,
+    "y": 673.0,
+    "ra": 152.093,
+    "dec": 11.967,
+    "confidence": "high"
+   },
+   {
+    "name": "Denebola",
+    "x": 90.8,
+    "y": 600.9,
+    "ra": 177.265,
+    "dec": 14.572,
+    "confidence": "high"
+   },
+   {
+    "name": "Algieba",
+    "x": 785.2,
+    "y": 414.2,
+    "ra": 154.993,
+    "dec": 19.841,
+    "confidence": "high"
+   }
+  ]
+ },
+ "Vir": {
+  "file": "Vir.png",
+  "width": 1400,
+  "height": 965,
+  "card": "Virgo",
+  "source": "https://commons.wikimedia.org/wiki/File:Sidney_Hall_-_Urania%27s_Mirror_-_Virgo.jpg",
+  "refs": [
+   {
+    "name": "Spica",
+    "x": 631.2,
+    "y": 793.5,
+    "ra": 201.298,
+    "dec": -11.161,
+    "confidence": "high"
+   },
+   {
+    "name": "Vindemiatrix",
+    "x": 779.0,
+    "y": 172.1,
+    "ra": 195.544,
+    "dec": 10.959,
+    "confidence": "high"
+   },
+   {
+    "name": "Zavijava",
+    "x": 1280.2,
+    "y": 415.5,
+    "ra": 177.674,
+    "dec": 1.765,
+    "confidence": "high"
+   }
+  ]
+ },
+ "Lib": {
+  "file": "Lib.png",
+  "width": 1400,
+  "height": 1075,
+  "card": "Libra",
+  "source": "https://commons.wikimedia.org/wiki/File:Sidney_Hall_-_Urania%27s_Mirror_-_Libra.jpg",
+  "refs": [
+   {
+    "name": "Zubenelgenubi",
+    "x": 899.6,
+    "y": 590.5,
+    "ra": 222.72,
+    "dec": -16.042,
+    "confidence": "high"
+   },
+   {
+    "name": "Zubeneschamali",
+    "x": 621.5,
+    "y": 231.8,
+    "ra": 229.252,
+    "dec": -9.383,
+    "confidence": "high"
+   }
+  ]
+ },
+ "Sco": {
+  "file": "Sco.png",
+  "width": 940,
+  "height": 1400,
+  "card": "Scorpio",
+  "source": "https://commons.wikimedia.org/wiki/File:Sidney_Hall_-_Urania%27s_Mirror_-_Scorpio.jpg",
+  "refs": [
+   {
+    "name": "Antares",
+    "x": 495.5,
+    "y": 711.7,
+    "ra": 247.352,
+    "dec": -26.432,
+    "confidence": "high"
+   },
+   {
+    "name": "Shaula",
+    "x": 110.1,
+    "y": 1070.5,
+    "ra": 263.402,
+    "dec": -37.104,
+    "confidence": "high"
+   },
+   {
+    "name": "Lesath",
+    "x": 127.3,
+    "y": 1091.1,
+    "ra": 262.691,
+    "dec": -37.296,
+    "confidence": "medium"
+   }
+  ]
+ },
+ "Sgr": {
+  "file": "Sgr.png",
+  "width": 1400,
+  "height": 1288,
+  "card": "Sagittarius and Corona Australis, Microscopium, and Telescopium",
+  "source": "https://commons.wikimedia.org/wiki/File:Sidney_Hall_-_Urania%27s_Mirror_-_Sagittarius_and_Corona_Australis,_Microscopium,_and_Telescopium.png",
+  "refs": [
+   {
+    "name": "Nunki",
+    "x": 816.7,
+    "y": 512.4,
+    "ra": 283.816,
+    "dec": -26.297,
+    "confidence": "high"
+   },
+   {
+    "name": "Ascella",
+    "x": 777.5,
+    "y": 660.4,
+    "ra": 285.653,
+    "dec": -29.88,
+    "confidence": "high"
+   },
+   {
+    "name": "Kaus Media",
+    "x": 1093.0,
+    "y": 639.3,
+    "ra": 275.249,
+    "dec": -29.828,
+    "confidence": "high"
+   },
+   {
+    "name": "Kaus Australis",
+    "x": 1063.3,
+    "y": 798.0,
+    "ra": 276.043,
+    "dec": -34.385,
+    "confidence": "high"
+   }
+  ]
+ },
+ "Cap": {
+  "file": "Cap.png",
+  "width": 1400,
+  "height": 965,
+  "card": "Capricornus",
+  "source": "https://commons.wikimedia.org/wiki/File:Sidney_Hall_-_Urania%27s_Mirror_-_Capricornus.jpg",
+  "refs": [
+   {
+    "name": "Deneb Algedi",
+    "x": 287.2,
+    "y": 336.7,
+    "ra": 326.76,
+    "dec": -16.127,
+    "confidence": "high"
+   },
+   {
+    "name": "Dabih",
+    "x": 1204.2,
+    "y": 276.0,
+    "ra": 305.253,
+    "dec": -14.781,
+    "confidence": "high"
+   },
+   {
+    "name": "Algedi",
+    "x": 1224.7,
+    "y": 160.3,
+    "ra": 304.514,
+    "dec": -12.545,
+    "confidence": "medium"
+   }
+  ]
+ },
+ "Aqr": {
+  "file": "Aqr.png",
+  "width": 1400,
+  "height": 1297,
+  "card": "Aquarius, Piscis Australis & Ballon Aerostatique",
+  "source": "https://commons.wikimedia.org/wiki/File:Sidney_Hall_-_Urania%27s_Mirror_-_Aquarius,_Piscis_Australis_%26_Ballon_Aerostatique.jpg",
+  "refs": [
+   {
+    "name": "Sadalmelik",
+    "x": 578.3,
+    "y": 246.4,
+    "ra": 331.446,
+    "dec": -0.32,
+    "confidence": "high"
+   },
+   {
+    "name": "Sadalsuud",
+    "x": 917.0,
+    "y": 428.0,
+    "ra": 322.89,
+    "dec": -5.571,
+    "confidence": "high"
+   }
+  ]
+ },
+ "Psc": {
+  "file": "Psc.png",
+  "width": 1400,
+  "height": 970,
+  "card": "Pisces",
+  "source": "https://commons.wikimedia.org/wiki/File:Sidney_Hall_-_Urania%27s_Mirror_-_Pisces.jpg",
+  "refs": [
+   {
+    "name": "Alrescha",
+    "x": 41.7,
+    "y": 891.4,
+    "ra": 30.512,
+    "dec": 2.764,
+    "confidence": "high"
+   },
+   {
+    "name": "Alpherg",
+    "x": 241.0,
+    "y": 510.0,
+    "ra": 22.871,
+    "dec": 15.346,
+    "confidence": "high"
+   }
+  ]
+ },
+ "UMa": {
+  "file": "UMa.png",
+  "width": 1400,
+  "height": 1136,
+  "card": "Ursa Major",
+  "source": "https://commons.wikimedia.org/wiki/File:Sidney_Hall_-_Urania%27s_Mirror_-_Ursa_Major.jpg",
+  "refs": [
+   {
+    "name": "Dubhe",
+    "x": 806.4,
+    "y": 262.5,
+    "ra": 165.932,
+    "dec": 61.751,
+    "confidence": "high"
+   },
+   {
+    "name": "Merak",
+    "x": 804.7,
+    "y": 410.5,
+    "ra": 165.46,
+    "dec": 56.382,
+    "confidence": "high"
+   },
+   {
+    "name": "Alkaid",
+    "x": 77.2,
+    "y": 561.8,
+    "ra": 206.885,
+    "dec": 49.313,
+    "confidence": "high"
+   }
+  ]
+ },
+ "UMi": {
+  "file": "UMi.png",
+  "width": 1188,
+  "height": 1143,
+  "card": "Draco and Ursa Minor",
+  "source": "https://commons.wikimedia.org/wiki/File:Sidney_Hall_-_Urania%27s_Mirror_-_Draco_and_Ursa_Minor.jpg",
+  "refs": [
+   {
+    "name": "Polaris",
+    "x": 1103.5,
+    "y": 1042.4,
+    "ra": 37.954,
+    "dec": 89.264,
+    "confidence": "high"
+   },
+   {
+    "name": "Kochab",
+    "x": 399.9,
+    "y": 428.5,
+    "ra": 222.676,
+    "dec": 74.156,
+    "confidence": "high"
+   }
+  ]
+ },
+ "Ori": {
+  "file": "Ori.png",
+  "width": 947,
+  "height": 1400,
+  "card": "Orion",
+  "source": "https://commons.wikimedia.org/wiki/File:Sidney_Hall_-_Urania%27s_Mirror_-_Orion_(best_currently_available_version_-_2014).jpg",
+  "refs": [
+   {
+    "name": "Betelgeuse",
+    "x": 264.4,
+    "y": 619.9,
+    "ra": 88.793,
+    "dec": 7.407,
+    "confidence": "high"
+   },
+   {
+    "name": "Bellatrix",
+    "x": 563.8,
+    "y": 675.3,
+    "ra": 81.283,
+    "dec": 6.35,
+    "confidence": "high"
+   },
+   {
+    "name": "Rigel",
+    "x": 649.6,
+    "y": 1242.2,
+    "ra": 78.635,
+    "dec": -8.202,
+    "confidence": "high"
+   },
+   {
+    "name": "Saiph",
+    "x": 341.8,
+    "y": 1291.6,
+    "ra": 86.939,
+    "dec": -9.67,
+    "confidence": "high"
+   }
+  ]
+ },
+ "Cas": {
+  "file": "Cas.png",
+  "width": 957,
+  "height": 1400,
+  "card": "Cassiopeia",
+  "source": "https://commons.wikimedia.org/wiki/File:Sidney_Hall_-_Urania%27s_Mirror_-_Cassiopeia_(image_right_side_up).jpg",
+  "refs": [
+   {
+    "name": "Shedar",
+    "x": 402.5,
+    "y": 582.8,
+    "ra": 10.127,
+    "dec": 56.537,
+    "confidence": "high"
+   },
+   {
+    "name": "Caph",
+    "x": 184.8,
+    "y": 753.1,
+    "ra": 2.295,
+    "dec": 59.15,
+    "confidence": "high"
+   },
+   {
+    "name": "Ruchbah",
+    "x": 678.2,
+    "y": 904.4,
+    "ra": 21.454,
+    "dec": 60.235,
+    "confidence": "high"
+   },
+   {
+    "name": "Navi",
+    "x": 491.7,
+    "y": 884.3,
+    "ra": 14.177,
+    "dec": 60.717,
+    "confidence": "medium"
+   },
+   {
+    "name": "Segin",
+    "x": 757.1,
+    "y": 1143.1,
+    "ra": 28.599,
+    "dec": 63.67,
+    "confidence": "medium"
+   }
+  ]
+ },
+ "Her": {
+  "file": "Her.png",
+  "width": 1091,
+  "height": 1400,
+  "card": "Hercules and Corona Borealis",
+  "source": "https://commons.wikimedia.org/wiki/File:Sidney_Hall_-_Urania%27s_Mirror_-_Hercules_and_Corona_Borealis.jpg",
+  "refs": [
+   {
+    "name": "Rasalgethi",
+    "x": 442.2,
+    "y": 1131.0,
+    "ra": 258.662,
+    "dec": 14.39,
+    "confidence": "high"
+   },
+   {
+    "name": "Kornephoros",
+    "x": 748.9,
+    "y": 923.1,
+    "ra": 247.555,
+    "dec": 21.49,
+    "confidence": "high"
+   }
+  ]
+ },
+ "Cyg": {
+  "file": "Cyg.png",
+  "width": 1298,
+  "height": 1400,
+  "card": "Lacerta, Cygnus, Lyra, Vulpecula and Anser",
+  "source": "https://commons.wikimedia.org/wiki/File:Sidney_Hall_-_Urania%27s_Mirror_-_Lacerta,_Cygnus,_Lyra,_Vulpecula_and_Anser.jpg",
+  "refs": [
+   {
+    "name": "Deneb",
+    "x": 663.2,
+    "y": 684.1,
+    "ra": 310.358,
+    "dec": 45.28,
+    "confidence": "high"
+   },
+   {
+    "name": "Sadr",
+    "x": 793.3,
+    "y": 867.2,
+    "ra": 305.557,
+    "dec": 40.257,
+    "confidence": "high"
+   },
+   {
+    "name": "Albireo",
+    "x": 1211.8,
+    "y": 1293.7,
+    "ra": 292.68,
+    "dec": 27.96,
+    "confidence": "medium"
+   },
+   {
+    "name": "Aljanah",
+    "x": 585.4,
+    "y": 1092.7,
+    "ra": 311.553,
+    "dec": 33.97,
+    "confidence": "high"
+   },
+   {
+    "name": "Fawaris",
+    "x": 1046.9,
+    "y": 680.6,
+    "ra": 296.244,
+    "dec": 45.131,
+    "confidence": "medium"
+   }
+  ]
+ }
+}
