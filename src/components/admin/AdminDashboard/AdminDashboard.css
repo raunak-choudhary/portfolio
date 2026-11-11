@@ -212,11 +212,48 @@
   width: 45px;
   height: 45px;
   border-radius: var(--admin-radius-sm);
-  overflow: hidden;
+  /* no overflow clipping: the orbit ring and its star sit just outside the box */
   border: 2px solid var(--admin-neon-cyan);
-  box-shadow: 0 0 15px rgba(0, 255, 255, 0.4);
-  animation: admin-logo-pulse 3s ease-in-out infinite;
+  box-shadow: 0 0 12px rgba(0, 255, 255, 0.35);
   position: relative;
+  --logo-orbit: 28px;   /* radius of the small star's orbit, kept inside the header */
+}
+
+/* A quiet ring around the logo and one small star circling it, in the spirit of
+   the sky behind. Rotation never changes the element's size, so unlike the old
+   breathing glow it cannot grow past the header. */
+.logo-image::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 255, 255, 0.28);
+  pointer-events: none;
+}
+
+.logo-image::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  margin: -3px 0 0 -3px;
+  border-radius: 50%;
+  background: #9ffcff;
+  box-shadow: 0 0 8px 2px rgba(0, 255, 255, 0.7);
+  transform: rotate(0deg) translateX(var(--logo-orbit));
+  animation: admin-logo-orbit 9s linear infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+@keyframes admin-logo-orbit {
+  to { transform: rotate(360deg) translateX(var(--logo-orbit)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logo-image::before { animation: none; }
 }
 
 [data-theme="light"] .logo-image {
@@ -228,6 +265,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  border-radius: inherit; /* the image rounds itself now that the box no longer clips */
   transition: transform var(--admin-transition-normal);
 }
 
@@ -919,27 +957,9 @@
 }
 
 /* ===== ANIMATIONS ===== */
-@keyframes admin-logo-pulse {
-  0%, 100% {
-    box-shadow: 0 0 15px rgba(0, 255, 255, 0.4);
-  }
-  50% {
-    box-shadow: 0 0 25px rgba(139, 43, 255, 0.6);
-  }
-}
 
-[data-theme="light"] .logo-image {
-  animation: admin-logo-pulse-light 3s ease-in-out infinite;
-}
 
-@keyframes admin-logo-pulse-light {
-  0%, 100% {
-    box-shadow: 0 0 15px rgba(139, 43, 255, 0.3);
-  }
-  50% {
-    box-shadow: 0 0 25px rgba(255, 102, 0, 0.4);
-  }
-}
+
 
 @keyframes admin-pulse-orange {
   0%, 100% {
@@ -2075,6 +2095,11 @@
   .logo-image {
     width: 35px;
     height: 35px;
+    --logo-orbit: 23px;
+  }
+
+  .logo-image::after {
+    inset: -5px;
   }
   
   .navigation-controls {
@@ -2607,7 +2632,15 @@
 [data-theme="light"] .logo-image {
   border-color: rgba(255, 255, 255, 0.75);
   box-shadow: 0 2px 10px rgba(30, 60, 100, 0.25);
-  animation: none;
+}
+
+[data-theme="light"] .logo-image::after {
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+[data-theme="light"] .logo-image::before {
+  background: #ffb27a;
+  box-shadow: 0 0 8px 2px rgba(156, 59, 18, 0.6);
 }
 
 [data-theme="light"] .breadcrumb-home,
