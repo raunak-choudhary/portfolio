@@ -144,43 +144,10 @@
   padding: 0 var(--admin-spacing-xl);
   z-index: var(--admin-z-header);
   box-shadow: var(--admin-glass-shadow);
-  /* MOBILE SCROLL FIX - Added for 468px screens */
-  overflow-x: auto;
-  overflow-y: hidden;
+  /* The header never scrolls sideways: wide screens show labelled buttons, tablets icon-only buttons,
+     phones one menu button (HeaderMenu). */
+  overflow: visible;
   min-width: 100%;
-}
-
-/* Mobile scroll styling for header */
-@media (max-width: 468px) {
-  .admin-header {
-    overflow-x: auto;
-    scrollbar-width: thin;
-    scrollbar-color: var(--admin-neon-cyan) transparent;
-  }
-  
-  .admin-header::-webkit-scrollbar {
-    height: 4px;
-  }
-  
-  .admin-header::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  
-  .admin-header::-webkit-scrollbar-thumb {
-    background: var(--admin-neon-cyan);
-    border-radius: 2px;
-  }
-  
-  [data-theme="light"] .admin-header::-webkit-scrollbar-thumb {
-    background: var(--admin-neon-purple);
-  }
-  
-  /* Prevent header items from shrinking on mobile */
-  .header-left,
-  .header-right {
-    flex-shrink: 0;
-    min-width: max-content;
-  }
 }
 
 /* Header Left Section */
@@ -2212,20 +2179,6 @@
     padding: var(--admin-spacing-md);
   }
 
-  .header-actions {
-  gap: var(--admin-spacing-xl);
-  }
-
-  .header-actions .theme-toggle {
-    margin-right: var(--admin-spacing-xl);
-  }
-
-  .preview-btn,
-  .refresh-btn,
-  .save-btn {
-    margin-right: var(--admin-spacing-xl);
-  }
-  
   .overview-header {
     margin-bottom: var(--admin-spacing-lg);
   }
@@ -2709,4 +2662,87 @@
 .admin-section-header {
   position: relative;
   z-index: 0;
+}
+
+
+/* ===== HEADER ACTIONS ACROSS SCREEN SIZES =====
+   Laptops: labelled buttons. Tablets (768 to 1199px): icon-only buttons with their titles as tooltips,
+   so Sky, Preview, Refresh, Save and Sign Out all stay in view. Phones (under 768px): HeaderMenu. */
+@media (max-width: 1199px) {
+  .preview-btn .btn-label,
+  .refresh-btn .btn-label,
+  .save-btn .btn-label,
+  .signout-btn .btn-label {
+    display: none;
+  }
+
+  .preview-btn,
+  .refresh-btn,
+  .save-btn {
+    margin-right: var(--admin-spacing-sm);
+    padding: var(--admin-spacing-sm);
+  }
+
+  .preview-btn .btn-icon,
+  .refresh-btn .btn-icon,
+  .save-btn .btn-icon,
+  .signout-btn .btn-icon {
+    font-size: 1.15rem;
+  }
+
+  .signout-btn {
+    padding: var(--admin-spacing-sm);
+  }
+
+  .profile-info {
+    display: none;
+  }
+
+  .admin-profile {
+    padding: var(--admin-spacing-xs);
+    border: 0;
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .header-actions,
+  .header-right {
+    gap: var(--admin-spacing-sm);
+  }
+
+  .sky-controls {
+    margin-right: var(--admin-spacing-sm);
+  }
+}
+
+@media (max-width: 767px) {
+  .admin-header {
+    gap: var(--admin-spacing-sm);
+  }
+
+  .header-left {
+    gap: var(--admin-spacing-sm);
+    min-width: 0;
+  }
+
+  .logo-content {
+    display: none;
+  }
+
+  .sky-controls__label {
+    display: none;
+  }
+
+  .sky-controls__button {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 10px;
+  }
+
+  .sky-controls {
+    margin-right: 0;
+  }
 }
