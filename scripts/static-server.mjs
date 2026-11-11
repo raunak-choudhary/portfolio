@@ -31,6 +31,7 @@ const CONTENT_TYPES = {
   '.ico': 'image/x-icon',
   '.woff': 'font/woff',
   '.woff2': 'font/woff2',
+  '.m4a': 'audio/mp4',
 };
 
 /** Reads `--name value` pairs from argv with defaults. */
