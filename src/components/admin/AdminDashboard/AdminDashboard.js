@@ -22,6 +22,7 @@ import LeadershipManager from './sections/LeadershipManager';
 import ContactMessagesManager from './sections/ContactMessagesManager';
 import AnalyticsDashboard from '../Analytics/AnalyticsDashboard';
 import MfaEnrollment from '../Security/MfaEnrollment';
+import { markDashboardReady } from '../AdminWelcome/adminReadiness';
 import MediaUpload from '../MediaUpload/MediaUpload';
 
 /**
@@ -275,6 +276,7 @@ const AdminDashboard = ({ requireSecurityEnrollment = false }) => {
           analyticsService.getPortfolioHealth()
         ]);
         setPortfolioStats(stats);
+        markDashboardReady();
         setPortfolioHealth(health);
         setLastUpdated(new Date().toLocaleString());
         setSectionStates(prev => ({
@@ -306,6 +308,7 @@ const AdminDashboard = ({ requireSecurityEnrollment = false }) => {
           analyticsService.getPortfolioHealth()
         ]);
         setPortfolioStats(stats);
+        markDashboardReady();
         setPortfolioHealth(health);
         setLastUpdated(new Date().toLocaleString());
         setSectionStates(prev => ({

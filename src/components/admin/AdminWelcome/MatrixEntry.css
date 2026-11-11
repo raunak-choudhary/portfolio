@@ -1,0 +1,78 @@
+/* The admin entry screen: Matrix rain over a dashboard that is already loading
+   underneath. Always black, in both themes: it is a seven-second transition,
+   not a screen to work on. */
+
+.matrix-entry {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: #000;
+  color: #00ff41;
+  font-family: ui-monospace, Menlo, "SF Mono", Consolas, monospace;
+  transition: opacity 900ms ease;
+}
+.matrix-entry.is-lifting { opacity: 0; pointer-events: none; }
+
+.matrix-entry__rain,
+.matrix-entry__fx { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.matrix-entry__fx { pointer-events: none; }
+.matrix-entry__rain.is-rabbit { cursor: pointer; }
+
+.matrix-entry__text {
+  position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; pointer-events: none; padding: 0 16px; text-shadow: 0 0 18px rgba(0, 255, 65, 0.35);
+  transition: opacity 500ms ease;
+}
+.matrix-entry__text.is-fading { opacity: 0; }
+.matrix-entry__title {
+  font-size: clamp(26px, 6vw, 72px); font-weight: 700; letter-spacing: 0.12em; color: #00ff41; min-height: 1.2em;
+  white-space: nowrap; margin: 0;
+}
+.matrix-entry__pending { color: #0a8a2a; }
+.matrix-entry__lines {
+  margin-top: clamp(18px, 3vh, 34px); display: grid; gap: 10px; font-size: clamp(11px, 1.5vw, 15px); letter-spacing: 0.18em;
+  max-width: min(92vw, 900px);
+}
+.matrix-entry__line { min-height: 1.3em; opacity: 0.92; white-space: normal; overflow-wrap: anywhere; line-height: 1.5; }
+.matrix-entry__line--jump { animation: matrix-entry-blink 900ms steps(2, end) infinite; }
+@keyframes matrix-entry-blink { 50% { opacity: 0.25; } }
+
+.matrix-entry__controls {
+  position: absolute; right: 18px; bottom: 18px; display: flex; gap: 12px; align-items: stretch;
+  opacity: 0; transition: opacity 500ms;
+}
+.matrix-entry__controls.is-on { opacity: 1; }
+.matrix-entry__pill {
+  display: grid; grid-template-columns: auto auto; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 14px; cursor: pointer;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.03)); border: 1px solid rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(14px) saturate(140%); -webkit-backdrop-filter: blur(14px) saturate(140%);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  color: #cfd8d2; font: 11px ui-monospace, Menlo, monospace; letter-spacing: 0.18em;
+  transition: transform 160ms, border-color 160ms, box-shadow 160ms;
+}
+.matrix-entry__pill:hover, .matrix-entry__pill:focus-visible {
+  transform: translateY(-2px); border-color: rgba(255, 255, 255, 0.35); outline: none;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+.matrix-entry__capsule {
+  display: block; width: 36px; height: 16px; border-radius: 999px; position: relative;
+  box-shadow: inset 0 -4px 6px rgba(0, 0, 0, 0.45), inset 0 2px 3px rgba(255, 255, 255, 0.45), 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+.matrix-entry__capsule::before { content: ""; position: absolute; left: 6px; right: 55%; top: 3px; height: 4px; border-radius: 999px; background: rgba(255, 255, 255, 0.55); }
+.matrix-entry__capsule::after { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: rgba(0, 0, 0, 0.35); }
+.matrix-entry__capsule--blue { background: linear-gradient(180deg, #5f9bff 0%, #1f5ee8 60%, #163fa8 100%); }
+.matrix-entry__capsule--red { background: linear-gradient(180deg, #ff6b7a 0%, #d8142f 60%, #8f0c1f 100%); }
+.matrix-entry__pill--speaker { grid-template-columns: auto; padding: 9px 12px; color: #cfe9d6; }
+.matrix-entry__speaker-cross { opacity: 0; transition: opacity 150ms; }
+.matrix-entry__pill--speaker.is-muted .matrix-entry__speaker-cross { opacity: 1; }
+.matrix-entry__pill--speaker.is-muted .matrix-entry__speaker-wave { opacity: 0.25; }
+
+@media (max-width: 480px) {
+  .matrix-entry__lines { letter-spacing: 0.1em; }
+  .matrix-entry__title { letter-spacing: 0.08em; }
+  .matrix-entry__controls { right: 12px; bottom: 12px; gap: 8px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .matrix-entry__line--jump { animation: none; }
+}
