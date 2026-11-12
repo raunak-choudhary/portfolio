@@ -812,6 +812,8 @@ Phase 3 exit: as the origin's Phase 3 exit.
 
 Phase 4 exit: as the origin's Phase 4 exit.
 
+Amendment (2026-11-12): the admin interface work of this phase (Unit 4.5: shell pass, overview and analytics redesign, inbox styling) is superseded by the voyage redesign, planned in `docs/plans/2026-11-12-002-feat-admin-voyage-redesign.md`. Units 4.1, 4.2, 4.3 and 4.4 stand as written; the login, Matrix entry, zodiac sky background and sign-out sequence are already merged. The voyage plan's Units V0 to V6 run between Unit 4.2 and Unit 4.3, and Phase 4 closes with Units 4.3 and 4.4 against the new managers.
+
 ### Phase 5 (new): Content refresh (added by the owner, 2026-11-09)
 
 The portfolio is where the owner sells himself to recruiters, so every section must carry current, relevant information, not only projects. Same method as Phase 3: draft from the owner's sources, review page, owner approval, one all-or-nothing import, browser check, owner sign-off on localhost.
