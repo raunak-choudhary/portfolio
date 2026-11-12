@@ -1,6 +1,6 @@
 // src/Router.js - public portfolio router
 
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import Header from './components/common/Header';
 import Footer from './components/common/Footer';
@@ -20,8 +20,13 @@ import AchievementsPage from './pages/AchievementsPage';
 import LeadershipPage from './pages/LeadershipPage';
 import AdminLogin from './components/admin/AdminLogin/AdminLogin';
 import MfaCodeStep from './components/admin/AdminLogin/MfaCodeStep';
-import AdminWelcome from './components/admin/AdminWelcome/AdminWelcome';
-import AdminSignOut from './components/admin/AdminSignOut/AdminSignOut';
+// The dashboard and the sign-out film carry the sky renderer, the 3D field and their
+// libraries; they load as their own chunk so the public site's bundle does not pay for them.
+const AdminWelcome = lazy(() => import('./components/admin/AdminWelcome/AdminWelcome'));
+const AdminSignOut = lazy(() => import('./components/admin/AdminSignOut/AdminSignOut'));
+
+/** Shown while an admin chunk loads; black like the admin screens so there is no white flash. */
+const AdminChunkFallback = () => <div style={{ minHeight: '100vh', background: '#04070f' }} aria-busy="true" />;
 
 /** Admin pages are full-screen experiences: no site header or footer, as in the 2025 build. */
 const isAdminPath = (pathname) => /^\/admin(login|dashboard|signout)(\/|$)/.test(pathname);
@@ -54,7 +59,11 @@ const ProtectedAdminRoute = () => {
     return <MfaCodeStep />;
   }
 
-  return <AdminWelcome requireSecurityEnrollment={assurance.needsEnrollment} />;
+  return (
+    <Suspense fallback={<AdminChunkFallback />}>
+      <AdminWelcome requireSecurityEnrollment={assurance.needsEnrollment} />
+    </Suspense>
+  );
 };
 
 const NotFound = () => (
@@ -100,7 +109,7 @@ const AppShell = () => {
           <Route path="/leadership" element={<LeadershipPage />} />
           <Route path="/adminlogin" element={<AdminLogin />} />
           <Route path="/admindashboard" element={<ProtectedAdminRoute />} />
-          <Route path="/adminsignout" element={<AdminSignOut />} />
+          <Route path="/adminsignout" element={<Suspense fallback={<AdminChunkFallback />}><AdminSignOut /></Suspense>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
