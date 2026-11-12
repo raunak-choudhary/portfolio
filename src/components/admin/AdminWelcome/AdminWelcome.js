@@ -10,6 +10,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import AdminDashboard from '../AdminDashboard/AdminDashboard';
+import VoyagePage from '../Voyage/VoyagePage';
 import MatrixEntry from './MatrixEntry';
 import { useAuthContext } from '../../../contexts/AuthContext';
 import { supabase } from '../../../services/supabaseClient';
@@ -36,7 +37,8 @@ const useEntryCounts = () => {
   return counts;
 };
 
-const AdminWelcome = ({ requireSecurityEnrollment = false }) => {
+/** @param {'classic'|'voyage'} [props.view] which dashboard the entry opens onto. */
+const AdminWelcome = ({ requireSecurityEnrollment = false, view = 'classic' }) => {
   const { assurance } = useAuthContext();
   const [entryDone, setEntryDone] = useState(false);
   const counts = useEntryCounts();
@@ -53,7 +55,7 @@ const AdminWelcome = ({ requireSecurityEnrollment = false }) => {
   return (
     <>
       <div inert={!entryDone} aria-hidden={!entryDone}>
-        <AdminDashboard requireSecurityEnrollment={requireSecurityEnrollment} />
+        {view === 'voyage' ? <VoyagePage requireSecurityEnrollment={requireSecurityEnrollment} /> : <AdminDashboard requireSecurityEnrollment={requireSecurityEnrollment} />}
       </div>
       {!entryDone && <MatrixEntry facts={facts} onDone={() => setEntryDone(true)} />}
     </>
