@@ -1,0 +1,7 @@
+{
+  "mainBaselineKb": 186,
+  "mainAllowanceKb": 5,
+  "otherChunkMaxKb": 300,
+  "recordedAt": "2026-11-12",
+  "note": "Gzipped sizes. The main chunk is the public site; it must not grow when admin libraries are added. Split chunks are the admin, loaded on demand. Update the baseline only with the change that justifies it."
+}
