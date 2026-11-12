@@ -6,7 +6,7 @@
 // no Three.js, so every rule here is unit tested; the scene and the page apply
 // the numbers.
 
-import { BLACK_HOLE_PLACEMENT, CHAPTERS, DEEP_SKY_PLACEMENTS, chapterIndex } from './chapters';
+import { CHAPTERS, DEEP_SKY_PLACEMENTS, chapterIndex } from './chapters';
 
 /** World units between chapter anchors along the route, and units per degree of sky inside a figure. */
 export const SPACING = 520;
@@ -22,10 +22,12 @@ export const clamp01 = (v) => Math.min(1, Math.max(0, v));
 
 /**
  * Anchor of chapter i: a gentle lateral weave so the route is not a straight
- * corridor, and a constant step in depth.
+ * corridor, and a constant step in depth. The prologue's anchor sits lower
+ * and to the right so the camera opens on the Earth (placed off that anchor
+ * by earthModel's EARTH_OFFSET) with the title at the left.
  * @returns {{x: number, y: number, z: number}}
  */
-export const anchorFor = (i) => ({ x: Math.sin(i * 1.7) * 160, y: Math.cos(i * 1.3) * 90, z: FIRST_ANCHOR_Z - i * SPACING });
+export const anchorFor = (i) => (i === 0 ? { x: 160, y: -140, z: FIRST_ANCHOR_Z } : { x: Math.sin(i * 1.7) * 160, y: Math.cos(i * 1.3) * 90, z: FIRST_ANCHOR_Z - i * SPACING });
 
 export const ANCHORS = Object.freeze(CHAPTERS.map((_, i) => anchorFor(i)));
 
@@ -74,8 +76,10 @@ export const liveChapterIndex = (f) => Math.round(f);
 export const isChapterLive = (i, f) => Math.abs(f - i) < 0.55;
 
 /**
- * World placement of a deep-sky photograph: beside the route near its chapter,
- * further back than the figures so it drifts slowly (parallax), and large.
+ * World placement of a deep-sky photograph: far behind its chapter's figure
+ * and off to one side, large enough to still fill a good part of the frame
+ * from that distance, so it drifts slowly past (parallax) with the stars in
+ * front of it.
  * @param {{slug: string, near: string, side: 'left'|'right', scale: number, depth: number}} placement
  * @param {{width: number, height: number}} image
  * @returns {{x: number, y: number, z: number, width: number, height: number}}
@@ -86,19 +90,14 @@ export function deepSkyPlacement(placement, image, anchors = ANCHORS) {
   const base = 1250 * placement.scale;
   const aspect = image.width / Math.max(1, image.height);
   const width = aspect >= 1 ? base : base * aspect, height = aspect >= 1 ? base / aspect : base;
-  // far enough to the side that the object enters at the frame's edge and drifts past, not a row across the middle
-  const x = (placement.side === 'left' ? -1 : 1) * (980 + base * 0.32) + a.x * 0.4;
-  const y = a.y * 0.4 + (i % 3 === 0 ? 220 : i % 3 === 1 ? -180 : 60);
+  // off the route's axis, so the object is seen past the figure rather than behind it
+  const x = (placement.side === 'left' ? -1 : 1) * (700 + base * 0.3) + a.x * 0.4;
+  const y = a.y * 0.4 + (i % 3 === 0 ? 380 : i % 3 === 1 ? -300 : 120);
   return { x, y, z: a.z + placement.depth, width, height };
 }
 
 export const deepSkyLayout = (manifest, anchors = ANCHORS) =>
   DEEP_SKY_PLACEMENTS.flatMap((p) => { const img = manifest.find((m) => m.slug === p.slug); return img ? [{ ...p, image: img, ...deepSkyPlacement(p, img, anchors) }] : []; });
-
-export const blackHolePlacement = (anchors = ANCHORS) => {
-  const i = chapterIndex(BLACK_HOLE_PLACEMENT.near), a = anchors[i];
-  return { x: (BLACK_HOLE_PLACEMENT.side === 'left' ? -1 : 1) * 1500 + a.x * 0.5, y: a.y * 0.5 + 260, z: a.z + BLACK_HOLE_PLACEMENT.depth, radius: 240 * BLACK_HOLE_PLACEMENT.scale };
-};
 
 /**
  * Star count and pixel ratio for a device, so phones keep their frame rate.
@@ -108,6 +107,16 @@ export function qualityFor({ width, devicePixelRatio = 1, reducedMotion = false,
   if (!webgl) return { mode: 'fallback', stars: 0, pixelRatio: 1, fly: false };
   const phone = width < 768;
   return { mode: 'webgl', stars: phone ? 3500 : 9000, pixelRatio: Math.min(devicePixelRatio, phone ? 1.5 : 2), fly: !reducedMotion };
+}
+
+/** The greeting for the prologue, by the hour in New York. */
+export function greetingFor(date = new Date(), timeZone = 'America/New_York') {
+  const hour = Number(new Intl.DateTimeFormat('en-US', { hour: 'numeric', hourCycle: 'h23', timeZone }).format(date));
+  if (hour < 5) return 'Good night';
+  if (hour < 12) return 'Good morning';
+  if (hour < 17) return 'Good afternoon';
+  if (hour < 22) return 'Good evening';
+  return 'Good night';
 }
 
 /** Scroll fraction that puts a chapter's stage in view (the star rail and the palette use it). */

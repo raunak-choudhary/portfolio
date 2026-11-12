@@ -5,7 +5,7 @@
 // a row along the bottom on phones (CSS).
 
 import React from 'react';
-import { CHAPTERS } from './chapters';
+import { CHAPTERS, chapterPlace } from './chapters';
 
 /**
  * @param {object} props
@@ -21,12 +21,12 @@ export default function StarRail({ active, onJump, names = {} }) {
           key={chapter.id}
           type="button"
           className={`voyage-rail__dot${i === active ? ' is-active' : ''}`}
-          aria-label={`${chapter.name} (${names[chapter.constellation] || chapter.constellation})`}
+          aria-label={`${chapter.name} (${chapterPlace(chapter, names)})`}
           aria-current={i === active ? 'true' : undefined}
-          data-name={`${chapter.name} · ${names[chapter.constellation] || chapter.constellation}`}
+          data-name={`${chapter.name} · ${chapterPlace(chapter, names)}`}
           onClick={() => onJump(i)}
         >
-          {chapter.constellation}
+          {chapter.rail || chapter.constellation}
         </button>
       ))}
     </nav>

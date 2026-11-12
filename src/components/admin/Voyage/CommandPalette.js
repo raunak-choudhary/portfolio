@@ -5,7 +5,7 @@
 
 import React, { useEffect } from 'react';
 import { Command } from 'cmdk';
-import { CHAPTERS } from './chapters';
+import { CHAPTERS, chapterPlace } from './chapters';
 
 /**
  * @param {object} props
@@ -32,8 +32,8 @@ export default function CommandPalette({ open, onOpenChange, onJump, actions = [
           <Command.Empty className="voyage-palette__empty">Nothing matches.</Command.Empty>
           <Command.Group heading="Chapters">
             {CHAPTERS.map((c, i) => (
-              <Command.Item key={c.id} value={`${c.name} ${names[c.constellation] || c.constellation}`} onSelect={() => { onJump(i); close(); }} className="voyage-palette__item">
-                <span>{c.name}</span><span className="voyage-palette__hint">{names[c.constellation] || c.constellation}</span>
+              <Command.Item key={c.id} value={`${c.name} ${chapterPlace(c, names)}`} onSelect={() => { onJump(i); close(); }} className="voyage-palette__item">
+                <span>{c.name}</span><span className="voyage-palette__hint">{chapterPlace(c, names)}</span>
               </Command.Item>
             ))}
           </Command.Group>
