@@ -19,8 +19,8 @@ import { chromium } from '@playwright/test';
 const STATE_FILE = path.join('.playwright', 'admin-state.json');
 export const WIDTHS = [[390, 844], [768, 1024], [1024, 768], [1440, 900]];
 
-/** True when the page is on an admin route other than the login, i.e. the saved session still works. */
-export const signedIn = (pathname) => /^\/admindashboard/.test(pathname);
+/** True when the real dashboard (classic or voyage) is on screen, not the login or the code step. */
+const DASHBOARD_SELECTOR = '.admin-dashboard, .voyage';
 
 async function main(argv) {
   const arg = (name, fallback) => { const i = argv.indexOf(name); return i >= 0 ? argv[i + 1] : fallback; };
@@ -41,9 +41,10 @@ async function main(argv) {
     if (argv.includes('--skip-entry')) await context.addInitScript(() => { try { sessionStorage.setItem('rc-admin-entry-seen', '1'); } catch { /* ignore */ } });
     await page.goto(`${base}${route}`, { waitUntil: 'networkidle' });
     await page.waitForTimeout(1500);
-    const where = new URL(page.url()).pathname;
-    if (!signedIn(where)) {
-      process.stderr.write(`Saved session did not sign in (landed on ${where}). Rerun admin-login-capture.\n`);
+    const onDashboard = await page.locator(DASHBOARD_SELECTOR).count();
+    if (!onDashboard) {
+      const where = new URL(page.url()).pathname, text = (await page.locator('body').innerText()).slice(0, 80).replace(/\s+/g, ' ');
+      process.stderr.write(`Saved session did not reach the dashboard (at ${where}: "${text}"). Rerun: npm run admin:login\n`);
       await browser.close();
       return 3;
     }
