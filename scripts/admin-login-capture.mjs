@@ -30,12 +30,24 @@ async function main(argv) {
   await page.goto(`${base}/adminlogin`);
   process.stdout.write('Sign in in the browser window (email code, then authenticator). Waiting for the dashboard...\n');
 
-  // The dashboard URL plus a stored Supabase session means the sign-in is complete.
+  // Complete means: the Supabase session in localStorage carries an access token whose
+  // assurance claim is aal2, i.e. the authenticator code has been accepted. The URL alone is
+  // not enough: the code step is also shown at /admindashboard.
   await page.waitForFunction(
-    () => window.location.pathname.startsWith('/admindashboard') && Object.keys(window.localStorage).some((k) => k.startsWith('sb-') && k.endsWith('-auth-token')),
+    () => {
+      try {
+        const key = Object.keys(window.localStorage).find((k) => k.startsWith('sb-') && k.endsWith('-auth-token'));
+        if (!key) return false;
+        const token = JSON.parse(window.localStorage.getItem(key))?.access_token;
+        if (!token) return false;
+        const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+        return payload.aal === 'aal2';
+      } catch { return false; }
+    },
     null,
     { timeout: 10 * 60 * 1000 },
   );
+  process.stdout.write('Second factor accepted. Saving in a moment...\n');
   // Let the entry animation and the first data load settle, so the saved state includes any refreshed token.
   await page.waitForTimeout(4000);
   await context.storageState({ path: STATE_FILE });
