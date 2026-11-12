@@ -28,11 +28,11 @@
   --voyage-muted: #d9c3b4;
   --voyage-accent: #ffb27a;
   --voyage-accent-ink: #2a1408;
-  --voyage-tint: rgba(26, 20, 48, 0.45);
+  --voyage-tint: rgba(20, 12, 8, 0.45);
   --voyage-bad: #ff7a90;
   --voyage-warn: #ffcf7a;
   --voyage-good: #7fe3b0;
-  background: #1a1430;
+  background: #120c08;
 }
 
 .voyage-field,

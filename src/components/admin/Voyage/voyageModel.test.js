@@ -1,19 +1,20 @@
 import { CHAPTERS, CHAPTER_IDS, DEEP_SKY_PLACEMENTS, chapterById, chapterIndex } from './chapters';
 import {
-  ANCHORS, LOOK_DROP, SPACING, blackHolePlacement, cameraTarget, deepSkyLayout, deepSkyPlacement, figureState, isChapterLive, liveChapterIndex, qualityFor, routePosition, scrollFractionFor,
+  ANCHORS, LOOK_DROP, SPACING, cameraTarget, deepSkyLayout, greetingFor, deepSkyPlacement, figureState, isChapterLive, liveChapterIndex, qualityFor, routePosition, scrollFractionFor,
 } from './voyageModel';
 
 describe('chapter registry', () => {
-  it('has sixteen chapters, the twelve managers on the zodiac in order', () => {
-    expect(CHAPTERS).toHaveLength(16);
+  it('has a prologue and sixteen chapters, the twelve managers on the zodiac in order', () => {
+    expect(CHAPTERS).toHaveLength(17);
+    expect(CHAPTERS[0]).toMatchObject({ id: 'earth', kind: 'prologue', constellation: null, place: 'Low Earth orbit' });
     const zodiac = ['Ari', 'Tau', 'Gem', 'Cnc', 'Leo', 'Vir', 'Lib', 'Sco', 'Sgr', 'Cap', 'Aqr', 'Psc'];
     expect(CHAPTERS.filter((c) => c.kind === 'deck').map((c) => c.constellation)).toEqual(zodiac);
     expect(chapterById('overview').constellation).toBe('UMa');
     expect(chapterById('analytics').constellation).toBe('Ori');
     expect(chapterById('inbox').constellation).toBe('Cyg');
     expect(chapterById('security').constellation).toBe('Cas');
-    expect(new Set(CHAPTER_IDS).size).toBe(16);
-    expect(chapterIndex('projects')).toBe(3);
+    expect(new Set(CHAPTER_IDS).size).toBe(17);
+    expect(chapterIndex('projects')).toBe(4);
     expect(chapterIndex('nope')).toBe(-1);
   });
 
@@ -26,15 +27,18 @@ describe('chapter registry', () => {
 describe('route and camera', () => {
   it('maps the scroll fraction onto the chapters', () => {
     expect(routePosition(0)).toEqual({ f: 0, index: 0, frac: 0 });
-    expect(routePosition(1)).toMatchObject({ index: 15, frac: 0 });
-    const mid = routePosition(0.5);
-    expect(mid.f).toBeCloseTo(7.5); expect(mid.index).toBe(7); expect(mid.frac).toBeCloseTo(0.5);
-    expect(routePosition(-1).f).toBe(0); expect(routePosition(2).f).toBe(15);
+    expect(routePosition(1)).toMatchObject({ index: 16, frac: 0 });
+    const mid = routePosition(0.25);
+    expect(mid.f).toBeCloseTo(4); expect(mid.index).toBe(4); expect(mid.frac).toBeCloseTo(0);
+    const between = routePosition(0.5 / 16);
+    expect(between.index).toBe(0); expect(between.frac).toBeCloseTo(0.5);
+    expect(routePosition(-1).f).toBe(0); expect(routePosition(2).f).toBe(16);
   });
 
-  it('spaces the anchors evenly in depth and keeps them near the axis', () => {
+  it('spaces the anchors evenly in depth and keeps them near the axis, the prologue lower and to the right', () => {
     for (let i = 1; i < ANCHORS.length; i++) expect(ANCHORS[i - 1].z - ANCHORS[i].z).toBeCloseTo(SPACING);
-    ANCHORS.forEach((a) => { expect(Math.abs(a.x)).toBeLessThanOrEqual(160); expect(Math.abs(a.y)).toBeLessThanOrEqual(90); });
+    ANCHORS.slice(1).forEach((a) => { expect(Math.abs(a.x)).toBeLessThanOrEqual(160); expect(Math.abs(a.y)).toBeLessThanOrEqual(90); });
+    expect(ANCHORS[0]).toEqual({ x: 160, y: -140, z: -360 });
   });
 
   it('flies between anchors, or cuts straight when flying is off', () => {
@@ -45,7 +49,7 @@ describe('route and camera', () => {
     expect(between.look.z).toBeCloseTo((ANCHORS[2].z + ANCHORS[3].z) / 2);
     const cut = cameraTarget({ index: 2, frac: 0.5 }, false);
     expect(cut.position).toEqual({ x: 0, y: -LOOK_DROP * 0.35, z: ANCHORS[2].z + 520 });
-    expect(cameraTarget({ index: 15, frac: 0.9 }).look.z).toEqual(ANCHORS[15].z);
+    expect(cameraTarget({ index: 16, frac: 0.9 }).look.z).toEqual(ANCHORS[16].z);
   });
 });
 
@@ -64,14 +68,15 @@ describe('figure drawing', () => {
   });
 });
 
-describe('deep sky and the black hole', () => {
-  it('keeps photographs beside the route, behind the figures, with their aspect ratio', () => {
+describe('deep sky', () => {
+  it('keeps photographs off the route, far behind the figures, with their aspect ratio', () => {
     const p = deepSkyPlacement({ slug: 'x', near: 'projects', side: 'left', scale: 1, depth: -800 }, { width: 1024, height: 512 });
-    expect(p.x).toBeLessThan(-900);
-    expect(p.z).toBeLessThan(ANCHORS[3].z);
+    expect(p.x).toBeLessThan(-800);
+    expect(p.z).toBe(ANCHORS[chapterIndex('projects')].z - 800);
+    DEEP_SKY_PLACEMENTS.forEach((d) => expect(d.depth).toBeLessThanOrEqual(-1600));
     expect(p.width / p.height).toBeCloseTo(2);
     const portrait = deepSkyPlacement({ slug: 'y', near: 'projects', side: 'right', scale: 1, depth: -800 }, { width: 500, height: 1000 });
-    expect(portrait.x).toBeGreaterThan(900);
+    expect(portrait.x).toBeGreaterThan(800);
     expect(portrait.height).toBeGreaterThan(portrait.width);
   });
 
@@ -79,8 +84,7 @@ describe('deep sky and the black hole', () => {
     const layout = deepSkyLayout([{ slug: 'andromeda', width: 1024, height: 672 }, { slug: 'unknown', width: 10, height: 10 }]);
     expect(layout).toHaveLength(1);
     expect(layout[0]).toMatchObject({ slug: 'andromeda', side: 'left' });
-    const hole = blackHolePlacement();
-    expect(hole.radius).toBe(240); expect(hole.x).toBeGreaterThan(1000); expect(hole.z).toBeLessThan(ANCHORS[chapterIndex('skills')].z);
+    expect(DEEP_SKY_PLACEMENTS).toHaveLength(8);
   });
 });
 
@@ -90,6 +94,16 @@ describe('quality', () => {
     expect(qualityFor({ width: 390, devicePixelRatio: 3 })).toEqual({ mode: 'webgl', stars: 3500, pixelRatio: 1.5, fly: true });
     expect(qualityFor({ width: 1440, devicePixelRatio: 1, reducedMotion: true }).fly).toBe(false);
     expect(qualityFor({ width: 1440, webgl: false })).toMatchObject({ mode: 'fallback', fly: false, stars: 0 });
-    expect(scrollFractionFor(0)).toBe(0); expect(scrollFractionFor(15)).toBe(1);
+    expect(scrollFractionFor(0)).toBe(0); expect(scrollFractionFor(16)).toBe(1);
+  });
+});
+
+describe('greeting', () => {
+  it('follows the New York clock', () => {
+    expect(greetingFor(new Date('2026-11-12T13:00:00Z'))).toBe('Good morning');     // 08:00 EST
+    expect(greetingFor(new Date('2026-11-12T19:00:00Z'))).toBe('Good afternoon');   // 14:00 EST
+    expect(greetingFor(new Date('2026-11-13T01:00:00Z'))).toBe('Good evening');     // 20:00 EST
+    expect(greetingFor(new Date('2026-11-13T04:30:00Z'))).toBe('Good night');       // 23:30 EST
+    expect(greetingFor(new Date('2026-11-13T08:00:00Z'))).toBe('Good night');       // 03:00 EST
   });
 });

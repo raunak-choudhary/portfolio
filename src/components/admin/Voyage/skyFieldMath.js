@@ -62,8 +62,10 @@ export function drawingPlacement(figure) {
 
 /** Night is the locked zodiac night; dawn is the light theme in space: indigo to rose, rust figures, faint stars. */
 export const PALETTES = Object.freeze({
-  night: { background: 0x04070f, fogNear: 400, fogFar: 3200, starAlpha: 1, line: 0xbfd4ff, point: 0xffffff, art: 0xa9c0ee, artAlpha: 0.32, deepAlpha: 0.95, glow: 0x7cc7ff },
-  dawn: { background: 0x1a1430, fogNear: 300, fogFar: 2600, starAlpha: 0.45, line: 0xffb27a, point: 0xffd9b0, art: 0xd98a5a, artAlpha: 0.28, deepAlpha: 0.55, glow: 0xff9a5c },
+  // night: the locked zodiac sky's colours (near-black ground, white stars, pale blue lines and drawings); fog reaches past the photographs so stars hang in front of them
+  night: { background: 0x04070f, fogNear: 500, fogFar: 4400, starAlpha: 1, line: 0xbfd4ff, point: 0xffffff, art: 0xa9c0ee, artAlpha: 0.32, deepAlpha: 0.9, glow: 0x7cc7ff },
+  // dawn is a placeholder until the day scene (Earth around the Sun) is built: a warm near-black, no violet
+  dawn: { background: 0x120c08, fogNear: 400, fogFar: 3600, starAlpha: 0.55, line: 0xffb27a, point: 0xffd9b0, art: 0xd98a5a, artAlpha: 0.28, deepAlpha: 0.7, glow: 0xff9a5c },
 });
 
 export const paletteForTheme = (theme) => (theme === 'light' ? PALETTES.dawn : PALETTES.night);

@@ -19,12 +19,12 @@ import { markDashboardReady } from '../AdminWelcome/adminReadiness';
 import SkyBackground, { SKY_ASSET_BASE } from '../SkyBackground/SkyBackground';
 import SkyControls from '../SkyBackground/SkyControls';
 import { SkySettingsProvider, useSkySettings } from '../SkyBackground/SkySettingsContext';
-import { CHAPTERS, chapterIndex } from './chapters';
+import { CHAPTERS, chapterIndex, chapterPlace } from './chapters';
 import Bento from './Bento';
 import CommandPalette from './CommandPalette';
 import StarRail from './StarRail';
 import { createSkyField, webglAvailable } from './skyField';
-import { isChapterLive, liveChapterIndex, qualityFor, routePosition, scrollFractionFor } from './voyageModel';
+import { isChapterLive, liveChapterIndex, qualityFor, routePosition, scrollFractionFor, greetingFor } from './voyageModel';
 import './Voyage.css';
 
 /** Names of the constellations, from figures.json, for the rail and the palette. */
@@ -129,6 +129,7 @@ function VoyageView({ requireSecurityEnrollment }) {
     { id: 'signout', label: 'Sign out', hint: 'the film plays', run: signOut },
   ], [navigate, signOut]);
 
+  const greeting = useMemo(() => greetingFor(), []);
   const countFor = (chapter) => { const s = data.stats; if (!s || !chapter.table) return null; const key = { hero_content: null, about_content: null, projects: 'projects', internships: 'internships', education: 'education', work_experience: 'workExperience', skills: 'skills', certifications: 'certifications', recommendations: 'recommendations', achievements: 'achievements', leadership: 'leadership', contact_messages: 'messages' }[chapter.table]; return key ? s[key] ?? null : null; };
 
   return (
@@ -150,15 +151,15 @@ function VoyageView({ requireSecurityEnrollment }) {
           <section key={chapter.id} id={`chapter-${chapter.id}`} ref={(el) => { stageRefs.current[i] = el; }} className="voyage-chapter" aria-labelledby={`chapter-${chapter.id}-title`}>
             <div className="voyage-chapter__head">
               <div>
-                <div className="voyage-chapter__kicker">{String(i + 1).padStart(2, '0')} · {names[chapter.constellation] || chapter.constellation}</div>
-                <h2 className="voyage-chapter__title" id={`chapter-${chapter.id}-title`}>{chapter.name}</h2>
+                <div className="voyage-chapter__kicker">{String(i).padStart(2, '0')} · {chapterPlace(chapter, names)}</div>
+                <h2 className="voyage-chapter__title" id={`chapter-${chapter.id}-title`}>{chapter.kind === 'prologue' ? `${greeting}, Raunak` : chapter.name}</h2>
                 <p className="voyage-chapter__sub">{chapter.sub}</p>
               </div>
             </div>
             {chapter.kind === 'bento' && (requireSecurityEnrollment
               ? <div className="voyage-pane voyage-notice">Confirm an authenticator app in Security before the managers open.</div>
               : <Bento data={data} onGo={go} />)}
-            {chapter.kind !== 'bento' && (
+            {chapter.kind !== 'bento' && chapter.kind !== 'prologue' && (
               <div className="voyage-pane voyage-placeholder">
                 <p>{countFor(chapter) !== null ? <><b>{countFor(chapter)}</b> {countFor(chapter) === 1 ? 'item' : 'items'} in this section.</> : 'This chapter is on its way.'}</p>
                 <p className="voyage-placeholder__note">The deck and the editor sheet arrive in the next unit. Until then this section is edited in the classic dashboard.</p>

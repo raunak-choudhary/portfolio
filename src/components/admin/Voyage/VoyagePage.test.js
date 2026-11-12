@@ -78,7 +78,8 @@ describe('VoyagePage (2D fallback)', () => {
     expect(document.body.style.getPropertyValue('transform')).toBe('none');
     expect(isDashboardReady()).toBe(true);
     const titles = [...view.container.querySelectorAll('.voyage-chapter__title')].map((h) => h.textContent);
-    expect(titles[0]).toBe('Mission control'); expect(titles[3]).toBe('Projects'); expect(titles[15]).toBe('Security');
+    expect(titles[0]).toMatch(/^Good (morning|afternoon|evening|night), Raunak$/); expect(titles[1]).toBe('Mission control'); expect(titles[4]).toBe('Projects'); expect(titles[16]).toBe('Security');
+    expect(view.container.querySelector('#chapter-earth .voyage-placeholder')).toBeNull();
     view.unmount();
     expect(document.body.style.getPropertyValue('transform')).toBe('scale(1)');
     document.body.style.removeProperty('transform');
@@ -105,8 +106,9 @@ describe('VoyagePage (2D fallback)', () => {
     const view = render();
     await flush();
     const dots = view.container.querySelectorAll('.voyage-rail__dot');
-    expect(dots).toHaveLength(16);
-    click(dots[3]);
+    expect(dots).toHaveLength(17);
+    expect(dots[0].textContent).toBe('⊕');
+    click(dots[4]);
     expect(window.scrollTo).toHaveBeenCalled();
     act(() => { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true })); });
     const palette = document.querySelector('.voyage-palette');
