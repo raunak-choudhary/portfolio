@@ -88,6 +88,16 @@ Each unit is one branch and one pull request, merged on local evidence (rule 10)
 
 - [ ] **Phase 5 hook: Layout manager.** Designed in Unit V1's bento as a future chapter ("Layout", on Ursa Minor): the public sections as draggable tiles in order, show or hide, hero style. Built in Phase 5; the data model (a `site_layout` row) is specified then.
 
+## Rollback strategy
+
+The owner asked for a way back at any moment. Three layers:
+
+1. **Tag.** `admin-classic-2026-11-12` marks the last main before any voyage code (the classic dashboard, the zodiac sky and the sign-out film). `git checkout admin-classic-2026-11-12` gives that exact state; a build from it is the emergency deploy.
+2. **Flag, not replacement.** Until Unit V6, the classic dashboard stays the default at `/admindashboard` and the voyage lives at `/admindashboard/voyage` behind a route flag. Switching the default is one commit in Unit V6; reverting that one commit brings the classic dashboard back with every voyage unit still merged and harmless.
+3. **One branch per unit, merged to main only when green** (owner's rule: nothing left open). Each unit's pull request lists the exact commits, so `git revert` of a unit is a mechanical step; the units are ordered so that reverting the latest never breaks an earlier one.
+
+Data: no unit changes existing tables. The only addition is `admin_activity` (Unit V5), owner-only and droppable without touching content.
+
 ## Risks
 
 - Twelve manager migrations are the real cost and the most likely place to lose a field. The per-manager checklist and `TEST-` round-trips are the guard.

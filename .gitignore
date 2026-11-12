@@ -91,3 +91,5 @@ CLAUDE.md
 test-results/
 playwright-report/
 captures/
+.playwright/
+# Playwright storage state with the owner's live admin session (admin-login-capture.mjs)
