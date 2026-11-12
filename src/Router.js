@@ -38,7 +38,7 @@ const isAdminPath = (pathname) => /^\/admin(login|dashboard|signout)(\/|$)/.test
  * the welcome animation. With no authenticator enrolled yet, the dashboard
  * opens on the Security screen alone until the first one is confirmed.
  */
-const ProtectedAdminRoute = () => {
+const ProtectedAdminRoute = ({ view = 'classic' }) => {
   const { assurance, isAuthenticated, isLoading, sessionChecked } = useAuthContext();
 
   if (isLoading || !sessionChecked || (isAuthenticated && !assurance.checked)) {
@@ -61,7 +61,7 @@ const ProtectedAdminRoute = () => {
 
   return (
     <Suspense fallback={<AdminChunkFallback />}>
-      <AdminWelcome requireSecurityEnrollment={assurance.needsEnrollment} />
+      <AdminWelcome requireSecurityEnrollment={assurance.needsEnrollment} view={view} />
     </Suspense>
   );
 };
@@ -109,6 +109,8 @@ const AppShell = () => {
           <Route path="/leadership" element={<LeadershipPage />} />
           <Route path="/adminlogin" element={<AdminLogin />} />
           <Route path="/admindashboard" element={<ProtectedAdminRoute />} />
+          {/* The voyage (the admin as one sky) lives beside the classic dashboard until it replaces it; see docs/plans/2026-11-12-002. */}
+          <Route path="/admindashboard/voyage" element={<ProtectedAdminRoute view="voyage" />} />
           <Route path="/adminsignout" element={<Suspense fallback={<AdminChunkFallback />}><AdminSignOut /></Suspense>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
