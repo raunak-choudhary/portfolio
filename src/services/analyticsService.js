@@ -252,7 +252,7 @@ const SECTION_HEALTH_RULES = [
     table: 'skills',
     weight: 8,
     minItems: 8,
-    requiredFields: ['name'],
+    requiredFields: ['skill_name'],   // the column is skill_name; 'name' flagged every skill as a critical gap
     qualityGroups: [
       { name: 'category', label: 'category', fields: ['category'], issueType: 'missing_required_field' }
     ]
