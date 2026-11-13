@@ -1,6 +1,6 @@
 import { CHAPTERS, CHAPTER_IDS, DEEP_SKY_PLACEMENTS, chapterById, chapterIndex } from './chapters';
 import {
-  ANCHORS, LOOK_DROP, PROLOGUE_GAP, SPACING, cameraTarget, deepSkyLayout, drawStartFor, greetingFor, deepSkyPlacement, figureState, isChapterLive, liveChapterIndex, qualityFor, routePosition, scrollFractionFor,
+  ANCHORS, LOOK_DROP, PROLOGUE_GAP, SPACING, cameraTarget, deepSkyLayout, drawStartFor, greetingFor, routeFromTops, deepSkyPlacement, figureState, isChapterLive, liveChapterIndex, qualityFor, routePosition, scrollFractionFor,
 } from './voyageModel';
 
 describe('chapter registry', () => {
@@ -104,6 +104,21 @@ describe('quality', () => {
     expect(qualityFor({ width: 1440, devicePixelRatio: 1, reducedMotion: true }).fly).toBe(false);
     expect(qualityFor({ width: 1440, webgl: false })).toMatchObject({ mode: 'fallback', fly: false, stars: 0 });
     expect(scrollFractionFor(0)).toBe(0); expect(scrollFractionFor(16)).toBe(1);
+  });
+});
+
+describe('route from the stages on the page', () => {
+  it('follows the stage under the viewport, however tall each one is', () => {
+    const tops = [0, 900, 1800, 6300, 7200];   // the fourth stage is a five-screen deck
+    expect(routeFromTops(0, tops)).toBe(0);
+    expect(routeFromTops(450, tops)).toBeCloseTo(0.5);
+    expect(routeFromTops(1800, tops)).toBe(2);
+    expect(routeFromTops(1800 + 4500 / 2, tops)).toBeCloseTo(2.5);   // halfway down the deck
+    expect(routeFromTops(6300, tops)).toBe(3);
+    expect(routeFromTops(99999, tops)).toBe(4);
+    expect(routeFromTops(-10, tops)).toBe(0);
+    expect(routeFromTops(100, [])).toBe(0); expect(routeFromTops(100, [0])).toBe(0);
+    expect(routeFromTops(5, [0, 0, 10])).toBeCloseTo(1.5);   // two stages at the same top do not divide by zero
   });
 });
 
