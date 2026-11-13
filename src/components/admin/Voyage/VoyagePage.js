@@ -35,7 +35,7 @@ function VoyageView({ requireSecurityEnrollment }) {
   const { resolvedTheme, effectiveMotion } = useSkySettings();
   const [figures, setFigures] = useState(null), [deep, setDeep] = useState([]);
   const [data, setData] = useState({ health: null, visitors: null, inbox: null, edits: null, pages: null, stats: null, assetBase: SKY_ASSET_BASE });
-  const [active, setActive] = useState(0), [paletteOpen, setPaletteOpen] = useState(false);
+  const [active, setActive] = useState(0), [paletteOpen, setPaletteOpen] = useState(false), [over, setOver] = useState('');
   const [webgl] = useState(() => webglAvailable());
   const canvasRef = useRef(null), fieldRef = useRef(null), stageRefs = useRef([]);
   const names = useMemo(() => namesFrom(figures), [figures]);
@@ -101,7 +101,7 @@ function VoyageView({ requireSecurityEnrollment }) {
 
   // ---- the loop: scroll fraction to camera, stages and rail ----
   useEffect(() => {
-    let frame = 0, stopped = false, lastIndex = -1;
+    let frame = 0, stopped = false, lastIndex = -1, lastOver = '';
     const scrollFraction = () => { const max = document.documentElement.scrollHeight - window.innerHeight; return max > 0 ? window.scrollY / max : 0; };
     const tick = (now) => {
       if (stopped) return;
@@ -110,6 +110,7 @@ function VoyageView({ requireSecurityEnrollment }) {
       const live = liveChapterIndex(route.f);
       stageRefs.current.forEach((el, i) => el?.classList.toggle('is-live', isChapterLive(i, route.f)));
       if (live !== lastIndex) { lastIndex = live; setActive(live); }
+      if (route.over !== undefined && route.over !== lastOver) { lastOver = route.over; setOver(route.over); }
       frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
@@ -154,6 +155,7 @@ function VoyageView({ requireSecurityEnrollment }) {
                 <div className="voyage-chapter__kicker">{String(i).padStart(2, '0')} · {chapterPlace(chapter, names)}</div>
                 <h2 className="voyage-chapter__title" id={`chapter-${chapter.id}-title`}>{chapter.kind === 'prologue' ? `${greeting}, Raunak` : chapter.name}</h2>
                 <p className="voyage-chapter__sub">{chapter.sub}</p>
+                {chapter.kind === 'prologue' && over && <p className="voyage-chapter__over" aria-live="off">{over}</p>}
               </div>
             </div>
             {chapter.kind === 'bento' && (requireSecurityEnrollment

@@ -9,7 +9,7 @@
 
 import * as THREE from 'three';
 import {
-  EARTH_RADIUS, MOON_RADIUS, earthScene, earthSpin, moonPosition, satelliteOrbits, satellitePosition,
+  EARTH_RADIUS, MOON_RADIUS, earthScene, earthSpin, moonPosition, overReadout, satelliteOrbits, satellitePosition,
 } from './earthModel';
 
 const UP = new THREE.Vector3(0, 1, 0);
@@ -77,7 +77,7 @@ const SATELLITE_FRAGMENT = `
  * @param {number} input.pixelRatio
  * @param {number} [input.satellites] how many satellites to draw.
  * @param {Date} [input.date] the moment the scene is set for (real Sun, tilt and Moon phase).
- * @returns {{group: THREE.Group, scene: object, update(elapsed: number): void, dispose(): void}}
+ * @returns {{group: THREE.Group, scene: object, update(elapsed: number): void, readout(elapsed: number, viewer: THREE.Vector3): string, dispose(): void}}
  */
 export function createEarthSystem({ scene, loadTexture, assetBase, pixelRatio, satellites = 9, date = new Date() }) {
   const model = earthScene(date);
@@ -150,6 +150,8 @@ export function createEarthSystem({ scene, loadTexture, assetBase, pixelRatio, s
       satGeometry.attributes.position.needsUpdate = true;
       satMaterial.uniforms.uTime.value = elapsed;
     },
+    /** The city passing under the viewer and its time on the scene's clock. */
+    readout(elapsed, viewer) { return overReadout(model, elapsed, [viewer.x, viewer.y, viewer.z], date); },
     dispose() { for (const d of disposables) d.dispose?.(); },
   };
 }

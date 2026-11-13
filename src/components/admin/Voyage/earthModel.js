@@ -5,7 +5,7 @@
 // declination sets the axial tilt against the Sun, the subsolar point sets
 // where the terminator falls at load, the Moon starts at tonight's phase),
 // stylised where reality is invisible (the Earth turns once in a few minutes,
-// the Moon orbits in a minute and a half, and sits under two Earth radii out
+// the Moon orbits in ten minutes, and sits under two Earth radii out
 // instead of sixty, close enough to share the frame). No Three.js here so every rule is unit tested; the
 // scene applies the vectors.
 //
@@ -29,7 +29,7 @@ export const EARTH_RADIUS = 300;
 export const MOON_RADIUS = EARTH_RADIUS * 0.2727;
 export const MOON_ORBIT_RADIUS = EARTH_RADIUS * 1.6;
 export const EARTH_SPIN_MS = 150000;   // one turn in two and a half minutes
-export const MOON_ORBIT_MS = 95000;    // one orbit in a minute and a half
+export const MOON_ORBIT_MS = 600000;   // one orbit in ten minutes: four Earth turns, so the Earth is clearly the faster body (in truth it is twenty-seven times faster)
 /** Where the Sun sits in world space: ecliptic longitude of the Sun as seen in the scene, measured so 90° is straight right. */
 export const SUN_SCENE_AZIMUTH = 75;
 /** How far above the Moon's orbit the camera looks, degrees: steep, so the orbit reads as a ring and the Moon never crosses the camera's path. */
@@ -177,4 +177,71 @@ export function satellitePosition(orbit, elapsed, scene) {
   const flat = [Math.cos(a), 0, -Math.sin(a)];
   const inclined = rotateY(rotateX(flat, orbit.inclination), orbit.node);
   return add(scene.centre, scale(alignYTo(scene.axis).apply(inclined), orbit.radius));
+}
+
+// ---- what is under the camera ----
+
+/** Cities the readout can name, with the time zone that gives their local time. Coarse on purpose: one per region. */
+export const CITIES = Object.freeze([
+  ['New York', 40.71, -74.01, 'America/New_York'], ['Chicago', 41.88, -87.63, 'America/Chicago'], ['Los Angeles', 34.05, -118.24, 'America/Los_Angeles'],
+  ['Anchorage', 61.22, -149.9, 'America/Anchorage'], ['Honolulu', 21.31, -157.86, 'Pacific/Honolulu'], ['Mexico City', 19.43, -99.13, 'America/Mexico_City'],
+  ['Toronto', 43.65, -79.38, 'America/Toronto'], ['Bogotá', 4.71, -74.07, 'America/Bogota'], ['Lima', -12.05, -77.04, 'America/Lima'],
+  ['São Paulo', -23.55, -46.63, 'America/Sao_Paulo'], ['Buenos Aires', -34.6, -58.38, 'America/Argentina/Buenos_Aires'], ['Reykjavík', 64.15, -21.94, 'Atlantic/Reykjavik'],
+  ['London', 51.51, -0.13, 'Europe/London'], ['Paris', 48.86, 2.35, 'Europe/Paris'], ['Madrid', 40.42, -3.7, 'Europe/Madrid'], ['Berlin', 52.52, 13.4, 'Europe/Berlin'],
+  ['Rome', 41.9, 12.5, 'Europe/Rome'], ['Istanbul', 41.01, 28.98, 'Europe/Istanbul'], ['Moscow', 55.76, 37.62, 'Europe/Moscow'], ['Cairo', 30.04, 31.24, 'Africa/Cairo'],
+  ['Lagos', 6.52, 3.38, 'Africa/Lagos'], ['Nairobi', -1.29, 36.82, 'Africa/Nairobi'], ['Johannesburg', -26.2, 28.05, 'Africa/Johannesburg'], ['Dubai', 25.2, 55.27, 'Asia/Dubai'],
+  ['Tehran', 35.69, 51.39, 'Asia/Tehran'], ['Karachi', 24.86, 67.01, 'Asia/Karachi'], ['Mumbai', 19.08, 72.88, 'Asia/Kolkata'], ['Delhi', 28.61, 77.21, 'Asia/Kolkata'],
+  ['Bengaluru', 12.97, 77.59, 'Asia/Kolkata'], ['Kolkata', 22.57, 88.36, 'Asia/Kolkata'], ['Dhaka', 23.81, 90.41, 'Asia/Dhaka'], ['Bangkok', 13.76, 100.5, 'Asia/Bangkok'],
+  ['Singapore', 1.35, 103.82, 'Asia/Singapore'], ['Jakarta', -6.21, 106.85, 'Asia/Jakarta'], ['Hong Kong', 22.32, 114.17, 'Asia/Hong_Kong'], ['Shanghai', 31.23, 121.47, 'Asia/Shanghai'],
+  ['Beijing', 39.9, 116.41, 'Asia/Shanghai'], ['Seoul', 37.57, 126.98, 'Asia/Seoul'], ['Tokyo', 35.68, 139.69, 'Asia/Tokyo'], ['Manila', 14.6, 120.98, 'Asia/Manila'],
+  ['Perth', -31.95, 115.86, 'Australia/Perth'], ['Sydney', -33.87, 151.21, 'Australia/Sydney'], ['Auckland', -36.85, 174.76, 'Pacific/Auckland'],
+].map(([name, lat, lon, zone]) => Object.freeze({ name, lat, lon, zone })));
+
+/** Farther than this from every listed city, the readout says open ocean. */
+export const OCEAN_KM = 1800;
+const EARTH_KM = 6371;
+
+/** Great-circle distance in kilometres. */
+export function distanceKm(lat1, lon1, lat2, lon2) {
+  const p1 = lat1 * DEG, p2 = lat2 * DEG, dp = (lat2 - lat1) * DEG, dl = (lon2 - lon1) * DEG;
+  const a = Math.sin(dp / 2) ** 2 + Math.cos(p1) * Math.cos(p2) * Math.sin(dl / 2) ** 2;
+  return 2 * EARTH_KM * Math.asin(Math.min(1, Math.sqrt(a)));
+}
+
+/** The listed city nearest a point, with its distance. */
+export function nearestCity(lat, lon, cities = CITIES) {
+  let best = null;
+  for (const c of cities) { const km = distanceKm(lat, lon, c.lat, c.lon); if (!best || km < best.km) best = { city: c, km }; }
+  return best;
+}
+
+/**
+ * Latitude and longitude of the surface point that faces a viewer, for the
+ * Earth's pose at `elapsed` ms: undo the spin and the axis alignment, then
+ * read the point back off the sphere (the inverse of surfacePoint).
+ */
+export function facingPoint(scene, elapsed, viewer) {
+  const d = normalize([viewer[0] - scene.centre[0], viewer[1] - scene.centre[1], viewer[2] - scene.centre[2]]);
+  const local = rotateY(alignYTo(scene.axis).inverse(d), -earthSpin(scene.spinAtLoad, elapsed));
+  return { lat: Math.asin(Math.max(-1, Math.min(1, local[1]))) / DEG, lon: Math.atan2(-local[2], local[0]) / DEG };
+}
+
+/** The scene's own clock: the globe turns a day in EARTH_SPIN_MS, so its time runs that much faster than the wall clock. */
+export const sceneTime = (loadedAt, elapsed, period = EARTH_SPIN_MS) => new Date(loadedAt.getTime() + (elapsed * 86400000) / period);
+
+/** "HH:MM" in a time zone, for the readout. */
+export const clockIn = (date, zone) => new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: zone }).format(date);
+
+/** The readout looks along the meridian facing the viewer but within the populated belt, since the camera looks down from above the Arctic. */
+export const READOUT_BELT = Object.freeze({ south: -35, north: 40 });
+
+/**
+ * The line under the greeting: which city is passing under the viewer and
+ * what time it is there on the scene's clock, or open ocean.
+ */
+export function overReadout(scene, elapsed, viewer, loadedAt) {
+  const { lat, lon } = facingPoint(scene, elapsed, viewer);
+  const near = nearestCity(Math.min(READOUT_BELT.north, Math.max(READOUT_BELT.south, lat)), lon);
+  if (!near || near.km > OCEAN_KM) return 'Over open ocean';
+  return `Over ${near.city.name} · ${clockIn(sceneTime(loadedAt, elapsed), near.city.zone)} there`;
 }

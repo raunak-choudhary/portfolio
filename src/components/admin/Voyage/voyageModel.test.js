@@ -1,6 +1,6 @@
 import { CHAPTERS, CHAPTER_IDS, DEEP_SKY_PLACEMENTS, chapterById, chapterIndex } from './chapters';
 import {
-  ANCHORS, LOOK_DROP, SPACING, cameraTarget, deepSkyLayout, greetingFor, deepSkyPlacement, figureState, isChapterLive, liveChapterIndex, qualityFor, routePosition, scrollFractionFor,
+  ANCHORS, LOOK_DROP, PROLOGUE_GAP, SPACING, cameraTarget, deepSkyLayout, drawStartFor, greetingFor, deepSkyPlacement, figureState, isChapterLive, liveChapterIndex, qualityFor, routePosition, scrollFractionFor,
 } from './voyageModel';
 
 describe('chapter registry', () => {
@@ -36,7 +36,8 @@ describe('route and camera', () => {
   });
 
   it('spaces the anchors evenly in depth and keeps them near the axis, the prologue lower and to the right', () => {
-    for (let i = 1; i < ANCHORS.length; i++) expect(ANCHORS[i - 1].z - ANCHORS[i].z).toBeCloseTo(SPACING);
+    for (let i = 2; i < ANCHORS.length; i++) expect(ANCHORS[i - 1].z - ANCHORS[i].z).toBeCloseTo(SPACING);
+    expect(ANCHORS[0].z - ANCHORS[1].z).toBeCloseTo(SPACING + PROLOGUE_GAP);
     ANCHORS.slice(1).forEach((a) => { expect(Math.abs(a.x)).toBeLessThanOrEqual(160); expect(Math.abs(a.y)).toBeLessThanOrEqual(90); });
     expect(ANCHORS[0]).toEqual({ x: 160, y: -140, z: -360 });
   });
@@ -60,6 +61,14 @@ describe('figure drawing', () => {
     expect(figureState(4, 4.0)).toMatchObject({ near: 1, draw: 1, pointAlpha: 1, artAlpha: 1, turn: 0 });
     expect(figureState(4, 4.2).turn).toBeCloseTo(0.024);
     expect(figureState(4, 5.5).draw).toBe(0);
+  });
+
+  it('holds the first figure back until the Earth is behind the camera', () => {
+    expect(drawStartFor(1)).toBe(0.5); expect(drawStartFor(2)).toBe(0.15);
+    expect(figureState(1, 0.4).draw).toBe(0);
+    expect(figureState(1, 0.5).draw).toBe(0);
+    expect(figureState(1, 0.625).draw).toBeCloseTo(0.5);
+    expect(figureState(1, 0.75).draw).toBe(1);
   });
 
   it('marks one chapter live at a time', () => {
