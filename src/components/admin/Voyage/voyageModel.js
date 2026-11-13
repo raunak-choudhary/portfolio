@@ -17,6 +17,8 @@ export const LOOK_DROP = 110;
 export const CAMERA_STANDOFF = 520;
 /** The first anchor sits this far in front of the origin. */
 const FIRST_ANCHOR_Z = -360;
+/** Extra depth between the prologue and the first chapter, so the Earth and Moon are left behind before the Great Bear draws. */
+export const PROLOGUE_GAP = 520;
 
 export const clamp01 = (v) => Math.min(1, Math.max(0, v));
 
@@ -27,7 +29,7 @@ export const clamp01 = (v) => Math.min(1, Math.max(0, v));
  * by earthModel's EARTH_OFFSET) with the title at the left.
  * @returns {{x: number, y: number, z: number}}
  */
-export const anchorFor = (i) => (i === 0 ? { x: 160, y: -140, z: FIRST_ANCHOR_Z } : { x: Math.sin(i * 1.7) * 160, y: Math.cos(i * 1.3) * 90, z: FIRST_ANCHOR_Z - i * SPACING });
+export const anchorFor = (i) => (i === 0 ? { x: 160, y: -140, z: FIRST_ANCHOR_Z } : { x: Math.sin(i * 1.7) * 160, y: Math.cos(i * 1.3) * 90, z: FIRST_ANCHOR_Z - PROLOGUE_GAP - i * SPACING });
 
 export const ANCHORS = Object.freeze(CHAPTERS.map((_, i) => anchorFor(i)));
 
@@ -58,16 +60,19 @@ export function cameraTarget({ index, frac }, fly = true, anchors = ANCHORS) {
   return { position, look };
 }
 
+/** Where in the approach a figure starts to draw: the first chapter waits until the Earth is behind the camera. */
+export const drawStartFor = (i) => (i === 1 ? 0.5 : 0.15);
+
 /**
  * How a chapter's constellation shows for a route coordinate f: `near` is 1 at
- * the chapter and 0 one chapter away; lines draw between 15% and 75% of the
- * approach; the drawing fades in over the last 40% of the draw; the whole
+ * the chapter and 0 one chapter away; lines draw from `drawStart` to 75% of
+ * the approach; the drawing fades in over the last 40% of the draw; the whole
  * group turns slightly as the camera passes.
  */
-export function figureState(i, f) {
+export function figureState(i, f, drawStart = drawStartFor(i)) {
   const d = Math.abs(f - i);
   const near = clamp01(1 - d);
-  const draw = clamp01((near - 0.15) / 0.6);
+  const draw = clamp01((near - drawStart) / (0.75 - drawStart));
   return { near, draw, pointAlpha: clamp01(near * 1.4), artAlpha: clamp01((draw - 0.6) / 0.4), turn: (f - i) * 0.12 };
 }
 

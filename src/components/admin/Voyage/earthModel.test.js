@@ -1,4 +1,5 @@
 import {
+  CITIES, OCEAN_KM, clockIn, distanceKm, facingPoint, nearestCity, overReadout, sceneTime,
   EARTH_AXIS_ECLIPTIC, EARTH_RADIUS, MOON_ORBIT_RADIUS, OBLIQUITY, DEG, alignYTo, dot, earthScene, earthSpin, eclipticDirection, length, moonDirection, moonFraction, moonPosition,
   normalize, rotateAbout, satelliteOrbits, satellitePosition, sceneFrame, spinForSubsolar, subsolarLongitude, sunCoordinates, surfacePoint,
 } from './earthModel';
@@ -100,8 +101,9 @@ describe('the Moon', () => {
   });
 
   it('orbits once per period and sits under two Earth radii out', () => {
-    close(moonFraction(0.1, 95000 / 2), 0.6);
-    close(moonFraction(0.9, 95000 / 2), 0.4);
+    close(moonFraction(0.1, 600000 / 2), 0.6);
+    close(moonFraction(0.9, 600000 / 2), 0.4);
+    expect(600000 / 150000).toBe(4);   // four Earth turns per Moon orbit, the Earth clearly faster
     const p = moonPosition(scene, 0);
     close(length([p[0] - scene.centre[0], p[1] - scene.centre[1], p[2] - scene.centre[2]]), MOON_ORBIT_RADIUS);
     expect(MOON_ORBIT_RADIUS).toBeCloseTo(EARTH_RADIUS * 1.6);
@@ -120,5 +122,42 @@ describe('satellites', () => {
       close(length([p0[0] - scene.centre[0], p0[1] - scene.centre[1], p0[2] - scene.centre[2]]), orbit.radius, 1e-6);
       expect(length([p1[0] - p0[0], p1[1] - p0[1], p1[2] - p0[2]])).toBeGreaterThan(1);
     }
+  });
+});
+
+describe('what is under the camera', () => {
+  const date = new Date('2026-11-12T18:30:00Z');
+  const scene = earthScene(date);
+  const viewerOver = (lat, lon, elapsed) => {
+    // a viewer placed straight above a surface point, for the Earth's pose at `elapsed`
+    const { apply } = alignYTo(scene.axis);
+    const dir = apply(rotateAbout(surfacePoint(lat, lon), [0, 1, 0], earthSpin(scene.spinAtLoad, elapsed)));
+    return [scene.centre[0] + dir[0] * 900, scene.centre[1] + dir[1] * 900, scene.centre[2] + dir[2] * 900];
+  };
+
+  it('reads the surface point back under any viewer at any spin', () => {
+    const p = facingPoint(scene, 0, viewerOver(19.08, 72.88, 0));
+    close(p.lat, 19.08, 1e-6); close(p.lon, 72.88, 1e-6);
+    const q = facingPoint(scene, 40000, viewerOver(-33.87, 151.21, 40000));
+    close(q.lat, -33.87, 1e-6); close(q.lon, 151.21, 1e-6);
+  });
+
+  it('names the nearest city or open ocean', () => {
+    expect(nearestCity(19.2, 73.0).city.name).toBe('Mumbai');
+    expect(nearestCity(51.4, -0.5).city.name).toBe('London');
+    expect(nearestCity(-20, -140).km).toBeGreaterThan(OCEAN_KM);   // South Pacific
+    close(distanceKm(0, 0, 0, 1), 111.19, 0.1);
+    expect(CITIES.length).toBeGreaterThan(40);
+  });
+
+  it('runs the scene clock at the globe\'s pace and formats a local time', () => {
+    const loaded = new Date('2026-11-12T18:30:00Z');
+    expect(sceneTime(loaded, 150000 / 24).getTime() - loaded.getTime()).toBe(3600000);   // one twenty-fourth of a turn is one hour
+    expect(clockIn(loaded, 'Asia/Kolkata')).toBe('00:00');
+    expect(clockIn(loaded, 'America/New_York')).toBe('13:30');
+    expect(overReadout(scene, 0, viewerOver(19.08, 72.88, 0), loaded)).toBe('Over Mumbai · 00:00 there');
+    expect(overReadout(scene, 0, viewerOver(-20, -140, 0), loaded)).toBe('Over open ocean');
+    // a viewer high over the Arctic on Delhi's meridian reads the populated belt below, not the ice
+    expect(overReadout(scene, 0, viewerOver(80, 77.21, 0), loaded)).toBe('Over Delhi · 00:00 there');
   });
 });

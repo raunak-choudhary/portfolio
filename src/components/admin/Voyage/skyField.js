@@ -144,7 +144,7 @@ export function createSkyField({ canvas, figures, deepManifest, assetBase, quali
 
   const cameraPosition = new THREE.Vector3(0, 20, ANCHORS[0].z + 520), cameraLook = new THREE.Vector3(ANCHORS[0].x, ANCHORS[0].y, ANCHORS[0].z);
   const wantPosition = new THREE.Vector3(), wantLook = new THREE.Vector3();
-  let startedAt = null;
+  let startedAt = null, readoutAt = -Infinity, over = '';
 
   return {
     resize(width, height) { renderer.setSize(width, height, false); camera.aspect = width / Math.max(1, height); camera.updateProjectionMatrix(); },
@@ -152,7 +152,7 @@ export function createSkyField({ canvas, figures, deepManifest, assetBase, quali
     setFly(next) { fly = !!next; },
     /**
      * Paint one frame. `scrollFraction` is 0..1 over the page; `now` is the animation clock in ms.
-     * @returns {{index: number, f: number}} the route position, for the page's stage and rail state.
+     * @returns {{index: number, f: number, over: string}} the route position for the page's stage and rail state, and the Earth readout (refreshed once a second).
      */
     frame(scrollFraction, now) {
       const route = routePosition(scrollFraction);
@@ -175,9 +175,11 @@ export function createSkyField({ canvas, figures, deepManifest, assetBase, quali
         d.mesh.visible = d.mesh.material.uniforms.uAlpha.value > 0.01;
       }
       if (startedAt === null) startedAt = now;
-      earth.update(fly ? now - startedAt : 0);   // a still frame under reduced motion: today's terminator, tonight's Moon
+      const elapsed = fly ? now - startedAt : 0;   // a still frame under reduced motion: today's terminator, tonight's Moon
+      earth.update(elapsed);
+      if (now - readoutAt > 1000) { readoutAt = now; over = earth.readout(elapsed, cameraPosition); }
       renderer.render(scene, camera);
-      return { index: route.index, f: route.f };
+      return { index: route.index, f: route.f, over };
     },
     dispose() { for (const d of disposables) d.dispose?.(); renderer.dispose(); },
   };
