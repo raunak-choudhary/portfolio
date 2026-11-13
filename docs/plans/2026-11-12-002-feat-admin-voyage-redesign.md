@@ -70,7 +70,8 @@ Each unit is one branch and one pull request, merged on local evidence (rule 10)
   - Exit: owner approves the feel at 390 and 1440 in night, and decides dawn versus night-only; 60 fps on the owner's laptop; the Playwright pass is green; unit tests for `voyageModel` and the registry.
 
 - [ ] **Unit V2: Deck and sheet, Projects migrated** (3 days). The shared deck and sheet; the Projects schema (the richest form: images, awards, links, order, featured); save through `saveAdminData`; delete with confirmation; reorder with dnd-kit writing `order_index`; dirty-state guard on close.
-  - Exit: the owner edits, adds, reorders and deletes a `TEST-` project through the sheet on localhost; schema and sheet tests green; the classic Projects manager is no longer linked.
+  - Exit: the owner edits, adds, reorders and deletes a `TEST-` project through the editor on localhost; schema and editor tests green. The classic Projects manager stays linked until Unit V6 (the classic dashboard remains whole as the default, per the rollback strategy).
+  - Amendment 2026-11-13 (owner review): the editor becomes a wide centred glass dialog (two columns of fields from 1024 px, full screen on phones) instead of a side sheet; a card opens in a rendered read view with an Edit button and returns to it after Save; error handling is layered (inline after a field is first left, everything on Save with the first error focused, typed session and permission errors in the dialog's own banner, offline detection, upload errors, an `updated_at` conflict check, list-load retry, typed text never lost); blur only on large surfaces, translucent fills on cards. Built as **Unit V2b** on the same branch before the pull request.
 
 - [ ] **Unit V3: Remaining managers** (5 to 8 days, four pull requests of about three managers each: hero and about and skills; education, work, internships; certifications, achievements, leadership; recommendations and media). Each manager becomes a schema file and loses its old component.
   - Exit per pull request: every field of the old form is present in the new schema (a checklist in the pull request body), a `TEST-` row round-trips, tests green, owner check.
@@ -83,6 +84,9 @@ Each unit is one branch and one pull request, merged on local evidence (rule 10)
 
 - [ ] **Unit V6: Polish and retirement** (3 to 5 days). Fly-through tuning (easing, parallax turn, pixel-ratio cap, star count by device), dawn palette final or night-only, phone performance pass, the classic dashboard and its stylesheets deleted, emoji replaced by Lucide icons throughout the admin, toasts for save results, the e2e suite extended with the admin pass.
   - Exit: owner approves on a phone through a tunnel they open; Lighthouse performance on the admin above 80 on the laptop; no console errors in a full scroll.
+
+- [ ] **Unit V7: Day mode** (2 to 3 days, added 2026-11-13). The light theme as a day scene: a large Sun sphere with granulation, flares and prominences turning on its axis (from the live SDO image and the procedural layer of the 2D sky), the Earth circling it, light glass panels. Replaces the dawn placeholder. Night stays the default.
+  - Exit: owner approves the day scene at 390 and 1440; the Sky menu switches cleanly; no console errors.
 
 - [ ] **Unit 4.3 and Unit 4.4** as written in the stabilisation plan (second factor enforced in SQL with a recovery drill; end-to-end manager tests including the production-build write proof). They run after Unit V3, so the proof covers the new sheet.
 
