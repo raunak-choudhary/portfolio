@@ -20,11 +20,14 @@ import SkyBackground, { SKY_ASSET_BASE } from '../SkyBackground/SkyBackground';
 import SkyControls from '../SkyBackground/SkyControls';
 import { SkySettingsProvider, useSkySettings } from '../SkyBackground/SkySettingsContext';
 import { CHAPTERS, chapterIndex, chapterPlace } from './chapters';
+import DeckChapter from './DeckChapter';
+import Toast, { useToast } from './Toast';
+import { schemaForTable } from './managers';
 import Bento from './Bento';
 import CommandPalette from './CommandPalette';
 import StarRail from './StarRail';
 import { createSkyField, webglAvailable } from './skyField';
-import { isChapterLive, liveChapterIndex, qualityFor, routePosition, scrollFractionFor, greetingFor } from './voyageModel';
+import { isChapterLive, liveChapterIndex, qualityFor, routeFromTops, routePosition, greetingFor } from './voyageModel';
 import './Voyage.css';
 
 /** Names of the constellations, from figures.json, for the rail and the palette. */
@@ -36,6 +39,7 @@ function VoyageView({ requireSecurityEnrollment }) {
   const [figures, setFigures] = useState(null), [deep, setDeep] = useState([]);
   const [data, setData] = useState({ health: null, visitors: null, inbox: null, edits: null, pages: null, stats: null, assetBase: SKY_ASSET_BASE });
   const [active, setActive] = useState(0), [paletteOpen, setPaletteOpen] = useState(false), [over, setOver] = useState('');
+  const { toast, notify } = useToast();
   const [webgl] = useState(() => webglAvailable());
   const canvasRef = useRef(null), fieldRef = useRef(null), stageRefs = useRef([]);
   const names = useMemo(() => namesFrom(figures), [figures]);
@@ -102,7 +106,9 @@ function VoyageView({ requireSecurityEnrollment }) {
   // ---- the loop: scroll fraction to camera, stages and rail ----
   useEffect(() => {
     let frame = 0, stopped = false, lastIndex = -1, lastOver = '';
-    const scrollFraction = () => { const max = document.documentElement.scrollHeight - window.innerHeight; return max > 0 ? window.scrollY / max : 0; };
+    // the route follows the stage under the viewport (stages differ in height: a deck is several screens), expressed as the fraction the field expects
+    const stageTops = () => stageRefs.current.map((el) => (el ? el.offsetTop - 56 : 0));   // 56 = the fixed top bar
+    const scrollFraction = () => routeFromTops(window.scrollY, stageTops()) / Math.max(1, CHAPTERS.length - 1);
     const tick = (now) => {
       if (stopped) return;
       const sf = scrollFraction();
@@ -120,8 +126,9 @@ function VoyageView({ requireSecurityEnrollment }) {
   }, []);
 
   const jump = useCallback((i) => {
-    const max = document.documentElement.scrollHeight - window.innerHeight;
-    window.scrollTo({ top: scrollFractionFor(i) * max, behavior: effectiveMotion ? 'smooth' : 'auto' });
+    const el = stageRefs.current[i];
+    const top = el ? Math.max(0, el.offsetTop - 56) : 0;
+    window.scrollTo({ top, behavior: effectiveMotion ? 'smooth' : 'auto' });
   }, [effectiveMotion]);
   const go = useCallback((id) => jump(Math.max(0, chapterIndex(id))), [jump]);
   const signOut = useCallback(() => { window.location.assign('/adminsignout'); }, []);
@@ -161,7 +168,10 @@ function VoyageView({ requireSecurityEnrollment }) {
             {chapter.kind === 'bento' && (requireSecurityEnrollment
               ? <div className="voyage-pane voyage-notice">Confirm an authenticator app in Security before the managers open.</div>
               : <Bento data={data} onGo={go} />)}
-            {chapter.kind !== 'bento' && chapter.kind !== 'prologue' && (
+            {chapter.kind === 'deck' && schemaForTable(chapter.table) && (requireSecurityEnrollment
+              ? <div className="voyage-pane voyage-notice">Confirm an authenticator app in Security before the managers open.</div>
+              : <DeckChapter schema={schemaForTable(chapter.table)} notify={notify} />)}
+            {chapter.kind !== 'bento' && chapter.kind !== 'prologue' && !(chapter.kind === 'deck' && schemaForTable(chapter.table)) && (
               <div className="voyage-pane voyage-placeholder">
                 <p>{countFor(chapter) !== null ? <><b>{countFor(chapter)}</b> {countFor(chapter) === 1 ? 'item' : 'items'} in this section.</> : 'This chapter is on its way.'}</p>
                 <p className="voyage-placeholder__note">The deck and the editor sheet arrive in the next unit. Until then this section is edited in the classic dashboard.</p>
@@ -173,6 +183,7 @@ function VoyageView({ requireSecurityEnrollment }) {
       </main>
 
       <StarRail active={active} onJump={jump} names={names} />
+      <Toast toast={toast} />
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} onJump={jump} actions={actions} names={names} />
     </div>
   );

@@ -28,9 +28,12 @@ jest.mock('../../../services/voyageData', () => ({
   getVisitorSeries: jest.fn(), getUnreadMessages: jest.fn(), getRecentEdits: jest.fn(), getTopPages: jest.fn(), relativeTime: () => 'just now',
 }));
 jest.mock('../../../services/adminSessionFacts', () => ({ startSession: jest.fn() }));
+// the decks load through the records service, which also needs the Supabase client; the page test checks the wiring only
+jest.mock('../../../services/voyageRecords', () => ({ listRecords: jest.fn(), saveRecord: jest.fn(), deleteRecord: jest.fn(), reorderRecords: jest.fn(), uploadImages: jest.fn(), removeImage: jest.fn(), imageProblem: jest.fn(() => null) }));
 const { getPortfolioStats } = jest.requireMock('../../../services/dataService');
 const analyticsService = jest.requireMock('../../../services/analyticsService').default;
 const voyageData = jest.requireMock('../../../services/voyageData');
+const voyageRecords = jest.requireMock('../../../services/voyageRecords');
 
 const health = {
   summary: { score: 86, status: 'needs_attention', issueCounts: { critical: 1, warning: 1, info: 0 } },
@@ -61,6 +64,7 @@ describe('VoyagePage (2D fallback)', () => {
     voyageData.getUnreadMessages.mockResolvedValue({ count: 2, latest: [{ id: '1', name: 'NYU Career Services', subject: 'Hello', createdAt: new Date().toISOString() }] });
     voyageData.getRecentEdits.mockResolvedValue([{ section: 'Projects', label: 'Tallyproof', at: new Date().toISOString() }]);
     voyageData.getTopPages.mockResolvedValue([{ page: '/home', views: 94 }, { page: '/projects', views: 20 }]);
+    voyageRecords.listRecords.mockResolvedValue([{ id: 'p1', title: 'Tallyproof', order_index: 30, technologies: ['React'] }]);
     mockNavigate.mockClear();
   });
 
@@ -97,8 +101,11 @@ describe('VoyagePage (2D fallback)', () => {
     expect(bento.textContent).toContain('/home');
     expect(bento.textContent).toContain('Tallyproof');
     const projects = view.container.querySelector('#chapter-projects');
-    expect(projects.textContent).toContain('30');
-    expect(projects.textContent).toContain('items in this section');
+    expect(projects.querySelector('[data-testid="deck"]')).not.toBeNull();   // Projects has a schema: it gets the deck
+    expect(projects.textContent).toContain('Tallyproof'); expect(projects.textContent).toContain('New project');
+    const skills = view.container.querySelector('#chapter-skills');
+    expect(skills.querySelector('.voyage-placeholder')).not.toBeNull();        // no schema yet: placeholder until V3
+    expect(skills.textContent).toContain('110');
     view.unmount();
   });
 

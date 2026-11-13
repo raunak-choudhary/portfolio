@@ -124,5 +124,23 @@ export function greetingFor(date = new Date(), timeZone = 'America/New_York') {
   return 'Good night';
 }
 
-/** Scroll fraction that puts a chapter's stage in view (the star rail and the palette use it). */
+/** Scroll fraction that puts a chapter's stage in view when stages are evenly spaced (the 2D fallback and tests). */
 export const scrollFractionFor = (i, count = CHAPTERS.length) => i / (count - 1);
+
+/**
+ * The route coordinate from where the chapter stages actually sit on the
+ * page. Stages are not all one screen tall (a deck of thirty cards is
+ * several), so the camera follows the stage under the viewport: f runs from
+ * i to i + 1 as the scroll position runs from stage i's top to stage i + 1's.
+ * @param {number} scrollY
+ * @param {number[]} tops document offsets of the stages, ascending.
+ */
+export function routeFromTops(scrollY, tops) {
+  const n = tops.length;
+  if (n === 0) return 0;
+  if (n === 1 || scrollY <= tops[0]) return 0;
+  for (let i = 0; i < n - 1; i++) {
+    if (scrollY < tops[i + 1]) { const span = Math.max(1, tops[i + 1] - tops[i]); return i + (scrollY - tops[i]) / span; }
+  }
+  return n - 1;
+}
