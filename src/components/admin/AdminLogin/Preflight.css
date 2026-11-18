@@ -316,6 +316,36 @@
   cursor: not-allowed;
 }
 
+/* Second place when a passkey leads: an accent outline that fills on hover. */
+.preflight .preflight-primary--quiet:not(:disabled) {
+  background: transparent;
+  color: var(--pf-accent);
+}
+
+.preflight .preflight-primary--quiet:hover:not(:disabled) {
+  background: rgba(var(--pf-accent-rgb), 0.12);
+}
+
+.preflight-passkey__mark { flex: none; }
+
+/* "Or enter a code": a hairline either side of the words. */
+.preflight .preflight-divider {
+  margin: 4px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--pf-muted);
+}
+
+.preflight .preflight-divider::before,
+.preflight .preflight-divider::after {
+  content: '';
+  flex: 1 1 0;
+  min-width: 0;
+  border-top: 1px solid var(--pf-line);
+}
+
 .preflight .preflight-google:disabled { opacity: 0.6; cursor: progress; }
 
 .preflight .preflight-quiet {

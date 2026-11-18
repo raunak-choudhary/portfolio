@@ -77,6 +77,16 @@ export const NoticeLine = ({ children }) => (
   </div>
 );
 
+/** A key-and-person mark for "Use passkey", drawn in the button's own colour. */
+export const PasskeyMark = () => (
+  <svg className="preflight-passkey__mark" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="9" cy="7" r="3.5" />
+    <path d="M2.5 20v-1.5A5.5 5.5 0 0 1 8 13h2.5" />
+    <circle cx="17" cy="13.5" r="2.5" />
+    <path d="M17 16v5.5l1.6-1.2M17 19h1.8" />
+  </svg>
+);
+
 /** Google's standard four-colour "G", as their sign-in branding guidance asks; inline so no request leaves the page. */
 export const GoogleMark = () => (
   <svg className="preflight-google__mark" viewBox="0 0 48 48" width="20" height="20" aria-hidden="true" focusable="false">
