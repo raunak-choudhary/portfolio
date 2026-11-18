@@ -358,19 +358,32 @@ const describeMfaError = (error, fallback) => {
 };
 
 /**
+ * Friendly name of the server-held TOTP factor behind passkey sign-in (see
+ * supabase/functions/admin-passkey). Its code is never shown to anyone, so it
+ * is kept out of every typed-code list and managed from the Passkeys section.
+ */
+export const BRIDGE_FACTOR_NAME = 'Passkey bridge';
+
+const isBridgeFactor = (factor) => factor?.friendly_name === BRIDGE_FACTOR_NAME;
+
+/**
  * Lists the authenticator-app factors on the account, split by state.
  * Supabase keeps a factor as "unverified" until its first code is accepted.
+ * `verified` holds only factors whose code a person can type; a verified
+ * passkey bridge is reported separately as `bridge`.
  */
 export const listTotpFactors = async () => {
   try {
     const { data, error } = await supabase.auth.mfa.listFactors();
     if (error) return { success: false, error: describeMfaError(error, 'Could not read your authenticators.') };
     const totp = Array.isArray(data?.totp) ? data.totp : [];
+    const verified = totp.filter((factor) => factor.status === 'verified');
     return {
       success: true,
       data: {
-        verified: totp.filter((factor) => factor.status === 'verified'),
-        unverified: totp.filter((factor) => factor.status !== 'verified')
+        verified: verified.filter((factor) => !isBridgeFactor(factor)),
+        unverified: totp.filter((factor) => factor.status !== 'verified'),
+        bridge: verified.find(isBridgeFactor) || null
       }
     };
   } catch (error) {
@@ -493,7 +506,8 @@ export const getAssuranceState = async () => {
     ]);
     if (levels.error || !factors.success) return restrictive;
     const currentLevel = levels.data?.currentLevel || 'aal1';
-    const hasVerifiedFactor = factors.data.verified.length > 0;
+    // A passkey bridge is a real second factor too: Auth asks for level 2.
+    const hasVerifiedFactor = factors.data.verified.length > 0 || Boolean(factors.data.bridge);
     return {
       currentLevel,
       nextLevel: levels.data?.nextLevel || currentLevel,

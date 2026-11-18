@@ -96,6 +96,24 @@ describe('authenticator factors', () => {
     const result = await listTotpFactors();
     expect(result.data.verified.map((f) => f.id)).toEqual(['f1']);
     expect(result.data.unverified.map((f) => f.id)).toEqual(['f2']);
+    expect(result.data.bridge).toBeNull();
+  });
+
+  it('keeps the passkey bridge out of the typed-code list and reports it apart', async () => {
+    supabase.auth.mfa.listFactors.mockResolvedValue({
+      data: { totp: [factor('b1', 'verified', 'Passkey bridge'), factor('f1', 'verified')] },
+      error: null
+    });
+    const result = await listTotpFactors();
+    expect(result.data.verified.map((f) => f.id)).toEqual(['f1']);
+    expect(result.data.bridge.id).toBe('b1');
+  });
+
+  it('counts a bridge alone as a second factor, so level 2 is still asked for', async () => {
+    supabase.auth.mfa.getAuthenticatorAssuranceLevel.mockResolvedValue({ data: { currentLevel: 'aal1', nextLevel: 'aal2' }, error: null });
+    supabase.auth.mfa.listFactors.mockResolvedValue({ data: { totp: [factor('b1', 'verified', 'Passkey bridge')] }, error: null });
+    const state = await getAssuranceState();
+    expect(state).toMatchObject({ hasVerifiedFactor: true, needsSecondFactor: true, needsEnrollment: false });
   });
 
   it('removes only unverified factors during cleanup', async () => {
