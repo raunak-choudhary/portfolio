@@ -58,7 +58,7 @@ function TileBody({ id, data, onGo }) {
       return <><h5><Wrench size={14} /> Fix next</h5>{issues.length ? <div className="tile__queue">{issues.map((i, k) => <div key={k}><b className={i.severity}>{i.severity}</b><span>{i.section} · {i.message}</span></div>)}</div> : <p className="tile__empty">{health ? 'Nothing to fix. Well played.' : 'Checking…'}</p>}</>;
     }
     case 'sections':
-      return <><h5><ListChecks size={14} /> Sections</h5><Bars rows={weakestSections(sections, 5).map((s) => ({ label: s.name, value: s.completeness || 0, tone: (s.completeness || 0) < 50 ? 'bad' : undefined }))} /></>;
+      return <><h5><ListChecks size={14} /> Sections</h5><Bars rows={weakestSections(sections, sections.length).map((s) => ({ label: s.name, value: s.completeness || 0, tone: (s.completeness || 0) < 50 ? 'bad' : undefined }))} /></>;
     case 'edits':
       return <><h5><Pencil size={14} /> Recent edits</h5>{data.edits?.length ? <div className="tile__feed">{data.edits.map((e, k) => <div key={k}><time>{relativeTime(e.at)}</time>{e.section} · {e.label}</div>)}</div> : <p className="tile__empty">No edits recorded yet.</p>}</>;
     case 'pages':
@@ -71,7 +71,10 @@ function TileBody({ id, data, onGo }) {
   }
 }
 
-const SPANS = { health: 'w2 h2', visitors: 'w2', inbox: 'w2', fixes: 'w2 h2', sections: 'w2', edits: 'w2', pages: 'w2', tonight: 'w2' };
+// Every tile is one row tall and two columns wide: rows size to their tallest
+// tile, so a tall span no longer leaves a short tile (health) standing in empty
+// space. The last-row gap at six columns is closed in CSS.
+const SPANS = { health: 'w2', visitors: 'w2', inbox: 'w2', fixes: 'w2', sections: 'w2', edits: 'w2', pages: 'w2', tonight: 'w2' };
 
 function SortableTile({ id, children }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
