@@ -281,10 +281,15 @@
 /* ---- decks: a chapter's records as glass cards ---- */
 .deck { display: grid; gap: 12px; opacity: 0; transform: translateY(30px); transition: opacity .6s .1s, transform .7s .1s; }
 .voyage-chapter.is-live .deck { opacity: 1; transform: none; }
-.deck__bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 32px; }
+/* The search takes the rest of the row and wraps under the count when the
+   row is too narrow for its placeholder (a phone with "Search
+   certifications"), instead of cutting the words off. */
+.deck__bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; min-height: 32px; }
 .deck__count { font-family: var(--voyage-cond); font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: var(--voyage-muted); }
-.deck__search { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border: 1px solid var(--voyage-line); border-radius: 999px; background: var(--voyage-panel); color: var(--voyage-muted); }
-.deck__search input { background: none; border: 0; outline: 0; color: var(--voyage-fg); font: inherit; width: 160px; }
+.deck__search { flex: 0 1 300px; min-width: min(100%, 250px); display: flex; align-items: center; gap: 8px; padding: 6px 12px; border: 1px solid var(--voyage-line); border-radius: 999px; background: var(--voyage-panel); color: var(--voyage-muted); box-sizing: border-box; }
+.deck__search svg { flex: none; }
+.deck__search input { flex: 1 1 auto; min-width: 0; width: auto; background: none; border: 0; outline: 0; color: var(--voyage-fg); font: inherit; }
+.deck__search input::placeholder { color: var(--voyage-muted); opacity: 1; }
 .deck__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
 .deck__empty { margin: 0; color: var(--voyage-muted); font-size: 14px; }
 .deck__error { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 12px 14px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--voyage-bad) 55%, transparent); background: color-mix(in srgb, var(--voyage-bad) 12%, transparent); color: var(--voyage-fg); font-size: 14px; }
