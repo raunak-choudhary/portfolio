@@ -162,8 +162,10 @@
 
 .voyage-bento { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: minmax(118px, auto); gap: 12px; }
 /* Rows grow to their tallest tile, so short tiles (health, visitors, inbox)
-   are never cut; the long lists below stop at a fixed height and scroll
-   inside the tile with the shared visible scrollbar. */
+   are never cut; the long lists below share one height (--tile-list) so
+   list tiles in a row end together instead of one leaving the others
+   standing in empty space, and scroll inside the tile with the shared
+   visible scrollbar. */
 .tile { padding: 14px 16px; display: grid; grid-template-rows: auto minmax(0, 1fr); align-content: start; gap: 6px; min-width: 0; cursor: grab; touch-action: manipulation; }
 .tile:active { cursor: grabbing; }
 .tile.is-dragging { opacity: .6; z-index: 2; }
@@ -171,22 +173,22 @@
 .tile .tile__big { font-family: var(--voyage-cond); font-weight: 700; font-size: 40px; line-height: 1; }
 .tile .tile__big small { font-size: 14px; color: var(--voyage-muted); font-weight: 500; margin-left: 6px; letter-spacing: .1em; }
 .tile__muted { font-size: 12px; color: var(--voyage-muted); }
-.tile__row { display: flex; gap: 14px; align-items: center; }
+.tile__row { display: flex; gap: 14px; align-items: center; align-self: center; }
 .tile__ring { width: 84px; height: 84px; flex: none; }
 .tile__spark { width: 100%; height: 56px; }
 .tile__moon { width: 56px; height: 56px; border-radius: 50%; flex: none; }
-.tile__bars { display: grid; gap: 6px; align-content: start; font-size: 12px; min-height: 0; max-height: 168px; overflow-y: auto; padding-right: 4px; }
+.tile__bars { display: grid; gap: 6px; align-content: start; font-size: 12px; min-height: 0; max-height: var(--tile-list, 150px); overflow-y: auto; padding-right: 4px; }
 .tile__bars span, .tile__queue span, .tile__feed div { min-width: 0; overflow-wrap: anywhere; }
 .tile__bars div { display: grid; grid-template-columns: minmax(70px, 110px) 1fr 40px; gap: 8px; align-items: center; }
 .tile__bars i { height: 6px; border-radius: 3px; background: rgba(127, 140, 170, .25); overflow: hidden; display: block; }
 .tile__bars i b { display: block; height: 100%; background: var(--voyage-accent); }
 .tile__bars span:last-child { text-align: right; font-family: var(--voyage-cond); }
-.tile__queue { display: grid; gap: 6px; font-size: 12px; align-content: start; min-height: 0; max-height: 196px; overflow-y: auto; padding-right: 4px; }
+.tile__queue { display: grid; gap: 6px; font-size: 12px; align-content: start; min-height: 0; max-height: var(--tile-list, 150px); overflow-y: auto; padding-right: 4px; }
 .tile__queue div { display: flex; gap: 8px; align-items: center; padding: 6px 8px; border-radius: 8px; background: rgba(127, 140, 170, .12); }
 .tile__queue b { font-family: var(--voyage-cond); letter-spacing: .12em; font-size: 10px; padding: 2px 6px; border-radius: 4px; background: var(--voyage-bad); color: #fff; text-transform: uppercase; flex: none; }
 .tile__queue b.warning { background: var(--voyage-warn); color: #1a1304; }
 .tile__queue b.info { background: rgba(127, 140, 170, .4); }
-.tile__feed { font-size: 12px; display: grid; gap: 5px; align-content: start; min-height: 0; max-height: 196px; overflow-y: auto; padding-right: 4px; }
+.tile__feed { font-size: 12px; display: grid; gap: 5px; align-content: start; min-height: 0; max-height: var(--tile-list, 150px); overflow-y: auto; padding-right: 4px; }
 .tile__feed time { font-family: var(--voyage-cond); color: var(--voyage-muted); margin-right: 8px; letter-spacing: .06em; }
 .tile__empty { margin: 0; color: var(--voyage-muted); font-size: 12px; }
 .tile__link { justify-self: start; align-self: end; font: 600 12px system-ui, sans-serif; color: var(--voyage-accent); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; }
@@ -252,7 +254,11 @@
 @media (min-width: 1024px) {
   .voyage-bar__hint { display: inline; }
   .voyage-bento { grid-template-columns: repeat(6, minmax(0, 1fr)); grid-auto-rows: minmax(120px, auto); }
-  .h2 { grid-row: span 2; }
+  /* Eight two-column tiles leave two on the last row of six; whichever two
+     tiles the owner has dragged last share that row half and half, so no
+     row is left with a hole in any order. */
+  .voyage-bento > .tile:last-child:nth-child(3n + 2),
+  .voyage-bento > .tile:nth-last-child(2):nth-child(3n + 1) { grid-column: span 3; }
 }
 
 @media (prefers-reduced-motion: reduce) {
