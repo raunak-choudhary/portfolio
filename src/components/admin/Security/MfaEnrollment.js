@@ -11,8 +11,12 @@
 // starts; removing the last device is allowed only after an explicit warning,
 // because it drops the account back to a single factor.
 //
-// Passkeys (PasskeyManager) appear once an authenticator is enrolled; they
-// replace typing the code on the devices that hold them.
+// Passkeys (PasskeyManager) appear once an authenticator is enrolled, and
+// whenever passkeys or the bridge exist; they replace typing the code on the
+// devices that hold them. While any passkey or the bridge exists the last
+// authenticator app cannot be removed here (and a database trigger refuses
+// it too), so a typed code always remains. The bridge factor is identified
+// by the id the admin-passkey function reports.
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { useAuthContext } from '../../../contexts/AuthContext';
@@ -27,6 +31,7 @@ import {
   unenrollFactor,
   verifyTotpEnrollment
 } from '../../../services/authService';
+import { getPasskeyStatus } from '../../../services/passkeyService';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import PasskeyManager from './PasskeyManager';
 import './MfaEnrollment.css';
@@ -42,11 +47,16 @@ const MfaEnrollment = ({ enrollmentRequired = false }) => {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [copied, setCopied] = useState(false);
+  const [hasBridge, setHasBridge] = useState(false);
+  const [passkeyCount, setPasskeyCount] = useState(0);
 
   const loadFactors = useCallback(async () => {
-    const listed = await listTotpFactors();
+    const status = await getPasskeyStatus();
+    const listed = await listTotpFactors({ bridgeFactorId: status.bridgeFactorId });
+    setPasskeyCount(status.passkeyCount);
     if (listed.success) {
       setFactors(listed.data.verified);
+      setHasBridge(Boolean(listed.data.bridge));
       setError('');
     } else {
       setError(listed.error.message);
@@ -120,7 +130,12 @@ const MfaEnrollment = ({ enrollmentRequired = false }) => {
     }
   };
 
+  // With passkeys in use the last typed authenticator stays, so a code always works.
+  const passkeysInUse = hasBridge || passkeyCount > 0;
+  const keepLastFactor = passkeysInUse && factors.length === 1;
+
   const removeFactor = async (factor) => {
+    if (keepLastFactor) return;
     const last = factors.length === 1;
     const question = last
       ? `Remove "${factor.friendly_name}"? It is your only authenticator. Until you enrol another, the account is protected by the email code alone, and content changes will be refused once the second factor is enforced.`
@@ -194,12 +209,24 @@ const MfaEnrollment = ({ enrollmentRequired = false }) => {
                       <div className="mfa-device-name">{factor.friendly_name || 'Authenticator'}</div>
                       <div className="mfa-muted">Added {new Date(factor.created_at).toLocaleDateString('en-US', { dateStyle: 'medium' })}</div>
                     </div>
-                    <button type="button" className="mfa-button mfa-button-danger" onClick={() => removeFactor(factor)} disabled={busy}>
+                    <button
+                      type="button"
+                      className="mfa-button mfa-button-danger"
+                      onClick={() => removeFactor(factor)}
+                      disabled={busy || keepLastFactor}
+                      aria-describedby={keepLastFactor ? 'mfa-keep-last' : undefined}
+                    >
                       Remove
                     </button>
                   </li>
                 ))}
               </ul>
+            )}
+            {keepLastFactor && (
+              <p id="mfa-keep-last" className="mfa-muted">
+                This is your only authenticator app, so it stays while you have passkeys: remove the passkeys below
+                first if you want to replace it.
+              </p>
             )}
           </section>
 
@@ -274,7 +301,7 @@ const MfaEnrollment = ({ enrollmentRequired = false }) => {
             </section>
           )}
 
-          {factors.length > 0 && <PasskeyManager />}
+          {(factors.length > 0 || passkeysInUse) && <PasskeyManager onChange={loadFactors} />}
 
           <section className="mfa-card mfa-card-note">
             <h3 className="mfa-card-title">If you lose your phone</h3>
