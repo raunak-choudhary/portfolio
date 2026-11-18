@@ -154,14 +154,15 @@ export function createSkyField({ canvas, figures, deepManifest, assetBase, quali
     setFly(next) { fly = !!next; },
     /**
      * Paint one frame. `scrollFraction` is 0..1 over the page; `now` is the animation clock in ms.
+     * With `snap` the camera lands on its pose at once instead of easing there (a frozen view, such as the sign-out backdrop).
      * @returns {{index: number, f: number, over: string}} the route position for the page's stage and rail state, and the Earth readout (refreshed once a second).
      */
-    frame(scrollFraction, now) {
+    frame(scrollFraction, now, { snap = false } = {}) {
       const route = routePosition(scrollFraction);
       const target = cameraTarget(route, fly);
       const framing = prologueFraming(aspect, route.f);   // zero on landscape screens and past the prologue
       wantPosition.set(target.position.x + framing.x, target.position.y + framing.y, target.position.z + framing.z); wantLook.set(target.look.x + framing.x, target.look.y + framing.y, target.look.z);
-      const ease = fly ? 0.08 : 1;
+      const ease = fly && !snap ? 0.08 : 1;
       cameraPosition.lerp(wantPosition, ease); cameraLook.lerp(wantLook, ease);
       camera.position.copy(cameraPosition); camera.lookAt(cameraLook);
       groups.forEach((g, i) => {
