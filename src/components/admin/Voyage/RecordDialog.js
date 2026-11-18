@@ -191,7 +191,9 @@ export default function RecordDialog({ schema, record, open, onClose, onSaved, o
         if (!sameStamp(current, base.updated_at)) { setConflict(true); return; }
       }
       let payload = normalizeForm(schema, form);
-      if (isNew && schema.orderKey) payload[schema.orderKey] = nextOrder;
+      // a new record goes after the others unless the form itself sets the
+      // order (internships show "Display order" as a field as well as a drag)
+      if (isNew && schema.orderKey && (payload[schema.orderKey] === null || payload[schema.orderKey] === undefined)) payload[schema.orderKey] = nextOrder;
       if (prepare) payload = prepare(payload, { isNew, base });
       const row = await saveRecord(schema, payload, base?.id || null);
       setBase(row); setForm(buildForm(schema, row)); setMode(editOnly ? 'edit' : 'read'); setTouched(new Set()); setSubmitted(false);

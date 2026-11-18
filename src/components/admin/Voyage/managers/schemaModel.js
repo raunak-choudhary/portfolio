@@ -17,7 +17,8 @@
 //   number, rating      numbers; rating is a whole number from 1 to max (default 5)
 //   toggle              true or false; `clears` empties other fields when switched on
 //   select              one of `options`; `allowEmpty` adds a blank choice,
-//                       `tolerateUnknown` keeps stored values the list does not know
+//                       `tolerateUnknown` keeps stored values the list does not know,
+//                       `ignoreCase` reads 'completed' as the option 'Completed'
 //   url                 a web address; `loose` accepts bare domains and adds https://,
 //                       `pattern` + `patternMessage` restrict the host or path
 //   link                a web address, a site path (/x) or an anchor (#x)
@@ -94,6 +95,17 @@ export function emptyValue(field) {
   return field.default ?? '';
 }
 
+/**
+ * The option a stored value means when case is not significant: the classic
+ * education form saved 'completed' while offering 'Completed', so the live
+ * rows hold a value no option matches. The form shows the option, and the
+ * next save writes the option's own spelling. Unknown values pass through.
+ */
+export function canonicalOption(field, value) {
+  const hit = (field.options || []).find((o) => String(o.value).toLowerCase() === String(value).toLowerCase());
+  return hit ? hit.value : value;
+}
+
 /** Form values for a row (or for a new record when row is null): one key per field, never undefined. */
 export function buildForm(schema, row) {
   const form = {};
@@ -106,6 +118,7 @@ export function buildForm(schema, row) {
     else if (field.kind === 'toggle') form[field.key] = Boolean(raw);
     else if (field.kind === 'number' || field.kind === 'rating') form[field.key] = Number.isFinite(Number(raw)) ? Number(raw) : '';
     else if (field.kind === 'date') form[field.key] = String(raw).slice(0, 10);   // a timestamp column still edits as a date
+    else if (field.kind === 'select' && field.ignoreCase) form[field.key] = canonicalOption(field, String(raw));
     else form[field.key] = String(raw);
   }
   return form;

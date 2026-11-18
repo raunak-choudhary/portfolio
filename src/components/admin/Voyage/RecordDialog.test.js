@@ -323,6 +323,30 @@ describe('RecordDialog', () => {
     view.unmount();
   });
 
+  it('places a new record after the others unless its form sets the order itself', async () => {
+    const ordered = {
+      table: 'things', singular: 'thing', plural: 'things', titleKey: 'title', orderKey: 'order_index', orderDirection: 'asc',
+      fields: [{ key: 'title', label: 'Title', kind: 'text', required: true }, { key: 'order_index', label: 'Display order', kind: 'number', integer: true, min: 0 }],
+      groups: [{ label: 'Thing', keys: ['title', 'order_index'] }],
+      card: (row) => ({ title: row.title || 'Thing', subtitle: '', chips: [], image: null, flags: [] }), searchText: () => '',
+    };
+    records.saveRecord.mockImplementation(async (schema, payload) => ({ id: 'n1', ...payload }));
+    let view = render({ schema: ordered, record: null, nextOrder: 7 });
+    setInputValue(inputFor('title'), 'Typed');
+    click(button('Add thing'));
+    await flush();
+    expect(records.saveRecord.mock.calls[0][1]).toEqual(expect.objectContaining({ title: 'Typed', order_index: 7 }));
+    view.unmount();
+    document.body.innerHTML = '';
+    view = render({ schema: ordered, record: null, nextOrder: 7 });
+    setInputValue(inputFor('title'), 'Typed');
+    setInputValue(inputFor('order_index'), '2');
+    click(button('Add thing'));
+    await flush();
+    expect(records.saveRecord.mock.calls[1][1]).toEqual(expect.objectContaining({ order_index: 2 }));
+    view.unmount();
+  });
+
   it('keeps the copy helpers in plain sentences', () => {
     expect(attentionText(1)).toBe('1 field needs attention');
     expect(attentionText(3)).toBe('3 fields need attention');

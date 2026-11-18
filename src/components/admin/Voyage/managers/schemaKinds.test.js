@@ -129,6 +129,16 @@ describe('selects', () => {
     expect(check({ ...sel, tolerateUnknown: false }, 'Legacy')).toBe('Type has an unknown value.');
     expect(isDirty(one(sel), buildForm(one(sel), { s: 'Legacy' }), { s: 'Legacy' })).toBe(false);
   });
+  it('reads a stored value in another case as its option, and saves the option spelling', () => {
+    const sel = { key: 's', label: 'Status', kind: 'select', options: [{ value: 'Completed', label: 'Completed' }, { value: 'In Progress', label: 'In progress' }], allowEmpty: true, ignoreCase: true };
+    const form = buildForm(one(sel), { s: 'completed' });
+    expect(form.s).toBe('Completed');
+    expect(check(sel, form.s)).toBeUndefined();
+    expect(normalizeForm(one(sel), form).s).toBe('Completed');
+    expect(buildForm(one(sel), { s: 'in progress' }).s).toBe('In Progress');
+    expect(buildForm(one(sel), { s: 'Paused' }).s).toBe('Paused');   // unknown values pass through untouched
+    expect(buildForm(one({ ...sel, ignoreCase: false }), { s: 'completed' }).s).toBe('completed');
+  });
 });
 
 describe('single uploads and file lists', () => {
