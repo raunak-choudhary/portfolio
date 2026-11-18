@@ -1,6 +1,7 @@
 /* eslint-disable testing-library/no-container, testing-library/render-result-naming-convention */
 import { ThemeProvider } from '../../../contexts/ThemeContext';
 import { SESSION_FACTS_KEY } from '../../../services/adminSessionFacts';
+import { VOYAGE_POSITION_KEY } from '../../../services/voyagePosition';
 import { REDUCED_TIMELINE, TIMELINE } from './exitModel';
 import AdminSignOut from './AdminSignOut';
 import { React, act, mount, stubCanvas } from '../SkyBackground/testUtils';
@@ -10,6 +11,11 @@ const mockNavigate = jest.fn();
 jest.mock('react-router-dom', () => ({ useNavigate: () => mockNavigate }));
 jest.mock('../../../services/authService', () => ({ signOutAdmin: jest.fn(), getAssuranceState: jest.fn() }));
 const { signOutAdmin, getAssuranceState } = jest.requireMock('../../../services/authService');
+// The backdrop is the voyage field; Three.js does not run in jsdom, so the field is a stand-in.
+let mockWebgl = false;
+jest.mock('../Voyage/webgl', () => ({ webglAvailable: () => mockWebgl }));
+jest.mock('../Voyage/skyField', () => ({ createSkyField: jest.fn() }));
+const { createSkyField } = jest.requireMock('../Voyage/skyField');
 
 /** Lets the mount effects settle: the assurance lookup, the state update it causes, and the sign-out call. */
 const flush = () => act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); await Promise.resolve(); });
@@ -46,7 +52,7 @@ describe('AdminSignOut', () => {
     getAssuranceState.mockResolvedValue({ currentLevel: 'aal2' });
   });
 
-  afterEach(() => { canvas.restore(); frames.restore(); performanceNow.mockRestore(); delete global.fetch; window.matchMedia = matchMediaOriginal; window.sessionStorage.clear(); });
+  afterEach(() => { mockWebgl = false; canvas.restore(); frames.restore(); performanceNow.mockRestore(); delete global.fetch; window.matchMedia = matchMediaOriginal; window.sessionStorage.clear(); });
 
   it('ends the session on mount and writes the chalk lines from the session facts', async () => {
     const view = render();
@@ -99,6 +105,36 @@ describe('AdminSignOut', () => {
     act(() => { window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })); });
     frames.run(10000 + 1040);
     expect(mockNavigate).toHaveBeenCalledWith('/adminlogin', { replace: true });
+    view.unmount();
+  });
+
+  it('plays over the voyage sky at the recorded chapter and gives the WebGL context back before the login', async () => {
+    mockWebgl = true;
+    const field = { resize: jest.fn(), setTheme: jest.fn(), frame: jest.fn(), dispose: jest.fn() };
+    createSkyField.mockImplementation(() => field);
+    window.sessionStorage.setItem(VOYAGE_POSITION_KEY, JSON.stringify({ f: 4, chapter: 'projects', theme: 'dark' }));
+    const view = render();
+    await act(async () => { for (let i = 0; i < 4; i++) { await new Promise((r) => setTimeout(r, 0)); await Promise.resolve(); } });
+    expect(view.container.querySelector('.exit-sky canvas.exit-voyage-field').dataset.chapter).toBe('projects');
+    expect(view.container.querySelector('.exit-sky + .exit-dim')).not.toBeNull();   // the dim and the black still sit above the sky
+    // the opaque black hides the sky from the cut to the end of the credits, so it is not painted then
+    frames.run(10000 + 3000);
+    const paintedDuringLeader = field.frame.mock.calls.length;
+    frames.run(10000 + 3100);
+    expect(field.frame.mock.calls.length).toBe(paintedDuringLeader);
+    frames.run(10000 + TIMELINE.login);
+    expect(field.dispose).toHaveBeenCalledTimes(1);
+    expect(field.dispose.mock.invocationCallOrder[0]).toBeLessThan(mockNavigate.mock.invocationCallOrder[0]);
+    expect(window.sessionStorage.getItem(VOYAGE_POSITION_KEY)).toBeNull();
+    view.unmount();
+    expect(field.dispose).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the voyage flat sky, not the classic one, without WebGL', async () => {
+    const view = render();
+    await flush();
+    expect(view.container.querySelector('.exit-sky .voyage-flat-sky .sky-background')).not.toBeNull();
+    expect(createSkyField).not.toHaveBeenCalled();
     view.unmount();
   });
 
