@@ -1,0 +1,460 @@
+/* src/components/admin/AdminLogin/Preflight.css
+   The admin login as a pre-flight before the voyage: a night sky with the
+   Earth's limb, one glass panel, a three-step checklist and one readout.
+   Everything is scoped under .preflight; colours are custom properties so
+   the dawn theme only swaps tokens. Mobile first.
+
+   Layout note: globals.css forces `transform: scale(1)` on <body>, which
+   turns position:fixed into "fixed to the body". The page therefore never
+   scrolls the document: .preflight is exactly one viewport tall and its
+   inner layer scrolls instead, with the sky absolutely placed behind it. */
+
+.preflight {
+  --pf-sky: #04070f;
+  --pf-fg: #e8eef8;
+  --pf-muted: #9aa8bd;
+  --pf-dim: rgba(232, 238, 248, 0.36);
+  --pf-line: rgba(255, 255, 255, 0.10);
+  --pf-accent: #7cc7ff;
+  --pf-accent-rgb: 124, 199, 255;
+  --pf-accent-ink: #04070f;
+  --pf-panel: rgba(10, 15, 28, 0.56);
+  --pf-panel-edge: rgba(255, 255, 255, 0.12);
+  --pf-panel-sheen: rgba(255, 255, 255, 0.06);
+  --pf-field: rgba(255, 255, 255, 0.04);
+  --pf-field-edge: rgba(255, 255, 255, 0.18);
+  --pf-danger: #ff5c7a;
+  --pf-danger-rgb: 255, 92, 122;
+  --pf-cond: 'Oswald', 'Avenir Next Condensed', 'Arial Narrow', sans-serif;
+  --pf-mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
+  --pf-radius: 10px;
+
+  position: relative;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--pf-sky);
+  color: var(--pf-fg);
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Dawn: the warm near-black placeholder the voyage uses for the light theme. */
+[data-theme="light"] .preflight {
+  --pf-sky: #120c08;
+  --pf-fg: #fff3e8;
+  --pf-muted: #d9c3b4;
+  --pf-dim: rgba(255, 243, 232, 0.38);
+  --pf-line: rgba(255, 230, 210, 0.12);
+  --pf-accent: #ffb27a;
+  --pf-accent-rgb: 255, 178, 122;
+  --pf-accent-ink: #2a1408;
+  --pf-panel: rgba(34, 19, 11, 0.58);
+  --pf-panel-edge: rgba(255, 214, 186, 0.18);
+  --pf-panel-sheen: rgba(255, 230, 210, 0.07);
+  --pf-field: rgba(255, 240, 228, 0.05);
+  --pf-field-edge: rgba(255, 220, 196, 0.22);
+  --pf-danger: #ff7a90;
+  --pf-danger-rgb: 255, 122, 144;
+}
+
+.preflight .visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---- sky ---- */
+.preflight-sky {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.preflight-sky__stars {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* ---- scrolling layer and panel ---- */
+.preflight__scroll {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  /* bottom room keeps the panel off the limb when there is space for it */
+  padding: 24px 16px calc(24px + min(11vh, 120px));
+  box-sizing: border-box;
+}
+
+.preflight-panel {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 400px;
+  /* auto margins centre the panel while it fits and let it scroll from the top when it does not */
+  margin: auto;
+  padding: 22px 22px 16px;
+  background: var(--pf-panel);
+  border: 1px solid var(--pf-panel-edge);
+  border-radius: 16px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45), inset 0 1px 0 var(--pf-panel-sheen);
+  -webkit-backdrop-filter: blur(14px) saturate(125%);
+  backdrop-filter: blur(14px) saturate(125%);
+}
+
+@media (min-width: 768px) {
+  .preflight-panel { padding: 28px 30px 20px; }
+}
+
+.preflight-panel__head {
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--pf-line);
+}
+
+.preflight .preflight-wordmark {
+  margin: 0;
+  font: 600 15px/1 var(--pf-cond);
+  letter-spacing: 0.26em;
+  color: var(--pf-fg);
+  display: flex;
+  align-items: center;
+  gap: 0.55em;
+}
+
+.preflight-wordmark__dot { color: var(--pf-accent); letter-spacing: 0; }
+
+/* ---- checklist ---- */
+.preflight-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.preflight-step {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  column-gap: 12px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--pf-line);
+}
+
+.preflight-step:last-child { border-bottom: 0; }
+
+.preflight-step__num {
+  font: 300 26px/26px var(--pf-cond);
+  font-variant-numeric: tabular-nums;
+  color: var(--pf-dim);
+}
+
+.preflight .preflight-step__label {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 26px;
+  font: 500 14px/1 var(--pf-cond);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--pf-dim);
+}
+
+/* A step lights with a short, deliberate colour change (themes.css gives every
+   element a slower one; reduced motion removes it below). */
+.preflight .preflight-step__num,
+.preflight .preflight-step__label { transition: color 200ms ease; }
+
+.preflight-step--current .preflight-step__num { color: var(--pf-accent); font-weight: 400; }
+.preflight-step--current .preflight-step__label { color: var(--pf-fg); }
+.preflight-step--done .preflight-step__num,
+.preflight-step--done .preflight-step__label { color: var(--pf-muted); }
+
+.preflight-step__check {
+  display: inline-flex;
+  color: var(--pf-accent);
+}
+
+.preflight .preflight-step__summary {
+  margin: 4px 0 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--pf-muted);
+  overflow-wrap: anywhere;
+}
+
+.preflight-step__body {
+  margin-top: 14px;
+  display: grid;
+  gap: 12px;
+}
+
+/* ---- controls ---- */
+.preflight-actions,
+.preflight-form {
+  display: grid;
+  gap: 12px;
+}
+
+.preflight .preflight-hint {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--pf-muted);
+}
+
+.preflight-hint strong { color: var(--pf-fg); font-weight: 600; }
+
+.preflight-field { display: grid; gap: 6px; }
+
+.preflight-field__label {
+  font-size: 13px;
+  color: var(--pf-muted);
+}
+
+.preflight-field__box { position: relative; }
+
+.preflight .preflight-field__input {
+  box-sizing: border-box;
+  width: 100%;
+  height: 48px;
+  padding: 0 14px;
+  background: var(--pf-field);
+  border: 1px solid var(--pf-field-edge);
+  border-radius: var(--pf-radius);
+  color: var(--pf-fg);
+  caret-color: var(--pf-accent);
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.preflight select.preflight-field__input { appearance: auto; }
+.preflight select.preflight-field__input option { color: #111; }
+
+.preflight .preflight-field__input--code {
+  padding-right: 52px;
+  font-family: var(--pf-mono);
+  font-size: 20px !important; /* beats the global 16px input rule; still no iOS zoom above 16px */
+  letter-spacing: 0.35em;
+}
+
+.preflight .preflight-field__input::placeholder { color: var(--pf-dim); opacity: 1; }
+
+.preflight .preflight-field__input:focus-visible,
+.preflight .preflight-field__input:focus {
+  border-color: var(--pf-accent);
+  box-shadow: 0 0 0 3px rgba(var(--pf-accent-rgb), 0.22);
+  outline: none;
+}
+
+.preflight .preflight-field__input:disabled { opacity: 0.6; }
+
+.preflight .preflight-field__reveal {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  color: var(--pf-muted);
+  border-radius: 8px;
+}
+
+.preflight .preflight-field__reveal:hover:not(:disabled) { color: var(--pf-fg); }
+
+/* Google's dark sign-in surface: neutral, with its own colours and the standard mark. */
+.preflight .preflight-google,
+.preflight .preflight-primary {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 48px;
+  padding: 0 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border-radius: var(--pf-radius);
+  font-weight: 500;
+  line-height: 1.2;
+  transition: background-color 160ms ease, border-color 160ms ease, opacity 160ms ease;
+}
+
+.preflight .preflight-google {
+  background: #131314;
+  border: 1px solid #8e918f;
+  color: #e3e3e3;
+  font-family: Roboto, system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+.preflight .preflight-google:hover:not(:disabled) { background: #1f1f21; border-color: #a8aba9; }
+.preflight-google__mark { flex: none; }
+
+.preflight .preflight-primary {
+  background: var(--pf-accent);
+  border: 1px solid var(--pf-accent);
+  color: var(--pf-accent-ink);
+  font-weight: 600;
+}
+
+.preflight .preflight-primary:hover:not(:disabled) { background: rgba(var(--pf-accent-rgb), 0.88); }
+
+/* Disabled reads as "not yet" (an outline), not as a faded copy of the accent. */
+.preflight .preflight-primary:disabled {
+  background: transparent;
+  border-color: var(--pf-field-edge);
+  color: var(--pf-dim);
+  cursor: not-allowed;
+}
+
+.preflight .preflight-google:disabled { opacity: 0.6; cursor: progress; }
+
+.preflight .preflight-quiet {
+  min-height: 44px;
+  padding: 0 4px;
+  justify-self: center;
+  color: var(--pf-muted);
+  font-size: 15px !important;
+  text-decoration: underline;
+  text-decoration-color: var(--pf-line);
+  text-underline-offset: 4px;
+}
+
+.preflight .preflight-quiet:hover:not(:disabled) { color: var(--pf-fg); text-decoration-color: currentColor; }
+.preflight .preflight-quiet:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.preflight-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0 12px;
+}
+
+/* One clearly visible ring for every keyboard stop. */
+.preflight button:focus-visible {
+  outline: 2px solid var(--pf-accent);
+  outline-offset: 3px;
+}
+
+.preflight .preflight-google:focus-visible { outline-color: #8ab4f8; }
+
+/* ---- messages ---- */
+.preflight-msg {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  padding: 10px 12px;
+  border-radius: var(--pf-radius);
+  border: 1px solid var(--pf-line);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.preflight .preflight-msg p { margin: 0; color: var(--pf-fg); }
+.preflight-msg svg { margin-top: 1px; }
+
+.preflight-msg--error {
+  border-color: rgba(var(--pf-danger-rgb), 0.5);
+  background: rgba(var(--pf-danger-rgb), 0.10);
+}
+
+.preflight-msg--error svg { color: var(--pf-danger); }
+/* A confirmation is quieter than an error: no box, just the mark and the words. */
+.preflight-msg--notice { border-color: transparent; padding: 0; }
+.preflight-msg--notice svg { color: var(--pf-accent); }
+
+/* ---- launch ---- */
+.preflight .preflight-launch {
+  margin: 0;
+  display: grid;
+  gap: 10px;
+  font: 500 12px/1 var(--pf-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--pf-fg);
+}
+
+.preflight-launch__bar {
+  position: relative;
+  display: block;
+  height: 2px;
+  background: var(--pf-line);
+  overflow: hidden;
+}
+
+.preflight-launch__bar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--pf-accent);
+  transform-origin: left center;
+  animation: preflight-fill 650ms linear forwards;
+}
+
+@keyframes preflight-fill {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+/* ---- readout ---- */
+.preflight-panel__foot {
+  margin-top: 4px;
+  padding-top: 14px;
+  border-top: 1px solid var(--pf-line);
+}
+
+.preflight .preflight-readout {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  row-gap: 6px;
+  font: 500 11px/1.2 var(--pf-mono);
+  letter-spacing: 0.1em;
+  color: var(--pf-muted);
+}
+
+.preflight-readout__part { display: inline-flex; align-items: center; white-space: nowrap; }
+
+.preflight-readout__rule {
+  display: inline-block;
+  width: 14px;
+  height: 1px;
+  margin: 0 10px;
+  background: var(--pf-dim);
+}
+
+/* Below 360 px the two facts do not fit on one line: stack them and drop the
+   rule, which would otherwise lead the second line. */
+@media (max-width: 359px) {
+  .preflight .preflight-readout { flex-direction: column; }
+  .preflight-readout__rule { display: none; }
+}
+
+/* ---- hand-off to the entry ---- */
+.preflight__blackout {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 450ms ease 250ms;
+}
+
+.preflight--launching .preflight__blackout { opacity: 1; pointer-events: auto; }
+
+@media (prefers-reduced-motion: reduce) {
+  .preflight *,
+  .preflight__blackout { transition: none !important; }
+  .preflight-launch__bar::after { animation: none; transform: scaleX(1); }
+}
