@@ -30,6 +30,9 @@ jest.mock('../../../services/voyageData', () => ({
 jest.mock('../../../services/adminSessionFacts', () => ({ startSession: jest.fn() }));
 // the decks load through the records service, which also needs the Supabase client; the page test checks the wiring only
 jest.mock('../../../services/voyageRecords', () => ({ listRecords: jest.fn(), saveRecord: jest.fn(), deleteRecord: jest.fn(), reorderRecords: jest.fn(), uploadImages: jest.fn(), removeImage: jest.fn(), imageProblems: jest.fn(), failureKind: jest.fn(), fetchUpdatedAt: jest.fn(), getRecord: jest.fn() }));
+// the inbox reads through its own service, which also needs the Supabase client
+jest.mock('../../../services/inboxService', () => ({ listMessages: jest.fn(), updateMessages: jest.fn(), deleteMessages: jest.fn(), signedAttachmentUrl: jest.fn(), SIGNED_URL_SECONDS: 300 }));
+const inboxService = jest.requireMock('../../../services/inboxService');
 const { getPortfolioStats } = jest.requireMock('../../../services/dataService');
 const analyticsService = jest.requireMock('../../../services/analyticsService').default;
 const voyageData = jest.requireMock('../../../services/voyageData');
@@ -65,6 +68,7 @@ describe('VoyagePage (2D fallback)', () => {
     voyageData.getRecentEdits.mockResolvedValue([{ section: 'Projects', label: 'Tallyproof', at: new Date().toISOString() }]);
     voyageData.getTopPages.mockResolvedValue([{ page: '/home', views: 94 }, { page: '/projects', views: 20 }]);
     voyageRecords.listRecords.mockResolvedValue([{ id: 'p1', title: 'Tallyproof', order_index: 30, technologies: ['React'] }]);
+    inboxService.listMessages.mockResolvedValue([{ id: 'm1', name: 'Test Sender', email: 'sender@example.com', subject: 'Hello', message: 'Hi', status: 'unread', created_at: new Date().toISOString() }]);
     mockNavigate.mockClear();
   });
 
@@ -114,6 +118,8 @@ describe('VoyagePage (2D fallback)', () => {
       expect([id, view.container.querySelector(`#chapter-${id} [data-testid="deck"]`) !== null]).toEqual([id, true]);   // V3b: the seven list sections
     });
     expect(view.container.querySelector('#chapter-media .voyage-placeholder')).not.toBeNull();   // no table: placeholder until its unit
+    expect(view.container.querySelector('#chapter-inbox [data-testid="inbox"]').textContent).toContain('Hello');   // V4a: the telegraph office
+    expect(view.container.querySelector('#chapter-inbox .voyage-placeholder')).toBeNull();
     view.unmount();
   });
 
@@ -142,6 +148,8 @@ describe('VoyagePage (2D fallback)', () => {
     await flush();
     expect(view.container.querySelector('.voyage-notice').textContent).toMatch(/authenticator/);
     expect(view.container.querySelector('[data-testid="bento"]')).toBeNull();
+    expect(view.container.querySelector('[data-testid="inbox"]')).toBeNull();
+    expect(inboxService.listMessages).not.toHaveBeenCalled();
     view.unmount();
   });
 });
