@@ -1,4 +1,7 @@
+import fs from 'fs';
+import path from 'path';
 import {
+  SECTION_HEALTH_RULES,
   evaluateContentSectionHealth,
   summarizePortfolioHealth
 } from './analyticsService';
@@ -117,5 +120,24 @@ describe('analyticsService portfolio health helpers', () => {
       severity: 'critical',
       section: 'Education'
     }));
+  });
+});
+
+describe('portfolio health rules against the real columns', () => {
+  // Each recorded fixture holds live rows of its table, so its keys are the
+  // table's columns. A rule naming a column that does not exist reports a gap
+  // on every row (the skills, work and recommendations rules once did).
+  const columnsOf = (table) => {
+    const file = path.join(__dirname, '../../e2e/fixtures', `${table}.json`);
+    const rows = JSON.parse(fs.readFileSync(file, 'utf8'));
+    return new Set(rows.flatMap((row) => Object.keys(row)));
+  };
+
+  it.each(SECTION_HEALTH_RULES.map((rule) => [rule.name, rule]))('%s names only columns its table has', (name, rule) => {
+    const columns = columnsOf(rule.table);
+    [...rule.requiredFields, ...(rule.descriptionFields || [])].forEach((field) => expect([name, field, columns.has(field)]).toEqual([name, field, true]));
+    (rule.qualityGroups || []).forEach((group) => {
+      expect([name, group.name, group.fields.some((field) => columns.has(field))]).toEqual([name, group.name, true]);
+    });
   });
 });

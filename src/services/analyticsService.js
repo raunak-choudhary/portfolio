@@ -173,7 +173,7 @@ export const trackContentUpdate = async (contentType, contentId, updateType, cha
 
 // ===== METRICS CALCULATION FUNCTIONS =====
 
-const SECTION_HEALTH_RULES = [
+export const SECTION_HEALTH_RULES = [
   {
     name: 'Hero',
     table: 'hero_content',
@@ -241,8 +241,8 @@ const SECTION_HEALTH_RULES = [
     table: 'work_experience',
     weight: 10,
     minItems: 1,
-    requiredFields: ['position', 'company', 'description'],
-    descriptionFields: ['description', 'summary'],
+    requiredFields: ['title', 'company', 'description'],   // the role column is title; 'position' flagged every role as a critical gap
+    descriptionFields: ['description'],
     qualityGroups: [
       { name: 'company logo', label: 'company logo', fields: ['company_logo_url', 'logo_url'], issueType: 'missing_image' }
     ]
@@ -265,7 +265,7 @@ const SECTION_HEALTH_RULES = [
     requiredFields: ['title', 'issuer'],
     descriptionFields: ['description'],
     qualityGroups: [
-      { name: 'proof', label: 'certificate or verification link', fields: ['certificate_pdf_url', 'credential_url', 'verification_url'], issueType: 'missing_proof_link' },
+      { name: 'proof', label: 'certificate or verification link', fields: ['certificate_pdf_url', 'credential_url'], issueType: 'missing_proof_link' },
       { name: 'badge', label: 'badge image', fields: ['badge_image_url'], issueType: 'missing_image' }
     ]
   },
@@ -274,10 +274,10 @@ const SECTION_HEALTH_RULES = [
     table: 'recommendations',
     weight: 4,
     minItems: 1,
-    requiredFields: ['recommender_name', 'recommendation_text'],
-    descriptionFields: ['recommendation_text'],
+    requiredFields: ['recommender_name', 'content'],   // the text column is content; 'recommendation_text' flagged every row
+    descriptionFields: ['content'],
     qualityGroups: [
-      { name: 'recommender proof', label: 'LinkedIn or profile proof', fields: ['linkedin_url', 'profile_url'], issueType: 'missing_proof_link' }
+      { name: 'recommender proof', label: 'LinkedIn or profile proof', fields: ['linkedin_profile_url'], issueType: 'missing_proof_link' }
     ]
   },
   {
@@ -288,7 +288,7 @@ const SECTION_HEALTH_RULES = [
     requiredFields: ['title', 'description'],
     descriptionFields: ['description'],
     qualityGroups: [
-      { name: 'proof', label: 'certificate or proof link', fields: ['certificate_url', 'proof_url'], issueType: 'missing_proof_link' }
+      { name: 'proof', label: 'certificate or proof link', fields: ['certificate_url', 'verification_url'], issueType: 'missing_proof_link' }
     ]
   },
   {
@@ -298,9 +298,8 @@ const SECTION_HEALTH_RULES = [
     minItems: 1,
     requiredFields: ['title', 'organization', 'description'],
     descriptionFields: ['description'],
-    qualityGroups: [
-      { name: 'proof', label: 'proof link or image', fields: ['proof_url', 'image_url', 'organization_logo_url'], issueType: 'missing_proof_link' }
-    ]
+    // the leadership table has no link or image column, so a proof group could only ever report a gap
+    qualityGroups: []
   }
 ];
 
