@@ -1,12 +1,10 @@
 // src/Router.js - public portfolio router
 
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useState } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import Header from './components/common/Header';
 import Footer from './components/common/Footer';
-import LoadingSpinner from './components/common/LoadingSpinner';
 import { AuthProvider, useAuthContext } from './contexts/AuthContext';
-import { readAuthErrorFromUrl } from './services/authService';
 
 import LandingPage from './pages/LandingPage';
 import ProjectsPage from './pages/ProjectsPage';
@@ -18,6 +16,9 @@ import CertificationsPage from './pages/CertificationsPage';
 import RecommendationsPage from './pages/RecommendationsPage';
 import AchievementsPage from './pages/AchievementsPage';
 import LeadershipPage from './pages/LeadershipPage';
+// Rules the 2025 login stylesheet used to lend every page; kept at the same
+// point in the cascade (after the pages) so nothing outside the login changes.
+import './styles/legacy-login-shared.css';
 import AdminLogin from './components/admin/AdminLogin/AdminLogin';
 import MfaCodeStep from './components/admin/AdminLogin/MfaCodeStep';
 // The dashboard and the sign-out film carry the sky renderer, the 3D field and their
@@ -40,19 +41,23 @@ const isAdminPath = (pathname) => /^\/admin(login|dashboard|signout)(\/|$)/.test
  */
 const ProtectedAdminRoute = ({ view = 'classic' }) => {
   const { assurance, isAuthenticated, isLoading, sessionChecked } = useAuthContext();
+  // The address this route was first reached with, read once. <Navigate> runs
+  // again whenever this component re-renders, and by the second run the
+  // window is already on /adminlogin with the query gone; one stable object
+  // keeps the redirect's error (and avoids a second navigation).
+  const [returnState] = useState(() => ({ returnUrl: { search: window.location.search, hash: window.location.hash } }));
 
   if (isLoading || !sessionChecked || (isAuthenticated && !assurance.checked)) {
-    return (
-      <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center' }}>
-        <LoadingSpinner />
-      </div>
-    );
+    // Dark like the login sky: a Google return waits here for its code
+    // exchange, and a white spinner page would flash between two night screens.
+    return <AdminChunkFallback />;
   }
 
   if (!isAuthenticated) {
-    // A failed magic link lands here with its error in the URL fragment;
-    // carry it to the login page so the visitor learns why.
-    return <Navigate to="/adminlogin" replace state={{ authError: readAuthErrorFromUrl(window.location.hash) }} />;
+    // A failed Google return or email link lands here with its error in the
+    // query or fragment. Hand the raw address to the login page, which turns
+    // it into a fixed sentence; replacing the URL also clears it from the bar.
+    return <Navigate to="/adminlogin" replace state={returnState} />;
   }
 
   if (assurance.needsSecondFactor) {

@@ -1,48 +1,80 @@
 // src/components/admin/AdminLogin/AdminLogin.js
 //
-// Admin login, steps 1 and 2 of the two-step flow, in the 2025 design:
-//   email  -> the owner types the admin address and a six-digit code is emailed
-//   code   -> the code is exchanged for a session (assurance level 1)
-// Step 3, the authenticator code, is shown by the protected dashboard route
-// once a session exists (MfaCodeStep), so this page never has to know
-// whether an authenticator is enrolled.
+// Step 01 of the admin pre-flight: proving who is signing in.
+//   google  "Continue with Google" (the default): a redirect through Supabase
+//           to Google and back to the dashboard route
+//   email   the quiet fallback: the admin address, then a six-digit code
+//   code    the code from that email, exchanged for a session
+// Either way the session is at assurance level 1; step 02, the authenticator
+// code, is shown by the protected dashboard route (MfaCodeStep), so this page
+// never has to know whether an authenticator is enrolled.
 //
-// Security notes: the page never reveals whether an address is the admin's
-// (the same message follows every request), codes are digits only and
-// single use, the resend button honours a cooldown, and every message shown
-// is a fixed sentence (nothing from the URL or the server is echoed).
+// Security notes: every message is a fixed sentence (nothing from the URL or
+// the server is echoed); a Google account that is not the admin's gets one
+// sentence and fires the owner's best-effort alert; the error parameters are
+// removed from the address bar once read; codes are digits only and single
+// use; the resend button honours a cooldown.
 
 import React, { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuthContext } from '../../../contexts/AuthContext';
 import {
+  GOOGLE_ATTEMPT_LABEL,
   LOGIN_LINK_SENT_MESSAGE,
   ONE_TIME_CODE_LENGTH,
   RESEND_COOLDOWN_SECONDS,
+  clearGoogleReturn,
+  isGoogleReturnPending,
   isValidOneTimeCode,
   maskEmail,
-  sanitizeCodeInput,
+  readLoginReturn,
+  reportUnknownLoginAttempt,
+  signInWithGoogle,
   verifyEmailCode
 } from '../../../services/authService';
 import ButtonSpinner from '../../common/ButtonSpinner';
-import './AdminLogin.css';
+import PreflightShell from './PreflightShell';
+import { CodeField, ErrorLine, GoogleMark, NoticeLine } from './PreflightControls';
 
-const STEP = Object.freeze({ EMAIL: 'email', CODE: 'code' });
+export const MODE = Object.freeze({ GOOGLE: 'google', EMAIL: 'email', CODE: 'code' });
 
-const AdminLogin = () => {
+/**
+ * Where to look for a returning redirect's result: the dashboard route hands
+ * over the address it was reached with, or the visitor landed here directly.
+ */
+const returnSource = (location) => location.state?.returnUrl || { search: location.search, hash: location.hash };
+
+const AdminLogin = ({ now }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { clearError, isAuthenticated, isSigningIn, sessionChecked, signIn } = useAuthContext();
 
-  const [step, setStep] = useState(STEP.EMAIL);
+  // Read once, on the first render; the effect below acts on it exactly once.
+  const [loginReturn] = useState(() => readLoginReturn(returnSource(location), isGoogleReturnPending()));
+  const [mode, setMode] = useState(MODE.GOOGLE);
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
-  const [formError, setFormError] = useState(location.state?.authError || '');
+  const [formError, setFormError] = useState(loginReturn?.message || '');
   const [notice, setNotice] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
+  const [isLeavingForGoogle, setIsLeavingForGoogle] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
-  const [showCode, setShowCode] = useState(false);
+  const emailInputRef = useRef(null);
   const codeInputRef = useRef(null);
+  const handledReturn = useRef(false);
+
+  // Act on a returning redirect once: alert the owner about a refused Google
+  // account, forget the pending round trip, and clean the address bar so the
+  // error neither lingers in the URL nor comes back on reload.
+  useEffect(() => {
+    if (handledReturn.current) return;
+    handledReturn.current = true;
+    if (loginReturn?.kind === 'google-not-admin') reportUnknownLoginAttempt(GOOGLE_ATTEMPT_LABEL);
+    clearGoogleReturn();
+    if (location.state || location.search || location.hash) {
+      navigate('/adminlogin', { replace: true, state: null });
+    }
+  }, [loginReturn, location, navigate]);
 
   // A visitor who already holds a session goes straight on; the protected
   // route decides whether the authenticator step is still due.
@@ -59,13 +91,32 @@ const AdminLogin = () => {
   }, [resendCooldown]);
 
   useEffect(() => {
-    if (step === STEP.CODE) codeInputRef.current?.focus();
-  }, [step]);
+    if (mode === MODE.EMAIL) emailInputRef.current?.focus();
+    if (mode === MODE.CODE) codeInputRef.current?.focus();
+  }, [mode]);
 
   const resetMessages = () => {
     setFormError('');
     setNotice('');
     clearError();
+  };
+
+  const switchMode = (next) => {
+    resetMessages();
+    setCode('');
+    setMode(next);
+  };
+
+  const handleGoogle = async () => {
+    resetMessages();
+    setIsLeavingForGoogle(true);
+    const result = await signInWithGoogle();
+    // On success the browser is already on its way to Google; the button
+    // stays busy so a second press cannot start a second round trip.
+    if (!result.success) {
+      setFormError(result.error.message);
+      setIsLeavingForGoogle(false);
+    }
   };
 
   const requestCode = async () => {
@@ -89,7 +140,7 @@ const AdminLogin = () => {
     resetMessages();
     if (await requestCode()) {
       setCode('');
-      setStep(STEP.CODE);
+      setMode(MODE.CODE);
     }
   };
 
@@ -124,193 +175,82 @@ const AdminLogin = () => {
     }
   };
 
-  const handleBackToEmail = () => {
-    resetMessages();
-    setCode('');
-    setStep(STEP.EMAIL);
-  };
-
-  const busy = isSigningIn || isVerifying;
-  const onCodeStep = step === STEP.CODE;
+  const busy = isSigningIn || isVerifying || isLeavingForGoogle;
 
   return (
-    <div className="admin-login-page">
-      <div className="login-background-effects">
-        <div className="floating-orb orb-1" />
-        <div className="floating-orb orb-2" />
-        <div className="floating-orb orb-3" />
-        <div className="login-grid-overlay" />
-      </div>
+    <PreflightShell current="identity" now={now}>
+      {formError && <ErrorLine>{formError}</ErrorLine>}
+      {notice && !formError && <NoticeLine>{notice}</NoticeLine>}
 
-      <div className="login-container">
-        <div className="login-card glass-card">
-          <div className="login-header">
-            <div className="login-logo">
-              <img src="/logo.png" alt="RC Portfolio" className="header-logo" />
-              <h1 className="login-title">
-                <span className="title-text">RC Portfolio</span>
-                <span className="title-admin">Admin</span>
-              </h1>
-            </div>
-            <p className="login-subtitle">
-              {onCodeStep ? 'Step 1 of 2 · Email Verification' : 'Secure Content Management System'}
-            </p>
-            <div className="security-indicator">
-              <span className="security-icon" aria-hidden="true">{onCodeStep ? '📧' : '🔐'}</span>
-              <span className="security-text">
-                {onCodeStep ? 'Code Sent To Your Inbox' : 'Encrypted Access Enabled'}
-              </span>
-            </div>
-          </div>
-
-          {formError && (
-            <div className="login-error animate-fade-in" role="alert">
-              <div className="error-icon" aria-hidden="true">⚠️</div>
-              <div className="error-content">
-                <strong>Authentication Failed</strong>
-                <p>{formError}</p>
-              </div>
-            </div>
-          )}
-
-          {notice && !formError && (
-            <div className="login-success animate-fade-in" role="status">
-              <div className="success-icon" aria-hidden="true">✅</div>
-              <div className="success-content">
-                <p>{notice}</p>
-              </div>
-            </div>
-          )}
-
-          {!onCodeStep && (
-            <form onSubmit={handleEmailSubmit} className="login-form">
-              <div className="form-group">
-                <label htmlFor="admin-email" className="form-label">Admin Email</label>
-                <div className="input-wrapper">
-                  <input
-                    id="admin-email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    inputMode="email"
-                    className="form-input"
-                    placeholder="Enter your admin email"
-                    value={email}
-                    onChange={(event) => { setEmail(event.target.value); setFormError(''); }}
-                    disabled={busy}
-                    required
-                  />
-                  <div className="input-icon" aria-hidden="true"><span>📧</span></div>
-                </div>
-              </div>
-
-              <button type="submit" disabled={busy} className={`login-button neon-button ${busy ? 'signing-in' : ''}`}>
-                {busy ? (
-                  <>
-                    <ButtonSpinner />
-                    <span>Sending code...</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="button-icon" aria-hidden="true">🚀</span>
-                    <span>Send Verification Code</span>
-                  </>
-                )}
-              </button>
-            </form>
-          )}
-
-          {onCodeStep && (
-            <form onSubmit={handleCodeSubmit} className="otp-form">
-              <div className="otp-info">
-                <p className="otp-message">
-                  📧 A {ONE_TIME_CODE_LENGTH}-digit code has been sent to <strong>{maskEmail(email)}</strong>
-                </p>
-                <p className="otp-expiry">⏰ Code expires in 10 minutes</p>
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="admin-email-code" className="form-label">Verification Code</label>
-                <div className="input-wrapper">
-                  <input
-                    ref={codeInputRef}
-                    id="admin-email-code"
-                    name="code"
-                    type={showCode ? 'text' : 'password'}
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    autoComplete="one-time-code"
-                    maxLength={ONE_TIME_CODE_LENGTH}
-                    className="form-input otp-input"
-                    placeholder={`Enter ${ONE_TIME_CODE_LENGTH}-digit code`}
-                    value={code}
-                    onChange={(event) => { setCode(sanitizeCodeInput(event.target.value)); setFormError(''); }}
-                    disabled={busy}
-                  />
-                  {/* Hidden by default: the code is a secret while it is valid. The toggle reveals it on request. */}
-                  <button
-                    type="button"
-                    className="input-icon password-toggle"
-                    onClick={() => setShowCode((v) => !v)}
-                    aria-label={showCode ? 'Hide the code' : 'Show the code'}
-                    aria-pressed={showCode}
-                    disabled={busy}
-                  >
-                    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z" />
-                      <circle cx="12" cy="12" r="3" />
-                      {!showCode && <path d="M4 4l16 16" />}
-                    </svg>
-                  </button>
-                </div>
-              </div>
-
-              <div className="otp-actions">
-                <button type="button" onClick={handleResend} disabled={resendCooldown > 0 || busy} className="resend-button">
-                  {isSigningIn ? (
-                    <>
-                      <ButtonSpinner />
-                      <span>Sending...</span>
-                    </>
-                  ) : resendCooldown > 0 ? (
-                    <span>📧 Resend in {resendCooldown}s</span>
-                  ) : (
-                    <span>📧 Resend Code</span>
-                  )}
-                </button>
-                <button type="button" onClick={handleBackToEmail} className="back-button" disabled={busy}>
-                  ← Use a different email
-                </button>
-              </div>
-
-              <button
-                type="submit"
-                disabled={busy || !isValidOneTimeCode(code)}
-                className={`login-button neon-button ${busy ? 'signing-in' : ''}`}
-              >
-                {isVerifying ? (
-                  <>
-                    <ButtonSpinner />
-                    <span>Verifying...</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="button-icon" aria-hidden="true">🔐</span>
-                    <span>Verify Email Code</span>
-                  </>
-                )}
-              </button>
-            </form>
-          )}
-
-          <div className="login-footer">
-            <p className="security-note">
-              🔒 {onCodeStep ? 'Two-factor authentication active' : 'Secure admin access with 2FA'}
-            </p>
-          </div>
+      {mode === MODE.GOOGLE && (
+        <div className="preflight-actions">
+          <button type="button" className="preflight-google" onClick={handleGoogle} disabled={busy}>
+            {isLeavingForGoogle ? <ButtonSpinner /> : <GoogleMark />}
+            <span>{isLeavingForGoogle ? 'Opening Google...' : 'Continue with Google'}</span>
+          </button>
+          <button type="button" className="preflight-quiet" onClick={() => switchMode(MODE.EMAIL)} disabled={busy}>
+            Use an email code instead
+          </button>
         </div>
-      </div>
-    </div>
+      )}
+
+      {mode === MODE.EMAIL && (
+        <form onSubmit={handleEmailSubmit} className="preflight-form" noValidate>
+          <div className="preflight-field">
+            <label htmlFor="admin-email" className="preflight-field__label">Admin email</label>
+            <div className="preflight-field__box">
+              <input
+                ref={emailInputRef}
+                id="admin-email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                inputMode="email"
+                className="preflight-field__input"
+                value={email}
+                onChange={(event) => { setEmail(event.target.value); setFormError(''); }}
+                disabled={busy}
+                required
+              />
+            </div>
+          </div>
+          <button type="submit" disabled={busy} className="preflight-primary">
+            {isSigningIn ? <><ButtonSpinner /><span>Sending code...</span></> : <span>Send code</span>}
+          </button>
+          <button type="button" className="preflight-quiet" onClick={() => switchMode(MODE.GOOGLE)} disabled={busy}>
+            Back to Google sign-in
+          </button>
+        </form>
+      )}
+
+      {mode === MODE.CODE && (
+        <form onSubmit={handleCodeSubmit} className="preflight-form" noValidate>
+          <p className="preflight-hint" id="admin-email-code-hint">
+            Sent to <strong>{maskEmail(email)}</strong>. The code expires in 10 minutes.
+          </p>
+          <CodeField
+            ref={codeInputRef}
+            id="admin-email-code"
+            label="Email code"
+            value={code}
+            onChange={(next) => { setCode(next); setFormError(''); }}
+            disabled={busy}
+            describedBy="admin-email-code-hint"
+          />
+          <button type="submit" disabled={busy || !isValidOneTimeCode(code)} className="preflight-primary">
+            {isVerifying ? <><ButtonSpinner /><span>Verifying...</span></> : <span>Verify code</span>}
+          </button>
+          <div className="preflight-row">
+            <button type="button" onClick={handleResend} disabled={resendCooldown > 0 || busy} className="preflight-quiet">
+              {isSigningIn ? 'Sending...' : resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend code'}
+            </button>
+            <button type="button" onClick={() => switchMode(MODE.EMAIL)} className="preflight-quiet" disabled={busy}>
+              Use a different email
+            </button>
+          </div>
+        </form>
+      )}
+    </PreflightShell>
   );
 };
 
