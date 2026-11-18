@@ -139,9 +139,18 @@ export const collectReferencedMediaPaths = (rowsByTable = {}, referenceTables = 
       Object.entries(bucketFields).forEach(([bucketId, fields]) => {
         fields.forEach(field => {
           flattenValues(row?.[field]).forEach(value => {
-            const filePath = extractStoragePathFromPublicUrl(String(value), bucketId);
+            const raw = String(value).trim();
+            const filePath = extractStoragePathFromPublicUrl(raw, bucketId);
             if (filePath) {
               referencedPaths.add(`${bucketId}:${filePath}`);
+            }
+            // A relative value that starts with the bucket's name is ambiguous:
+            // the contact form stores `contact-attachments/contact-...` as the
+            // object key INSIDE the bucket of that name, so the prefix is part
+            // of the real path. Both readings are recorded; the listing then
+            // matches whichever object actually exists.
+            if (raw.startsWith(`${bucketId}/`) && !raw.includes('://')) {
+              referencedPaths.add(`${bucketId}:${raw}`);
             }
           });
         });
