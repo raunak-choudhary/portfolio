@@ -8,7 +8,8 @@
 // Configuration:
 //   SUPABASE_URL, SUPABASE_SECRET_KEYS, SUPABASE_PUBLISHABLE_KEYS  injected
 //   PASSKEY_BRIDGE_KEY        32 random bytes, base64; encrypts the bridge secret
-//   PASSKEY_ALLOWED_ORIGINS   comma list; defaults to the site and localhost:3000
+//   PASSKEY_ALLOWED_ORIGINS   comma list; required, every request is refused without it
+//   PASSKEY_ALLOW_LOCALHOST   "1" lets http://localhost:3000 through (temporary, pre-deploy)
 // Deploy with gateway JWT verification off (supabase/config.toml): the
 // handler verifies the bearer token with Auth itself.
 
@@ -172,8 +173,10 @@ const store: Store | null = db
     updatePasskeyUse: async (id, signCount, lastUsedIso) => {
       must(await db.from('admin_passkeys').update({ sign_count: signCount, last_used_at: lastUsedIso }).eq('id', id));
     },
-    deletePasskey: async (id, userId) => {
-      const rows = must(await db.from('admin_passkeys').delete().eq('id', id).eq('user_id', userId).select('id'));
+    deletePasskey: async (id, userId, refuseRpId) => {
+      let query = db.from('admin_passkeys').delete().eq('id', id).eq('user_id', userId);
+      if (refuseRpId) query = query.neq('rp_id', refuseRpId);
+      const rows = must(await query.select('id'));
       return Array.isArray(rows) && rows.length > 0;
     },
     getBridge: async (userId) =>

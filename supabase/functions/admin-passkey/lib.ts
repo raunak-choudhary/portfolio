@@ -158,26 +158,36 @@ export async function unwrapSecret(key: CryptoKey, wrapped: string, userId: stri
 // ---------------------------------------------------------------------------
 // Origins and relying party
 
-/** Origins allowed when PASSKEY_ALLOWED_ORIGINS is not set. */
-export const DEFAULT_PASSKEY_ORIGINS = [
-  'https://www.raunakchoudhary.com',
-  'https://raunakchoudhary.com',
-  'http://localhost:3000',
-];
+/** The development relying party. Refused unless PASSKEY_ALLOW_LOCALHOST=1. */
+export const LOCALHOST_RP_ID = 'localhost';
 
-/** Parses the comma-separated origin list, or falls back to the defaults. */
+/**
+ * Parses the comma-separated origin list. There is no default: with the
+ * setting missing or empty every request is refused (fail closed).
+ */
 export function passkeyOriginsFrom(setting: string | undefined): string[] {
-  const parsed = (setting ?? '').split(',').map((item) => item.trim()).filter(Boolean);
-  return parsed.length > 0 ? parsed : DEFAULT_PASSKEY_ORIGINS;
+  return (setting ?? '').split(',').map((item) => item.trim()).filter(Boolean);
 }
+
+/**
+ * Localhost is a temporary opt-in while the site is not yet deployed: the dev
+ * server talks to the production project and port 3000 is shared with other
+ * local projects, so it needs an explicit second switch besides the origin list.
+ */
+export const localhostAllowed = (env: Record<string, string | undefined>) => env.PASSKEY_ALLOW_LOCALHOST === '1';
 
 /**
  * The relying party for a request origin, or null when the origin is not
  * allowed. The RP ID is the host without a leading "www.", so a passkey made
  * on www.raunakchoudhary.com also works on raunakchoudhary.com. Plain http is
- * accepted only for localhost (browsers allow WebAuthn there).
+ * accepted only for localhost (browsers allow WebAuthn there), and localhost
+ * only when `allowLocalhost` is set.
  */
-export function relyingPartyFor(origin: string | null, allowed: string[]): { origin: string; rpId: string } | null {
+export function relyingPartyFor(
+  origin: string | null,
+  allowed: string[],
+  { allowLocalhost = false }: { allowLocalhost?: boolean } = {},
+): { origin: string; rpId: string } | null {
   if (!origin || !allowed.includes(origin)) return null;
   let url: URL;
   try {
@@ -187,7 +197,8 @@ export function relyingPartyFor(origin: string | null, allowed: string[]): { ori
   }
   if (url.origin !== origin) return null; // no paths, credentials or trailing slashes
   const host = url.hostname;
-  if (url.protocol === 'http:' && host !== 'localhost') return null;
+  if (host === LOCALHOST_RP_ID && !allowLocalhost) return null;
+  if (url.protocol === 'http:' && host !== LOCALHOST_RP_ID) return null;
   if (url.protocol !== 'https:' && url.protocol !== 'http:') return null;
   return { origin, rpId: host.replace(/^www\./, '') };
 }

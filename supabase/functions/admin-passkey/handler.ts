@@ -36,6 +36,8 @@ import {
   importWrapKey,
   isRateLimited,
   isUuid,
+  LOCALHOST_RP_ID,
+  localhostAllowed,
   MAX_BODY_BYTES,
   passkeyOriginsFrom,
   rateWindowStart,
@@ -116,7 +118,8 @@ export interface Store {
   /** Inserts a credential; `duplicate` when the credential id already exists. */
   insertPasskey(row: NewPasskey): Promise<{ id: string } | { duplicate: true }>;
   updatePasskeyUse(id: string, signCount: number, lastUsedIso: string): Promise<void>;
-  deletePasskey(id: string, userId: string): Promise<boolean>;
+  /** Deletes one of the user's passkeys; rows for `refuseRpId` are left alone (reported as not found). */
+  deletePasskey(id: string, userId: string, refuseRpId: string | null): Promise<boolean>;
   getBridge(userId: string): Promise<BridgeRow | null>;
   insertBridge(row: { user_id: string; factor_id: string; secret_ciphertext: string }): Promise<void>;
   deleteBridge(userId: string): Promise<void>;
@@ -205,7 +208,11 @@ interface Caller {
 
 export async function handleRequest(request: Request, deps: HandlerDeps): Promise<Response> {
   const origin = request.headers.get('origin');
-  const rp = relyingPartyFor(origin, passkeyOriginsFrom(deps.env.PASSKEY_ALLOWED_ORIGINS));
+  // Fail closed: no origin list means no relying party, and localhost needs
+  // PASSKEY_ALLOW_LOCALHOST=1 as well, so a localhost request never gets past here without it.
+  const rp = relyingPartyFor(origin, passkeyOriginsFrom(deps.env.PASSKEY_ALLOWED_ORIGINS), {
+    allowLocalhost: localhostAllowed(deps.env),
+  });
   const cors = rp ? corsHeadersFor(rp.origin, request.headers.get('access-control-request-headers')) : {};
   const reply = (status: number, body: unknown) =>
     new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', ...cors } });
@@ -510,9 +517,11 @@ async function authVerify(caller: Caller, deps: HandlerDeps) {
   const credentialId = responseIdOf(caller.body.response);
   const expectedChallenge = await takeChallenge(caller, deps, 'authenticate');
 
-  // The credential must be the caller's and registered for this site.
+  // The credential must be the caller's and registered for this site. The
+  // store filters by site already; the second check keeps that true even if a
+  // store ever returned a row for another relying party (a localhost one).
   const passkey = await store.findPasskey(credentialId, caller.user.id, caller.rp.rpId);
-  if (!passkey) throw refuse(400, 'verification_failed', MESSAGES.verification);
+  if (!passkey || passkey.rp_id !== caller.rp.rpId) throw refuse(400, 'verification_failed', MESSAGES.verification);
 
   let result: Awaited<ReturnType<WebAuthnApi['verifyAuthentication']>>;
   try {
@@ -553,7 +562,9 @@ async function remove(caller: Caller, deps: HandlerDeps) {
   const store = deps.store as Store;
   const id = caller.body.id;
   if (!isUuid(id)) throw refuse(400, 'bad_request', MESSAGES.badRequest);
-  if (!(await store.deletePasskey(id, caller.user.id))) throw refuse(404, 'not_found', MESSAGES.notFound);
+  // Without the localhost switch a localhost credential is out of reach here too.
+  const refuseRpId = localhostAllowed(deps.env) ? null : LOCALHOST_RP_ID;
+  if (!(await store.deletePasskey(id, caller.user.id, refuseRpId))) throw refuse(404, 'not_found', MESSAGES.notFound);
 
   // With the last passkey gone the bridge has no purpose; unenrol it so no
   // server-held factor outlives the passkeys. Auth then lowers sessions that
