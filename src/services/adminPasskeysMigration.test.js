@@ -6,23 +6,20 @@
 const fs = require('fs');
 const path = require('path');
 
-const MIGRATION = path.join(
-  __dirname,
-  '..',
-  '..',
-  'supabase',
-  'migrations',
-  '20261118120000_admin_passkeys.sql',
-);
+const MIGRATIONS = path.join(__dirname, '..', '..', 'supabase', 'migrations');
 
-/** The migration without SQL line comments, so prose never satisfies a check. */
-const sql = fs
-  .readFileSync(MIGRATION, 'utf8')
-  .split('\n')
-  .map((line) => line.replace(/--.*$/, ''))
-  .join('\n')
-  .replace(/\s+/g, ' ')
-  .toLowerCase();
+/** A migration without SQL line comments or extra spaces, so prose never satisfies a check. */
+const readSql = (name) =>
+  fs
+    .readFileSync(path.join(MIGRATIONS, name), 'utf8')
+    .split('\n')
+    .map((line) => line.replace(/--.*$/, ''))
+    .join('\n')
+    .replace(/\s+/g, ' ')
+    .toLowerCase();
+
+const sql = readSql('20261118120000_admin_passkeys.sql');
+const guard = readSql('20261118120100_admin_keep_typed_factor.sql');
 
 describe('admin passkeys migration', () => {
   test('signed-in users may only read passkeys, never delete them directly', () => {
@@ -42,5 +39,22 @@ describe('admin passkeys migration', () => {
     );
     expect(sql).toMatch(/pg_advisory_xact_lock\(/);
     expect(sql).not.toMatch(/grant [^;]* on table public\.admin_passkey_challenges to authenticated/);
+  });
+
+  test('the database keeps a typed authenticator while passkeys or a bridge exist', () => {
+    expect(guard).toContain(
+      'create trigger keep_typed_factor_with_passkeys before delete on auth.mfa_factors for each row execute function app_private.keep_typed_factor_with_passkeys();',
+    );
+    expect(guard).toContain('security definer set search_path = \'\'');
+    // The bridge factor itself, unverified factors and user deletion stay possible.
+    expect(guard).toContain("old.status::text <> 'verified'");
+    expect(guard).toContain('b.factor_id = old.id');
+    expect(guard).toContain('not exists (select 1 from auth.users u where u.id = old.user_id)');
+    expect(guard).toMatch(/raise exception 'keep one authenticator app/);
+    // A hosted project that refuses auth-schema triggers still applies the rest.
+    expect(guard).toContain('when insufficient_privilege then raise notice');
+    expect(guard).toContain(
+      'revoke all on function app_private.keep_typed_factor_with_passkeys() from public, anon, authenticated;',
+    );
   });
 });
