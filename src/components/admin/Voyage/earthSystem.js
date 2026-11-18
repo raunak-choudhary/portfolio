@@ -24,12 +24,21 @@ const EARTH_VERTEX = `
     gl_Position = projectionMatrix * viewMatrix * world;
   }`;
 /**
+ * The twilight band in units of N.L (the cosine of the Sun's angle from the
+ * zenith): its Gaussian half-width, and how far it sits on the night side.
+ * Exported so a test can hold the band narrow.
+ */
+export const TWILIGHT_WIDTH = 0.045;
+export const TWILIGHT_SHIFT = 0.02;
+/**
  * Day map where the Sun shines, city lights where it does not, clouds over
  * both (lit by day, dimming the lights by night), a warm twilight band at the
  * terminator, and a blue limb that is strong on the day side and faint on the
  * night side. Colours are in linear light; the last line encodes for the screen.
  */
 const EARTH_FRAGMENT = `
+  #define TWILIGHT_WIDTH ${TWILIGHT_WIDTH.toFixed(3)}
+  #define TWILIGHT_SHIFT ${TWILIGHT_SHIFT.toFixed(3)}
   uniform sampler2D uDay; uniform sampler2D uNight; uniform sampler2D uClouds; uniform vec3 uSun; uniform float uCloudShift;
   varying vec2 vUv; varying vec3 vNormal; varying vec3 vView;
   void main() {
@@ -43,8 +52,16 @@ const EARTH_FRAGMENT = `
     vec3 surface = mix(day, vec3(0.95, 0.96, 1.0), cloud * 0.9) * (0.06 + 1.1 * max(lit, 0.0));
     vec3 city = lights * vec3(1.3, 1.05, 0.75) * 1.7 * (1.0 - cloud * 0.65);
     vec3 earthshine = (day * 0.03 + vec3(cloud) * 0.03) * (1.0 - cloud * 0.3);
-    float twilight = exp(-pow(lit / 0.14, 2.0));
-    vec3 color = mix(city + earthshine, surface, dayMix) + twilight * vec3(0.9, 0.42, 0.14) * 0.35 * (1.0 - cloud * 0.4);
+    // Twilight is sunlight reddened on its long path through the air, so it
+    // is a thin strip hugging the terminator, a little on the night side, and
+    // strongest toward the limb where the line of sight crosses the most air.
+    // Its width is set in units of N.L, so it stays the same share of the disc
+    // at every screen size (a band of +-0.14 read as a wide orange stripe).
+    // A bright core plus a faint, wider skirt so it reads as a glow, not a painted line.
+    float core = exp(-pow((lit + TWILIGHT_SHIFT) / TWILIGHT_WIDTH, 2.0));
+    float skirt = exp(-pow((lit + TWILIGHT_SHIFT) / (TWILIGHT_WIDTH * 2.4), 2.0));
+    float twilight = (core * 0.30 + skirt * 0.10) * (0.5 + 0.5 * pow(1.0 - max(dot(n, v), 0.0), 1.5));
+    vec3 color = mix(city + earthshine, surface, dayMix) + twilight * vec3(0.95, 0.44, 0.15) * (1.0 - cloud * 0.4);
     float rim = pow(1.0 - max(dot(n, v), 0.0), 3.0);
     color += rim * vec3(0.30, 0.55, 1.0) * (0.10 + 0.9 * smoothstep(-0.3, 0.35, lit));
     gl_FragColor = vec4(color, 1.0);
