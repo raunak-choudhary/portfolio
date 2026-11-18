@@ -21,6 +21,7 @@ import SkyControls from '../SkyBackground/SkyControls';
 import { SkySettingsProvider, useSkySettings } from '../SkyBackground/SkySettingsContext';
 import { CHAPTERS, chapterIndex, chapterPlace } from './chapters';
 import DeckChapter from './DeckChapter';
+import SingletonChapter from './SingletonChapter';
 import Toast, { useToast } from './Toast';
 import { schemaForTable } from './managers';
 import Bento from './Bento';
@@ -170,7 +171,9 @@ function VoyageView({ requireSecurityEnrollment }) {
               : <Bento data={data} onGo={go} />)}
             {chapter.kind === 'deck' && schemaForTable(chapter.table) && (requireSecurityEnrollment
               ? <div className="voyage-pane voyage-notice">Confirm an authenticator app in Security before the managers open.</div>
-              : <DeckChapter schema={schemaForTable(chapter.table)} notify={notify} />)}
+              : schemaForTable(chapter.table).mode === 'singleton'
+                ? <SingletonChapter schema={schemaForTable(chapter.table)} notify={notify} />
+                : <DeckChapter schema={schemaForTable(chapter.table)} notify={notify} />)}
             {chapter.kind !== 'bento' && chapter.kind !== 'prologue' && !(chapter.kind === 'deck' && schemaForTable(chapter.table)) && (
               <div className="voyage-pane voyage-placeholder">
                 <p>{countFor(chapter) !== null ? <><b>{countFor(chapter)}</b> {countFor(chapter) === 1 ? 'item' : 'items'} in this section.</> : 'This chapter is on its way.'}</p>
