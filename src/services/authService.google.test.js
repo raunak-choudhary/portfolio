@@ -99,7 +99,7 @@ describe('signInWithGoogle', () => {
 describe('readLoginReturn', () => {
   it('returns null when the address carries no error', () => {
     expect(readLoginReturn({ search: '', hash: '' }, true)).toBeNull();
-    expect(readLoginReturn({ search: '?code=abc' }, true)).toBeNull();
+    expect(readLoginReturn({ search: '?code=abc' }, false)).toBeNull();
     expect(readLoginReturn()).toBeNull();
   });
 
@@ -110,6 +110,10 @@ describe('readLoginReturn', () => {
 
   it('reads the fragment too, for the implicit flow', () => {
     expect(readLoginReturn({ hash: '#error=server_error&error_code=signup_disabled' }, false).kind).toBe('google-not-admin');
+  });
+
+  it('treats a Google code that did not become a session as a failed round trip', () => {
+    expect(readLoginReturn({ search: '?code=abc' }, true)).toEqual({ kind: 'google-failed', message: GOOGLE_FAILED_MESSAGE });
   });
 
   it('gives any other failed Google round trip one fixed sentence', () => {
