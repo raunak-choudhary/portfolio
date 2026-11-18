@@ -1,0 +1,363 @@
+/* src/styles/legacy-login-shared.css
+
+   The part of the 2025 admin login stylesheet that other screens still rely on.
+   That sheet was imported eagerly by the router, so its unscoped rules reached
+   every page: the public contact form's inputs, the shared LoadingSpinner, the
+   ErrorBoundary and certificate modal icons, the classic dashboard managers'
+   form groups and checkboxes, and the effective `fadeIn`, `spin`,
+   `successPulse` and `errorPulse` keyframes (the last definition of a name
+   wins). The login itself now has its own scoped stylesheet; the login-only
+   rules were deleted and these are kept verbatim, imported at the same point
+   in the cascade, so nothing outside the login changes.
+
+   Retire with the public redesign (Phase 8) and the classic dashboard (V6). */
+
+.error-icon {
+  font-size: var(--text-xl);
+  flex-shrink: 0;
+  animation: errorPulse 1s ease-in-out infinite;
+}
+
+.error-content {
+  flex: 1;
+}
+
+.error-content strong {
+  color: #ff6b9d;
+  font-weight: 700;
+  display: block;
+  margin-bottom: var(--spacing-xs);
+  font-size: var(--text-sm);
+}
+
+.error-content p {
+  color: var(--text-secondary);
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+.error-hint {
+  margin-top: var(--spacing-sm) !important;
+  font-style: italic;
+  opacity: 0.8;
+}
+
+.success-icon {
+  font-size: var(--text-xl);
+  flex-shrink: 0;
+  animation: successPulse 1.5s ease-in-out infinite;
+}
+
+.success-content {
+  flex: 1;
+}
+
+.success-content p {
+  color: #4caf50;
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.form-label {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: var(--text-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.form-input {
+  width: 100%;
+  padding: var(--spacing-md) var(--spacing-xl);
+  padding-right: 3rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 102, 204, 0.3);
+  border-radius: var(--radius-lg);
+  color: var(--text-primary);
+  font-size: var(--text-base);
+  transition: all var(--duration-normal) var(--ease-in-out);
+  backdrop-filter: blur(10px);
+  font-family: inherit;
+  position: relative;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #ff66cc;
+  box-shadow: 
+    0 0 0 3px rgba(255, 102, 204, 0.2),
+    0 0 20px rgba(255, 102, 204, 0.3);
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-1px);
+}
+
+.form-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.form-input.error {
+  border-color: #ff6b9d;
+  box-shadow: 
+    0 0 0 3px rgba(255, 107, 157, 0.2),
+    0 0 20px rgba(255, 107, 157, 0.3);
+}
+
+[data-theme="light"] .form-input {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(139, 0, 255, 0.3);
+  color: var(--text-primary);
+}
+
+[data-theme="light"] .form-input:focus {
+  border-color: #8b00ff;
+  box-shadow: 
+    0 0 0 3px rgba(139, 0, 255, 0.15),
+    0 0 20px rgba(139, 0, 255, 0.2);
+  background: rgba(255, 255, 255, 1);
+}
+
+.form-input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
+.input-icon {
+  position: absolute;
+  right: var(--spacing-md);
+  color: rgba(255, 102, 204, 0.6);
+  font-size: var(--text-lg);
+  pointer-events: none;
+  transition: all var(--duration-normal);
+}
+
+.input-icon.password-toggle {
+  pointer-events: all;
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  border-radius: var(--radius-sm);
+  background: none;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.input-icon.password-toggle:hover {
+  background: rgba(255, 102, 204, 0.1);
+  transform: scale(1.1);
+}
+
+[data-theme="light"] .input-icon {
+  color: rgba(139, 0, 255, 0.6);
+}
+
+[data-theme="light"] .input-icon.password-toggle:hover {
+  background: rgba(139, 0, 255, 0.1);
+}
+
+.field-error {
+  color: #ff6b9d;
+  font-size: var(--text-xs);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.field-error::before {
+  content: '⚠️';
+  font-size: var(--text-sm);
+}
+
+.form-options {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  margin: var(--spacing-md) 0;
+}
+
+.checkbox-wrapper {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  cursor: pointer;
+  user-select: none;
+}
+
+.checkbox-input {
+  display: none;
+}
+
+.checkbox-custom {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 102, 204, 0.4);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.05);
+  position: relative;
+  transition: all var(--duration-normal);
+  flex-shrink: 0;
+}
+
+.checkbox-input:checked + .checkbox-custom {
+  background: linear-gradient(135deg, #ff66cc, #6633ff);
+  border-color: #ff66cc;
+  box-shadow: 0 0 15px rgba(255, 102, 204, 0.4);
+}
+
+.checkbox-input:checked + .checkbox-custom::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+[data-theme="light"] .checkbox-custom {
+  border-color: rgba(139, 0, 255, 0.4);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+[data-theme="light"] .checkbox-input:checked + .checkbox-custom {
+  background: linear-gradient(135deg, #8b00ff, #ff6600);
+  border-color: #8b00ff;
+  box-shadow: 0 0 15px rgba(139, 0, 255, 0.3);
+}
+
+.checkbox-label {
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  font-weight: 500;
+}
+
+@keyframes errorPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+@keyframes successPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out;
+}
+
+.form-input:focus {
+  outline: 2px solid rgba(255, 102, 204, 0.5);
+  outline-offset: 2px;
+}
+
+[data-theme="light"] .form-input:focus {
+  outline-color: rgba(139, 0, 255, 0.5);
+}
+
+.loading-spinner-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-lg);
+}
+
+.spinner-ring {
+  width: 60px;
+  height: 60px;
+  border: 3px solid rgba(255, 102, 204, 0.3);
+  border-radius: 50%;
+  border-top-color: #ff66cc;
+  animation: spin 1s linear infinite;
+}
+
+[data-theme="light"] .spinner-ring {
+  border-color: rgba(139, 0, 255, 0.3);
+  border-top-color: #8b00ff;
+}
+
+.loading-message {
+  color: var(--text-secondary);
+  font-size: var(--text-lg);
+  font-weight: 500;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 768px) {
+  .form-input {
+    padding: var(--spacing-md);
+    padding-right: 2.5rem;
+  }
+  .form-options {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .form-options {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    align-items: center;
+  }
+  .checkbox-wrapper {
+    justify-content: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .checkbox-custom, .success-icon {
+    animation: none;
+  }
+  .form-input:focus {
+    transform: none;
+  }
+}
+
+@media (prefers-contrast: high) {
+  .form-input, .checkbox-custom {
+    border-width: 2px;
+  }
+}
