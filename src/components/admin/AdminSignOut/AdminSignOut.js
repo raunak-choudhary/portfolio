@@ -3,7 +3,9 @@
 // The sign-out sequence. The dashboard sends the admin here with a full page
 // load; this page ends the Supabase session itself on mount and returns to
 // the login when the sequence is over. Seventeen seconds: the clapperboard,
-// the countdown leader, the credits, the शुभम् card.
+// the countdown leader, the credits, the शुभम् card. It plays over the
+// voyage's sky, held where the camera was when the admin signed out
+// (ExitVoyageSky); the dim and black layers sit on top of it.
 //
 // The structure is React; the per-frame work (phase classes, plane positions,
 // the two canvases) is done imperatively on refs from one animation loop, so
@@ -14,14 +16,16 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAssuranceState, signOutAdmin } from '../../../services/authService';
-import SkyBackground from '../SkyBackground/SkyBackground';
 import { SkySettingsProvider } from '../SkyBackground/SkySettingsContext';
 import { createExitAudio } from './exitAudio';
+import { skyCovered } from './exitBackdrop';
+import ExitVoyageSky from './ExitVoyageSky';
 import { drawCreditBackground, drawLeader, makeArcs } from './exitCanvas';
 import {
   DIRECTOR, FAREWELLS, REDUCED_TIMELINE, TIMELINE, buildScript, creditFacts, phaseClasses, planeState, sceneLine, takeLine, wheelBoost,
 } from './exitModel';
 import { clearSession, readSessionFacts } from '../../../services/adminSessionFacts';
+import { clearVoyagePosition, readVoyagePosition } from '../../../services/voyagePosition';
 import './AdminSignOut.css';
 
 const CONDENSED = "'Oswald', 'Avenir Next Condensed', 'Arial Narrow', Impact, sans-serif";
@@ -59,6 +63,7 @@ export default function AdminSignOut() {
   const [reduced] = useState(prefersReducedMotion);
   const [assurance, setAssurance] = useState(null);
   const facts = useMemo(() => readSessionFacts(), []);
+  const [skyPosition] = useState(readVoyagePosition);
   const now = useMemo(() => new Date(), []);
   const T = reduced ? REDUCED_TIMELINE : TIMELINE;
 
@@ -66,7 +71,7 @@ export default function AdminSignOut() {
   const script = useMemo(() => buildScript({ farewells: FAREWELLS, facts: creditFacts({ facts, now, assurance }), director: DIRECTOR }), [facts, now, assurance]);
 
   const rootRef = useRef(null), leaderRef = useRef(null), bgRef = useRef(null), planeRefs = useRef([]);
-  const audioRef = useRef(null);
+  const audioRef = useRef(null), releaseSkyRef = useRef(null);
   const [muted, setMuted] = useState(false);
 
   useEffect(() => { loadCondensedFont(); }, []);
@@ -102,7 +107,9 @@ export default function AdminSignOut() {
       if (finished) return;
       finished = true;
       audio.whirOff();
+      releaseSkyRef.current?.();   // give the WebGL context back before the login mounts
       clearSession();
+      clearVoyagePosition();
       try { localStorage.removeItem('admin_analytics_session'); } catch { /* nothing to clear */ }
       navigate('/adminlogin', { replace: true });
     };
@@ -168,7 +175,7 @@ export default function AdminSignOut() {
   return (
     <div className="exit" ref={rootRef} data-testid="exit-sequence">
       <SkySettingsProvider>
-        <div className="exit-sky"><SkyBackground liveSun={false} motion={false} /></div>
+        <div className="exit-sky"><ExitVoyageSky position={skyPosition} releaseRef={releaseSkyRef} shouldPaint={() => !skyCovered(rootRef.current?.className)} /></div>
       </SkySettingsProvider>
       <div className="exit-dim" />
       <div className="exit-black" />
