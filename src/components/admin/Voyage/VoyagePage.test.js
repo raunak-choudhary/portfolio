@@ -1,6 +1,7 @@
 /* eslint-disable testing-library/no-container, testing-library/render-result-naming-convention */
 import { ThemeProvider } from '../../../contexts/ThemeContext';
 import { CHAPTERS } from './chapters';
+import { VOYAGE_POSITION_KEY } from '../../../services/voyagePosition';
 import VoyagePage, { VOYAGE_ROOT_CLASS } from './VoyagePage';
 import { React, act, click, mount, stubCanvas } from '../SkyBackground/testUtils';
 import { isDashboardReady, resetDashboardReady } from '../AdminWelcome/adminReadiness';
@@ -146,6 +147,28 @@ describe('VoyagePage (2D fallback)', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/admindashboard/classic');
     expect(document.querySelector('.voyage-palette')).toBeNull();
     view.unmount();
+  });
+
+  it('records where the camera was before moving to the sign-out film', async () => {
+    const frames = [];
+    window.requestAnimationFrame.mockImplementation((cb) => { frames.push(cb); return frames.length; });
+    const location = window.location;
+    delete window.location;
+    window.location = { assign: jest.fn() };
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 900 });
+    try {
+      const view = render();
+      await flush();
+      act(() => { frames.splice(0).forEach((cb) => cb(16)); });   // one frame of the loop: the stage tops are 0 in jsdom, so 900 px is past the last
+      click(view.container.querySelector('.voyage-bar__button[aria-label="Sign out"]'));
+      expect(window.location.assign).toHaveBeenCalledWith('/adminsignout');
+      const recorded = JSON.parse(window.sessionStorage.getItem(VOYAGE_POSITION_KEY));
+      expect(recorded).toEqual({ f: CHAPTERS.length - 1, chapter: 'security', theme: expect.stringMatching(/^(dark|light)$/) });
+      view.unmount();
+    } finally {
+      window.location = location;
+      Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 });
+    }
   });
 
   it('holds the managers back until an authenticator is confirmed', async () => {

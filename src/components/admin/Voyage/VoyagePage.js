@@ -15,6 +15,7 @@ import { getPortfolioStats } from '../../../services/dataService';
 import analyticsService from '../../../services/analyticsService';
 import { getRecentEdits, getTopPages, getUnreadMessages, getVisitorSeries } from '../../../services/voyageData';
 import { startSession } from '../../../services/adminSessionFacts';
+import { recordVoyagePosition } from '../../../services/voyagePosition';
 import { markDashboardReady } from '../AdminWelcome/adminReadiness';
 import SkyBackground, { SKY_ASSET_BASE } from '../SkyBackground/SkyBackground';
 import SkyControls from '../SkyBackground/SkyControls';
@@ -52,6 +53,7 @@ function VoyageView({ requireSecurityEnrollment }) {
   const { toast, notify } = useToast();
   const [webgl] = useState(() => webglAvailable());
   const canvasRef = useRef(null), fieldRef = useRef(null), stageRefs = useRef([]);
+  const routeRef = useRef(0);   // the camera's route coordinate, kept for the sign-out film's backdrop
   const names = useMemo(() => namesFrom(figures), [figures]);
 
   // ---- data: figures and photographs for the field, facts for the tiles ----
@@ -133,6 +135,7 @@ function VoyageView({ requireSecurityEnrollment }) {
       if (stopped) return;
       const sf = scrollFraction();
       const route = fieldRef.current ? fieldRef.current.frame(sf, now) : routePosition(sf);
+      routeRef.current = route.f;
       const live = liveChapterIndex(route.f);
       stageRefs.current.forEach((el, i) => el?.classList.toggle('is-live', isChapterLive(i, route.f)));
       if (live !== lastIndex) { lastIndex = live; setActive(live); }
@@ -151,7 +154,11 @@ function VoyageView({ requireSecurityEnrollment }) {
     window.scrollTo({ top, behavior: effectiveMotion ? 'smooth' : 'auto' });
   }, [effectiveMotion]);
   const go = useCallback((id) => jump(Math.max(0, chapterIndex(id))), [jump]);
-  const signOut = useCallback(() => { window.location.assign('/adminsignout'); }, []);
+  // The film on /adminsignout plays over this same sky, frozen where the camera is now.
+  const signOut = useCallback(() => {
+    recordVoyagePosition({ f: routeRef.current, theme: resolvedTheme });
+    window.location.assign('/adminsignout');
+  }, [resolvedTheme]);
   const actions = useMemo(() => [
     { id: 'classic', label: 'Open the classic dashboard', hint: 'until the voyage replaces it', run: () => navigate('/admindashboard/classic') },
     { id: 'signout', label: 'Sign out', hint: 'the film plays', run: signOut },
