@@ -19,8 +19,7 @@ jest.mock('../../../services/authService', () => ({
 }));
 const { listTotpFactors, verifyTotpChallenge } = jest.requireMock('../../../services/authService');
 jest.mock('../../../services/passkeyService', () => ({
-  isSupported: jest.fn(),
-  hasPasskey: jest.fn(),
+  getPasskeyStatus: jest.fn(),
   signInWithPasskey: jest.fn()
 }));
 const passkeys = jest.requireMock('../../../services/passkeyService');
@@ -49,8 +48,7 @@ describe('MfaCodeStep (pre-flight steps 02 and 03)', () => {
     mockAuth = { refreshAssurance: jest.fn().mockResolvedValue({}), signOut: jest.fn(), user: { email: 'raunak@example.com' } };
     listTotpFactors.mockResolvedValue({ success: true, data: { verified: [{ id: 'f1', friendly_name: 'Phone' }], unverified: [] } });
     verifyTotpChallenge.mockResolvedValue({ success: true, data: { factorId: 'f1' } });
-    passkeys.isSupported.mockReturnValue(false);
-    passkeys.hasPasskey.mockResolvedValue(false);
+    passkeys.getPasskeyStatus.mockResolvedValue({ known: false, available: false, bridgeFactorId: undefined, passkeyCount: 0 });
     passkeys.signInWithPasskey.mockResolvedValue({ success: true });
   });
 
@@ -59,8 +57,7 @@ describe('MfaCodeStep (pre-flight steps 02 and 03)', () => {
   const passkeyButton = (container) => Array.from(container.querySelectorAll('button'))
     .find((b) => /passkey/i.test(b.textContent));
   const offerPasskey = () => {
-    passkeys.isSupported.mockReturnValue(true);
-    passkeys.hasPasskey.mockResolvedValue(true);
+    passkeys.getPasskeyStatus.mockResolvedValue({ known: true, available: true, bridgeFactorId: 'bridge', passkeyCount: 1 });
   };
 
   it('lights 02 Second key, checks 01 Identity with the masked address, and focuses the code', async () => {
@@ -127,16 +124,15 @@ describe('MfaCodeStep (pre-flight steps 02 and 03)', () => {
     view.unmount();
   });
 
-  it('offers no passkey when the browser lacks WebAuthn or none is registered', async () => {
+  it('offers no passkey when the status is unknown or none is registered', async () => {
     let view = render();
     await flush();
+    expect(passkeys.getPasskeyStatus).toHaveBeenCalled();
     expect(passkeyButton(view.container)).toBeUndefined();
-    expect(passkeys.hasPasskey).not.toHaveBeenCalled();
     view.unmount();
-    passkeys.isSupported.mockReturnValue(true);
+    passkeys.getPasskeyStatus.mockResolvedValue({ known: true, available: false, bridgeFactorId: null, passkeyCount: 0 });
     view = render();
     await flush();
-    expect(passkeys.hasPasskey).toHaveBeenCalled();
     expect(passkeyButton(view.container)).toBeUndefined();
     expect(view.container.querySelector('.preflight-primary').className).not.toContain('preflight-primary--quiet');
     view.unmount();
@@ -185,6 +181,66 @@ describe('MfaCodeStep (pre-flight steps 02 and 03)', () => {
     expect(mockAuth.refreshAssurance).not.toHaveBeenCalled();
     const code = view.container.querySelector('#admin-totp-code');
     expect(code.disabled).toBe(false);
+    setInputValue(code, '123456');
+    await submit(code.form);
+    await flush();
+    expect(verifyTotpChallenge).toHaveBeenCalledWith('f1', '123456');
+    view.unmount();
+  });
+});
+
+describe('MfaCodeStep with the passkey bridge', () => {
+  let canvas;
+
+  beforeEach(() => {
+    canvas = stubCanvas();
+    window.matchMedia = () => ({ matches: false });
+    onHoldChange = jest.fn();
+    mockAuth = { refreshAssurance: jest.fn().mockResolvedValue({}), signOut: jest.fn(), user: { email: 'raunak@example.com' } };
+    verifyTotpChallenge.mockResolvedValue({ success: true, data: { factorId: 'f1' } });
+    passkeys.signInWithPasskey.mockResolvedValue({ success: true });
+  });
+
+  afterEach(() => { canvas.restore(); });
+
+  const look = { id: 'look', friendly_name: 'Passkey bridge', status: 'verified' };
+  const real = { id: 'real-bridge', friendly_name: 'Passkey bridge 1a2b3c4d', status: 'verified' };
+  const phone = { id: 'f1', friendly_name: 'Phone', status: 'verified' };
+
+  it('hides exactly the bridge factor the function reports and keeps a look-alike name selectable', async () => {
+    // The list alone split by the prefix, so both carry the bridge name there.
+    listTotpFactors.mockResolvedValue({ success: true, data: { verified: [phone], unverified: [], bridge: real, all: [look, real, phone] } });
+    passkeys.getPasskeyStatus.mockResolvedValue({ known: true, available: false, bridgeFactorId: 'real-bridge', passkeyCount: 1 });
+    const view = render();
+    await flush();
+    const options = Array.from(view.container.querySelectorAll('#admin-factor option')).map((o) => o.value);
+    expect(options).toEqual(['look', 'f1']);
+    view.unmount();
+  });
+
+  it('uses the list as given when the bridge id is unknown', async () => {
+    listTotpFactors.mockResolvedValue({ success: true, data: { verified: [phone], unverified: [], bridge: real, all: [real, phone] } });
+    passkeys.getPasskeyStatus.mockResolvedValue({ known: false, available: false, bridgeFactorId: undefined, passkeyCount: 0 });
+    const view = render();
+    await flush();
+    expect(view.container.querySelector('#admin-factor')).toBeNull(); // one typed factor, no choice
+    expect(document.activeElement).toBe(view.container.querySelector('#admin-totp-code'));
+    view.unmount();
+  });
+
+  it('keeps the code field usable after a rate-limited passkey attempt', async () => {
+    listTotpFactors.mockResolvedValue({ success: true, data: { verified: [phone], unverified: [], bridge: real, all: [real, phone] } });
+    passkeys.getPasskeyStatus.mockResolvedValue({ known: true, available: true, bridgeFactorId: 'real-bridge', passkeyCount: 1 });
+    const message = 'Too many passkey attempts. Enter a code instead, or wait a few minutes and try again.';
+    passkeys.signInWithPasskey.mockResolvedValue({ success: false, error: { code: 'rate_limited', message } });
+    const view = render();
+    await flush();
+    click(Array.from(view.container.querySelectorAll('button')).find((b) => /passkey/i.test(b.textContent)));
+    await flush();
+    expect(view.container.querySelector('[role="alert"]').textContent).toBe(message);
+    const code = view.container.querySelector('#admin-totp-code');
+    expect(code.disabled).toBe(false);
+    expect(view.container.querySelector('button[type="submit"]')).not.toBeNull();
     setInputValue(code, '123456');
     await submit(code.form);
     await flush();
