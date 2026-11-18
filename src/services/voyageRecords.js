@@ -12,6 +12,7 @@
 
 import { describeAdminWriteError, getAdminSupabaseClient, removeAdminStorageFiles, saveAdminData, uploadAdminPublicFile } from './adminDataService';
 import { deleteProject } from './dataService';
+import { cleanupTargets, fileExtension } from '../components/admin/Voyage/managers/schemaModel';
 
 const IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 export const IMAGE_MAX_BYTES = 5 * 1024 * 1024;
@@ -29,8 +30,15 @@ export async function saveRecord(schema, payload, id = null) {
   return result.data;
 }
 
-/** Deletes one row (and, for projects, its stored images). */
-export async function deleteRecord(schema, id) {
+/**
+ * Deletes one row, then the stored files it owned (`schema.cleanup`).
+ * Projects go through the data service, which clears their images itself.
+ * The row goes first: if the delete is refused, its files are still there
+ * for it; a file left behind by a failed cleanup is only an orphan, which
+ * the media library lists, never a broken record.
+ * @param {object} [row] the saved row, needed to know its files.
+ */
+export async function deleteRecord(schema, id, row = null) {
   if (schema.table === 'projects') {
     const result = await deleteProject(id);
     if (!result?.success) throw new Error('The project could not be deleted.');
@@ -38,17 +46,36 @@ export async function deleteRecord(schema, id) {
   }
   const { error } = await getAdminSupabaseClient().from(schema.table).delete().eq('id', id);
   if (error) throw new Error(`The ${schema.singular} could not be deleted.`);
+  if (!row) return;
+  await Promise.all(cleanupTargets(schema, row).map(({ bucket, urls }) => removeAdminStorageFiles(bucket, urls).catch(() => null)));
 }
 
 /**
- * Writes a new order column: each entry's order_index. All writes run
- * together; the first failure fails the call.
- * @param {Array<{id: string, order_index: number}>} writes
+ * Moves whole groups (skills by type): writes each group's new priority to
+ * every row of that group. A missing group value is matched with IS NULL,
+ * because `eq(col, null)` matches nothing in PostgREST.
+ * @param {Array<{value: string|null, priority: number}>} writes
+ */
+export async function reorderGroups(schema, writes) {
+  const client = getAdminSupabaseClient();
+  const { key, priorityKey } = schema.group;
+  const stamp = new Date().toISOString();
+  const results = await Promise.all(writes.map((w) => {
+    const query = client.from(schema.table).update({ [priorityKey]: w.priority, updated_at: stamp });
+    return w.value === null ? query.is(key, null) : query.eq(key, w.value);
+  }));
+  if (results.some((r) => r.error)) throw new Error('The new group order could not be saved.');
+}
+
+/**
+ * Writes a new order column: each entry's value under `schema.orderKey`.
+ * All writes run together; the first failure fails the call.
+ * @param {Array<{id: string}>} writes
  */
 export async function reorderRecords(schema, writes) {
   const client = getAdminSupabaseClient();
   const stamp = new Date().toISOString();
-  const results = await Promise.all(writes.map((w) => client.from(schema.table).update({ [schema.orderKey]: w.order_index, updated_at: stamp }).eq('id', w.id)));
+  const results = await Promise.all(writes.map((w) => client.from(schema.table).update({ [schema.orderKey]: w[schema.orderKey], updated_at: stamp }).eq('id', w.id)));
   if (results.some((r) => r.error)) throw new Error('The new order could not be saved.');
 }
 
@@ -142,4 +169,54 @@ export async function uploadImages(schema, id, files) {
 /** Removes one stored image file; the record's list is saved separately by the dialog. Storage misses are not errors. */
 export async function removeImage(schema, url) {
   try { await removeAdminStorageFiles(schema.images.bucket, url); } catch { /* the row no longer points at it, which is what matters */ }
+}
+
+/** "5 MB", "2 MB", "512 KB": a limit as the owner reads it. */
+export const sizeLabel = (bytes) => (bytes >= 1048576 ? `${Math.round((bytes / 1048576) * 10) / 10} MB` : `${Math.round(bytes / 1024)} KB`);
+
+/**
+ * Checks chosen files against a field's upload rules (`field.upload`):
+ * accepted types, size per file, files per choice (`perBatch`) and the
+ * field's total (`maxCount`, counting what is already there). One verdict
+ * per file, like `imageProblems`.
+ * @returns {{accepted: File[], problems: Array<{name: string|null, message: string}>}}
+ */
+export function fileProblems(files, upload, { existing = 0 } = {}) {
+  if (!files.length) return { accepted: [], problems: [{ name: null, message: 'Choose at least one file.' }] };
+  const max = upload.maxCount ?? 1;
+  if (upload.perBatch && files.length > upload.perBatch) return { accepted: [], problems: [{ name: null, message: `At most ${upload.perBatch} files at a time; ${files.length} were chosen.` }] };
+  if (max > 1 && existing + files.length > max) {
+    const room = Math.max(0, max - existing);
+    return { accepted: [], problems: [{ name: null, message: `At most ${max} entries here. ${room === 0 ? 'Remove one first.' : `There is room for ${room} more; ${files.length} were chosen.`}` }] };
+  }
+  if (max === 1 && files.length > 1) return { accepted: [], problems: [{ name: null, message: 'Choose one file.' }] };
+  const accepted = [], problems = [];
+  for (const f of files) {
+    if (!upload.accept.includes(f.type)) problems.push({ name: f.name, message: `is not ${upload.typesLabel}.` });
+    else if (f.size > upload.maxBytes) problems.push({ name: f.name, message: `is ${(f.size / 1048576).toFixed(1)} MB; the limit is ${sizeLabel(upload.maxBytes)}.` });
+    else accepted.push(f);
+  }
+  return { accepted, problems };
+}
+
+/**
+ * Uploads files for one field of a saved record into the field's bucket at
+ * the path its schema builds (`upload.path({ id, form, file, index, stamp, ext })`).
+ * Each file settles on its own, so one failure is reported by name.
+ * @returns {Promise<{urls: string[], failed: Array<{name: string, message: string}>}>}
+ */
+export async function uploadFieldFiles(upload, { id, form }, files) {
+  const stamp = Date.now();
+  const settled = await Promise.allSettled(files.map((file, index) => uploadAdminPublicFile({ bucket: upload.bucket, filePath: upload.path({ id, form, file, index, stamp, ext: fileExtension(file.name) }), file })));
+  const urls = [], failed = [];
+  settled.forEach((r, i) => {
+    if (r.status === 'fulfilled') urls.push(r.value.publicUrl);
+    else failed.push({ name: files[i].name, message: failureKind(r.reason) === 'network' ? 'did not upload: the connection dropped.' : 'did not upload: storage refused it.' });
+  });
+  return { urls, failed };
+}
+
+/** Removes stored files from a bucket after the row stopped pointing at them; misses and failures are not errors. */
+export async function removeStoredFiles(bucket, urls) {
+  try { await removeAdminStorageFiles(bucket, urls); } catch { /* an orphan at worst; the row is already right */ }
 }
