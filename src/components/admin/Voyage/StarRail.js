@@ -20,7 +20,7 @@ export default function StarRail({ active, onJump, names = {} }) {
         <button
           key={chapter.id}
           type="button"
-          className={`voyage-rail__dot${i === active ? ' is-active' : ''}`}
+          className={`voyage-rail__dot${chapter.rail ? ' is-glyph' : ''}${i === active ? ' is-active' : ''}`}
           aria-label={`${chapter.name} (${chapterPlace(chapter, names)})`}
           aria-current={i === active ? 'true' : undefined}
           data-name={`${chapter.name} · ${chapterPlace(chapter, names)}`}

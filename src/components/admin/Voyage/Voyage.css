@@ -202,7 +202,7 @@
   bottom: 0;
   z-index: 5;
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 6px;
   padding: 8px 6px;
   background: var(--voyage-panel);
@@ -226,6 +226,16 @@
   position: relative;
 }
 
+/* Centred with auto margins rather than justify-content: center, which
+   pushes the first marks past the left edge where scrolling cannot reach
+   them once the row is wider than a phone. */
+.voyage-rail__dot:first-child { margin-left: auto; }
+.voyage-rail__dot:last-child { margin-right: auto; }
+/* globals.css forces 16px on every button (an iOS input-zoom guard that
+   buttons do not need); the marks are abbreviations that must sit inside
+   their circles, so the rail sets its own size with the same weight. */
+.voyage .voyage-rail__dot { font-size: 8px !important; }
+.voyage .voyage-rail__dot.is-glyph { font-size: 14px !important; line-height: 1; }   /* the prologue's single symbol, not an abbreviation */
 .voyage-rail__dot.is-active { border-color: var(--voyage-accent); color: var(--voyage-accent); box-shadow: 0 0 12px rgba(124, 199, 255, .45); }
 
 /* ---- palette ---- */
@@ -247,7 +257,10 @@
   .voyage-chapter { padding: 84px 72px 48px 40px; }
   .voyage-bento { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .voyage-rail { left: auto; right: 14px; top: 50%; bottom: auto; transform: translateY(-50%); flex-direction: column; gap: 10px; padding: 0; background: transparent; border: 0; backdrop-filter: none; -webkit-backdrop-filter: none; overflow: visible; }
-  .voyage-rail__dot { width: 28px; height: 28px; font-size: 9px; background: var(--voyage-panel); backdrop-filter: blur(var(--sky-blur, 5px)); }
+  .voyage-rail__dot:first-child, .voyage-rail__dot:last-child { margin: 0; }
+  .voyage .voyage-rail__dot { font-size: 11px !important; }
+  .voyage .voyage-rail__dot.is-glyph { font-size: 17px !important; }
+  .voyage-rail__dot { width: 30px; height: 30px; background: var(--voyage-panel); backdrop-filter: blur(var(--sky-blur, 5px)); }
   .voyage-rail__dot:hover::after { content: attr(data-name); position: absolute; right: 36px; top: 50%; transform: translateY(-50%); white-space: nowrap; font: 600 11px system-ui, sans-serif; color: var(--voyage-fg); background: rgba(10, 16, 32, .9); border: 1px solid var(--voyage-line); padding: 4px 8px; border-radius: 6px; }
 }
 
