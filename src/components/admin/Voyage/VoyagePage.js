@@ -174,7 +174,7 @@ function VoyageView({ requireSecurityEnrollment }) {
             {chapter.kind !== 'bento' && chapter.kind !== 'prologue' && !(chapter.kind === 'deck' && schemaForTable(chapter.table)) && (
               <div className="voyage-pane voyage-placeholder">
                 <p>{countFor(chapter) !== null ? <><b>{countFor(chapter)}</b> {countFor(chapter) === 1 ? 'item' : 'items'} in this section.</> : 'This chapter is on its way.'}</p>
-                <p className="voyage-placeholder__note">The deck and the editor sheet arrive in the next unit. Until then this section is edited in the classic dashboard.</p>
+                <p className="voyage-placeholder__note">The deck and the record dialog arrive in the next unit. Until then this section is edited in the classic dashboard.</p>
                 <button type="button" className="voyage-bar__button" onClick={() => navigate('/admindashboard')}>Open in the classic dashboard</button>
               </div>
             )}

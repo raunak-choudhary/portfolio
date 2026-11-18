@@ -2,7 +2,10 @@
    The admin as one sky. Glass variables come from SkySettingsProvider
    (--sky-glass, --sky-blur) like the rest of the admin. Mobile first. */
 
-.voyage {
+/* Tokens live on the page and on the record dialog's backdrop, because the
+   dialog is portalled into <body>, outside .voyage. */
+.voyage,
+.record-backdrop {
   --voyage-cond: 'Oswald', 'Avenir Next Condensed', 'Arial Narrow', sans-serif;
   --voyage-panel: rgba(16, 22, 38, var(--sky-glass, 0.10));
   --voyage-line: rgba(255, 255, 255, 0.14);
@@ -14,14 +17,19 @@
   --voyage-bad: #ff5c7a;
   --voyage-warn: #ffb454;
   --voyage-good: #4fd58a;
-  position: relative;
-  min-height: 100vh;
-  color: var(--voyage-fg);
-  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
-  background: #04070f;
+  /* the dialog: a large surface, so it alone gets a strong blur; the fill is
+     dense enough that light text keeps WCAG AA contrast over any sky even
+     where the blur is not drawn (software compositing, older browsers) */
+  --voyage-glass-fill: linear-gradient(180deg, rgba(18, 26, 46, 0.88), rgba(8, 12, 24, 0.92));
+  --voyage-glass-solid: rgba(8, 12, 24, 0.97);
+  --voyage-glass-edge: rgba(255, 255, 255, 0.16);
+  --voyage-glass-sheen: rgba(255, 255, 255, 0.07);
+  --voyage-soft: rgba(255, 255, 255, 0.06);
+  --voyage-soft-strong: rgba(255, 255, 255, 0.10);
 }
 
-[data-theme="light"] .voyage {
+[data-theme="light"] .voyage,
+[data-theme="light"] .record-backdrop {
   --voyage-panel: rgba(255, 255, 255, var(--sky-glass, 0.10));
   --voyage-line: rgba(255, 255, 255, 0.5);
   --voyage-fg: #fff3e8;
@@ -32,8 +40,21 @@
   --voyage-bad: #ff7a90;
   --voyage-warn: #ffcf7a;
   --voyage-good: #7fe3b0;
-  background: #120c08;
+  --voyage-glass-fill: linear-gradient(180deg, rgba(48, 26, 16, 0.88), rgba(26, 14, 8, 0.92));
+  --voyage-glass-solid: rgba(26, 14, 8, 0.97);
+  --voyage-glass-edge: rgba(255, 214, 186, 0.24);
+  --voyage-glass-sheen: rgba(255, 230, 210, 0.08);
 }
+
+.voyage {
+  position: relative;
+  min-height: 100vh;
+  color: var(--voyage-fg);
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  background: #04070f;
+}
+
+[data-theme="light"] .voyage { background: #120c08; }
 
 .voyage-field,
 .voyage-flat-sky {
@@ -242,8 +263,11 @@
 .deck__search { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border: 1px solid var(--voyage-line); border-radius: 999px; background: var(--voyage-panel); color: var(--voyage-muted); }
 .deck__search input { background: none; border: 0; outline: 0; color: var(--voyage-fg); font: inherit; width: 160px; }
 .deck__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
-.deck__empty, .deck__error { margin: 0; color: var(--voyage-muted); font-size: 14px; }
-.deck__error { color: var(--voyage-bad); }
+.deck__empty { margin: 0; color: var(--voyage-muted); font-size: 14px; }
+.deck__error { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 12px 14px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--voyage-bad) 55%, transparent); background: color-mix(in srgb, var(--voyage-bad) 12%, transparent); color: var(--voyage-fg); font-size: 14px; }
+.deck__error > svg { color: var(--voyage-bad); flex: none; }
+.deck__error p { margin: 0; flex: 1 1 220px; color: inherit; }
+.deck__error .voyage-bar__button span { display: inline; }
 .card { position: relative; min-height: 190px; padding: 0; overflow: hidden; touch-action: manipulation; transition: transform .25s, opacity .4s, box-shadow .25s; }
 .card:hover { transform: translateY(-2px); box-shadow: 0 14px 40px rgba(0, 0, 0, .35); }
 .card.is-dragging { opacity: .65; z-index: 3; cursor: grabbing; }
@@ -267,27 +291,138 @@
 .card--skeleton { min-height: 190px; background: linear-gradient(100deg, var(--voyage-panel) 30%, rgba(255,255,255,.08) 50%, var(--voyage-panel) 70%); background-size: 200% 100%; animation: card-shimmer 1.4s linear infinite; }
 @keyframes card-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
 
-/* ---- the editor sheet ---- */
-.sheet-backdrop { position: fixed; inset: 0; z-index: 20; background: rgba(2, 4, 10, .55); backdrop-filter: blur(2px); animation: fade-in .25s both; }
+/* ---- shared button variants ---- */
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
-.sheet { position: absolute; top: 0; right: 0; bottom: 0; width: min(100%, 600px); display: grid; grid-template-rows: auto 1fr auto; background: rgba(8, 12, 24, .92); border-left: 1px solid var(--voyage-line); color: var(--voyage-fg); box-shadow: -24px 0 60px rgba(0, 0, 0, .45); animation: sheet-in .38s cubic-bezier(.2, .8, .2, 1) both; }
-:root[data-theme="light"] .sheet, [data-theme="light"] .sheet { background: rgba(24, 14, 10, .94); }
-@keyframes sheet-in { from { transform: translateX(40px); opacity: 0; } to { transform: none; opacity: 1; } }
-.sheet__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 18px 20px 12px; border-bottom: 1px solid var(--voyage-line); }
-.sheet__head h3 { margin: 4px 0 0; font-family: var(--voyage-cond); font-weight: 600; font-size: 26px; line-height: 1.1; letter-spacing: .02em; text-transform: uppercase; }
-.sheet__body { overflow-y: auto; overscroll-behavior: contain; padding: 6px 20px 24px; display: grid; gap: 22px; align-content: start; }
-.sheet__group { border: 0; padding: 0; margin: 0; display: grid; gap: 14px; min-width: 0; }
-.sheet__group legend { font-family: var(--voyage-cond); font-size: 12px; letter-spacing: .2em; text-transform: uppercase; color: var(--voyage-accent); padding: 14px 0 4px; }
-.sheet__foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 20px calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid var(--voyage-line); background: rgba(8, 12, 24, .85); }
-.sheet__status { font-size: 12px; color: var(--voyage-muted); letter-spacing: .06em; }
-.sheet__actions { display: flex; gap: 8px; }
-.sheet__actions .voyage-bar__button span { display: inline; }
 .voyage-bar__button--primary { background: var(--voyage-accent); color: var(--voyage-accent-ink); border-color: transparent; font-weight: 600; }
 .voyage-bar__button--primary:disabled { opacity: .45; cursor: default; }
 .voyage-bar__button--danger { background: var(--voyage-bad); color: #fff; border-color: transparent; }
+.voyage-bar__button--plain { color: var(--voyage-fg); }
 .voyage-bar__button--icon { padding: 6px; }
 .voyage-bar__button--small { padding: 5px 9px; font-size: 12px; }
 .voyage-bar__button:disabled { opacity: .5; cursor: default; }
+
+/* ---- the record dialog ----
+   Phones: the whole screen. From 768 px: a centred glass dialog, at most
+   960 px wide and 88% of the viewport tall; only its body scrolls. From
+   1024 px the form and the read view run in two columns. */
+.record-backdrop { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; background: rgba(2, 4, 10, .52); color: var(--voyage-fg); font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; animation: fade-in .2s both; }
+.record-dialog {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  background: var(--voyage-glass-fill);
+  backdrop-filter: blur(22px) saturate(140%);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+  box-shadow: inset 0 1px 0 var(--voyage-glass-sheen);
+  overflow: hidden;
+  animation: record-in .26s cubic-bezier(.2, .8, .2, 1) both;
+}
+/* full screen on phones: nothing to see behind it, so the surface is all but
+   solid and the deck's text cannot read through the form */
+@media (max-width: 767px) { .record-dialog { background: var(--voyage-glass-solid); } }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .record-dialog { background: var(--voyage-glass-solid); } }
+@keyframes record-in { from { opacity: 0; transform: translateY(14px) scale(.985); } to { opacity: 1; transform: none; } }
+
+.record-dialog__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: calc(16px + env(safe-area-inset-top)) 16px 14px; border-bottom: 1px solid var(--voyage-line); flex: none; }
+.record-dialog__titles { min-width: 0; }
+.record-dialog__head h3 { margin: 4px 0 0; font-family: var(--voyage-cond); font-weight: 600; font-size: 24px; line-height: 1.1; letter-spacing: .02em; text-transform: uppercase; overflow-wrap: anywhere; }
+.record-dialog__sub { margin: 6px 0 0; color: var(--voyage-muted); font-size: 14px; }
+.record-dialog__close { flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--voyage-line); background: var(--voyage-soft); color: var(--voyage-fg); cursor: pointer; padding: 0; transition: background .15s, border-color .15s; }
+.record-dialog__close:hover { background: var(--voyage-soft-strong); border-color: var(--voyage-accent); }
+.record-dialog__close:disabled { opacity: .5; cursor: default; }
+
+.record-dialog__banners { flex: none; display: grid; gap: 8px; padding: 0 16px; }
+.record-dialog__banners:not(:empty) { padding-top: 12px; }
+.record-banner { display: grid; grid-template-columns: auto 1fr; gap: 10px; padding: 12px 14px; border-radius: 12px; border: 1px solid; font-size: 14px; line-height: 1.45; }
+.record-banner--bad { border-color: color-mix(in srgb, var(--voyage-bad) 60%, transparent); background: color-mix(in srgb, var(--voyage-bad) 13%, transparent); }
+.record-banner--warn { border-color: color-mix(in srgb, var(--voyage-warn) 60%, transparent); background: color-mix(in srgb, var(--voyage-warn) 12%, transparent); }
+.record-banner--bad .record-banner__icon { color: var(--voyage-bad); }
+.record-banner--warn .record-banner__icon { color: var(--voyage-warn); }
+.record-banner__icon { margin-top: 2px; }
+.record-banner__text { min-width: 0; display: grid; gap: 4px; }
+.record-banner__text p { margin: 0; overflow-wrap: anywhere; color: var(--voyage-fg); }
+.record-banner__title { font-weight: 600; }
+.record-banner__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.record-banner__actions a { text-decoration: none; }
+
+.record-dialog__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 4px 16px 24px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, .32) transparent;
+  scrollbar-gutter: stable;
+}
+.record-dialog__body::-webkit-scrollbar { width: 12px; }
+.record-dialog__body::-webkit-scrollbar-track { background: transparent; }
+.record-dialog__body::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, .26); border-radius: 999px; border: 3px solid transparent; background-clip: padding-box; }
+.record-dialog__body::-webkit-scrollbar-thumb:hover { background-color: rgba(255, 255, 255, .4); }
+
+.record-dialog__foot { flex: none; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 12px; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid var(--voyage-line); background: rgba(0, 0, 0, .16); }
+.record-dialog__actions { display: flex; gap: 8px; margin-left: auto; }
+.record-dialog__status { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--voyage-muted); }
+.record-dialog__status.is-bad { color: var(--voyage-bad); font-weight: 600; }
+
+/* small surfaces inside the dialog: translucent fills, no blur of their own */
+/* globals.css forces 16px on every <button> (an iOS zoom guard), so links
+   dressed as buttons take the same size to sit level with them */
+.record-dialog .voyage-bar__button { backdrop-filter: none; -webkit-backdrop-filter: none; min-height: 40px; padding: 8px 16px; font-size: 16px; text-decoration: none; }
+.record-dialog .voyage-bar__button:not(.voyage-bar__button--primary):not(.voyage-bar__button--danger) { background: var(--voyage-soft); }
+.record-dialog .voyage-bar__button span { display: inline; }
+.record-dialog .voyage-bar__button--small { min-height: 34px; padding: 5px 11px; }
+.record-dialog :focus-visible { outline: 2px solid var(--voyage-accent); outline-offset: 2px; }
+
+/* the form */
+.record-form { display: grid; gap: 4px; }
+.record-form__group { border: 0; padding: 0; margin: 0; min-width: 0; }
+.record-form__group legend, .record-view__heading { width: 100%; padding: 18px 0 10px; margin: 0; font-family: var(--voyage-cond); font-weight: 500; font-size: 13px; letter-spacing: .16em; text-transform: uppercase; color: var(--voyage-accent); }
+.record-form__grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px 24px; }
+.record-form__cell { min-width: 0; }
+
+/* the read view */
+.record-view { display: grid; gap: 4px; padding-top: 12px; }
+.record-view__strip { list-style: none; margin: 0; padding: 2px 2px 8px; display: flex; gap: 8px; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, .28) transparent; }
+.record-view__strip li { flex: none; scroll-snap-align: start; }
+.record-view__strip a { display: block; border-radius: 10px; }
+.record-view__strip img { display: block; height: 116px; width: auto; max-width: 260px; object-fit: cover; border-radius: 10px; border: 1px solid var(--voyage-line); background: var(--voyage-soft); }
+.record-view__noimages { margin: 4px 0 0; color: var(--voyage-muted); font-size: 13px; }
+.record-view__heading { border-bottom: 1px solid var(--voyage-line); padding-bottom: 8px; margin-bottom: 12px; }
+.record-view__list { margin: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px 32px; }
+.record-view__item { min-width: 0; }
+.record-view__item dt { font-size: 12px; font-weight: 600; color: var(--voyage-muted); letter-spacing: .02em; margin-bottom: 4px; }
+.record-view__item dd { margin: 0; font-size: 15px; line-height: 1.55; overflow-wrap: anywhere; }
+.record-view__prose { max-width: 72ch; }
+/* globals.css colours every <p> with the public site's --text-secondary,
+   which is a dark ink in the light theme; paragraphs here set their own */
+.record-view__prose p { margin: 0 0 8px; color: var(--voyage-fg); }
+.record-view__prose p:last-child { margin-bottom: 0; }
+.record-view__unset { color: var(--voyage-muted); font-size: 14px; opacity: .8; }
+.record-view__chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.record-view__chips li { font-size: 13px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--voyage-line); background: var(--voyage-soft); }
+.record-view__links { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.record-view__link { display: inline-flex; align-items: center; gap: 4px; color: var(--voyage-accent); text-decoration: underline; text-underline-offset: 3px; overflow-wrap: anywhere; }
+.record-view__link svg { flex: none; }
+
+@media (min-width: 768px) {
+  .record-backdrop { padding: 24px; }
+  .record-dialog { width: min(96vw, 960px); height: auto; max-height: 88vh; max-height: 88dvh; border-radius: 20px; border: 1px solid var(--voyage-glass-edge); box-shadow: inset 0 1px 0 var(--voyage-glass-sheen), 0 30px 90px rgba(0, 0, 0, .5); }
+  .record-dialog__head { padding: 22px 28px 16px; }
+  .record-dialog__head h3 { font-size: 30px; }
+  .record-dialog__banners { padding: 0 28px; }
+  .record-dialog__body { padding: 4px 28px 28px; }
+  .record-dialog__foot { padding: 14px 28px; }
+  .record-view__strip img { height: 140px; }
+}
+
+@media (min-width: 1024px) {
+  .record-form__grid, .record-view__list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .record-form__cell.is-wide, .record-view__item.is-wide { grid-column: 1 / -1; }
+}
 
 /* ---- fields ---- */
 .field { display: grid; gap: 6px; min-width: 0; }
@@ -298,9 +433,13 @@
 .field textarea { resize: vertical; min-height: 68px; line-height: 1.45; }
 .field select option { color: #111; }
 .field input:focus, .field textarea:focus, .field select:focus { border-color: var(--voyage-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--voyage-accent) 25%, transparent); }
-.field.has-error input, .field.has-error textarea { border-color: var(--voyage-bad); }
+.field.has-error input, .field.has-error textarea, .field.has-error select { border-color: var(--voyage-bad); }
 .field__help { margin: 0; font-size: 12px; color: var(--voyage-muted); }
-.field__error { margin: 0; font-size: 12px; color: var(--voyage-bad); }
+.field__error { margin: 0; display: flex; align-items: flex-start; gap: 6px; font-size: 13px; line-height: 1.4; color: var(--voyage-bad); }
+.field__error svg, .field__problems svg { flex: none; margin-top: 2px; }
+.field__problems { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 4px; font-size: 13px; line-height: 1.4; color: var(--voyage-bad); }
+.field__problems li { display: flex; gap: 6px; }
+.field__problems b { font-weight: 600; overflow-wrap: anywhere; }
 .field--toggle { grid-template-columns: 1fr auto; align-items: center; }
 .field--toggle .field__help, .field--toggle .field__error { grid-column: 1 / -1; }
 .switch { position: relative; width: 44px; height: 26px; border-radius: 999px; border: 1px solid var(--voyage-line); background: rgba(255, 255, 255, .08); cursor: pointer; padding: 0; transition: background .2s; }
@@ -314,7 +453,7 @@
 .chip__remove:hover { background: var(--voyage-bad); color: #fff; }
 .chips__add { display: flex; gap: 6px; flex: 1 1 220px; }
 .chips__add input { flex: 1; min-width: 0; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--voyage-line); background: rgba(255, 255, 255, .06); color: var(--voyage-fg); font: inherit; font-size: 13px; outline: 0; }
-.chips__add input:focus { border-color: var(--voyage-accent); }
+.chips__add input:focus { border-color: var(--voyage-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--voyage-accent) 25%, transparent); }
 .thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
 .thumb { position: relative; margin: 0; aspect-ratio: 4 / 3; border-radius: 8px; overflow: hidden; border: 1px solid var(--voyage-line); background: rgba(255, 255, 255, .05); }
 .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -335,5 +474,5 @@
 .voyage-toast--bad { border-color: var(--voyage-bad); }
 .voyage-toast--warn { border-color: var(--voyage-warn); }
 @keyframes toast-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
-@media (max-width: 767px) { .voyage-toast-host { bottom: calc(64px + env(safe-area-inset-bottom)); } .sheet__foot { flex-wrap: wrap; } .sheet__actions { width: 100%; justify-content: flex-end; } }
-@media (prefers-reduced-motion: reduce) { .deck, .card, .card.is-new, .sheet, .sheet-backdrop, .dialog-backdrop, .voyage-toast { animation: none; transition: none; } }
+@media (max-width: 767px) { .voyage-toast-host { bottom: calc(64px + env(safe-area-inset-bottom)); } }
+@media (prefers-reduced-motion: reduce) { .deck, .card, .card.is-new, .record-dialog, .record-backdrop, .record-dialog__close, .dialog-backdrop, .voyage-toast { animation: none; transition: none; } }
