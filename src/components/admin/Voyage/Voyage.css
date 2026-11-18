@@ -185,7 +185,7 @@
 .tile__bars span:last-child { text-align: right; font-family: var(--voyage-cond); }
 .tile__queue { display: grid; gap: 6px; font-size: 12px; align-content: start; min-height: 0; max-height: var(--tile-list, 150px); overflow-y: auto; padding-right: 4px; }
 .tile__queue div { display: flex; gap: 8px; align-items: center; padding: 6px 8px; border-radius: 8px; background: rgba(127, 140, 170, .12); }
-.tile__queue b { font-family: var(--voyage-cond); letter-spacing: .12em; font-size: 10px; padding: 2px 6px; border-radius: 4px; background: var(--voyage-bad); color: #fff; text-transform: uppercase; flex: none; }
+.tile__queue b { font-family: var(--voyage-cond); letter-spacing: .12em; font-size: 10px; padding: 2px 6px; border-radius: 4px; background: var(--voyage-bad); color: #2a0710; text-transform: uppercase; flex: none; }   /* dark ink: white on the coral fails AA at 10px */
 .tile__queue b.warning { background: var(--voyage-warn); color: #1a1304; }
 .tile__queue b.info { background: rgba(127, 140, 170, .4); }
 .tile__feed { font-size: 12px; display: grid; gap: 5px; align-content: start; min-height: 0; max-height: var(--tile-list, 150px); overflow-y: auto; padding-right: 4px; }
@@ -307,7 +307,7 @@
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 .voyage-bar__button--primary { background: var(--voyage-accent); color: var(--voyage-accent-ink); border-color: transparent; font-weight: 600; }
 .voyage-bar__button--primary:disabled { opacity: .45; cursor: default; }
-.voyage-bar__button--danger { background: var(--voyage-bad); color: #fff; border-color: transparent; }
+.voyage-bar__button--danger { background: var(--voyage-bad); color: #2a0710; border-color: transparent; }
 .voyage-bar__button--plain { color: var(--voyage-fg); }
 .voyage-bar__button--icon { padding: 6px; }
 .voyage-bar__button--small { padding: 5px 9px; font-size: 12px; }
@@ -504,6 +504,8 @@
   }
 }
 .record-view__strip::-webkit-scrollbar, .tile__queue::-webkit-scrollbar, .tile__feed::-webkit-scrollbar, .tile__bars::-webkit-scrollbar, .pairs__list::-webkit-scrollbar { width: 10px; height: 10px; }
+/* the public stylesheet paints a light track in the light theme; keep it clear here */
+.record-view__strip::-webkit-scrollbar-track, .tile__queue::-webkit-scrollbar-track, .tile__feed::-webkit-scrollbar-track, .tile__bars::-webkit-scrollbar-track, .pairs__list::-webkit-scrollbar-track { background: transparent; }
 .record-view__strip::-webkit-scrollbar-thumb, .tile__queue::-webkit-scrollbar-thumb, .tile__feed::-webkit-scrollbar-thumb, .tile__bars::-webkit-scrollbar-thumb, .pairs__list::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, .28); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
 
 /* ---- grouped and compact decks ---- */
