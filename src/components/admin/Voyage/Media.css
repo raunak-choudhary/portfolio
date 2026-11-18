@@ -37,8 +37,13 @@
 .media__more { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 16px; padding-top: 4px; }
 
 @media (min-width: 768px) {
-  .media__bar { grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
   .media__grid { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
+}
+
+/* pills and tools side by side only once both fit; at tablet width the
+   bucket select and search left the pills too narrow a column */
+@media (min-width: 1024px) {
+  .media__bar { grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
 }
 
 @media (prefers-reduced-motion: reduce) { .media { transition: none; } }
