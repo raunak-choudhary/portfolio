@@ -103,9 +103,12 @@ describe('VoyagePage (2D fallback)', () => {
     const projects = view.container.querySelector('#chapter-projects');
     expect(projects.querySelector('[data-testid="deck"]')).not.toBeNull();   // Projects has a schema: it gets the deck
     expect(projects.textContent).toContain('Tallyproof'); expect(projects.textContent).toContain('New project');
-    const skills = view.container.querySelector('#chapter-skills');
-    expect(skills.querySelector('.voyage-placeholder')).not.toBeNull();        // no schema yet: placeholder until V3
-    expect(skills.textContent).toContain('110');
+    expect(view.container.querySelector('#chapter-skills [data-testid="deck"]')).not.toBeNull();   // grouped deck since V3a
+    expect(view.container.querySelector('#chapter-hero [data-testid="singleton"]')).not.toBeNull();   // one record, no deck
+    expect(view.container.querySelector('#chapter-hero [data-testid="deck"]')).toBeNull();
+    expect(view.container.querySelector('#chapter-about [data-testid="singleton"]')).not.toBeNull();
+    const internships = view.container.querySelector('#chapter-internships');
+    expect(internships.querySelector('.voyage-placeholder')).not.toBeNull();   // no schema yet: placeholder until its unit
     view.unmount();
   });
 
