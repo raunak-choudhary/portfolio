@@ -21,6 +21,7 @@ export const workExperienceSchema = Object.freeze({
   table: 'work_experience',
   singular: 'role',
   plural: 'roles',
+  cardImage: 'logo',
   titleKey: 'title',
   sort: sortWith(orderThenDate('start_date')),
   visibility: ACTIVE_ONLY,

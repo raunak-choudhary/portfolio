@@ -22,6 +22,7 @@ one schema file plus its tests. The pure helpers live in `schemaModel.js`.
 | `sort` | no | `rows => rows` for tables without an order column, or with a custom order (skills: featured, order number, name). |
 | `group` | no | `{ key, priorityKey, emptyLabel, defaultPriority }`: a grouped deck. Groups sort by priority, then name; Up and Down renumber every group 1..n and write only the changed ones. A new record, or one moved to another group, takes its group's priority. |
 | `cardStyle` | no | `'compact'` for long lists (small icon, no media band). |
+| `cardImage` | no | `'logo'` shows the card image whole (logos, badges) instead of cropping it to the band. |
 | `visibility` | no | `[{ key, publicValues, fallback? }]`: every rule must hold for the row to be public; a card that fails one gets the `hidden` flag. |
 | `cleanup` | no | `[{ key, bucket }]`: columns holding file URLs to remove from storage after the row is deleted (only URLs inside that public bucket; storage errors never undo the delete). |
 | `images` | no | Legacy image-list uploader for the projects schema. |

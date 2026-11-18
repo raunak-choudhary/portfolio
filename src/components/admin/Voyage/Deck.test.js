@@ -2,6 +2,7 @@
 import Deck, { SEARCH_FROM } from './Deck';
 import { projectsSchema } from './managers/projects.schema';
 import { skillsSchema } from './managers/skills.schema';
+import { certificationsSchema } from './managers/certifications.schema';
 import { React, click, mount, setInputValue } from '../SkyBackground/testUtils';
 
 const rows = (n) => Array.from({ length: n }, (_, i) => ({ id: `p${i}`, title: `Project ${i}`, project_type: i % 2 ? 'Web app' : 'Research', technologies: ['React', 'Three'], featured: i === 0, awards: i === 1 ? 'Prize' : null, order_index: n - i }));
@@ -22,6 +23,18 @@ describe('Deck', () => {
     expect(onCreate).toHaveBeenCalled();
     expect(view.container.querySelector('.deck__search')).toBeNull();
     view.unmount();
+  });
+
+  it('shows logos whole and labels an expired certificate, with no drag where the public order is fixed', () => {
+    const certs = [{ id: 'c1', title: 'AWS', issuer: 'Amazon', issue_date: '2020-01-01', expiry_date: '2021-01-01', issuer_logo_url: 'https://x.test/l.png', status: 'active' }];
+    const view = mount(<Deck schema={certificationsSchema} records={certs} loading={false} error={null} onOpen={() => {}} onCreate={() => {}} onReorder={() => {}} />);
+    expect(view.container.querySelector('.card__media').classList.contains('card__media--logo')).toBe(true);
+    expect(view.container.querySelector('.card__flags span').getAttribute('aria-label')).toBe('Expired');
+    expect(view.container.querySelectorAll('[aria-roledescription="sortable"]')).toHaveLength(0);
+    view.unmount();
+    const projects = mount(<Deck schema={projectsSchema} records={rows(1)} loading={false} error={null} onOpen={() => {}} onCreate={() => {}} onReorder={() => {}} />);
+    expect(projects.container.querySelector('.card__media--logo')).toBeNull();   // photographs keep the cropped band
+    projects.unmount();
   });
 
   it('offers search from nine records, filters, and hides the new card while searching', () => {
