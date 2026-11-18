@@ -13,6 +13,9 @@ export const projectsSchema = Object.freeze({
   plural: 'projects',
   /** Deck order: newest build first (a higher order_index is a later project); a drag rewrites the whole column. */
   orderKey: 'order_index',
+  orderDirection: 'desc',
+  /** Visitors see a project only while its status is active. */
+  visibility: [{ key: 'status', publicValues: ['active'] }],
   /** The field that heads the record dialog (the read view does not repeat it). */
   titleKey: 'title',
   images: { bucket: 'project-images', folder: 'projects', max: 10 },
