@@ -129,8 +129,10 @@ export interface Store {
   /** Deletes one of the user's passkeys; rows for `refuseRpId` are left alone (reported as not found). */
   deletePasskey(id: string, userId: string, refuseRpId: string | null): Promise<boolean>;
   getBridge(userId: string): Promise<BridgeRow | null>;
-  insertBridge(row: { user_id: string; factor_id: string; secret_ciphertext: string }): Promise<void>;
-  deleteBridge(userId: string): Promise<void>;
+  /** Records the bridge; false when the user already has one (a concurrent registration won). */
+  insertBridge(row: { user_id: string; factor_id: string; secret_ciphertext: string }): Promise<boolean>;
+  /** Deletes the user's bridge row only if it still names `factorId`. */
+  deleteBridge(userId: string, factorId: string): Promise<void>;
 }
 
 /** A credential as the registration check reports it; publicKey in base64url (COSE). */
@@ -458,11 +460,15 @@ async function registerVerify(caller: Caller, deps: HandlerDeps) {
     }
     createdFactorId = enrolled.data.factorId;
     try {
-      await store.insertBridge({
+      // The factor id is recorded before it is verified, so a half-made bridge
+      // is always findable by id. Losing the race to a parallel registration
+      // rolls back only this request's factor.
+      const recorded = await store.insertBridge({
         user_id: caller.user.id,
         factor_id: createdFactorId,
         secret_ciphertext: await wrapSecret(key, enrolled.data.secret, caller.user.id),
       });
+      if (!recorded) throw refuse(409, 'try_again', MESSAGES.tryAgain);
       session = await completeBridge(caller.token, createdFactorId, enrolled.data.secret, deps);
     } catch (thrown) {
       await rollbackBridge(caller, deps, createdFactorId);
@@ -502,7 +508,7 @@ async function retireBridge(caller: Caller, deps: HandlerDeps, factorId: string)
     const unenrolled = await deps.auth.unenroll(caller.token, factorId);
     if (!unenrolled.ok && unenrolled.status !== 404) throw refuse(502, 'bridge_unenroll_failed', MESSAGES.server);
   }
-  await (deps.store as Store).deleteBridge(caller.user.id);
+  await (deps.store as Store).deleteBridge(caller.user.id, factorId);
 }
 
 /** Best effort: removes a half-made bridge so a later registration starts clean. */
@@ -513,7 +519,9 @@ async function rollbackBridge(caller: Caller, deps: HandlerDeps, factorId: strin
     // The row below still names the factor, so the next registration retires it.
   }
   try {
-    await (deps.store as Store).deleteBridge(caller.user.id);
+    // Filtered by factor id too, so a bridge recorded by a parallel
+    // registration is never deleted here.
+    await (deps.store as Store).deleteBridge(caller.user.id, factorId);
   } catch {
     // A row without its factor is detected and replaced on the next registration.
   }
@@ -597,7 +605,7 @@ async function remove(caller: Caller, deps: HandlerDeps) {
     if (bridge) {
       const unenrolled = await deps.auth.unenroll(caller.token, bridge.factor_id);
       if (!unenrolled.ok && unenrolled.status !== 404) throw refuse(502, 'bridge_unenroll_failed', MESSAGES.server);
-      await store.deleteBridge(caller.user.id);
+      await store.deleteBridge(caller.user.id, bridge.factor_id);
       bridgeRemoved = true;
     }
   }
