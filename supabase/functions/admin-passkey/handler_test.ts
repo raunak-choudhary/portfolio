@@ -171,11 +171,13 @@ function setup(
       },
       getBridge: () => Promise.resolve(bridge),
       insertBridge: (row) => {
+        // user_id is the primary key: a second row is a conflict.
+        if (bridge) return Promise.resolve(false);
         bridge = row;
-        return Promise.resolve();
+        return Promise.resolve(true);
       },
-      deleteBridge: () => {
-        bridge = null;
+      deleteBridge: (userId, factorId) => {
+        if (bridge && bridge.user_id === userId && bridge.factor_id === factorId) bridge = null;
         return Promise.resolve();
       },
     },
@@ -578,4 +580,35 @@ Deno.test('a recorded bridge whose factor is already gone is cleared without an 
   assertEquals(result.status, 200);
   assertFalse(t.authCalls.some((call) => call.startsWith('unenroll')));
   assertEquals(t.bridge()?.factor_id, 'bridge-factor');
+});
+
+Deno.test('losing a registration race rolls back only this request and keeps the winner intact', async () => {
+  const t = setup();
+  const winner = { user_id: USER_ID, factor_id: 'winner-factor', secret_ciphertext: 'winner-secret' };
+  // A parallel registration records its bridge while this one is enrolling.
+  const enroll = t.deps.auth.enrollTotp;
+  t.deps.auth.enrollTotp = async (bearer, name) => {
+    const result = await enroll(bearer, name);
+    t.setBridge({ ...winner });
+    return result;
+  };
+  const result = await t.register();
+  assertEquals(result.status, 409);
+  assertEquals(result.body.code, 'try_again');
+  assertEquals(t.bridge(), winner, "the other request's row is untouched");
+  assert(t.authCalls.includes('unenroll:bridge-factor'), 'our own half-made factor is removed');
+  assertEquals(t.passkeys.length, 0);
+});
+
+Deno.test('rollback and removal delete the bridge row by its factor id, never by user alone', async () => {
+  const t = setup({ codeAccepted: () => false });
+  const deletes: Array<[string, string]> = [];
+  const store = t.deps.store!;
+  const original = store.deleteBridge;
+  store.deleteBridge = (userId, factorId) => {
+    deletes.push([userId, factorId]);
+    return original(userId, factorId);
+  };
+  await t.register();
+  assertEquals(deletes, [[USER_ID, 'bridge-factor']]);
 });

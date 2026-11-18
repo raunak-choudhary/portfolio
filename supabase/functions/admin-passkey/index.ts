@@ -187,10 +187,14 @@ const store: Store | null = db
           .maybeSingle(),
       ),
     insertBridge: async (row) => {
-      must(await db.from('admin_passkey_bridge').insert(row));
+      const { error } = await db.from('admin_passkey_bridge').insert(row);
+      // 23505: the user already has a bridge row (user_id is the primary key).
+      if (error && (error as { code?: string }).code === '23505') return false;
+      if (error) throw new Error('database');
+      return true;
     },
-    deleteBridge: async (userId) => {
-      must(await db.from('admin_passkey_bridge').delete().eq('user_id', userId));
+    deleteBridge: async (userId, factorId) => {
+      must(await db.from('admin_passkey_bridge').delete().eq('user_id', userId).eq('factor_id', factorId));
     },
   }
   : null;
