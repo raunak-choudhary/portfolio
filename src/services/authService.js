@@ -358,34 +358,51 @@ const describeMfaError = (error, fallback) => {
 };
 
 /**
- * Friendly name of the server-held TOTP factor behind passkey sign-in (see
- * supabase/functions/admin-passkey). Its code is never shown to anyone, so it
- * is kept out of every typed-code list and managed from the Passkeys section.
+ * Reserved start of the server-held TOTP factor's name (see
+ * supabase/functions/admin-passkey, which adds a random suffix). Its code is
+ * never shown to anyone, so it is kept out of every typed-code list and
+ * managed from the Passkeys section. Authenticator apps may not use it.
  */
-export const BRIDGE_FACTOR_NAME = 'Passkey bridge';
+export const BRIDGE_FACTOR_PREFIX = 'Passkey bridge';
 
-const isBridgeFactor = (factor) => factor?.friendly_name === BRIDGE_FACTOR_NAME;
+/** True for a name that starts with the reserved prefix, ignoring case and extra spaces. */
+export const isReservedFactorName = (name) =>
+  String(name ?? '').trim().replace(/\s+/g, ' ').toLowerCase().startsWith(BRIDGE_FACTOR_PREFIX.toLowerCase());
+
+/**
+ * Splits TOTP factors into typed authenticators and the passkey bridge.
+ * The bridge is identified by the id the admin-passkey function reports.
+ * Only when that id is unknown (the function did not answer) does the
+ * reserved name prefix stand in; enrolTotp refuses the prefix, so no
+ * authenticator app can carry it.
+ *   bridgeFactorId  string: the bridge; null: there is no bridge;
+ *                   undefined: unknown, fall back to the prefix
+ */
+export const partitionTotpFactors = (totp, bridgeFactorId) => {
+  const isBridge = bridgeFactorId === undefined
+    ? (factor) => isReservedFactorName(factor?.friendly_name)
+    : (factor) => Boolean(bridgeFactorId) && factor?.id === bridgeFactorId;
+  const list = Array.isArray(totp) ? totp : [];
+  const verified = list.filter((factor) => factor.status === 'verified');
+  return {
+    verified: verified.filter((factor) => !isBridge(factor)),
+    unverified: list.filter((factor) => factor.status !== 'verified' && !isBridge(factor)),
+    bridge: verified.find(isBridge) || null
+  };
+};
 
 /**
  * Lists the authenticator-app factors on the account, split by state.
  * Supabase keeps a factor as "unverified" until its first code is accepted.
  * `verified` holds only factors whose code a person can type; a verified
- * passkey bridge is reported separately as `bridge`.
+ * passkey bridge is reported separately as `bridge`. Pass the bridge factor
+ * id from passkeyService.getPasskeyStatus when it is known.
  */
-export const listTotpFactors = async () => {
+export const listTotpFactors = async ({ bridgeFactorId } = {}) => {
   try {
     const { data, error } = await supabase.auth.mfa.listFactors();
     if (error) return { success: false, error: describeMfaError(error, 'Could not read your authenticators.') };
-    const totp = Array.isArray(data?.totp) ? data.totp : [];
-    const verified = totp.filter((factor) => factor.status === 'verified');
-    return {
-      success: true,
-      data: {
-        verified: verified.filter((factor) => !isBridgeFactor(factor)),
-        unverified: totp.filter((factor) => factor.status !== 'verified'),
-        bridge: verified.find(isBridgeFactor) || null
-      }
-    };
+    return { success: true, data: partitionTotpFactors(data?.totp, bridgeFactorId) };
   } catch (error) {
     return { success: false, error: authError('MFA_LIST_ERROR', 'Could not read your authenticators.', error.message) };
   }
@@ -399,12 +416,15 @@ export const listTotpFactors = async () => {
 export const removeUnverifiedFactors = async () => {
   const listed = await listTotpFactors();
   if (!listed.success) return listed;
+  // A bridge factor being set up by the function is unverified for a moment;
+  // it carries the reserved name and is left to the function.
+  const leftovers = listed.data.unverified.filter((factor) => !isReservedFactorName(factor.friendly_name));
   const results = await Promise.all(
-    listed.data.unverified.map((factor) => supabase.auth.mfa.unenroll({ factorId: factor.id }))
+    leftovers.map((factor) => supabase.auth.mfa.unenroll({ factorId: factor.id }))
   );
   const failed = results.find((result) => result.error);
   if (failed) return { success: false, error: describeMfaError(failed.error, 'Could not clean up an unfinished enrolment.') };
-  return { success: true, data: { removed: listed.data.unverified.length } };
+  return { success: true, data: { removed: leftovers.length } };
 };
 
 /**
@@ -415,6 +435,12 @@ export const removeUnverifiedFactors = async () => {
  */
 export const enrollTotp = async (friendlyName = PRIMARY_FACTOR_NAME) => {
   const name = String(friendlyName || '').trim().slice(0, 60) || PRIMARY_FACTOR_NAME;
+  if (isReservedFactorName(name)) {
+    return {
+      success: false,
+      error: authError('MFA_NAME_RESERVED', `Names starting with "${BRIDGE_FACTOR_PREFIX}" are reserved for passkey sign-in. Choose another name.`)
+    };
+  }
   try {
     const { data, error } = await supabase.auth.mfa.enroll({ factorType: 'totp', friendlyName: name });
     if (error) return { success: false, error: describeMfaError(error, 'Could not start the enrolment.') };

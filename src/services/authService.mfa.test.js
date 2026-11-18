@@ -2,8 +2,10 @@
 // enrolment and verification, and the assurance state used for routing.
 
 import {
+  BRIDGE_FACTOR_PREFIX,
   enrollTotp,
   getAssuranceState,
+  isReservedFactorName,
   isValidOneTimeCode,
   listTotpFactors,
   maskEmail,
@@ -107,6 +109,66 @@ describe('authenticator factors', () => {
     const result = await listTotpFactors();
     expect(result.data.verified.map((f) => f.id)).toEqual(['f1']);
     expect(result.data.bridge.id).toBe('b1');
+  });
+
+  it('identifies the bridge by the reported id, so a look-alike name stays a typed authenticator', async () => {
+    supabase.auth.mfa.listFactors.mockResolvedValue({
+      data: {
+        totp: [
+          factor('old', 'verified', 'Passkey bridge'),
+          factor('b9', 'verified', 'Passkey bridge 1a2b3c4d'),
+          factor('f1', 'verified'),
+          factor('pending', 'unverified', 'Passkey bridge 0f0f0f0f')
+        ]
+      },
+      error: null
+    });
+    const result = await listTotpFactors({ bridgeFactorId: 'b9' });
+    expect(result.data.bridge.id).toBe('b9');
+    expect(result.data.verified.map((f) => f.id)).toEqual(['old', 'f1']);
+    // With no bridge at all, nothing is hidden.
+    const none = await listTotpFactors({ bridgeFactorId: null });
+    expect(none.data.bridge).toBeNull();
+    expect(none.data.verified.map((f) => f.id)).toEqual(['old', 'b9', 'f1']);
+  });
+
+  it('falls back to the reserved prefix only when the bridge id is unknown', async () => {
+    supabase.auth.mfa.listFactors.mockResolvedValue({
+      data: { totp: [factor('b9', 'verified', 'Passkey bridge 1a2b3c4d'), factor('f1', 'verified')] },
+      error: null
+    });
+    const result = await listTotpFactors();
+    expect(result.data.bridge.id).toBe('b9');
+    expect(result.data.verified.map((f) => f.id)).toEqual(['f1']);
+  });
+
+  it('reserves the bridge prefix, ignoring case and spaces', () => {
+    expect(BRIDGE_FACTOR_PREFIX).toBe('Passkey bridge');
+    for (const name of ['Passkey bridge', '  passkey BRIDGE  ', 'Passkey   bridge 2', 'PASSKEY BRIDGE phone']) {
+      expect(isReservedFactorName(name)).toBe(true);
+    }
+    for (const name of ['Primary authenticator', 'My passkey bridge', '', null, undefined]) {
+      expect(isReservedFactorName(name)).toBe(false);
+    }
+  });
+
+  it('refuses to enrol an authenticator under the reserved name', async () => {
+    const result = await enrollTotp('  passkey Bridge ');
+    expect(result.success).toBe(false);
+    expect(result.error.code).toBe('MFA_NAME_RESERVED');
+    expect(supabase.auth.mfa.enroll).not.toHaveBeenCalled();
+  });
+
+  it('leaves an unverified bridge factor alone during cleanup', async () => {
+    supabase.auth.mfa.listFactors.mockResolvedValue({
+      data: { totp: [factor('drop', 'unverified'), factor('bridge-pending', 'unverified', 'Passkey bridge 0a0b0c0d')] },
+      error: null
+    });
+    supabase.auth.mfa.unenroll.mockResolvedValue({ data: {}, error: null });
+    const result = await removeUnverifiedFactors();
+    expect(supabase.auth.mfa.unenroll).toHaveBeenCalledTimes(1);
+    expect(supabase.auth.mfa.unenroll).toHaveBeenCalledWith({ factorId: 'drop' });
+    expect(result.data.removed).toBe(1);
   });
 
   it('counts a bridge alone as a second factor, so level 2 is still asked for', async () => {
