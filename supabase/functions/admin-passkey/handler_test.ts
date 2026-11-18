@@ -15,6 +15,8 @@ import {
 import { BRIDGE_FACTOR_NAME, RATE_LIMIT_MAX, toBase64Url, totpCode } from './lib.ts';
 
 const ORIGIN = 'http://localhost:3000';
+const SITE = 'https://www.raunakchoudhary.com';
+const ORIGINS = `${SITE},https://raunakchoudhary.com,${ORIGIN}`;
 const USER_ID = '7a3c3c55-6f0e-4b8e-9d4c-0f6b1e2a9c11';
 const EMAIL = 'owner@example.com';
 const BRIDGE_SECRET = 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP';
@@ -37,7 +39,12 @@ interface ChallengeRow {
 }
 
 function setup(
-  options: { factors?: AuthFactor[]; admin?: boolean; codeAccepted?: (code: string, step: number) => boolean } = {},
+  options: {
+    factors?: AuthFactor[];
+    admin?: boolean;
+    codeAccepted?: (code: string, step: number) => boolean;
+    env?: Record<string, string | undefined>;
+  } = {},
 ) {
   let ids = 0;
   const uuid = () => `00000000-0000-4000-8000-${String(++ids).padStart(12, '0')}`;
@@ -52,7 +59,8 @@ function setup(
   const secrets = new Map<string, string>();
 
   const deps: HandlerDeps = {
-    env: { PASSKEY_BRIDGE_KEY: WRAP_KEY },
+    env: options.env ??
+      { PASSKEY_BRIDGE_KEY: WRAP_KEY, PASSKEY_ALLOWED_ORIGINS: ORIGINS, PASSKEY_ALLOW_LOCALHOST: '1' },
     now: () => NOW,
     log: (message) => logs.push(message),
     auth: {
@@ -143,8 +151,8 @@ function setup(
         if (row) Object.assign(row, { sign_count: signCount, last_used_at: lastUsed });
         return Promise.resolve();
       },
-      deletePasskey: (id, userId) => {
-        const index = passkeys.findIndex((row) => row.id === id && row.user_id === userId);
+      deletePasskey: (id, userId, refuseRpId) => {
+        const index = passkeys.findIndex((row) => row.id === id && row.user_id === userId && row.rp_id !== refuseRpId);
         if (index >= 0) passkeys.splice(index, 1);
         return Promise.resolve(index >= 0);
       },
@@ -435,4 +443,56 @@ Deno.test('removing the last passkey unenrolls the bridge factor and deletes its
   assertEquals(t.bridge(), null);
   assertFalse(t.factors.some((factor) => factor.friendly_name === BRIDGE_FACTOR_NAME));
   assertEquals((await t.call({ action: 'remove', id: '00000000-0000-4000-8000-000000000999' }, 'aal2')).status, 404);
+});
+
+Deno.test('without PASSKEY_ALLOWED_ORIGINS every request is refused, even from the site', async () => {
+  const t = setup({ env: { PASSKEY_BRIDGE_KEY: WRAP_KEY, PASSKEY_ALLOW_LOCALHOST: '1' } });
+  for (const origin of [SITE, ORIGIN]) {
+    const result = await t.call({ action: 'status' }, 'aal1', { origin });
+    assertEquals(result.status, 403);
+    assertEquals(result.body.code, 'origin_not_allowed');
+  }
+});
+
+Deno.test('localhost is refused at every action unless PASSKEY_ALLOW_LOCALHOST=1', async () => {
+  const t = setup({ env: { PASSKEY_BRIDGE_KEY: WRAP_KEY, PASSKEY_ALLOWED_ORIGINS: ORIGINS } });
+  const preflight = await handleRequest(
+    new Request('https://x/admin-passkey', { method: 'OPTIONS', headers: { origin: ORIGIN } }),
+    t.deps,
+  );
+  assertEquals(preflight.status, 403);
+  for (const action of ['status', 'register-options', 'register-verify', 'auth-options', 'auth-verify', 'remove']) {
+    const result = await t.call({ action }, 'aal2');
+    assertEquals(result.status, 403, action);
+    assertEquals(result.body.code, 'origin_not_allowed', action);
+  }
+  // The site itself still answers.
+  assertEquals((await t.call({ action: 'status' }, 'aal1', { origin: SITE })).status, 200);
+});
+
+Deno.test('with the switch off a localhost credential cannot be used or removed from the site', async () => {
+  const t = setup();
+  await t.register('cred-local');
+  assertEquals(t.passkeys[0].rp_id, 'localhost');
+  delete t.deps.env.PASSKEY_ALLOW_LOCALHOST;
+  // Sign-in from the site: the localhost credential is not offered or accepted.
+  assertEquals((await t.call({ action: 'auth-options' }, 'aal1', { origin: SITE })).body.code, 'no_passkey');
+  const removal = await t.call({ action: 'remove', id: t.passkeys[0].id }, 'aal2', { origin: SITE });
+  assertEquals(removal.status, 404);
+  assertEquals(t.passkeys.length, 1);
+});
+
+Deno.test('a credential row for another relying party is never accepted', async () => {
+  const t = setup();
+  await t.register('cred-1');
+  const options = await t.call({ action: 'auth-options' });
+  // A faulty store that ignores the site filter.
+  const row = t.passkeys[0];
+  t.deps.store!.findPasskey = () => Promise.resolve({ ...row, rp_id: 'raunakchoudhary.com' });
+  const result = await t.call({
+    action: 'auth-verify',
+    challengeId: options.body.data.challengeId,
+    response: { id: 'cred-1', challenge: options.body.data.options.challenge, counter: 2 },
+  });
+  assertEquals(result.body.code, 'verification_failed');
 });

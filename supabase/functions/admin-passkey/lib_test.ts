@@ -2,13 +2,13 @@ import { assert, assertEquals, assertFalse, assertRejects, assertThrows } from '
 import {
   challengeProblem,
   cleanDeviceName,
-  DEFAULT_PASSKEY_ORIGINS,
   fromBase32,
   fromBase64Url,
   hotp,
   importWrapKey,
   isRateLimited,
   isUuid,
+  localhostAllowed,
   passkeyOriginsFrom,
   RATE_LIMIT_MAX,
   RATE_LIMIT_WINDOW_MS,
@@ -96,11 +96,9 @@ Deno.test('the wrap key must be present and exactly 32 bytes', async () => {
 });
 
 Deno.test('origins map to the relying party; unknown or malformed origins do not', () => {
-  const allowed = passkeyOriginsFrom(undefined);
-  assertEquals(allowed, DEFAULT_PASSKEY_ORIGINS);
+  const allowed = ['https://www.raunakchoudhary.com', 'https://raunakchoudhary.com'];
   assertEquals(relyingPartyFor('https://www.raunakchoudhary.com', allowed)?.rpId, 'raunakchoudhary.com');
   assertEquals(relyingPartyFor('https://raunakchoudhary.com', allowed)?.rpId, 'raunakchoudhary.com');
-  assertEquals(relyingPartyFor('http://localhost:3000', allowed)?.rpId, 'localhost');
   assertEquals(relyingPartyFor('https://evil.example', allowed), null);
   assertEquals(relyingPartyFor(null, allowed), null);
   assertEquals(relyingPartyFor('https://raunakchoudhary.com/', ['https://raunakchoudhary.com/']), null);
@@ -109,6 +107,24 @@ Deno.test('origins map to the relying party; unknown or malformed origins do not
     'https://a.test',
     'http://localhost:3000',
   ]);
+});
+
+Deno.test('with no origin list nothing is allowed (fail closed)', () => {
+  assertEquals(passkeyOriginsFrom(undefined), []);
+  assertEquals(passkeyOriginsFrom('  , '), []);
+  assertEquals(relyingPartyFor('https://www.raunakchoudhary.com', passkeyOriginsFrom(undefined)), null);
+});
+
+Deno.test('localhost needs both the origin entry and the explicit switch', () => {
+  const allowed = ['http://localhost:3000'];
+  assertEquals(relyingPartyFor('http://localhost:3000', allowed), null);
+  assertEquals(relyingPartyFor('http://localhost:3000', allowed, { allowLocalhost: false }), null);
+  assertEquals(relyingPartyFor('http://localhost:3000', allowed, { allowLocalhost: true })?.rpId, 'localhost');
+  assertEquals(relyingPartyFor('http://localhost:3000', [], { allowLocalhost: true }), null);
+  assert(localhostAllowed({ PASSKEY_ALLOW_LOCALHOST: '1' }));
+  assertFalse(localhostAllowed({}));
+  assertFalse(localhostAllowed({ PASSKEY_ALLOW_LOCALHOST: 'true' }));
+  assertFalse(localhostAllowed({ PASSKEY_ALLOW_LOCALHOST: '0' }));
 });
 
 Deno.test('a challenge is refused when missing, used, expired or for another ceremony', () => {
