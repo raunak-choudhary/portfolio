@@ -186,12 +186,5 @@ export function createSkyField({ canvas, figures, deepManifest, assetBase, quali
   };
 }
 
-/** Whether this browser can give us a WebGL context (probe on a throwaway canvas). */
-export function webglAvailable(doc = document) {
-  try {
-    const c = doc.createElement('canvas');
-    return !!(c.getContext('webgl2') || c.getContext('webgl'));
-  } catch { return false; }
-}
-
+export { webglAvailable } from './webgl';
 export { PALETTES };
