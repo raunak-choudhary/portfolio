@@ -62,6 +62,22 @@ describe('mediaLibraryService helpers', () => {
     expect(references.has('project-images:projects/app/hero.png')).toBe(true);
     expect(references.has('organization-logos:education/nyu.png')).toBe(true);
     expect(references.has('contact-attachments:resume.pdf')).toBe(true);
+    // the contact form's key keeps the bucket name as a folder inside the bucket
+    expect(references.has('contact-attachments:contact-attachments/resume.pdf')).toBe(true);
+  });
+
+  it('counts a contact attachment stored under its bucket-named folder as referenced', async () => {
+    const references = collectReferencedMediaPaths({
+      contact_messages: [{ attachment_urls: ['contact-attachments/contact-1763-0-cv.pdf'] }]
+    });
+    const item = await createMediaLibraryItem({
+      bucket: { id: 'contact-attachments', label: 'Contact Attachments', isPublic: false },
+      file: { name: 'contact-1763-0-cv.pdf', metadata: { size: 10 } },
+      filePath: 'contact-attachments/contact-1763-0-cv.pdf',
+      referencedPaths: references,
+      createSignedUrl: async () => 'https://example.com/signed'
+    });
+    expect(item.status).toBe('referenced');
   });
 
   it('creates public and private media library items with safe preview metadata', async () => {
