@@ -1,13 +1,14 @@
 // src/components/admin/Voyage/DeckChapter.js
 //
-// Ties a manager schema to its deck and sheet inside a chapter stage: loads
-// the records, opens the sheet for a card or for a new record, merges saves
-// back into the deck, drops deleted cards, and writes a new order after a
-// drag (optimistically, rolled back if the write fails).
+// Ties a manager schema to its deck and record dialog inside a chapter
+// stage: loads the records (with a retry when the load fails), opens the
+// dialog for a card or for a new record, merges saves back into the deck,
+// drops deleted cards, and writes a new order after a drag (optimistically,
+// rolled back if the write fails).
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Deck from './Deck';
-import Sheet from './Sheet';
+import RecordDialog from './RecordDialog';
 import { deckOrder, nextOrderIndex, orderWrites } from './managers/projects.schema';
 import { listRecords, reorderRecords } from '../../../services/voyageRecords';
 
@@ -22,29 +23,34 @@ export default function DeckChapter({ schema, notify }) {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [sheet, setSheet] = useState({ open: false, record: null });
+  const [dialog, setDialog] = useState({ open: false, record: null });
   const [leaving, setLeaving] = useState(() => new Set());
   const [freshId, setFreshId] = useState(null);
   const alive = useRef(true);
 
-  useEffect(() => {
-    alive.current = true;
-    listRecords(schema).then((rows) => { if (alive.current) { setRecords(deckOrder(rows)); setLoading(false); } }).catch((err) => { if (alive.current) { setError(err.message); setLoading(false); } });
-    return () => { alive.current = false; };
+  const load = useCallback(() => {
+    setLoading(true); setError(null);
+    listRecords(schema).then((rows) => { if (alive.current) { setRecords(deckOrder(rows)); setLoading(false); } }).catch((err) => { if (alive.current) { setError(err.message || 'The list could not be loaded.'); setLoading(false); } });
   }, [schema]);
 
-  const open = useCallback((record) => setSheet({ open: true, record }), []);
-  const create = useCallback(() => setSheet({ open: true, record: null }), []);
-  const close = useCallback(() => setSheet((s) => ({ ...s, open: false })), []);
+  useEffect(() => {
+    alive.current = true;
+    load();
+    return () => { alive.current = false; };
+  }, [load]);
+
+  const open = useCallback((record) => setDialog({ open: true, record }), []);
+  const create = useCallback(() => setDialog({ open: true, record: null }), []);
+  const close = useCallback(() => setDialog((s) => ({ ...s, open: false })), []);
 
   const saved = useCallback((row, isNew) => {
     setRecords((rows) => deckOrder(isNew ? [row, ...rows] : rows.map((r) => (r.id === row.id ? { ...r, ...row } : r))));
-    setSheet({ open: true, record: row });
+    setDialog({ open: true, record: row });
     if (isNew) { setFreshId(row.id); setTimeout(() => alive.current && setFreshId(null), 1200); }
   }, []);
 
   const deleted = useCallback((id) => {
-    setSheet({ open: false, record: null });
+    setDialog({ open: false, record: null });
     setLeaving((s) => new Set([...s, id]));
     setTimeout(() => { if (!alive.current) return; setRecords((rows) => rows.filter((r) => r.id !== id)); setLeaving((s) => { const n = new Set(s); n.delete(id); return n; }); }, LEAVE_MS);
   }, []);
@@ -61,8 +67,8 @@ export default function DeckChapter({ schema, notify }) {
 
   return (
     <>
-      <Deck schema={schema} records={records} loading={loading} error={error} onOpen={open} onCreate={create} onReorder={reorder} leaving={leaving} freshId={freshId} />
-      <Sheet schema={schema} record={sheet.record} open={sheet.open} onClose={close} onSaved={saved} onDeleted={deleted} notify={notify} nextOrder={nextOrder} />
+      <Deck schema={schema} records={records} loading={loading} error={error} onRetry={load} onOpen={open} onCreate={create} onReorder={reorder} leaving={leaving} freshId={freshId} />
+      <RecordDialog schema={schema} record={dialog.record} open={dialog.open} onClose={close} onSaved={saved} onDeleted={deleted} notify={notify} nextOrder={nextOrder} />
     </>
   );
 }

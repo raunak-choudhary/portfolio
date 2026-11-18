@@ -49,7 +49,7 @@ describe('forms', () => {
     const payload = normalizeForm(projectsSchema, { ...form, awards: '  ', technologies: [' React ', '', 'Supabase'], team_size: '3' });
     expect(payload.awards).toBeNull(); expect(payload.technologies).toEqual(['React', 'Supabase']); expect(payload.team_size).toBe(3);
     expect(payload.short_description).toBe('Counting with proofs'); expect(payload.featured).toBe(true);
-    expect(payload).not.toHaveProperty('order_index');   // order is written by the deck, not the sheet
+    expect(payload).not.toHaveProperty('order_index');   // order is written by the deck, not the dialog
     expect(isDirty(projectsSchema, form, row)).toBe(false);
     expect(isDirty(projectsSchema, { ...form, title: 'Tallyproof 2' }, row)).toBe(true);
     expect(isDirty(projectsSchema, { ...form, short_description: 'Counting with proofs' }, row)).toBe(false);   // whitespace only

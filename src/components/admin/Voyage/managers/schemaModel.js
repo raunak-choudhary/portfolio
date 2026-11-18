@@ -2,7 +2,7 @@
 //
 // The shape every manager shares. A manager is a schema: the table it edits,
 // how a row becomes a card in the deck, and a list of fields with a kind and
-// limits. The deck and the sheet are written once against this shape; a new
+// limits. The deck and the record dialog are written once against this shape; a new
 // manager is a new schema file, not a new form. Everything here is pure and
 // tested: building a form from a row, validating it, normalising it back
 // into a row, and telling whether anything changed.

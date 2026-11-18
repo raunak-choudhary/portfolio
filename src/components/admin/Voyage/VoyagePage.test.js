@@ -29,7 +29,7 @@ jest.mock('../../../services/voyageData', () => ({
 }));
 jest.mock('../../../services/adminSessionFacts', () => ({ startSession: jest.fn() }));
 // the decks load through the records service, which also needs the Supabase client; the page test checks the wiring only
-jest.mock('../../../services/voyageRecords', () => ({ listRecords: jest.fn(), saveRecord: jest.fn(), deleteRecord: jest.fn(), reorderRecords: jest.fn(), uploadImages: jest.fn(), removeImage: jest.fn(), imageProblem: jest.fn(() => null) }));
+jest.mock('../../../services/voyageRecords', () => ({ listRecords: jest.fn(), saveRecord: jest.fn(), deleteRecord: jest.fn(), reorderRecords: jest.fn(), uploadImages: jest.fn(), removeImage: jest.fn(), imageProblems: jest.fn(), failureKind: jest.fn(), fetchUpdatedAt: jest.fn(), getRecord: jest.fn() }));
 const { getPortfolioStats } = jest.requireMock('../../../services/dataService');
 const analyticsService = jest.requireMock('../../../services/analyticsService').default;
 const voyageData = jest.requireMock('../../../services/voyageData');

@@ -1,7 +1,7 @@
 // src/components/admin/Voyage/ConfirmDialog.js
 //
 // A small in-page confirmation on glass: one sentence, a quiet cancel and
-// one decisive button. Used by the sheet for discard and delete.
+// one decisive button. Used by the record dialog for discard and delete.
 
 import React, { useEffect, useRef } from 'react';
 
