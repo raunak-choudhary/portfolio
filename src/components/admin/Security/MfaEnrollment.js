@@ -10,6 +10,9 @@
 // stored by this code; an unfinished enrolment is removed before a new one
 // starts; removing the last device is allowed only after an explicit warning,
 // because it drops the account back to a single factor.
+//
+// Passkeys (PasskeyManager) appear once an authenticator is enrolled; they
+// replace typing the code on the devices that hold them.
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { useAuthContext } from '../../../contexts/AuthContext';
@@ -25,6 +28,7 @@ import {
   verifyTotpEnrollment
 } from '../../../services/authService';
 import LoadingSpinner from '../../common/LoadingSpinner';
+import PasskeyManager from './PasskeyManager';
 import './MfaEnrollment.css';
 
 const MfaEnrollment = ({ enrollmentRequired = false }) => {
@@ -270,12 +274,15 @@ const MfaEnrollment = ({ enrollmentRequired = false }) => {
             </section>
           )}
 
+          {factors.length > 0 && <PasskeyManager />}
+
           <section className="mfa-card mfa-card-note">
             <h3 className="mfa-card-title">If you lose your phone</h3>
             <p className="mfa-muted">
               Re-add the app with the setup key from your password manager. Without the key, the backup device signs
               you in. Without either, the account owner removes the factors with the Supabase admin command described
-              in the project notes, then enrols again.
+              in the project notes, then enrols again. Passkeys never replace the authenticator: a typed code always
+              works, so losing a passkey device only means typing the code until you add a new one.
             </p>
           </section>
         </>

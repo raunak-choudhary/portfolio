@@ -78,3 +78,8 @@
 [data-theme="light"] .mfa-device { background: rgba(0, 0, 0, 0.03); border-color: rgba(0, 0, 0, 0.08); }
 [data-theme="light"] .mfa-input { background: #fff; border-color: rgba(0, 0, 0, 0.2); }
 [data-theme="light"] .mfa-button { background: rgba(0, 0, 0, 0.04); border-color: rgba(0, 0, 0, 0.15); }
+
+/* Passkeys card: long device names wrap instead of pushing Remove off screen. */
+.passkey-explainer { margin: 0 0 0.75rem; max-width: 60ch; }
+.passkey-device-text { min-width: 0; overflow-wrap: anywhere; }
+.passkey-add { margin-top: 0.5rem; max-width: 28rem; }
