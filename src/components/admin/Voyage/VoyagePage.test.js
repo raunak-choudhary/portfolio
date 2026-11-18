@@ -1,7 +1,7 @@
 /* eslint-disable testing-library/no-container, testing-library/render-result-naming-convention */
 import { ThemeProvider } from '../../../contexts/ThemeContext';
 import { CHAPTERS } from './chapters';
-import VoyagePage from './VoyagePage';
+import VoyagePage, { VOYAGE_ROOT_CLASS } from './VoyagePage';
 import { React, act, click, mount, stubCanvas } from '../SkyBackground/testUtils';
 import { isDashboardReady, resetDashboardReady } from '../AdminWelcome/adminReadiness';
 
@@ -84,7 +84,10 @@ describe('VoyagePage (2D fallback)', () => {
     const titles = [...view.container.querySelectorAll('.voyage-chapter__title')].map((h) => h.textContent);
     expect(titles[0]).toMatch(/^Good (morning|afternoon|evening|night), Raunak$/); expect(titles[1]).toBe('Mission control'); expect(titles[4]).toBe('Projects'); expect(titles[16]).toBe('Security');
     expect(view.container.querySelector('#chapter-earth .voyage-placeholder')).toBeNull();
+    // the public gradient scrollbars are overridden only while the voyage is mounted
+    expect(document.documentElement.classList.contains(VOYAGE_ROOT_CLASS)).toBe(true);
     view.unmount();
+    expect(document.documentElement.classList.contains(VOYAGE_ROOT_CLASS)).toBe(false);
     expect(document.body.style.getPropertyValue('transform')).toBe('scale(1)');
     document.body.style.removeProperty('transform');
   });
