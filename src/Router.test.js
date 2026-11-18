@@ -41,7 +41,7 @@ jest.mock('./components/admin/AdminLogin/MfaCodeStep', () => (props) => {
   mockHold = props.onHoldChange;
   return <p data-testid="code-step" />;
 });
-jest.mock('./components/admin/AdminWelcome/AdminWelcome', () => () => <p data-testid="dashboard" />);
+jest.mock('./components/admin/AdminWelcome/AdminWelcome', () => (props) => <p data-testid="dashboard" data-view={props.view} />);
 
 const flush = () => act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
 const shown = (container) => container.querySelector('[data-testid]')?.dataset.testid || 'fallback';
@@ -90,6 +90,32 @@ describe('ProtectedAdminRoute', () => {
     act(() => mockHold(false));
     await flush();
     expect(shown(view.container)).toBe('code-step');
+    view.unmount();
+  });
+
+  const shownView = (container) => container.querySelector('[data-testid="dashboard"]')?.dataset.view;
+
+  it('opens the voyage by default after the second step', async () => {
+    mockAuth = session(2);
+    const view = mount(<ProtectedAdminRoute />);
+    await flush();
+    expect(shownView(view.container)).toBe('voyage');
+    view.unmount();
+  });
+
+  it('opens the classic screens only when asked for them', async () => {
+    mockAuth = session(2);
+    const view = mount(<ProtectedAdminRoute view="classic" />);
+    await flush();
+    expect(shownView(view.container)).toBe('classic');
+    view.unmount();
+  });
+
+  it('sends a session with no authenticator to the classic Security screen', async () => {
+    mockAuth = { ...session(2), assurance: { checked: true, needsSecondFactor: false, needsEnrollment: true } };
+    const view = mount(<ProtectedAdminRoute />);
+    await flush();
+    expect(shownView(view.container)).toBe('classic');
     view.unmount();
   });
 });

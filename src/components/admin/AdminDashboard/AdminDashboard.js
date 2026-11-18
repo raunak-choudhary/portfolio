@@ -154,8 +154,8 @@ const AdminDashboardView = ({ requireSecurityEnrollment = false }) => {
       setHasUnsavedChanges(false);
       
       const newUrl = sectionId === 'dashboard'
-        ? '/admindashboard'
-        : `/admindashboard?section=${sectionId}`;
+        ? '/admindashboard/classic'
+        : `/admindashboard/classic?section=${sectionId}`;
       
       window.history.pushState({ section: sectionId }, '', newUrl);
       

@@ -153,7 +153,7 @@ function VoyageView({ requireSecurityEnrollment }) {
   const go = useCallback((id) => jump(Math.max(0, chapterIndex(id))), [jump]);
   const signOut = useCallback(() => { window.location.assign('/adminsignout'); }, []);
   const actions = useMemo(() => [
-    { id: 'classic', label: 'Open the classic dashboard', hint: 'until the voyage replaces it', run: () => navigate('/admindashboard') },
+    { id: 'classic', label: 'Open the classic dashboard', hint: 'until the voyage replaces it', run: () => navigate('/admindashboard/classic') },
     { id: 'signout', label: 'Sign out', hint: 'the film plays', run: signOut },
   ], [navigate, signOut]);
 
@@ -203,7 +203,7 @@ function VoyageView({ requireSecurityEnrollment }) {
               <div className="voyage-pane voyage-placeholder">
                 <p>{countFor(chapter) !== null ? <><b>{countFor(chapter)}</b> {countFor(chapter) === 1 ? 'item' : 'items'} in this section.</> : 'This chapter is on its way.'}</p>
                 <p className="voyage-placeholder__note">The deck and the record dialog arrive in the next unit. Until then this section is edited in the classic dashboard.</p>
-                <button type="button" className="voyage-bar__button" onClick={() => navigate('/admindashboard')}>Open in the classic dashboard</button>
+                <button type="button" className="voyage-bar__button" onClick={() => navigate('/admindashboard/classic')}>Open in the classic dashboard</button>
               </div>
             )}
           </section>

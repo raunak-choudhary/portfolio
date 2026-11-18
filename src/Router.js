@@ -42,7 +42,7 @@ const isAdminPath = (pathname) => /^\/admin(login|dashboard|signout)(\/|$)/.test
  * the welcome animation. With no authenticator enrolled yet, the dashboard
  * opens on the Security screen alone until the first one is confirmed.
  */
-export const ProtectedAdminRoute = ({ view = 'classic' }) => {
+export const ProtectedAdminRoute = ({ view = 'voyage' }) => {
   const { assurance, isAuthenticated, isLoading, sessionChecked } = useAuthContext();
   // The address this route was first reached with, read once. <Navigate> runs
   // again whenever this component re-renders, and by the second run the
@@ -80,9 +80,12 @@ export const ProtectedAdminRoute = ({ view = 'classic' }) => {
     );
   }
 
+  // Enrolling the first authenticator still happens on the classic Security
+  // screen, so a session without one is sent there whatever the address.
+  const shownView = assurance.needsEnrollment ? 'classic' : view;
   return (
     <Suspense fallback={<AdminChunkFallback />}>
-      <AdminWelcome requireSecurityEnrollment={assurance.needsEnrollment} view={view} />
+      <AdminWelcome requireSecurityEnrollment={assurance.needsEnrollment} view={shownView} />
     </Suspense>
   );
 };
@@ -129,9 +132,12 @@ const AppShell = () => {
           <Route path="/achievements" element={<AchievementsPage />} />
           <Route path="/leadership" element={<LeadershipPage />} />
           <Route path="/adminlogin" element={<Suspense fallback={<AdminChunkFallback />}><AdminLogin /></Suspense>} />
-          <Route path="/admindashboard" element={<ProtectedAdminRoute />} />
-          {/* The voyage (the admin as one sky) lives beside the classic dashboard until it replaces it; see docs/plans/2026-11-12-002. */}
-          <Route path="/admindashboard/voyage" element={<ProtectedAdminRoute view="voyage" />} />
+          {/* The voyage (the admin as one sky) is the dashboard. The classic
+              screens stay at /classic only until analytics and security move
+              into the voyage; see docs/plans/2026-11-12-002. */}
+          <Route path="/admindashboard" element={<ProtectedAdminRoute view="voyage" />} />
+          <Route path="/admindashboard/voyage" element={<Navigate to="/admindashboard" replace />} />
+          <Route path="/admindashboard/classic" element={<ProtectedAdminRoute view="classic" />} />
           <Route path="/adminsignout" element={<Suspense fallback={<AdminChunkFallback />}><AdminSignOut /></Suspense>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
