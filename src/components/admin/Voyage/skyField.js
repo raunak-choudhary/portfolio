@@ -144,7 +144,7 @@ export function createSkyField({ canvas, figures, deepManifest, assetBase, quali
 
   const cameraPosition = new THREE.Vector3(0, 20, ANCHORS[0].z + 520), cameraLook = new THREE.Vector3(ANCHORS[0].x, ANCHORS[0].y, ANCHORS[0].z);
   const wantPosition = new THREE.Vector3(), wantLook = new THREE.Vector3();
-  let startedAt = null, readoutAt = -Infinity, over = '', aspect = 16 / 9;
+  let startedAt = null, readoutAt = -Infinity, over = '', aspect = 16 / 9, disposed = false;
 
   return {
     resize(width, height) { renderer.setSize(width, height, false); aspect = width / Math.max(1, height); camera.aspect = aspect; camera.updateProjectionMatrix(); },
@@ -182,7 +182,14 @@ export function createSkyField({ canvas, figures, deepManifest, assetBase, quali
       renderer.render(scene, camera);
       return { index: route.index, f: route.f, over };
     },
-    dispose() { for (const d of disposables) d.dispose?.(); renderer.dispose(); },
+    /** Frees geometry, materials and the renderer, then gives the WebGL context back to the browser (it holds only a handful). Safe to call twice. */
+    dispose() {
+      if (disposed) return;
+      disposed = true;
+      for (const d of disposables) d.dispose?.();
+      renderer.dispose();
+      renderer.forceContextLoss();
+    },
   };
 }
 

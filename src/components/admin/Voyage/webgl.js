@@ -7,6 +7,9 @@
 export function webglAvailable(doc = document) {
   try {
     const c = doc.createElement('canvas');
-    return !!(c.getContext('webgl2') || c.getContext('webgl'));
+    const gl = c.getContext('webgl2') || c.getContext('webgl');
+    // give the probe's context back at once; browsers keep only a handful alive
+    gl?.getExtension?.('WEBGL_lose_context')?.loseContext();
+    return !!gl;
   } catch { return false; }
 }
