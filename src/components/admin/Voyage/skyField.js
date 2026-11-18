@@ -108,8 +108,10 @@ export function createSkyField({ canvas, figures, deepManifest, assetBase, quali
     const place = drawingPlacement(figure);
     if (place) {
       const artMaterial = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, color: palette.art, depthWrite: false });
-      loadTexture(`${assetBase}art/${figure.art.file}`, (t) => { artMaterial.map = t; artMaterial.needsUpdate = true; });
+      // hidden until its texture arrives: without a map the plane would paint as a flat grey card
+      loadTexture(`${assetBase}art/${figure.art.file}`, (t) => { artMaterial.map = t; artMaterial.needsUpdate = true; if (art) art.visible = true; });
       art = new THREE.Mesh(new THREE.PlaneGeometry(place.width, place.height), artMaterial);
+      art.visible = false;
       art.position.set(place.x, place.y, -2); art.rotation.z = place.rotation; art.renderOrder = 3; group.add(art);
       disposables.push(art.geometry, artMaterial);
     }
