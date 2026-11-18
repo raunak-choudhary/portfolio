@@ -143,7 +143,7 @@ describe('VoyagePage (2D fallback)', () => {
     expect(items.length).toBeGreaterThanOrEqual(16);
     const classic = items.find((i) => i.textContent.includes('classic dashboard'));
     click(classic);
-    expect(mockNavigate).toHaveBeenCalledWith('/admindashboard');
+    expect(mockNavigate).toHaveBeenCalledWith('/admindashboard/classic');
     expect(document.querySelector('.voyage-palette')).toBeNull();
     view.unmount();
   });
