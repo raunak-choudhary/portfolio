@@ -25,7 +25,14 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 // ✅ SIMPLIFIED: Basic client configuration for production
 const supabaseConfig = {
+  // PKCE (owner-approved Google sign-in, 2026-11-18): a redirect back from
+  // Supabase carries a one-time `?code=` that only this browser can redeem
+  // (the verifier stays in local storage), so access and refresh tokens never
+  // appear in the URL fragment, the history or a referrer. The email-code
+  // login does not redirect (verifyOtp) and stored sessions restore the same
+  // way, so neither depends on the flow type.
   auth: {
+    flowType: 'pkce',
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true
