@@ -2,7 +2,8 @@
 //
 // A chapter's records as a deck of glass cards beside its constellation:
 // newest first, a "new" card at the front, drag to reorder, search when the
-// deck grows. A card opens the sheet. Create rises into the deck and delete
+// deck grows. A card opens the record dialog. A failed load says so and
+// offers a retry instead of showing an empty deck as if nothing existed. Create rises into the deck and delete
 // dims and drops (CSS on the card's state classes); the deck itself stays
 // quiet because this is where the owner works.
 
@@ -10,7 +11,7 @@ import React, { useMemo, useState } from 'react';
 import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, arrayMove, rectSortingStrategy, sortableKeyboardCoordinates, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Award, EyeOff, Plus, Search, Star } from 'lucide-react';
+import { AlertCircle, Award, EyeOff, Plus, RefreshCw, Search, Star } from 'lucide-react';
 
 const FLAG_ICON = { starred: Star, award: Award, hidden: EyeOff };
 const FLAG_TEXT = { starred: 'Starred on the public page', award: 'Has an award', hidden: 'Hidden from the public page' };
@@ -41,18 +42,22 @@ function Card({ schema, row, onOpen, sortable, leaving, fresh }) {
  * @param {object[]} props.records in deck order (newest first).
  * @param {boolean} props.loading
  * @param {string|null} props.error
+ * @param {() => void} [props.onRetry] reloads after a failed load.
  * @param {(row: object) => void} props.onOpen
  * @param {() => void} props.onCreate
  * @param {(ids: string[]) => void} props.onReorder new order of ids after a drag.
  * @param {Set<string>} [props.leaving] ids mid-removal.
  * @param {string|null} [props.freshId] the id just added.
  */
-export default function Deck({ schema, records, loading, error, onOpen, onCreate, onReorder, leaving = new Set(), freshId = null }) {
+export default function Deck({ schema, records, loading, error, onRetry, onOpen, onCreate, onReorder, leaving = new Set(), freshId = null }) {
   const [query, setQuery] = useState('');
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
   const q = query.trim().toLowerCase();
   const shown = useMemo(() => (q ? records.filter((r) => schema.searchText(r).includes(q)) : records), [records, q, schema]);
   const sortable = !q && records.length > 1;
+  // a failed first load knows nothing: no count, and no new record whose
+  // order index would be computed from an empty list
+  const unknown = !!error && !records.length;
   const onDragEnd = ({ active, over }) => {
     if (!over || active.id === over.id) return;
     const ids = records.map((r) => r.id);
@@ -62,17 +67,23 @@ export default function Deck({ schema, records, loading, error, onOpen, onCreate
   return (
     <section className="deck" aria-label={`${schema.plural} deck`} data-testid="deck">
       <div className="deck__bar">
-        <span className="deck__count">{loading ? 'Loading' : `${records.length} ${records.length === 1 ? schema.singular : schema.plural}`}{sortable && !loading ? ' · drag to reorder' : ''}</span>
+        <span className="deck__count">{loading ? 'Loading' : unknown ? 'Not loaded' : `${records.length} ${records.length === 1 ? schema.singular : schema.plural}`}{sortable && !loading ? ' · drag to reorder' : ''}</span>
         {records.length >= SEARCH_FROM && (
           <label className="deck__search"><Search size={14} aria-hidden="true" /><input type="search" value={query} placeholder={`Search ${schema.plural}`} onChange={(e) => setQuery(e.target.value)} aria-label={`Search ${schema.plural}`} /></label>
         )}
       </div>
-      {error && <p className="deck__error" role="alert">{error}</p>}
+      {error && (
+        <div className="deck__error" role="alert">
+          <AlertCircle size={16} aria-hidden="true" />
+          <p>{error} Check the connection{onRetry ? ', then try again.' : '.'}</p>
+          {onRetry && <button type="button" className="voyage-bar__button" onClick={onRetry}><RefreshCw size={14} /><span>Try again</span></button>}
+        </div>
+      )}
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
         <SortableContext items={shown.map((r) => r.id)} strategy={rectSortingStrategy}>
           <div className="deck__grid">
             {!q && (
-              <button type="button" className="card card--new voyage-pane" onClick={onCreate} disabled={loading}>
+              <button type="button" className="card card--new voyage-pane" onClick={onCreate} disabled={loading || unknown}>
                 <Plus size={22} /><span>New {schema.singular}</span>
               </button>
             )}
