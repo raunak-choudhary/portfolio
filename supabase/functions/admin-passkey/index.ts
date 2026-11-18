@@ -125,19 +125,21 @@ const store: Store | null = db
       const rows = must(await db.from('admin_users').select('email').eq('is_active', true).not('email', 'is', null));
       return Array.isArray(rows) && rows.some((row) => String(row.email).toLowerCase() === email.toLowerCase());
     },
-    countChallengesSince: async (userId, sinceIso) => {
-      const { count, error } = await db.from('admin_passkey_challenges').select('id', { count: 'exact', head: true })
-        .eq('user_id', userId).gte('created_at', sinceIso);
-      if (error) throw new Error('database');
-      return count ?? 0;
-    },
-    insertChallenge: async (row) => {
-      // Old rows for this user are of no further use; clear them as we go.
-      await db.from('admin_passkey_challenges').delete().eq('user_id', row.user_id)
-        .lt('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
-      const inserted = must(await db.from('admin_passkey_challenges').insert(row).select('id').single());
-      if (!inserted?.id) throw new Error('database');
-      return inserted.id as string;
+    issueChallenge: async (row, windowStartIso, max) => {
+      // One database call: count and insert under a per-user lock (migration
+      // 20261118120000, app_private.issue_passkey_challenge).
+      const id = must(
+        await db.rpc('issue_admin_passkey_challenge', {
+          p_user_id: row.user_id,
+          p_kind: row.kind,
+          p_challenge: row.challenge,
+          p_rp_id: row.rp_id,
+          p_expires_at: row.expires_at,
+          p_window_start: windowStartIso,
+          p_max: max,
+        }),
+      );
+      return typeof id === 'string' && id ? id : null;
     },
     consumeChallenge: async (id, userId, kind, rpId, nowIso) => {
       // One conditional UPDATE: a second caller with the same id finds

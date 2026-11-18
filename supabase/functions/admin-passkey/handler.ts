@@ -34,12 +34,12 @@ import {
   BRIDGE_FACTOR_NAME,
   cleanDeviceName,
   importWrapKey,
-  isRateLimited,
   isUuid,
   LOCALHOST_RP_ID,
   localhostAllowed,
   MAX_BODY_BYTES,
   passkeyOriginsFrom,
+  RATE_LIMIT_MAX,
   rateWindowStart,
   readClaims,
   REGISTER_CHALLENGE_TTL_MS,
@@ -106,10 +106,16 @@ export interface BridgeRow {
 
 export interface Store {
   isAdminEmail(email: string): Promise<boolean>;
-  countChallengesSince(userId: string, sinceIso: string): Promise<number>;
-  insertChallenge(
+  /**
+   * Counts the user's challenges since `windowStartIso` and inserts the new one
+   * only when fewer than `max` exist, as one atomic step. Returns the new id,
+   * or null when the limit is reached.
+   */
+  issueChallenge(
     row: { user_id: string; kind: string; challenge: string; rp_id: string; expires_at: string },
-  ): Promise<string>;
+    windowStartIso: string,
+    max: number,
+  ): Promise<string | null>;
   /** Marks the challenge used if it is this user's, of this kind and site, unused and unexpired; returns its text, else null. Atomic. */
   consumeChallenge(id: string, userId: string, kind: string, rpId: string, nowIso: string): Promise<string | null>;
   listPasskeys(userId: string, rpId: string): Promise<PasskeyRow[]>;
@@ -304,23 +310,24 @@ const requirePendingSecondFactor = (caller: Caller) => {
 
 const nowOf = (deps: HandlerDeps) => (deps.now ?? (() => new Date()))();
 
+/** Stores a challenge under the rate limit; the count and the insert are one atomic database step. */
 async function issueChallenge(caller: Caller, deps: HandlerDeps, kind: 'register' | 'authenticate', challenge: string) {
   const store = deps.store as Store;
   const now = nowOf(deps);
   const ttl = kind === 'register' ? REGISTER_CHALLENGE_TTL_MS : AUTH_CHALLENGE_TTL_MS;
-  return await store.insertChallenge({
-    user_id: caller.user.id,
-    kind,
-    challenge,
-    rp_id: caller.rp.rpId,
-    expires_at: new Date(now.getTime() + ttl).toISOString(),
-  });
-}
-
-async function enforceRateLimit(caller: Caller, deps: HandlerDeps) {
-  const store = deps.store as Store;
-  const recent = await store.countChallengesSince(caller.user.id, rateWindowStart(nowOf(deps)).toISOString());
-  if (isRateLimited(recent)) throw refuse(429, 'rate_limited', MESSAGES.rateLimited);
+  const id = await store.issueChallenge(
+    {
+      user_id: caller.user.id,
+      kind,
+      challenge,
+      rp_id: caller.rp.rpId,
+      expires_at: new Date(now.getTime() + ttl).toISOString(),
+    },
+    rateWindowStart(now).toISOString(),
+    RATE_LIMIT_MAX,
+  );
+  if (!id) throw refuse(429, 'rate_limited', MESSAGES.rateLimited);
+  return id;
 }
 
 /** Consumes the challenge named in the body before anything is verified, so it can never be replayed. */
@@ -395,7 +402,6 @@ async function status(caller: Caller, deps: HandlerDeps) {
 
 async function registerOptions(caller: Caller, deps: HandlerDeps) {
   requireAal2(caller);
-  await enforceRateLimit(caller, deps);
   const existing = await (deps.store as Store).listPasskeys(caller.user.id, caller.rp.rpId);
   const options = await deps.webauthn.registrationOptions({
     rpId: caller.rp.rpId,
@@ -501,7 +507,6 @@ async function authOptions(caller: Caller, deps: HandlerDeps) {
   const store = deps.store as Store;
   const passkeys = await store.listPasskeys(caller.user.id, caller.rp.rpId);
   if (passkeys.length === 0) throw refuse(404, 'no_passkey', MESSAGES.noPasskey);
-  await enforceRateLimit(caller, deps);
   const options = await deps.webauthn.authenticationOptions({
     rpId: caller.rp.rpId,
     allow: passkeys.map((row) => ({ id: row.credential_id, transports: row.transports ?? undefined })),

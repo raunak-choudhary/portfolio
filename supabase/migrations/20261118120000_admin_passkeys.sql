@@ -99,6 +99,77 @@ create policy admin_deletes_own_passkeys
     and (select auth.jwt() ->> 'aal') = 'aal2'
   );
 
+-- Rate limit and insert in one step (at most 10 challenges per user in 15
+-- minutes). A per-user advisory lock serialises concurrent callers, so two
+-- requests can never both see nine and both insert. Returns the new
+-- challenge id, or null when the limit is reached. Rows older than a day are
+-- cleared on the way. The body lives in app_private; the public wrapper exists
+-- only because the API exposes the public schema, and both are executable by
+-- the service role alone (the admin-passkey function).
+create or replace function app_private.issue_passkey_challenge(
+  p_user_id uuid,
+  p_kind text,
+  p_challenge text,
+  p_rp_id text,
+  p_expires_at timestamptz,
+  p_window_start timestamptz,
+  p_max integer
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_id uuid;
+begin
+  perform pg_advisory_xact_lock(hashtextextended('admin_passkey_challenge:' || p_user_id::text, 0));
+
+  delete from public.admin_passkey_challenges
+  where user_id = p_user_id
+    and created_at < now() - interval '1 day';
+
+  insert into public.admin_passkey_challenges (user_id, kind, challenge, rp_id, expires_at)
+  select p_user_id, p_kind, p_challenge, p_rp_id, p_expires_at
+  where (
+    select count(*)
+    from public.admin_passkey_challenges c
+    where c.user_id = p_user_id
+      and c.created_at >= p_window_start
+  ) < p_max
+  returning id into v_id;
+
+  return v_id;
+end;
+$$;
+
+revoke all on function app_private.issue_passkey_challenge(uuid, text, text, text, timestamptz, timestamptz, integer)
+  from public, anon, authenticated;
+grant execute on function app_private.issue_passkey_challenge(uuid, text, text, text, timestamptz, timestamptz, integer)
+  to service_role;
+
+create or replace function public.issue_admin_passkey_challenge(
+  p_user_id uuid,
+  p_kind text,
+  p_challenge text,
+  p_rp_id text,
+  p_expires_at timestamptz,
+  p_window_start timestamptz,
+  p_max integer
+)
+returns uuid
+language sql
+security definer
+set search_path = ''
+as $$
+  select app_private.issue_passkey_challenge(p_user_id, p_kind, p_challenge, p_rp_id, p_expires_at, p_window_start, p_max);
+$$;
+
+revoke all on function public.issue_admin_passkey_challenge(uuid, text, text, text, timestamptz, timestamptz, integer)
+  from public, anon, authenticated;
+grant execute on function public.issue_admin_passkey_challenge(uuid, text, text, text, timestamptz, timestamptz, integer)
+  to service_role;
+
 grant select, insert, update, delete on table public.admin_passkeys to service_role;
 grant select, insert, update, delete on table public.admin_passkey_challenges to service_role;
 grant select, insert, update, delete on table public.admin_passkey_bridge to service_role;
