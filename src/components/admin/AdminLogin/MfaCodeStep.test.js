@@ -18,6 +18,12 @@ jest.mock('../../../services/authService', () => ({
   verifyTotpChallenge: jest.fn()
 }));
 const { listTotpFactors, verifyTotpChallenge } = jest.requireMock('../../../services/authService');
+jest.mock('../../../services/passkeyService', () => ({
+  isSupported: jest.fn(),
+  hasPasskey: jest.fn(),
+  signInWithPasskey: jest.fn()
+}));
+const passkeys = jest.requireMock('../../../services/passkeyService');
 
 const NOW = new Date('2026-11-18T02:14:00Z');
 const flush = () => act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
@@ -43,9 +49,19 @@ describe('MfaCodeStep (pre-flight steps 02 and 03)', () => {
     mockAuth = { refreshAssurance: jest.fn().mockResolvedValue({}), signOut: jest.fn(), user: { email: 'raunak@example.com' } };
     listTotpFactors.mockResolvedValue({ success: true, data: { verified: [{ id: 'f1', friendly_name: 'Phone' }], unverified: [] } });
     verifyTotpChallenge.mockResolvedValue({ success: true, data: { factorId: 'f1' } });
+    passkeys.isSupported.mockReturnValue(false);
+    passkeys.hasPasskey.mockResolvedValue(false);
+    passkeys.signInWithPasskey.mockResolvedValue({ success: true });
   });
 
   afterEach(() => { canvas.restore(); window.sessionStorage.clear(); });
+
+  const passkeyButton = (container) => Array.from(container.querySelectorAll('button'))
+    .find((b) => /passkey/i.test(b.textContent));
+  const offerPasskey = () => {
+    passkeys.isSupported.mockReturnValue(true);
+    passkeys.hasPasskey.mockResolvedValue(true);
+  };
 
   it('lights 02 Second key, checks 01 Identity with the masked address, and focuses the code', async () => {
     window.sessionStorage.setItem(GOOGLE_PENDING_KEY, '1');
@@ -108,6 +124,71 @@ describe('MfaCodeStep (pre-flight steps 02 and 03)', () => {
     expect(view.container.querySelectorAll('#admin-factor option').length).toBe(2);
     click(Array.from(view.container.querySelectorAll('button')).find((b) => b.textContent === 'Sign out'));
     expect(mockAuth.signOut).toHaveBeenCalled();
+    view.unmount();
+  });
+
+  it('offers no passkey when the browser lacks WebAuthn or none is registered', async () => {
+    let view = render();
+    await flush();
+    expect(passkeyButton(view.container)).toBeUndefined();
+    expect(passkeys.hasPasskey).not.toHaveBeenCalled();
+    view.unmount();
+    passkeys.isSupported.mockReturnValue(true);
+    view = render();
+    await flush();
+    expect(passkeys.hasPasskey).toHaveBeenCalled();
+    expect(passkeyButton(view.container)).toBeUndefined();
+    expect(view.container.querySelector('.preflight-primary').className).not.toContain('preflight-primary--quiet');
+    view.unmount();
+  });
+
+  it('leads with "Use passkey" and keeps the code field below it as the fallback', async () => {
+    offerPasskey();
+    const view = render();
+    await flush();
+    const button = passkeyButton(view.container);
+    expect(button.textContent).toBe('Use passkey');
+    expect(document.activeElement).toBe(button);
+    expect(view.container.querySelector('.preflight-divider').textContent).toBe('Or enter a code');
+    expect(view.container.querySelector('#admin-totp-code').disabled).toBe(false);
+    expect(view.container.querySelector('button[type="submit"]').className).toContain('preflight-primary--quiet');
+    view.unmount();
+  });
+
+  it('signs in with the passkey, holds the route and plays the same launch', async () => {
+    offerPasskey();
+    const view = render();
+    await flush();
+    click(passkeyButton(view.container));
+    await flush();
+    expect(passkeys.signInWithPasskey).toHaveBeenCalledTimes(1);
+    expect(verifyTotpChallenge).not.toHaveBeenCalled();
+    expect(stepStates(view.container)).toEqual(['identity:done', 'second:done', 'launch:current']);
+    expect(view.container.querySelector('[data-step="second"] .preflight-step__summary').textContent).toBe('Passkey accepted');
+    expect(onHoldChange.mock.calls).toEqual([[true]]);
+    await wait(LAUNCH_HOLD_MS + 20);
+    expect(mockAuth.refreshAssurance).toHaveBeenCalledTimes(1);
+    expect(onHoldChange.mock.calls).toEqual([[true], [false]]);
+    view.unmount();
+  });
+
+  it('shows the sentence for a closed prompt and leaves the code field ready', async () => {
+    offerPasskey();
+    passkeys.signInWithPasskey.mockResolvedValue({ success: false, error: { code: 'cancelled', message: 'The passkey prompt was closed.' } });
+    const view = render();
+    await flush();
+    click(passkeyButton(view.container));
+    await flush();
+    expect(view.container.querySelector('[role="alert"]').textContent).toBe('The passkey prompt was closed.');
+    expect(stepStates(view.container)).toEqual(['identity:done', 'second:current', 'launch:pending']);
+    expect(onHoldChange.mock.calls).toEqual([[true], [false]]);
+    expect(mockAuth.refreshAssurance).not.toHaveBeenCalled();
+    const code = view.container.querySelector('#admin-totp-code');
+    expect(code.disabled).toBe(false);
+    setInputValue(code, '123456');
+    await submit(code.form);
+    await flush();
+    expect(verifyTotpChallenge).toHaveBeenCalledWith('f1', '123456');
     view.unmount();
   });
 });
