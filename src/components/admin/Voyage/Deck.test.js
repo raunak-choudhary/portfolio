@@ -42,7 +42,18 @@ describe('Deck', () => {
     expect(empty.container.textContent).toContain('No projects yet');
     empty.unmount();
     const failed = mount(<Deck schema={projectsSchema} records={[]} loading={false} error="The list could not be loaded." onOpen={() => {}} onCreate={() => {}} onReorder={() => {}} />);
-    expect(failed.container.querySelector('.deck__error').textContent).toBe('The list could not be loaded.');
+    expect(failed.container.querySelector('.deck__error').textContent).toBe('The list could not be loaded. Check the connection.');   // no retry handler, so no retry offered
     failed.unmount();
+  });
+
+  it('after a failed load shows the error with a retry, no count and no new card to press', () => {
+    const onRetry = jest.fn();
+    const view = mount(<Deck schema={projectsSchema} records={[]} loading={false} error="The list could not be loaded." onRetry={onRetry} onOpen={() => {}} onCreate={() => {}} onReorder={() => {}} />);
+    expect(view.container.querySelector('.deck__count').textContent).toBe('Not loaded');
+    expect(view.container.querySelector('.card--new').disabled).toBe(true);
+    expect(view.container.querySelector('.deck__empty')).toBeNull();
+    click([...view.container.querySelectorAll('.deck__error button')].find((b) => b.textContent.trim() === 'Try again'));
+    expect(onRetry).toHaveBeenCalledTimes(1);
+    view.unmount();
   });
 });
