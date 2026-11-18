@@ -1,5 +1,7 @@
+import { supabase } from './supabaseClient';
 import {
   collectReferencedMediaPaths,
+  createMediaSignedUrl,
   createMediaLibraryItem,
   extractStoragePathFromPublicUrl,
   formatFileSize,
@@ -148,5 +150,16 @@ describe('mediaLibraryService helpers', () => {
     expect(formatFileSize(0)).toBe('0 B');
     expect(formatFileSize(1536)).toBe('1.5 KB');
     expect(formatFileSize(1048576)).toBe('1 MB');
+  });
+
+  it('signs one private file on demand and surfaces a refusal', async () => {
+    const createSignedUrl = jest.fn()
+      .mockResolvedValueOnce({ data: { signedUrl: 'https://example.com/fresh' }, error: null })
+      .mockResolvedValueOnce({ data: null, error: new Error('Object not found') });
+    supabase.storage.from.mockReturnValue({ createSignedUrl });
+    await expect(createMediaSignedUrl('contact-attachments', 'contact-attachments/cv.pdf')).resolves.toBe('https://example.com/fresh');
+    expect(supabase.storage.from).toHaveBeenCalledWith('contact-attachments');
+    expect(createSignedUrl).toHaveBeenCalledWith('contact-attachments/cv.pdf', 300);
+    await expect(createMediaSignedUrl('contact-attachments', 'gone.pdf')).rejects.toThrow('Object not found');
   });
 });
