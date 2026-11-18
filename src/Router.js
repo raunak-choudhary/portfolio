@@ -25,7 +25,8 @@ const AdminLogin = lazy(() => import('./components/admin/AdminLogin/AdminLogin')
 const MfaCodeStep = lazy(() => import('./components/admin/AdminLogin/MfaCodeStep'));
 // The dashboard and the sign-out film carry the sky renderer, the 3D field and their
 // libraries; they load as their own chunk so the public site's bundle does not pay for them.
-const AdminWelcome = lazy(() => import('./components/admin/AdminWelcome/AdminWelcome'));
+const loadAdminWelcome = () => import('./components/admin/AdminWelcome/AdminWelcome');
+const AdminWelcome = lazy(loadAdminWelcome);
 const AdminSignOut = lazy(() => import('./components/admin/AdminSignOut/AdminSignOut'));
 
 /** Shown while an admin chunk loads; black like the admin screens so there is no white flash. */
@@ -41,13 +42,22 @@ const isAdminPath = (pathname) => /^\/admin(login|dashboard|signout)(\/|$)/.test
  * the welcome animation. With no authenticator enrolled yet, the dashboard
  * opens on the Security screen alone until the first one is confirmed.
  */
-const ProtectedAdminRoute = ({ view = 'classic' }) => {
+export const ProtectedAdminRoute = ({ view = 'classic' }) => {
   const { assurance, isAuthenticated, isLoading, sessionChecked } = useAuthContext();
   // The address this route was first reached with, read once. <Navigate> runs
   // again whenever this component re-renders, and by the second run the
   // window is already on /adminlogin with the query gone; one stable object
   // keeps the redirect's error (and avoids a second navigation).
   const [returnState] = useState(() => ({ returnUrl: { search: window.location.search, hash: window.location.hash } }));
+  // While the code step verifies and plays step 03, it holds the route. A
+  // verified code fires an auth event that lifts the session to level 2 at
+  // once; without the hold the route would swap to the dashboard mid-launch
+  // and Suspense would hide the screen while that chunk loads.
+  const [secondFactorHeld, setSecondFactorHeld] = useState(false);
+  const holdSecondFactor = (held) => {
+    setSecondFactorHeld(held);
+    if (held) loadAdminWelcome().catch(() => {}); // warm the dashboard chunk during the hold
+  };
 
   if (isLoading || !sessionChecked || (isAuthenticated && !assurance.checked)) {
     // Dark like the login sky: a Google return waits here for its code
@@ -62,10 +72,10 @@ const ProtectedAdminRoute = ({ view = 'classic' }) => {
     return <Navigate to="/adminlogin" replace state={returnState} />;
   }
 
-  if (assurance.needsSecondFactor) {
+  if (assurance.needsSecondFactor || secondFactorHeld) {
     return (
       <Suspense fallback={<AdminChunkFallback />}>
-        <MfaCodeStep />
+        <MfaCodeStep onHoldChange={holdSecondFactor} />
       </Suspense>
     );
   }
