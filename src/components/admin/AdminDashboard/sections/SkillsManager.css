@@ -1011,6 +1011,8 @@
   font-weight: 700;
   color: var(--skillmgr-text-primary);
   margin: 0;
+  line-height: 1.3;
+  padding-block: 0.08em;
   display: flex; 
   align-items: center;
   gap: var(--skillmgr-space-md);
