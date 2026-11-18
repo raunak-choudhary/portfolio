@@ -5,14 +5,21 @@
 // and cannot be selected or followed). Driven by the same schema as the form,
 // so every manager gets it for free: images as a strip, tags as chips, links
 // as links that open in a new tab, long text as paragraphs, toggles as Yes or
-// No, select values by their label, and anything empty as a quiet "Not set".
+// No, select values by their label, dates as "12 Nov 2026", files by name,
+// pairs as a two-column list, and anything empty as a quiet "Not set".
+// Every value wraps (`overflow-wrap: anywhere`) so a long URL or word never
+// spills out of its column.
 
 import React from 'react';
-import { ExternalLink } from 'lucide-react';
-import { fieldsForGroup } from './managers/schemaModel';
+import { ExternalLink, FileText, Star } from 'lucide-react';
+import { fieldsForGroup, fileNameFromUrl, isFileUrl, isIsoDate, toPairs } from './managers/schemaModel';
 
 /** Kinds that read better across the full width of the dialog. */
-export const WIDE_KINDS = new Set(['textarea', 'tags', 'urls', 'images']);
+export const WIDE_KINDS = new Set(['textarea', 'tags', 'urls', 'images', 'files', 'pairs']);
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+/** "2026-11-18" as "18 Nov 2026", read from the parts so no time zone can move it a day. */
+export const readableDate = (iso) => { const v = String(iso).slice(0, 10); if (!isIsoDate(v)) return String(iso); const [y, m, d] = v.split('-'); return `${Number(d)} ${MONTHS[Number(m) - 1]} ${y}`; };
 
 const NotSet = () => <span className="record-view__unset">Not set</span>;
 
@@ -20,6 +27,14 @@ const isEmpty = (value) => value === null || value === undefined || (typeof valu
 
 /** Only http(s) links become anchors; anything else stays text so a stray `javascript:` value can never run. */
 const safeHref = (url) => (/^https?:\/\//i.test(String(url).trim()) ? String(url).trim() : null);
+
+function FileOut({ url }) {
+  const href = safeHref(url);
+  const name = fileNameFromUrl(url);
+  return href
+    ? <a className="record-view__link" href={href} target="_blank" rel="noopener noreferrer"><FileText size={13} aria-hidden="true" /><span>{name}</span><ExternalLink size={12} aria-hidden="true" /></a>
+    : <span>{name}</span>;
+}
 
 function LinkOut({ url }) {
   const href = safeHref(url);
@@ -30,6 +45,11 @@ function LinkOut({ url }) {
 /** The rendered value of one field. */
 export function ReadValue({ field, value }) {
   if (field.kind === 'toggle') return <span>{value ? 'Yes' : 'No'}</span>;
+  if (field.kind === 'pairs') {
+    const pairs = toPairs(value);
+    if (!pairs.length) return <NotSet />;
+    return <dl className="record-view__pairs">{pairs.map((p, i) => <div key={`${p.key}-${i}`}><dt>{p.key}</dt><dd>{p.value}</dd></div>)}</dl>;
+  }
   if (isEmpty(value)) return <NotSet />;
   switch (field.kind) {
     case 'textarea':
@@ -46,6 +66,29 @@ export function ReadValue({ field, value }) {
     }
     case 'images':
       return <ImageStrip urls={value} />;
+    case 'image': {
+      const href = safeHref(value);
+      return href ? <a className="record-view__image" href={href} target="_blank" rel="noopener noreferrer" aria-label={`Open ${field.label.toLowerCase()} in a new tab`}><img src={href} alt="" loading="lazy" /></a> : <span>{String(value)}</span>;
+    }
+    case 'file':
+      return <FileOut url={value} />;
+    case 'files': {
+      const files = value.filter(isFileUrl), texts = value.filter((v) => !isFileUrl(v));
+      return (
+        <div className="record-view__files">
+          {texts.length ? <ul className="record-view__chips">{texts.map((t, i) => <li key={`${t}-${i}`}>{t}</li>)}</ul> : null}
+          {files.length ? <ul className="record-view__links">{files.map((u, i) => <li key={`${u}-${i}`}><FileOut url={u} /></li>)}</ul> : null}
+        </div>
+      );
+    }
+    case 'link':
+      return /^https?:\/\//i.test(String(value)) ? <LinkOut url={value} /> : <code className="record-view__code">{String(value)}</code>;
+    case 'date':
+      return <span>{readableDate(value)}</span>;
+    case 'rating': {
+      const max = field.max || 5;
+      return <span className="record-view__rating" aria-label={`${value} of ${max}`}>{Array.from({ length: max }, (_, i) => <Star key={i} size={14} aria-hidden="true" className={i < value ? 'is-on' : ''} />)}<span aria-hidden="true">{value}/{max}</span></span>;
+    }
     default:
       return <span>{String(value)}</span>;
   }
@@ -86,7 +129,7 @@ export default function RecordView({ schema, row }) {
               {fields.map((field) => (
                 <div key={field.key} className={`record-view__item${WIDE_KINDS.has(field.kind) ? ' is-wide' : ''}`}>
                   <dt>{field.label}</dt>
-                  <dd><ReadValue field={field} value={row[field.key]} /></dd>
+                  <dd><ReadValue field={field} value={field.kind === 'derived' && (row[field.key] === undefined || row[field.key] === null) ? field.compute(row) : row[field.key]} /></dd>
                 </div>
               ))}
             </dl>

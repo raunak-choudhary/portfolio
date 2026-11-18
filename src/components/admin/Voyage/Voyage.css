@@ -279,11 +279,11 @@
 .card__media { background: linear-gradient(135deg, rgba(124, 199, 255, .18), rgba(255, 255, 255, .04) 60%, rgba(124, 199, 255, .10)); overflow: hidden; }
 .card__media img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .card__media--empty { background-image: radial-gradient(circle at 20% 30%, rgba(255,255,255,.55) 0 1px, transparent 2px), radial-gradient(circle at 70% 60%, rgba(255,255,255,.5) 0 1px, transparent 2px), radial-gradient(circle at 45% 80%, rgba(255,255,255,.4) 0 1px, transparent 2px), radial-gradient(circle at 85% 20%, rgba(255,255,255,.45) 0 1px, transparent 2px), linear-gradient(135deg, rgba(124, 199, 255, .14), rgba(255, 255, 255, .03)); }
-.card__body { padding: 12px 14px 14px; display: grid; gap: 6px; align-content: start; }
-.card__body h4 { margin: 0; font-size: 15px; font-weight: 600; line-height: 1.25; }
-.card__sub { margin: 0; color: var(--voyage-muted); font-size: 12px; }
+.card__body { padding: 12px 14px 14px; display: grid; gap: 6px; align-content: start; min-width: 0; }
+.card__body h4 { margin: 0; font-size: 15px; font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
+.card__sub { margin: 0; color: var(--voyage-muted); font-size: 12px; overflow-wrap: anywhere; }
 .card__chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.card__chips span { font-size: 11px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--voyage-line); color: var(--voyage-muted); }
+.card__chips span { font-size: 11px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--voyage-line); color: var(--voyage-muted); max-width: 100%; overflow-wrap: anywhere; }
 .card__flags { position: absolute; top: 8px; right: 8px; display: flex; gap: 4px; }
 .card__flags span { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: rgba(4, 7, 15, .55); color: var(--voyage-accent); }
 .card--new { display: grid; place-content: center; justify-items: center; gap: 8px; min-height: 190px; border: 1px dashed var(--voyage-line); color: var(--voyage-muted); background: var(--voyage-panel); cursor: pointer; font: inherit; font-family: var(--voyage-cond); letter-spacing: .14em; text-transform: uppercase; font-size: 12px; }
@@ -386,7 +386,7 @@
 
 /* the read view */
 .record-view { display: grid; gap: 4px; padding-top: 12px; }
-.record-view__strip { list-style: none; margin: 0; padding: 2px 2px 8px; display: flex; gap: 8px; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, .28) transparent; }
+.record-view__strip { list-style: none; margin: 0; padding: 2px 2px 8px; display: flex; gap: 8px; overflow-x: auto; scroll-snap-type: x proximity; }
 .record-view__strip li { flex: none; scroll-snap-align: start; }
 .record-view__strip a { display: block; border-radius: 10px; }
 .record-view__strip img { display: block; height: 116px; width: auto; max-width: 260px; object-fit: cover; border-radius: 10px; border: 1px solid var(--voyage-line); background: var(--voyage-soft); }
@@ -448,7 +448,7 @@
 .switch.is-on i { transform: translateX(18px); background: var(--voyage-accent); }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .chip { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; padding: 4px 6px 4px 10px; border-radius: 999px; border: 1px solid var(--voyage-line); background: rgba(255, 255, 255, .05); font-size: 12px; }
-.chip__text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 260px; }
+.chip__text { min-width: 0; overflow-wrap: anywhere; }
 .chip__remove { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; border: 0; background: rgba(255, 255, 255, .08); color: inherit; cursor: pointer; padding: 0; }
 .chip__remove:hover { background: var(--voyage-bad); color: #fff; }
 .chips__add { display: flex; gap: 6px; flex: 1 1 220px; }
@@ -476,3 +476,107 @@
 @keyframes toast-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
 @media (max-width: 767px) { .voyage-toast-host { bottom: calc(64px + env(safe-area-inset-bottom)); } }
 @media (prefers-reduced-motion: reduce) { .deck, .card, .card.is-new, .record-dialog, .record-backdrop, .record-dialog__close, .dialog-backdrop, .voyage-toast { animation: none; transition: none; } }
+
+/* ---- scrolling inside bounded boxes ----
+   Owner's rule: content either wraps or scrolls inside its box with a
+   visible scrollbar; nothing is clipped and nothing spills. Every bounded
+   scroller in the voyage shares this one thin, visible bar. */
+.record-view__strip, .tile__queue, .tile__feed, .tile__bars, .pairs__list {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, .34) transparent;
+}
+.record-view__strip::-webkit-scrollbar, .tile__queue::-webkit-scrollbar, .tile__feed::-webkit-scrollbar, .tile__bars::-webkit-scrollbar, .pairs__list::-webkit-scrollbar { width: 10px; height: 10px; }
+.record-view__strip::-webkit-scrollbar-thumb, .tile__queue::-webkit-scrollbar-thumb, .tile__feed::-webkit-scrollbar-thumb, .tile__bars::-webkit-scrollbar-thumb, .pairs__list::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, .28); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
+
+/* ---- grouped and compact decks ---- */
+.deck__grid[hidden] { display: none; }
+.deck__group { display: grid; gap: 10px; margin-top: 8px; min-width: 0; }
+.deck__group-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; border-bottom: 1px solid var(--voyage-line); padding-bottom: 6px; min-width: 0; }
+.deck__group-toggle { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 auto; padding: 4px 0; border: 0; background: none; color: var(--voyage-fg); cursor: pointer; text-align: left; font: inherit; }
+.deck__group-toggle svg { flex: none; transition: transform .2s; }
+.deck__group-toggle svg.is-closed { transform: rotate(-90deg); }
+.deck__group-toggle h3 { margin: 0; min-width: 0; overflow-wrap: anywhere; font-family: var(--voyage-cond); font-weight: 600; font-size: 15px; letter-spacing: .14em; text-transform: uppercase; }
+.deck__group-toggle:focus-visible { outline: 2px solid var(--voyage-accent); outline-offset: 2px; border-radius: 6px; }
+.deck__group-count { flex: none; font-family: var(--voyage-cond); font-size: 12px; color: var(--voyage-muted); padding: 1px 8px; border-radius: 999px; border: 1px solid var(--voyage-line); }
+.deck__group-tools { display: flex; gap: 4px; flex: none; }
+.card--compact, .card--compact .card__open { min-height: 92px; }
+.card--compact .card__open { grid-template-rows: none; grid-template-columns: auto minmax(0, 1fr); align-items: start; }
+.card--compact .card__open > .card__body:only-child, .card--compact .card__body:first-child { grid-column: 1 / -1; }
+.card--compact .card__body { padding: 12px 40px 12px 14px; }
+.card__icon { width: 40px; height: 40px; margin: 12px 0 0 12px; border-radius: 8px; overflow: hidden; background: var(--voyage-soft); }
+.card__icon img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.card--new.card--compact { min-height: 92px; }
+.card--skeleton.card--compact { min-height: 92px; }
+@media (min-width: 768px) { .deck__grid:has(> .card--compact) { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); } }
+
+/* ---- singleton chapters (hero, about): the record as a read panel ---- */
+.singleton { padding: 16px; display: grid; gap: 8px; min-width: 0; opacity: 0; transform: translateY(30px); transition: opacity .6s .1s, transform .7s .1s; }
+.voyage-chapter.is-live .singleton { opacity: 1; transform: none; }
+.singleton__head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px; min-width: 0; }
+.singleton__titles { min-width: 0; flex: 1 1 240px; }
+.singleton__title { margin: 0; font-family: var(--voyage-cond); font-weight: 600; font-size: 22px; line-height: 1.15; letter-spacing: .02em; overflow-wrap: anywhere; }
+.singleton__sub { margin: 6px 0 0; color: var(--voyage-muted); font-size: 14px; overflow-wrap: anywhere; }
+.singleton__hidden { margin: 8px 0 0; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--voyage-warn); }
+.singleton__note { margin: 8px 0 0; font-size: 12px; color: var(--voyage-muted); }
+.singleton__empty { display: grid; gap: 12px; justify-items: start; }
+.singleton__empty p { margin: 0; color: var(--voyage-muted); font-size: 14px; }
+.singleton__skeleton { height: 220px; border-radius: 12px; background: linear-gradient(100deg, var(--voyage-soft) 30%, rgba(255,255,255,.1) 50%, var(--voyage-soft) 70%); background-size: 200% 100%; animation: card-shimmer 1.4s linear infinite; }
+.singleton .voyage-bar__button span { display: inline; }
+.singleton .record-view__item dd, .singleton .record-view__prose p { color: var(--voyage-fg); }
+@media (min-width: 768px) { .singleton { padding: 22px 26px; } .singleton .record-view__list { grid-template-columns: repeat(2, minmax(0, 1fr)); } .singleton .record-view__item.is-wide { grid-column: 1 / -1; } }
+@media (prefers-reduced-motion: reduce) { .singleton, .singleton__skeleton { transition: none; animation: none; } }
+
+/* ---- new field kinds ---- */
+.field input[type="date"] { width: 100%; box-sizing: border-box; padding: 8px 11px; border-radius: 8px; border: 1px solid var(--voyage-line); background: rgba(255, 255, 255, .06); color: var(--voyage-fg); font: inherit; font-size: 14px; outline: 0; color-scheme: dark; }
+.field input[type="date"]:focus { border-color: var(--voyage-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--voyage-accent) 25%, transparent); }
+.field.is-disabled input { opacity: .5; cursor: not-allowed; }
+.field__derived { display: block; padding: 9px 11px; border-radius: 8px; border: 1px dashed var(--voyage-line); color: var(--voyage-muted); font-variant-numeric: tabular-nums; }
+.chip--edit { padding: 2px 4px 2px 2px; flex: 1 1 100%; }
+.chip--edit input { flex: 1; min-width: 0; padding: 6px 10px; border: 0; border-radius: 999px; background: transparent; color: var(--voyage-fg); font: inherit; font-size: 13px; outline: 0; }
+.chip--edit input:focus { background: rgba(255, 255, 255, .06); }
+.upload { display: grid; gap: 8px; min-width: 0; }
+.upload__current { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; min-width: 0; }
+.upload__current--image img { width: 96px; height: 96px; object-fit: cover; border-radius: 10px; border: 1px solid var(--voyage-line); background: var(--voyage-soft); flex: none; }
+.upload__actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.picker { position: relative; cursor: pointer; }
+.picker input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
+.picker.is-busy { opacity: .6; }
+.picker:focus-within { outline: 2px solid var(--voyage-accent); outline-offset: 2px; }
+.file-link { display: inline-flex; align-items: center; gap: 6px; min-width: 0; max-width: 100%; color: var(--voyage-accent); font-size: 13px; text-decoration: underline; text-underline-offset: 3px; }
+.file-link span { min-width: 0; overflow-wrap: anywhere; }
+.file-link svg { flex: none; }
+.file-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.file-list li { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--voyage-line); background: rgba(255, 255, 255, .04); }
+.file-list__text { min-width: 0; font-size: 13px; overflow-wrap: anywhere; }
+.pairs { display: grid; gap: 8px; min-width: 0; }
+.pairs__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.pairs__row { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "key tools" "value value"; gap: 6px; padding: 8px; border-radius: 10px; border: 1px solid var(--voyage-line); background: rgba(255, 255, 255, .03); min-width: 0; }
+.pairs__key { grid-area: key; }
+.pairs__value { grid-area: value; }
+.pairs__tools { grid-area: tools; display: flex; gap: 4px; }
+.pairs__row input { width: 100%; min-width: 0; box-sizing: border-box; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--voyage-line); background: rgba(255, 255, 255, .06); color: var(--voyage-fg); font: inherit; font-size: 14px; outline: 0; }
+.pairs__row input:focus { border-color: var(--voyage-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--voyage-accent) 25%, transparent); }
+.field.has-error .pairs__row input { border-color: var(--voyage-bad); }
+.pairs__tool { display: inline-grid; place-items: center; width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--voyage-line); background: var(--voyage-soft); color: var(--voyage-fg); cursor: pointer; padding: 0; }
+.pairs__tool:hover:not(:disabled) { border-color: var(--voyage-accent); }
+.pairs__tool:disabled { opacity: .35; cursor: default; }
+@media (min-width: 640px) { .pairs__row { grid-template-columns: minmax(0, 2fr) minmax(0, 3fr) auto; grid-template-areas: "key value tools"; } }
+.rating { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.rating__star { display: inline-grid; place-items: center; width: 36px; height: 36px; border-radius: 8px; border: 1px solid transparent; background: none; color: var(--voyage-muted); cursor: pointer; padding: 0; }
+.rating__star.is-on { color: var(--voyage-warn); }
+.rating__star.is-on svg { fill: currentColor; }
+.rating__star:hover { border-color: var(--voyage-line); }
+.record-view__pairs { margin: 0; display: grid; gap: 0; border: 1px solid var(--voyage-line); border-radius: 10px; overflow: hidden; }
+.record-view__pairs > div { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 12px; padding: 8px 12px; min-width: 0; }
+.record-view__pairs > div + div { border-top: 1px solid var(--voyage-line); }
+.record-view__pairs dt { margin: 0; font-size: 13px; color: var(--voyage-muted); overflow-wrap: anywhere; }
+.record-view__pairs dd { margin: 0; font-size: 14px; overflow-wrap: anywhere; }
+.record-view__image { display: inline-block; border-radius: 10px; }
+.record-view__image img { display: block; width: 120px; height: 120px; object-fit: cover; border-radius: 10px; border: 1px solid var(--voyage-line); background: var(--voyage-soft); }
+.record-view__code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; padding: 2px 6px; border-radius: 6px; background: var(--voyage-soft); overflow-wrap: anywhere; }
+.record-view__files { display: grid; gap: 8px; }
+.record-view__rating { display: inline-flex; align-items: center; gap: 2px; color: var(--voyage-muted); }
+.record-view__rating svg.is-on { color: var(--voyage-warn); fill: currentColor; }
+.record-view__rating > span { margin-left: 6px; font-size: 13px; }
+.record-view__chips li { max-width: 100%; overflow-wrap: anywhere; }
+.record-view__link span { min-width: 0; overflow-wrap: anywhere; }
