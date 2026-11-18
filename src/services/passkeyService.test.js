@@ -6,6 +6,7 @@
 import {
   PASSKEY_FUNCTION,
   PASSKEY_MESSAGES,
+  getPasskeyStatus,
   hasPasskey,
   isSupported,
   listPasskeys,
@@ -63,6 +64,24 @@ describe('support and availability', () => {
     await expect(hasPasskey()).resolves.toBe(false);
   });
 
+  it('reports the bridge factor id and passkey count, and unknown on any failure', async () => {
+    answer({ status: ok({ available: true, bridgeFactorId: 'bridge-1', passkeyCount: 2 }) });
+    await expect(getPasskeyStatus()).resolves.toEqual({ known: true, available: true, bridgeFactorId: 'bridge-1', passkeyCount: 2 });
+    answer({ status: ok({ available: false, bridgeFactorId: null, passkeyCount: 0 }) });
+    await expect(getPasskeyStatus()).resolves.toEqual({ known: true, available: false, bridgeFactorId: null, passkeyCount: 0 });
+    // An older function without the fields: the id stays unknown.
+    answer({ status: ok({ available: false }) });
+    expect((await getPasskeyStatus()).bridgeFactorId).toBeUndefined();
+    answer({ status: { data: null, error: httpError(403, { code: 'origin_not_allowed' }) } });
+    await expect(getPasskeyStatus()).resolves.toEqual({ known: false, available: false, bridgeFactorId: undefined, passkeyCount: 0 });
+  });
+
+  it('still reads the status without WebAuthn, but never offers a passkey there', async () => {
+    delete window.PublicKeyCredential;
+    answer({ status: ok({ available: true, bridgeFactorId: 'bridge-1', passkeyCount: 1 }) });
+    await expect(getPasskeyStatus()).resolves.toMatchObject({ known: true, available: false, bridgeFactorId: 'bridge-1' });
+  });
+
   it('does not call the function when the browser has no WebAuthn', async () => {
     delete window.PublicKeyCredential;
     await expect(hasPasskey()).resolves.toBe(false);
@@ -97,6 +116,7 @@ describe('signInWithPasskey', () => {
     [httpError(404), 'not_deployed', PASSKEY_MESSAGES.notSwitchedOn],
     [httpError(503, { code: 'not_configured', error: 'server text' }), 'not_configured', PASSKEY_MESSAGES.notSwitchedOn],
     [httpError(429, { code: 'rate_limited' }), 'rate_limited', PASSKEY_MESSAGES.rateLimited],
+    [httpError(403, { code: 'origin_not_allowed' }), 'origin_not_allowed', PASSKEY_MESSAGES.notSwitchedOn],
     [httpError(401, { code: 'unauthorized' }), 'unauthorized', PASSKEY_MESSAGES.sessionExpired],
     [httpError(404, { code: 'no_passkey' }), 'no_passkey', PASSKEY_MESSAGES.noPasskey],
     [httpError(502, { code: 'bridge_mfa_ip_address_mismatch' }), 'bridge_mfa_ip_address_mismatch', PASSKEY_MESSAGES.tryAgain],
@@ -107,6 +127,10 @@ describe('signInWithPasskey', () => {
     const result = await signInWithPasskey();
     expect(result).toEqual({ success: false, error: { code, message } });
     expect(browser.startAuthentication).not.toHaveBeenCalled();
+  });
+
+  it('points to the typed code when passkey attempts are rate limited', () => {
+    expect(PASSKEY_MESSAGES.rateLimited).toMatch(/enter a code/i);
   });
 
   it('reports a session that could not be adopted as expired', async () => {
