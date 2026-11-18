@@ -366,9 +366,13 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: 4px 16px 24px;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, .32) transparent;
   scrollbar-gutter: stable;
+}
+/* Standard scrollbar properties only where the WebKit ones are missing
+   (Firefox): in Chrome and Safari they would override the styled bars below
+   and fall back to macOS overlay bars that hide until you scroll. */
+@supports not selector(::-webkit-scrollbar) {
+  .record-dialog__body { scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, .32) transparent; }
 }
 .record-dialog__body::-webkit-scrollbar { width: 12px; }
 .record-dialog__body::-webkit-scrollbar-track { background: transparent; }
@@ -493,9 +497,11 @@
    Owner's rule: content either wraps or scrolls inside its box with a
    visible scrollbar; nothing is clipped and nothing spills. Every bounded
    scroller in the voyage shares this one thin, visible bar. */
-.record-view__strip, .tile__queue, .tile__feed, .tile__bars, .pairs__list {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, .34) transparent;
+@supports not selector(::-webkit-scrollbar) {
+  .record-view__strip, .tile__queue, .tile__feed, .tile__bars, .pairs__list {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, .34) transparent;
+  }
 }
 .record-view__strip::-webkit-scrollbar, .tile__queue::-webkit-scrollbar, .tile__feed::-webkit-scrollbar, .tile__bars::-webkit-scrollbar, .pairs__list::-webkit-scrollbar { width: 10px; height: 10px; }
 .record-view__strip::-webkit-scrollbar-thumb, .tile__queue::-webkit-scrollbar-thumb, .tile__feed::-webkit-scrollbar-thumb, .tile__bars::-webkit-scrollbar-thumb, .pairs__list::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, .28); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
