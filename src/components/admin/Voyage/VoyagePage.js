@@ -34,6 +34,9 @@ import './Voyage.css';
 /** Names of the constellations, from figures.json, for the rail and the palette. */
 const namesFrom = (figures) => Object.fromEntries((figures || []).map((f) => [f.id, f.name]));
 
+/** Set on <html> while the voyage is mounted, so its scrollbars can be styled apart from the public site's. */
+export const VOYAGE_ROOT_CLASS = 'voyage-root';
+
 function VoyageView({ requireSecurityEnrollment }) {
   const navigate = useNavigate();
   const { resolvedTheme, effectiveMotion } = useSkySettings();
@@ -84,6 +87,16 @@ function VoyageView({ requireSecurityEnrollment }) {
       observer?.disconnect();
       roots.forEach((el, i) => { if (previous[i][0]) el.style.setProperty('transform', previous[i][0], previous[i][1]); else el.style.removeProperty('transform'); });
     };
+  }, []);
+
+  // globals.css paints every scrollbar with the public site's cyan-to-purple
+  // gradient, and an unscoped ::-webkit-scrollbar also reaches the document
+  // and the phone star rail. A class on <html> while the voyage is mounted
+  // lets Voyage.css give them the voyage's own quiet bars; the public site,
+  // which never has the class, keeps its gradient.
+  useEffect(() => {
+    document.documentElement.classList.add(VOYAGE_ROOT_CLASS);
+    return () => document.documentElement.classList.remove(VOYAGE_ROOT_CLASS);
   }, []);
 
   // ---- the field ----

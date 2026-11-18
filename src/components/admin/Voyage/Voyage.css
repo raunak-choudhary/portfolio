@@ -508,6 +508,24 @@
 .record-view__strip::-webkit-scrollbar-track, .tile__queue::-webkit-scrollbar-track, .tile__feed::-webkit-scrollbar-track, .tile__bars::-webkit-scrollbar-track, .pairs__list::-webkit-scrollbar-track { background: transparent; }
 .record-view__strip::-webkit-scrollbar-thumb, .tile__queue::-webkit-scrollbar-thumb, .tile__feed::-webkit-scrollbar-thumb, .tile__bars::-webkit-scrollbar-thumb, .pairs__list::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, .28); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
 
+/* The document and the phone star rail. globals.css gives every scrollbar
+   the public site's cyan-to-purple gradient through an unscoped
+   ::-webkit-scrollbar; on the voyage that read as a progress bar along the
+   bottom (the rail's horizontal bar) and a coloured strip on the right edge
+   (the page's own bar). VoyagePage puts .voyage-root on <html> while it is
+   mounted, so these rules win there and nowhere else. */
+@supports not selector(::-webkit-scrollbar) {
+  html.voyage-root, .voyage-rail { scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, .3) transparent; }
+}
+html.voyage-root::-webkit-scrollbar, html.voyage-root body::-webkit-scrollbar { width: 10px; height: 10px; }
+html.voyage-root::-webkit-scrollbar-track, html.voyage-root body::-webkit-scrollbar-track { background: #04070f; }
+html.voyage-root[data-theme="light"]::-webkit-scrollbar-track, html.voyage-root[data-theme="light"] body::-webkit-scrollbar-track { background: #120c08; }
+html.voyage-root::-webkit-scrollbar-thumb, html.voyage-root body::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, .26); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
+html.voyage-root::-webkit-scrollbar-thumb:hover, html.voyage-root body::-webkit-scrollbar-thumb:hover { background-color: rgba(255, 255, 255, .4); }
+.voyage-rail::-webkit-scrollbar { height: 4px; }
+.voyage-rail::-webkit-scrollbar-track { background: transparent; }
+.voyage-rail::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, .3); border-radius: 999px; }
+
 /* ---- grouped and compact decks ---- */
 .deck__grid[hidden] { display: none; }
 .deck__group { display: grid; gap: 10px; margin-top: 8px; min-width: 0; }
