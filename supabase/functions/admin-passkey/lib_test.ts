@@ -1,5 +1,7 @@
 import { assert, assertEquals, assertFalse, assertRejects, assertThrows } from 'jsr:@std/assert@1';
 import {
+  BRIDGE_FACTOR_NAME,
+  bridgeFactorName,
   challengeProblem,
   cleanDeviceName,
   fromBase32,
@@ -161,4 +163,13 @@ Deno.test('device names are trimmed and limited', () => {
   assertEquals(cleanDeviceName(42), null);
   assert(isUuid(USER));
   assertFalse(isUuid('1; drop table'));
+});
+
+Deno.test('each bridge factor name is the reserved prefix plus a random suffix', () => {
+  const names = new Set(Array.from({ length: 20 }, () => bridgeFactorName()));
+  assertEquals(names.size, 20);
+  for (const name of names) {
+    assert(name.startsWith(`${BRIDGE_FACTOR_NAME} `));
+    assert(/^Passkey bridge [0-9a-f]{8}$/.test(name));
+  }
 });
