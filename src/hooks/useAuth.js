@@ -1,6 +1,6 @@
 // src/hooks/useAuth.js - Supabase Auth based admin state
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   getAssuranceState,
   requestAdminLoginOtp,
@@ -33,6 +33,7 @@ const initialAuthState = {
 
 export const useAuth = () => {
   const [authState, setAuthState] = useState(initialAuthState);
+  const checkGeneration = useRef(0);
   const [loadingStates, setLoadingStates] = useState({
     signIn: false,
     signOut: false,
@@ -65,9 +66,15 @@ export const useAuth = () => {
   }, []);
 
   const refreshSession = useCallback(async () => {
+    // Several checks can be in flight at once (mount, every auth event). Only
+    // the newest may write state: an older check that started while signed in
+    // and resolves after a sign-out would otherwise put the session back.
+    const generation = ++checkGeneration.current;
+    const isStale = () => generation !== checkGeneration.current;
     try {
       setOperationLoading('sessionVerification', true);
       const admin = await verifyAdminSession();
+      if (isStale()) return;
 
       if (!admin.success) {
         // No session is the normal signed-out state, not an error to display.
@@ -76,6 +83,7 @@ export const useAuth = () => {
       }
 
       const assurance = await getAssuranceState();
+      if (isStale()) return;
       setAuthState({
         user: admin.data.user,
         isAuthenticated: true,
@@ -85,6 +93,7 @@ export const useAuth = () => {
         assurance
       });
     } catch (error) {
+      if (isStale()) return;
       setSignedOut({
         code: 'SESSION_CHECK_ERROR',
         message: 'Failed to verify admin session',
@@ -120,6 +129,7 @@ export const useAuth = () => {
     try {
       setOperationLoading('signOut', true);
       const result = await signOutAdmin();
+      checkGeneration.current += 1;
       setSignedOut(result.success ? null : result.error);
       return result;
     } finally {
@@ -140,14 +150,20 @@ export const useAuth = () => {
 
     const {
       data: { subscription }
-    } = supabase.auth.onAuthStateChange(() => {
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT') {
+        // Settle at once and retire any check still in flight.
+        checkGeneration.current += 1;
+        setSignedOut(null);
+        return;
+      }
       refreshSession();
     });
 
     return () => {
       subscription.unsubscribe();
     };
-  }, [refreshSession]);
+  }, [refreshSession, setSignedOut]);
 
   const hasAdminRole = authState.isAuthenticated;
 
