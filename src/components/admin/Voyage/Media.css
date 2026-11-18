@@ -20,8 +20,10 @@
 
 .media__grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; min-width: 0; }
 .plate { display: grid; grid-template-rows: auto 1fr; min-width: 0; border-radius: 12px; }
-.plate__face { aspect-ratio: 4 / 3; display: grid; place-items: center; overflow: hidden; background: var(--voyage-soft); border-bottom: 1px solid var(--voyage-line); }
-.plate__face img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.plate__face { position: relative; aspect-ratio: 4 / 3; display: grid; place-items: center; overflow: hidden; background: var(--voyage-soft); border-bottom: 1px solid var(--voyage-line); }
+/* the picture fills the plate's frame and is shown whole; positioned so a
+   tall image can never stretch the frame past its 4:3 shape */
+.plate__face img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; display: block; }
 /* files without a picture: their extension set large, like a stencilled crate label */
 .plate__face.is-mark { background: repeating-linear-gradient(135deg, var(--voyage-soft) 0 8px, transparent 8px 16px); }
 .plate__mark { font-family: var(--voyage-cond); font-size: 28px; font-weight: 600; letter-spacing: .14em; color: var(--voyage-muted); }
