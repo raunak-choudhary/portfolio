@@ -1,6 +1,6 @@
 import { CHAPTERS, CHAPTER_IDS, DEEP_SKY_PLACEMENTS, chapterById, chapterIndex } from './chapters';
 import {
-  ANCHORS, LOOK_DROP, PROLOGUE_GAP, SPACING, cameraTarget, deepSkyLayout, drawStartFor, greetingFor, routeFromTops, deepSkyPlacement, figureState, isChapterLive, liveChapterIndex, qualityFor, routePosition, scrollFractionFor,
+  ANCHORS, LOOK_DROP, NARROW_FRAMING, PROLOGUE_GAP, narrowWeight, prologueFraming, SPACING, cameraTarget, deepSkyLayout, drawStartFor, greetingFor, routeFromTops, deepSkyPlacement, figureState, isChapterLive, liveChapterIndex, qualityFor, routePosition, scrollFractionFor,
 } from './voyageModel';
 
 describe('chapter registry', () => {
@@ -129,5 +129,26 @@ describe('greeting', () => {
     expect(greetingFor(new Date('2026-11-13T01:00:00Z'))).toBe('Good evening');     // 20:00 EST
     expect(greetingFor(new Date('2026-11-13T04:30:00Z'))).toBe('Good night');       // 23:30 EST
     expect(greetingFor(new Date('2026-11-13T08:00:00Z'))).toBe('Good night');       // 03:00 EST
+  });
+});
+
+describe('prologue framing on narrow screens', () => {
+  it('leaves landscape screens alone and weighs portrait ones up to a tall phone', () => {
+    [16 / 9, 1440 / 900, 1280 / 800, NARROW_FRAMING.wide].forEach((a) => expect(narrowWeight(a)).toBe(0));
+    expect(narrowWeight(390 / 844)).toBe(1);
+    expect(narrowWeight(768 / 1024)).toBeCloseTo(0.667, 2);
+    [0, -1, NaN, Infinity].forEach((a) => expect(narrowWeight(a)).toBe(0));
+  });
+  it('slides toward the Earth and backs away in the prologue only, easing out by Mission Control', () => {
+    expect(prologueFraming(1440 / 900, 0)).toEqual({ x: 0, y: 0, z: 0 });
+    expect(prologueFraming(390 / 844, 0)).toEqual({ x: NARROW_FRAMING.shiftX, y: NARROW_FRAMING.lift, z: NARROW_FRAMING.pullBack });
+    const half = prologueFraming(390 / 844, 0.5);
+    expect(half.x).toBeCloseTo(NARROW_FRAMING.shiftX / 2, 6);   // smoothstep is symmetric about the midpoint
+    [1, 2, 16].forEach((f) => expect(prologueFraming(390 / 844, f)).toEqual({ x: 0, y: 0, z: 0 }));
+    expect(prologueFraming(390 / 844, 0.2).z).toBeGreaterThan(prologueFraming(390 / 844, 0.6).z);
+  });
+  it('only ever moves the camera away from the Moon, never across its orbit', () => {
+    const f = prologueFraming(390 / 844, 0);
+    expect(f.z).toBeGreaterThanOrEqual(0);   // backing away from the Earth system, which sits ahead of anchor 0
   });
 });
