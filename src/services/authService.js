@@ -402,7 +402,9 @@ export const listTotpFactors = async ({ bridgeFactorId } = {}) => {
   try {
     const { data, error } = await supabase.auth.mfa.listFactors();
     if (error) return { success: false, error: describeMfaError(error, 'Could not read your authenticators.') };
-    return { success: true, data: partitionTotpFactors(data?.totp, bridgeFactorId) };
+    const all = Array.isArray(data?.totp) ? data.totp : [];
+    // `all` lets a caller that learns the bridge id later split the list again.
+    return { success: true, data: { ...partitionTotpFactors(all, bridgeFactorId), all } };
   } catch (error) {
     return { success: false, error: authError('MFA_LIST_ERROR', 'Could not read your authenticators.', error.message) };
   }

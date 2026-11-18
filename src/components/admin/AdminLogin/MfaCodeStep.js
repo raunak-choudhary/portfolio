@@ -13,10 +13,11 @@
 // session to level 2 through an auth event before the launch has played.
 //
 // Passkey: when this browser supports WebAuthn and the owner has a passkey
-// for this site (passkeyService.hasPasskey), "Use passkey" leads and the code
+// for this site (passkeyService.getPasskeyStatus), "Use passkey" leads and the code
 // field stays below it as the fallback. A passkey sign-in ends in the same
 // hold and launch as a typed code. A closed prompt or any failure leaves the
-// code field ready.
+// code field ready. The same status names the bridge factor, which is kept
+// out of the authenticator choice by its id.
 
 import React, { useEffect, useRef, useState } from 'react';
 import { useAuthContext } from '../../../contexts/AuthContext';
@@ -26,13 +27,14 @@ import {
   isValidOneTimeCode,
   listTotpFactors,
   maskEmail,
+  partitionTotpFactors,
   verifyTotpChallenge
 } from '../../../services/authService';
 import ButtonSpinner from '../../common/ButtonSpinner';
 import PreflightShell from './PreflightShell';
 import { prefersReducedMotion } from './PreflightSky';
 import { CodeField, ErrorLine, PasskeyMark } from './PreflightControls';
-import { hasPasskey, isSupported as passkeysSupported, signInWithPasskey } from '../../../services/passkeyService';
+import { getPasskeyStatus, signInWithPasskey } from '../../../services/passkeyService';
 
 /** How long step 03 shows before the route hands over; matches the CSS fade to black. */
 export const LAUNCH_HOLD_MS = 700;
@@ -43,12 +45,13 @@ export const LAUNCH_HOLD_REDUCED_MS = 250;
 /** The availability check never holds the screen longer than this; a slow answer reads as "no passkey". */
 export const PASSKEY_CHECK_TIMEOUT_MS = 4000;
 
-const checkPasskey = () => (passkeysSupported()
-  ? Promise.race([
-    hasPasskey().catch(() => false),
-    new Promise((resolve) => setTimeout(() => resolve(false), PASSKEY_CHECK_TIMEOUT_MS))
-  ])
-  : Promise.resolve(false));
+const UNKNOWN_STATUS = { known: false, available: false, bridgeFactorId: undefined, passkeyCount: 0 };
+
+/** The function's status, or unknown when it fails or is slow. */
+const checkPasskeyStatus = () => Promise.race([
+  getPasskeyStatus().catch(() => UNKNOWN_STATUS),
+  new Promise((resolve) => setTimeout(() => resolve(UNKNOWN_STATUS), PASSKEY_CHECK_TIMEOUT_MS))
+]);
 
 const MfaCodeStep = ({ now, onHoldChange = () => {} }) => {
   const { refreshAssurance, signOut, user } = useAuthContext();
@@ -70,22 +73,28 @@ const MfaCodeStep = ({ now, onHoldChange = () => {} }) => {
     // Reaching this step means any Google round trip ended in a session.
     clearGoogleReturn();
     let cancelled = false;
-    (async () => {
-      const listed = await listTotpFactors();
-      if (cancelled) return;
-      if (!listed.success) {
-        setError(listed.error.message);
-      } else {
-        setFactors(listed.data.verified);
-        setFactorId(listed.data.verified[0]?.id || '');
-      }
-      setIsLoadingFactors(false);
-    })();
-    checkPasskey().then((available) => {
+    const status = checkPasskeyStatus();
+    status.then(({ available }) => {
       if (cancelled) return;
       setPasskeyOffered(Boolean(available));
       setPasskeyChecked(true);
     });
+    (async () => {
+      const [listed, { bridgeFactorId }] = await Promise.all([listTotpFactors(), status]);
+      if (cancelled) return;
+      if (!listed.success) {
+        setError(listed.error.message);
+      } else {
+        // Hide the bridge by the id the function reported; the list's own
+        // split (by the reserved prefix) stands when the id is unknown.
+        const typed = bridgeFactorId === undefined || !Array.isArray(listed.data.all)
+          ? listed.data.verified
+          : partitionTotpFactors(listed.data.all, bridgeFactorId).verified;
+        setFactors(typed);
+        setFactorId(typed[0]?.id || '');
+      }
+      setIsLoadingFactors(false);
+    })();
     return () => { cancelled = true; };
   }, []);
 
