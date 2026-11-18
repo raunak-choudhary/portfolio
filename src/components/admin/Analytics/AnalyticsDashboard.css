@@ -133,12 +133,24 @@
   border: 1px solid var(--glass-border);
   border-radius: 12px;
   overflow-x: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
 }
 
+/* Always-visible thin scrollbar so off-screen tabs are discoverable.
+   Only the webkit pseudo-elements are used: the standard
+   scrollbar-width would turn macOS back into hide-on-idle overlay bars. */
 .admin-dashboard .analytics-tabs::-webkit-scrollbar {
-  display: none;
+  height: 8px;
+}
+
+.admin-dashboard .analytics-tabs::-webkit-scrollbar-track {
+  background: rgba(127, 127, 127, 0.18);
+  border-radius: 4px;
+}
+
+.admin-dashboard .analytics-tabs::-webkit-scrollbar-thumb {
+  background: var(--accent-primary, #00ffff);
+  border-radius: 3px;
 }
 
 .admin-dashboard .analytics-tab {
