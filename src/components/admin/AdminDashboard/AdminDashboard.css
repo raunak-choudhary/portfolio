@@ -1071,7 +1071,8 @@
   color: var(--admin-text-primary);
   font-size: 2.4rem;
   font-weight: 900;
-  line-height: 1;
+  line-height: 1.2;
+  padding-block: 0.06em;
 }
 
 .health-score-label {
@@ -1324,7 +1325,8 @@
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  line-height: 1;
+  line-height: 1.2;
+  padding-block: 0.06em;
 }
 
 [data-theme="light"] .stat-content h3 {
@@ -2745,4 +2747,100 @@
   .sky-controls {
     margin-right: 0;
   }
+}
+
+
+/* ===== MANAGER TABLES: horizontal scroll instead of clipping =====
+   Each manager sets overflow:hidden on its table wrapper and .admin-main
+   hides overflow-x, so wide tables were cut with no way to reach the
+   right-hand columns (Actions). The .admin-main prefix outranks the
+   per-manager rules regardless of stylesheet load order. */
+.admin-main .projects-table-wrapper,
+.admin-main .internships-table-wrapper,
+.admin-main .education-table-wrapper,
+.admin-main .skillmgr-table-wrapper,
+.admin-main .certmgr-table-wrapper,
+.admin-main .recommgr-table-wrapper,
+.admin-main .achievemgr-table-wrapper,
+.admin-main .leadermgr-table-wrapper,
+.admin-main .workexmgr-table-wrapper {
+  max-width: 100%;
+  /* important: a wide-screen rule in each manager sheet resets overflow */
+  overflow-x: auto !important;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Firefox only: Chromium and Safari ignore ::-webkit-scrollbar when the
+   standard properties are set, which would bring back overlay bars that
+   hide themselves. */
+@supports not selector(::-webkit-scrollbar) {
+  .admin-main [class$="-table-wrapper"] {
+    scrollbar-width: thin;
+    scrollbar-color: var(--admin-neon-cyan, #00ffff) transparent;
+  }
+}
+
+.admin-main .projects-table-wrapper > table,
+.admin-main .internships-table-wrapper > table,
+.admin-main .education-table-wrapper > table,
+.admin-main .skillmgr-table-wrapper > table,
+.admin-main .certmgr-table-wrapper > table,
+.admin-main .recommgr-table-wrapper > table,
+.admin-main .achievemgr-table-wrapper > table,
+.admin-main .leadermgr-table-wrapper > table,
+.admin-main .workexmgr-table-wrapper > table {
+  min-width: 760px;
+}
+
+.admin-main .projects-table-wrapper::-webkit-scrollbar,
+.admin-main .internships-table-wrapper::-webkit-scrollbar,
+.admin-main .education-table-wrapper::-webkit-scrollbar,
+.admin-main .skillmgr-table-wrapper::-webkit-scrollbar,
+.admin-main .certmgr-table-wrapper::-webkit-scrollbar,
+.admin-main .recommgr-table-wrapper::-webkit-scrollbar,
+.admin-main .achievemgr-table-wrapper::-webkit-scrollbar,
+.admin-main .leadermgr-table-wrapper::-webkit-scrollbar,
+.admin-main .workexmgr-table-wrapper::-webkit-scrollbar {
+  height: 10px;
+}
+
+.admin-main .projects-table-wrapper::-webkit-scrollbar-track,
+.admin-main .internships-table-wrapper::-webkit-scrollbar-track,
+.admin-main .education-table-wrapper::-webkit-scrollbar-track,
+.admin-main .skillmgr-table-wrapper::-webkit-scrollbar-track,
+.admin-main .certmgr-table-wrapper::-webkit-scrollbar-track,
+.admin-main .recommgr-table-wrapper::-webkit-scrollbar-track,
+.admin-main .achievemgr-table-wrapper::-webkit-scrollbar-track,
+.admin-main .leadermgr-table-wrapper::-webkit-scrollbar-track,
+.admin-main .workexmgr-table-wrapper::-webkit-scrollbar-track {
+  background: rgba(127, 127, 127, 0.18);
+}
+
+.admin-main .projects-table-wrapper::-webkit-scrollbar-thumb,
+.admin-main .internships-table-wrapper::-webkit-scrollbar-thumb,
+.admin-main .education-table-wrapper::-webkit-scrollbar-thumb,
+.admin-main .skillmgr-table-wrapper::-webkit-scrollbar-thumb,
+.admin-main .certmgr-table-wrapper::-webkit-scrollbar-thumb,
+.admin-main .recommgr-table-wrapper::-webkit-scrollbar-thumb,
+.admin-main .achievemgr-table-wrapper::-webkit-scrollbar-thumb,
+.admin-main .leadermgr-table-wrapper::-webkit-scrollbar-thumb,
+.admin-main .workexmgr-table-wrapper::-webkit-scrollbar-thumb {
+  background: var(--admin-neon-cyan, #00ffff);
+  border-radius: 4px;
+}
+
+[data-theme="light"] .admin-main [class$="-table-wrapper"]::-webkit-scrollbar-thumb {
+  background: var(--admin-neon-purple, #7a3cff);
+}
+
+/* Grid and flex children must be allowed to shrink below their content
+   width, otherwise a wide table stretches the whole manager. */
+.admin-main [class*="-content-manager"],
+.admin-main [class*="-manager-content"] {
+  min-width: 0;
+  max-width: 100%;
+}
+.admin-main [class*="-manager-content"] > * {
+  min-width: 0;
 }
