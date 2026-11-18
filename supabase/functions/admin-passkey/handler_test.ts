@@ -114,12 +114,15 @@ function setup(
     },
     store: {
       isAdminEmail: (email) => Promise.resolve(options.admin !== false && email === EMAIL),
-      countChallengesSince: (userId, since) =>
-        Promise.resolve(challenges.filter((row) => row.user_id === userId && row.created_at >= since).length),
-      insertChallenge: (row) => {
+      issueChallenge: async (row, windowStart, max) => {
+        // Like the SQL function: count and insert with no await in between, so
+        // concurrent callers in this single-threaded fake are serialised too.
+        await Promise.resolve();
+        const recent = challenges.filter((item) => item.user_id === row.user_id && item.created_at >= windowStart);
+        if (recent.length >= max) return null;
         const id = uuid();
         challenges.push({ ...row, id, used_at: null, created_at: NOW.toISOString() });
-        return Promise.resolve(id);
+        return id;
       },
       consumeChallenge: (id, userId, kind, rpId, nowIso) => {
         const row = challenges.find((item) =>
@@ -416,6 +419,20 @@ Deno.test('more than ten challenges in fifteen minutes is refused with 429', asy
   const limited = await t.call({ action: 'register-options' }, 'aal2');
   assertEquals(limited.status, 429);
   assertEquals(limited.body.code, 'rate_limited');
+  assertEquals(t.challenges.length, RATE_LIMIT_MAX, 'a refused request stores nothing');
+});
+
+Deno.test('concurrent requests cannot overshoot the limit', async () => {
+  const t = setup();
+  await t.register();
+  const results = await Promise.all(
+    Array.from({ length: RATE_LIMIT_MAX + 5 }, () => t.call({ action: 'auth-options' })),
+  );
+  const issued = results.filter((result) => result.status === 200).length;
+  // register-options already used one challenge in this window
+  assertEquals(issued, RATE_LIMIT_MAX - 1);
+  assert(results.every((result) => result.status === 200 || result.body.code === 'rate_limited'));
+  assertEquals(t.challenges.length, RATE_LIMIT_MAX);
 });
 
 Deno.test('a missing bridge key reads as not switched on, and nothing secret is logged', async () => {

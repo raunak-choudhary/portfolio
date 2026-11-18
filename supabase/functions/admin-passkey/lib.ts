@@ -233,7 +233,7 @@ export function challengeProblem(
 /** Start of the rate-limit window that ends now. */
 export const rateWindowStart = (now: Date) => new Date(now.getTime() - RATE_LIMIT_WINDOW_MS);
 
-/** True when another challenge would exceed the limit. */
+/** True when another challenge would exceed the limit (the rule the SQL function applies). */
 export const isRateLimited = (recentCount: number) => recentCount >= RATE_LIMIT_MAX;
 
 // ---------------------------------------------------------------------------
