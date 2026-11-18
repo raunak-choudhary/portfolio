@@ -6,8 +6,21 @@
 // that Auth has already verified. Nothing here touches the network or the
 // database, so every rule is unit tested. WebCrypto is used for HMAC and AES.
 
-/** Friendly name of the server-held TOTP factor. The client hides it from typed-code lists. */
+/**
+ * Reserved prefix for the server-held TOTP factor's friendly name. The client
+ * refuses it for authenticator apps, and each bridge factor gets a random
+ * suffix (bridgeFactorName), so a name never identifies the bridge on its
+ * own: the function only ever acts on the factor id stored in
+ * admin_passkey_bridge.
+ */
 export const BRIDGE_FACTOR_NAME = 'Passkey bridge';
+
+/** A fresh bridge factor name, "Passkey bridge 1a2b3c4d". */
+export function bridgeFactorName(): string {
+  const suffix = Array.from(crypto.getRandomValues(new Uint8Array(4)), (byte) => byte.toString(16).padStart(2, '0'))
+    .join('');
+  return `${BRIDGE_FACTOR_NAME} ${suffix}`;
+}
 
 /** Registration challenges live five minutes, sign-in challenges two. */
 export const REGISTER_CHALLENGE_TTL_MS = 5 * 60 * 1000;

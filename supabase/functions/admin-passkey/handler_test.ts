@@ -3,7 +3,7 @@
 // sign-in proves the function computes the code Auth expects from the
 // secret it stored encrypted.
 
-import { assert, assertEquals, assertFalse } from 'jsr:@std/assert@1';
+import { assert, assertEquals, assertFalse, assertMatch, assertNotEquals } from 'jsr:@std/assert@1';
 import {
   type AuthFactor,
   type BridgeRow,
@@ -13,6 +13,8 @@ import {
   type PasskeyRow,
 } from './handler.ts';
 import { BRIDGE_FACTOR_NAME, RATE_LIMIT_MAX, toBase64Url, totpCode } from './lib.ts';
+
+const BRIDGE_NAME = new RegExp(`^${BRIDGE_FACTOR_NAME} [0-9a-f]{8}$`);
 
 const ORIGIN = 'http://localhost:3000';
 const SITE = 'https://www.raunakchoudhary.com';
@@ -57,6 +59,8 @@ function setup(
   const authChallenges = new Map<string, string>();
   const logs: string[] = [];
   const secrets = new Map<string, string>();
+  const enrolledNames: string[] = [];
+  let enrolments = 0;
 
   const deps: HandlerDeps = {
     env: options.env ??
@@ -75,8 +79,14 @@ function setup(
         );
       },
       enrollTotp: (_bearer, friendlyName) => {
-        authCalls.push(`enroll:${friendlyName}`);
-        const factorId = 'bridge-factor';
+        authCalls.push('enroll');
+        enrolledNames.push(friendlyName);
+        // Auth keeps friendly names unique per user.
+        if (factors.some((factor) => factor.friendly_name === friendlyName)) {
+          return Promise.resolve({ ok: false, status: 422, code: 'mfa_factor_name_conflict' });
+        }
+        enrolments += 1;
+        const factorId = enrolments === 1 ? 'bridge-factor' : `bridge-factor-${enrolments}`;
         factors.push({ id: factorId, friendly_name: friendlyName, factor_type: 'totp', status: 'unverified' });
         secrets.set(factorId, BRIDGE_SECRET);
         return Promise.resolve({ ok: true, data: { factorId, secret: BRIDGE_SECRET } });
@@ -219,7 +229,21 @@ function setup(
     }, 'aal2');
   };
 
-  return { deps, call, register, factors, challenges, passkeys, bridge: () => bridge, authCalls, logs };
+  return {
+    deps,
+    call,
+    register,
+    factors,
+    challenges,
+    passkeys,
+    bridge: () => bridge,
+    setBridge: (row: (BridgeRow & { user_id: string }) | null) => {
+      bridge = row;
+    },
+    authCalls,
+    enrolledNames,
+    logs,
+  };
 }
 
 Deno.test('preflight and origin: allowed origins get CORS, others are refused', async () => {
@@ -258,9 +282,16 @@ Deno.test('callers without a valid admin token are refused', async () => {
 
 Deno.test('status says false until a passkey and a working bridge exist', async () => {
   const t = setup();
-  assertEquals((await t.call({ action: 'status' })).body, { success: true, data: { available: false } });
+  assertEquals((await t.call({ action: 'status' })).body, {
+    success: true,
+    data: { available: false, bridgeFactorId: null, passkeyCount: 0 },
+  });
   await t.register();
-  assertEquals((await t.call({ action: 'status' })).body.data, { available: true });
+  assertEquals((await t.call({ action: 'status' })).body.data, {
+    available: true,
+    bridgeFactorId: 'bridge-factor',
+    passkeyCount: 1,
+  });
 });
 
 Deno.test('registration needs level 2 and a sensible device name', async () => {
@@ -282,7 +313,8 @@ Deno.test('first registration creates, stores encrypted and verifies the bridge 
   const result = await t.register();
   assertEquals(result.status, 200);
   assertEquals(result.body.data.session, { access_token: 'new-access', refresh_token: 'new-refresh' });
-  assertEquals(t.authCalls, [`enroll:${BRIDGE_FACTOR_NAME}`, 'challenge:bridge-factor', 'verify:bridge-factor']);
+  assertEquals(t.authCalls, ['enroll', 'challenge:bridge-factor', 'verify:bridge-factor']);
+  assertMatch(t.enrolledNames[0], BRIDGE_NAME);
   const stored = t.bridge();
   assert(stored);
   assertEquals(stored.factor_id, 'bridge-factor');
@@ -458,7 +490,7 @@ Deno.test('removing the last passkey unenrolls the bridge factor and deletes its
   const last = await t.call({ action: 'remove', id: t.passkeys[0].id }, 'aal2');
   assertEquals(last.body.data.bridgeRemoved, true);
   assertEquals(t.bridge(), null);
-  assertFalse(t.factors.some((factor) => factor.friendly_name === BRIDGE_FACTOR_NAME));
+  assertFalse(t.factors.some((factor) => factor.id === 'bridge-factor'));
   assertEquals((await t.call({ action: 'remove', id: '00000000-0000-4000-8000-000000000999' }, 'aal2')).status, 404);
 });
 
@@ -512,4 +544,38 @@ Deno.test('a credential row for another relying party is never accepted', async 
     response: { id: 'cred-1', challenge: options.body.data.options.challenge, counter: 2 },
   });
   assertEquals(result.body.code, 'verification_failed');
+});
+
+Deno.test('a broken bridge is replaced by its recorded id only; a look-alike factor is never touched', async () => {
+  const lookAlike = { id: 'user-factor', friendly_name: 'Passkey bridge', factor_type: 'totp', status: 'verified' };
+  const t = setup({
+    factors: [
+      { id: 'totp-phone', friendly_name: 'Primary authenticator', factor_type: 'totp', status: 'verified' },
+      lookAlike,
+    ],
+  });
+  await t.register('cred-1');
+  // The bridge factor drops back to unverified (for example after an Auth reset).
+  const first = t.factors.find((factor) => factor.id === 'bridge-factor');
+  assert(first);
+  first.status = 'unverified';
+
+  const again = await t.register('cred-2', 'Phone');
+  assertEquals(again.status, 200);
+  assert(t.authCalls.includes('unenroll:bridge-factor'), 'the recorded factor is retired');
+  assertFalse(t.authCalls.includes('unenroll:user-factor'), 'a factor is never removed by its name');
+  assert(t.factors.includes(lookAlike));
+  assertEquals(t.bridge()?.factor_id, 'bridge-factor-2');
+  assertEquals(t.enrolledNames.length, 2);
+  assertNotEquals(t.enrolledNames[0], t.enrolledNames[1]);
+  for (const name of t.enrolledNames) assertMatch(name, BRIDGE_NAME);
+});
+
+Deno.test('a recorded bridge whose factor is already gone is cleared without an unenroll call', async () => {
+  const t = setup();
+  t.setBridge({ user_id: USER_ID, factor_id: 'vanished-factor', secret_ciphertext: 'x' });
+  const result = await t.register();
+  assertEquals(result.status, 200);
+  assertFalse(t.authCalls.some((call) => call.startsWith('unenroll')));
+  assertEquals(t.bridge()?.factor_id, 'bridge-factor');
 });

@@ -1,15 +1,17 @@
 // supabase/functions/admin-passkey/handler.ts
 //
 // The passkey bridge. Supabase Auth offers TOTP and phone as MFA factors, so
-// a passkey reaches assurance level 2 through a TOTP factor named "Passkey
-// bridge" whose secret never leaves the server: this function verifies a
+// a passkey reaches assurance level 2 through a TOTP factor ("Passkey bridge"
+// plus a random suffix) whose secret never leaves the server: this function verifies a
 // WebAuthn assertion, then runs the MFA challenge and verify for that factor
 // with the caller's own access token, back to back in one invocation (Auth
 // refuses a verify from a different IP than its challenge). The six-digit
 // code exists only here.
 //
 // Actions (POST JSON, field `action`):
-//   status            any admin session: { available } for this site
+//   status            any admin session: { available } for this site, the
+//                     bridge factor id (so the client can hide exactly that
+//                     factor) and the number of passkeys on every site
 //   register-options  aal2: WebAuthn creation options
 //   register-verify   aal2: stores the credential; creates the bridge factor
 //                     the first time and returns the upgraded session
@@ -31,7 +33,7 @@
 import { corsHeadersFor } from '../send-contact-email/lib.ts';
 import {
   AUTH_CHALLENGE_TTL_MS,
-  BRIDGE_FACTOR_NAME,
+  bridgeFactorName,
   cleanDeviceName,
   importWrapKey,
   isUuid,
@@ -397,7 +399,11 @@ async function status(caller: Caller, deps: HandlerDeps) {
     store.getBridge(caller.user.id),
   ]);
   const available = passkeys.length > 0 && Boolean(bridgeFactorOf(caller.user, bridge?.factor_id));
-  return { available };
+  return {
+    available,
+    bridgeFactorId: bridge?.factor_id ?? null,
+    passkeyCount: await store.countAllPasskeys(caller.user.id),
+  };
 }
 
 async function registerOptions(caller: Caller, deps: HandlerDeps) {
@@ -436,16 +442,15 @@ async function registerVerify(caller: Caller, deps: HandlerDeps) {
   if (!result.verified || !result.credential) throw refuse(400, 'verification_failed', MESSAGES.verification);
   const credential = result.credential;
 
-  // The bridge factor: reuse a healthy one, otherwise clear leftovers and make one.
+  // The bridge factor: reuse a healthy one, otherwise retire the recorded one
+  // and make a new one. Only the factor id this function stored is ever
+  // removed; a factor is never picked out by its name.
   let session: Session | null = null;
   let createdFactorId: string | null = null;
   const bridge = await store.getBridge(caller.user.id);
   if (!bridgeFactorOf(caller.user, bridge?.factor_id)) {
-    if (bridge) await store.deleteBridge(caller.user.id);
-    for (const leftover of caller.user.factors.filter((factor) => factor.friendly_name === BRIDGE_FACTOR_NAME)) {
-      await deps.auth.unenroll(caller.token, leftover.id);
-    }
-    const enrolled = await deps.auth.enrollTotp(caller.token, BRIDGE_FACTOR_NAME);
+    if (bridge) await retireBridge(caller, deps, bridge.factor_id);
+    const enrolled = await deps.auth.enrollTotp(caller.token, bridgeFactorName());
     if (!enrolled.ok) {
       throw enrolled.status === 401
         ? refuse(401, 'unauthorized', MESSAGES.unauthorized)
@@ -488,12 +493,24 @@ async function registerVerify(caller: Caller, deps: HandlerDeps) {
   return { id: inserted.id, session };
 }
 
+/**
+ * Removes a recorded bridge that is no longer usable (its factor unverified
+ * or already gone) before a new one is made.
+ */
+async function retireBridge(caller: Caller, deps: HandlerDeps, factorId: string) {
+  if (caller.user.factors.some((factor) => factor.id === factorId)) {
+    const unenrolled = await deps.auth.unenroll(caller.token, factorId);
+    if (!unenrolled.ok && unenrolled.status !== 404) throw refuse(502, 'bridge_unenroll_failed', MESSAGES.server);
+  }
+  await (deps.store as Store).deleteBridge(caller.user.id);
+}
+
 /** Best effort: removes a half-made bridge so a later registration starts clean. */
 async function rollbackBridge(caller: Caller, deps: HandlerDeps, factorId: string) {
   try {
     await deps.auth.unenroll(caller.token, factorId);
   } catch {
-    // Leftover factors named "Passkey bridge" are cleared on the next registration.
+    // The row below still names the factor, so the next registration retires it.
   }
   try {
     await (deps.store as Store).deleteBridge(caller.user.id);
