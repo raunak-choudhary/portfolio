@@ -22,6 +22,7 @@ import { SkySettingsProvider, useSkySettings } from '../SkyBackground/SkySetting
 import { CHAPTERS, chapterIndex, chapterPlace } from './chapters';
 import DeckChapter from './DeckChapter';
 import InboxChapter from './InboxChapter';
+import MediaChapter from './MediaChapter';
 import SingletonChapter from './SingletonChapter';
 import Toast, { useToast } from './Toast';
 import { schemaForTable } from './managers';
@@ -35,6 +36,8 @@ import './Voyage.css';
 /** Names of the constellations, from figures.json, for the rail and the palette. */
 // chapter kinds with their own component; the rest show the placeholder until their unit
 const BUILT_KINDS = new Set(['prologue', 'bento', 'inbox']);
+// the media library is a deck with no table of its own: storage is its source
+const MEDIA_CHAPTER = 'media';
 const namesFrom =(figures) => Object.fromEntries((figures || []).map((f) => [f.id, f.name]));
 
 /** Set on <html> while the voyage is mounted, so its scrollbars can be styled apart from the public site's. */
@@ -193,7 +196,10 @@ function VoyageView({ requireSecurityEnrollment }) {
             {chapter.kind === 'inbox' && (requireSecurityEnrollment
               ? <div className="voyage-pane voyage-notice">Confirm an authenticator app in Security before the managers open.</div>
               : <InboxChapter notify={notify} />)}
-            {!BUILT_KINDS.has(chapter.kind) && !(chapter.kind === 'deck' && schemaForTable(chapter.table)) && (
+            {chapter.id === MEDIA_CHAPTER && (requireSecurityEnrollment
+              ? <div className="voyage-pane voyage-notice">Confirm an authenticator app in Security before the managers open.</div>
+              : <MediaChapter notify={notify} />)}
+            {!BUILT_KINDS.has(chapter.kind) && chapter.id !== MEDIA_CHAPTER && !(chapter.kind === 'deck' && schemaForTable(chapter.table)) && (
               <div className="voyage-pane voyage-placeholder">
                 <p>{countFor(chapter) !== null ? <><b>{countFor(chapter)}</b> {countFor(chapter) === 1 ? 'item' : 'items'} in this section.</> : 'This chapter is on its way.'}</p>
                 <p className="voyage-placeholder__note">The deck and the record dialog arrive in the next unit. Until then this section is edited in the classic dashboard.</p>
