@@ -29,7 +29,7 @@ function CardFace({ schema, row, onOpen }) {
     <button type="button" className="card__open" onClick={() => onOpen(row)} aria-label={`Open ${card.title}`}>
       {compact
         ? (card.image ? <div className="card__icon"><img src={card.image} alt="" loading="lazy" /></div> : null)
-        : <div className={`card__media${card.image ? '' : ' card__media--empty'}`}>{card.image ? <img src={card.image} alt="" loading="lazy" /> : null}</div>}
+        : <div className={`card__media${card.image ? '' : ' card__media--empty'}${schema.cardImage === 'logo' ? ' card__media--logo' : ''}`}>{card.image ? <img src={card.image} alt="" loading="lazy" /> : null}</div>}
       <div className="card__body">
         <h4>{card.title}</h4>
         {card.subtitle && <p className="card__sub">{card.subtitle}</p>}

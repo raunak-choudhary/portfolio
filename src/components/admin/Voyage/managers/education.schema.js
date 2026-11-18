@@ -40,6 +40,7 @@ export const educationSchema = Object.freeze({
   table: 'education',
   singular: 'education entry',
   plural: 'education entries',
+  cardImage: 'logo',
   titleKey: 'degree',
   sort: sortWith(orderThenDate('start_date')),
   visibility: ACTIVE_ONLY,

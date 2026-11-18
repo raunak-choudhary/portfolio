@@ -42,6 +42,7 @@ export const certificationsSchema = Object.freeze({
   table: 'certifications',
   singular: 'certification',
   plural: 'certifications',
+  cardImage: 'logo',
   titleKey: 'title',
   sort: sortWith(featuredFirst(orderThenDate('issue_date'))),
   visibility: ACTIVE_ONLY,

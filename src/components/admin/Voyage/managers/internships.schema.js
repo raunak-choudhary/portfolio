@@ -37,6 +37,7 @@ export const internshipsSchema = Object.freeze({
   table: 'internships',
   singular: 'internship',
   plural: 'internships',
+  cardImage: 'logo',
   titleKey: 'title',
   orderKey: 'order_index',
   orderDirection: 'asc',
