@@ -290,7 +290,11 @@ export const signInWithGoogle = async () => {
 export const readLoginReturn = ({ search = '', hash = '' } = {}, googlePending = false) => {
   const params = new URLSearchParams(String(search).replace(/^\?/, ''));
   new URLSearchParams(String(hash).replace(/^#/, '')).forEach((value, key) => params.set(key, value));
-  if (!params.get('error') && !params.get('error_code') && !params.get('error_description')) return null;
+  if (!params.get('error') && !params.get('error_code') && !params.get('error_description')) {
+    // A code still in the address means the exchange did not produce a
+    // session (for example, the round trip finished in another browser).
+    return googlePending && params.get('code') ? { kind: 'google-failed', message: GOOGLE_FAILED_MESSAGE } : null;
+  }
   if (NOT_ADMIN_REDIRECT_CODES.has(params.get('error_code'))) {
     return { kind: 'google-not-admin', message: GOOGLE_NOT_ADMIN_MESSAGE };
   }
