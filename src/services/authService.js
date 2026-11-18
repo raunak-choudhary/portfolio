@@ -183,6 +183,122 @@ export const readAuthErrorFromUrl = (fragment) => {
   return 'The login link could not be used. Request a new one below.';
 };
 
+/** Shown when Google returns an account that is not linked to the admin user. */
+export const GOOGLE_NOT_ADMIN_MESSAGE = 'That Google account is not the admin.';
+
+/** Shown for any other failed or cancelled Google round trip. */
+export const GOOGLE_FAILED_MESSAGE = 'Google sign-in did not finish. Try again, or use an email code.';
+
+/** Shown when the Google redirect cannot even be prepared (offline, client error). */
+export const GOOGLE_START_FAILED_MESSAGE = 'Google sign-in could not start. Check the connection and try again.';
+
+/**
+ * sessionStorage key set just before the browser leaves for Google. On the
+ * way back it tells an error in the URL that came from Google apart from an
+ * old email-link error, without adding anything to the redirect URL (which
+ * must match the allow-list in the Supabase dashboard exactly).
+ */
+export const GOOGLE_PENDING_KEY = 'rc-admin-google-pending';
+
+/**
+ * Stand-in sent to the alert function for a refused Google account. The
+ * address Google returned is never handed to the browser, so there is none
+ * to report; the function masks anything without an "@" as "an unreadable
+ * address", which keeps its contract unchanged.
+ */
+export const GOOGLE_ATTEMPT_LABEL = 'google-account';
+
+/** Error codes Supabase puts on the redirect when an OAuth identity has no user and sign-ups are closed. */
+const NOT_ADMIN_REDIRECT_CODES = new Set(['signup_disabled', 'user_not_found']);
+
+const readPendingFlag = () => {
+  try { return window.sessionStorage.getItem(GOOGLE_PENDING_KEY) === '1'; } catch { return false; }
+};
+
+/** True while a Google round trip started from this tab has not yet been handled. */
+export const isGoogleReturnPending = () => readPendingFlag();
+
+/** Forgets the Google round trip; called once its result has been shown. */
+export const clearGoogleReturn = () => {
+  try { window.sessionStorage.removeItem(GOOGLE_PENDING_KEY); } catch { /* storage blocked: nothing to clear */ }
+};
+
+/**
+ * Builds the address Google sends the browser back to. Always the current
+ * origin (localhost in development, the live domain in production), never a
+ * hardcoded host, so the same build works wherever it is served.
+ */
+export const googleReturnUrl = () => {
+  const origin = typeof window !== 'undefined' ? window.location?.origin : '';
+  return origin ? `${origin}${ADMIN_DASHBOARD_PATH}` : '';
+};
+
+/**
+ * Starts "Continue with Google". Redirect flow only: supabase-js sends the
+ * browser to `<supabase>/auth/v1/authorize?provider=google...`, Supabase talks
+ * to Google, and the browser comes back to the dashboard route, which then
+ * asks for the authenticator code exactly as after the email code. No Google
+ * script is loaded, so the page's `script-src 'self'` policy is unchanged.
+ *
+ * Supabase links the Google identity to the existing admin user when the
+ * verified addresses match; sign-ups are closed, so any other account comes
+ * back with an error in the URL (see readLoginReturn).
+ *
+ * @returns {Promise<{success: boolean, data?: object, error?: object}>}
+ */
+export const signInWithGoogle = async () => {
+  const redirectTo = googleReturnUrl();
+  if (!redirectTo) {
+    return { success: false, error: authError('GOOGLE_START_FAILED', GOOGLE_START_FAILED_MESSAGE) };
+  }
+  try { window.sessionStorage.setItem(GOOGLE_PENDING_KEY, '1'); } catch { /* the return still works, only less precisely worded */ }
+  try {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo,
+        // Always show Google's account chooser, so a browser signed in to a
+        // personal account does not silently try that one.
+        queryParams: { prompt: 'select_account' }
+      }
+    });
+    if (error) {
+      clearGoogleReturn();
+      return { success: false, error: authError('GOOGLE_START_FAILED', GOOGLE_START_FAILED_MESSAGE, error) };
+    }
+    return { success: true, data: { url: data?.url || '' } };
+  } catch (error) {
+    clearGoogleReturn();
+    return { success: false, error: authError('GOOGLE_START_FAILED', GOOGLE_START_FAILED_MESSAGE, error.message) };
+  }
+};
+
+/**
+ * Classifies what a redirect back from Supabase carries, for the login page.
+ * Errors arrive in the query (PKCE flow) or the fragment (older links); both
+ * are read. Returns null when there is no error. Only fixed sentences come
+ * out: the URL is attacker-controllable, so none of its text is ever shown.
+ *
+ *   kind 'google-not-admin'  the Google account has no admin user (alerts the owner)
+ *   kind 'google-failed'     a Google round trip from this tab ended in any other error
+ *   kind 'link-failed'       an email-link error, worded as before
+ *
+ * @param {{search?: string, hash?: string}} where  location parts to read.
+ * @param {boolean} googlePending  whether this tab started a Google round trip.
+ * @returns {{kind: string, message: string}|null}
+ */
+export const readLoginReturn = ({ search = '', hash = '' } = {}, googlePending = false) => {
+  const params = new URLSearchParams(String(search).replace(/^\?/, ''));
+  new URLSearchParams(String(hash).replace(/^#/, '')).forEach((value, key) => params.set(key, value));
+  if (!params.get('error') && !params.get('error_code') && !params.get('error_description')) return null;
+  if (NOT_ADMIN_REDIRECT_CODES.has(params.get('error_code'))) {
+    return { kind: 'google-not-admin', message: GOOGLE_NOT_ADMIN_MESSAGE };
+  }
+  if (googlePending) return { kind: 'google-failed', message: GOOGLE_FAILED_MESSAGE };
+  params.set('error', params.get('error') || 'unspecified');
+  return { kind: 'link-failed', message: readAuthErrorFromUrl(`?${params.toString()}`) };
+};
+
 /**
  * Exchanges the six-digit code from the login email for a session.
  *
@@ -550,6 +666,8 @@ const authService = {
   reportUnknownLoginAttempt,
   verifyEmailCode,
   readAuthErrorFromUrl,
+  readLoginReturn,
+  signInWithGoogle,
   hasSecondFactorSession,
   getAssuranceState,
   listTotpFactors,
