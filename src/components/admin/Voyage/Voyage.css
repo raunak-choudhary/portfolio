@@ -540,6 +540,11 @@ html.voyage-root::-webkit-scrollbar-track, html.voyage-root body::-webkit-scroll
 html.voyage-root[data-theme="light"]::-webkit-scrollbar-track, html.voyage-root[data-theme="light"] body::-webkit-scrollbar-track { background: #120c08; }
 html.voyage-root::-webkit-scrollbar-thumb, html.voyage-root body::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, .26); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
 html.voyage-root::-webkit-scrollbar-thumb:hover, html.voyage-root body::-webkit-scrollbar-thumb:hover { background-color: rgba(255, 255, 255, .4); }
+/* globals.css sets overflow-x: hidden on both html and body, which makes body
+   a scroll container of its own (the page itself scrolls on the viewport), so
+   every position: sticky inside it stuck to a box that never scrolls. clip
+   hides the same sideways spill without creating a scroll container. */
+html.voyage-root body { overflow-x: clip; }
 .voyage-rail::-webkit-scrollbar { height: 4px; }
 .voyage-rail::-webkit-scrollbar-track { background: transparent; }
 .voyage-rail::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, .3); border-radius: 999px; }
