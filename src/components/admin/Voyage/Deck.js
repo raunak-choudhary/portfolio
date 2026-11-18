@@ -14,11 +14,11 @@ import React, { useMemo, useState } from 'react';
 import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, arrayMove, rectSortingStrategy, sortableKeyboardCoordinates, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { AlertCircle, ArrowDown, ArrowUp, Award, ChevronDown, Clock, EyeOff, Plus, RefreshCw, Search, Star } from 'lucide-react';
+import { AlertCircle, ArrowDown, ArrowUp, Award, CalendarX, ChevronDown, Clock, EyeOff, Plus, RefreshCw, Search, Star } from 'lucide-react';
 import { canDrag, cardFlags, groupRows } from './managers/schemaModel';
 
-const FLAG_ICON = { starred: Star, featured: Star, award: Award, current: Clock, hidden: EyeOff };
-const FLAG_TEXT = { starred: 'Starred on the public page', featured: 'Featured', award: 'Has an award', current: 'Current', hidden: 'Hidden from the public page' };
+const FLAG_ICON = { starred: Star, featured: Star, award: Award, current: Clock, expired: CalendarX, hidden: EyeOff };
+const FLAG_TEXT = { starred: 'Starred on the public page', featured: 'Featured', award: 'Has an award', current: 'Current', expired: 'Expired', hidden: 'Hidden from the public page' };
 export const SEARCH_FROM = 9;
 
 function CardFace({ schema, row, onOpen }) {
