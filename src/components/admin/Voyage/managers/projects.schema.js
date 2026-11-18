@@ -13,6 +13,8 @@ export const projectsSchema = Object.freeze({
   plural: 'projects',
   /** Deck order: newest build first (a higher order_index is a later project); a drag rewrites the whole column. */
   orderKey: 'order_index',
+  /** The field that heads the record dialog (the read view does not repeat it). */
+  titleKey: 'title',
   images: { bucket: 'project-images', folder: 'projects', max: 10 },
   fields: [
     { key: 'title', label: 'Title', kind: 'text', required: true, min: 5, max: 100, help: 'Resume style, no parentheses.' },
