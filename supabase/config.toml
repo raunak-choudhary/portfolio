@@ -428,3 +428,9 @@ verify_jwt = false
 # Same access model as send-contact-email: the login page sends the publishable key.
 [functions.admin-login-alert]
 verify_jwt = false
+
+# The passkey bridge verifies the caller's access token with Auth itself
+# (GET /auth/v1/user) and reads the assurance level from it, so the gateway
+# check is off as for the other functions.
+[functions.admin-passkey]
+verify_jwt = false
