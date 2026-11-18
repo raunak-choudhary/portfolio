@@ -11,7 +11,13 @@ export const MEDIA_LIBRARY_BUCKETS = [
   { id: 'contact-attachments', label: 'Contact Attachments', isPublic: false }
 ];
 
-const REFERENCE_TABLES = [
+// Every column named here must exist: PostgREST refuses the whole select
+// (400) for one unknown column, and that table's files then all read as
+// Unknown. projects.image_url, internships.certificate_url and the three
+// leadership columns never existed, which hid every project image and
+// internship file as Unknown. A test checks this list against the recorded
+// fixtures' columns.
+export const REFERENCE_TABLES = [
   {
     table: 'about_content',
     bucketFields: {
@@ -21,14 +27,14 @@ const REFERENCE_TABLES = [
   {
     table: 'projects',
     bucketFields: {
-      'project-images': ['image_urls', 'image_url']
+      'project-images': ['image_urls']
     }
   },
   {
     table: 'internships',
     bucketFields: {
       'organization-logos': ['company_logo_url'],
-      documents: ['certificate_urls', 'certificate_url']
+      documents: ['certificate_urls']
     }
   },
   {
@@ -66,13 +72,6 @@ const REFERENCE_TABLES = [
     table: 'achievements',
     bucketFields: {
       'achievement-images': ['certificate_url']
-    }
-  },
-  {
-    table: 'leadership',
-    bucketFields: {
-      'achievement-images': ['image_url', 'proof_url'],
-      'organization-logos': ['organization_logo_url']
     }
   },
   {

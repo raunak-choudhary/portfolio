@@ -1,7 +1,10 @@
+import fs from 'fs';
+import path from 'path';
 import { supabase } from './supabaseClient';
 import {
   collectReferencedMediaPaths,
   createMediaSignedUrl,
+  REFERENCE_TABLES,
   createMediaLibraryItem,
   extractStoragePathFromPublicUrl,
   formatFileSize,
@@ -161,5 +164,20 @@ describe('mediaLibraryService helpers', () => {
     expect(supabase.storage.from).toHaveBeenCalledWith('contact-attachments');
     expect(createSignedUrl).toHaveBeenCalledWith('contact-attachments/cv.pdf', 300);
     await expect(createMediaSignedUrl('contact-attachments', 'gone.pdf')).rejects.toThrow('Object not found');
+  });
+});
+
+describe('media references against the real columns', () => {
+  // the recorded fixtures hold live rows, so their keys are the tables' columns;
+  // contact_messages is not recorded (private), its columns come from the form
+  const columnsOf = (table) => {
+    if (table === 'contact_messages') return new Set(['attachment_urls', 'attachment_url']);
+    const rows = JSON.parse(fs.readFileSync(path.join(__dirname, '../../e2e/fixtures', `${table}.json`), 'utf8'));
+    return new Set(rows.flatMap((row) => Object.keys(row)));
+  };
+
+  it.each(REFERENCE_TABLES.map((t) => [t.table, t]))('%s names only columns its table has', (table, { bucketFields }) => {
+    const columns = columnsOf(table);
+    Object.values(bucketFields).flat().forEach((field) => expect([table, field, columns.has(field)]).toEqual([table, field, true]));
   });
 });
