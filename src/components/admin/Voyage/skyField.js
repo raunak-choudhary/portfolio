@@ -14,7 +14,7 @@
 import * as THREE from 'three';
 import { CHAPTERS } from './chapters';
 import { PALETTES, buildFigureGeometry, buildStarField, drawRangeFor, drawingPlacement, paletteForTheme } from './skyFieldMath';
-import { ANCHORS, cameraTarget, deepSkyLayout, figureState, routePosition } from './voyageModel';
+import { ANCHORS, cameraTarget, deepSkyLayout, figureState, prologueFraming, routePosition } from './voyageModel';
 import { createEarthSystem } from './earthSystem';
 
 const STAR_VERTEX = `
@@ -144,10 +144,10 @@ export function createSkyField({ canvas, figures, deepManifest, assetBase, quali
 
   const cameraPosition = new THREE.Vector3(0, 20, ANCHORS[0].z + 520), cameraLook = new THREE.Vector3(ANCHORS[0].x, ANCHORS[0].y, ANCHORS[0].z);
   const wantPosition = new THREE.Vector3(), wantLook = new THREE.Vector3();
-  let startedAt = null, readoutAt = -Infinity, over = '';
+  let startedAt = null, readoutAt = -Infinity, over = '', aspect = 16 / 9;
 
   return {
-    resize(width, height) { renderer.setSize(width, height, false); camera.aspect = width / Math.max(1, height); camera.updateProjectionMatrix(); },
+    resize(width, height) { renderer.setSize(width, height, false); aspect = width / Math.max(1, height); camera.aspect = aspect; camera.updateProjectionMatrix(); },
     setTheme(next) { palette = paletteForTheme(next); applyPalette(); },
     setFly(next) { fly = !!next; },
     /**
@@ -157,7 +157,8 @@ export function createSkyField({ canvas, figures, deepManifest, assetBase, quali
     frame(scrollFraction, now) {
       const route = routePosition(scrollFraction);
       const target = cameraTarget(route, fly);
-      wantPosition.set(target.position.x, target.position.y, target.position.z); wantLook.set(target.look.x, target.look.y, target.look.z);
+      const framing = prologueFraming(aspect, route.f);   // zero on landscape screens and past the prologue
+      wantPosition.set(target.position.x + framing.x, target.position.y + framing.y, target.position.z + framing.z); wantLook.set(target.look.x + framing.x, target.look.y + framing.y, target.look.z);
       const ease = fly ? 0.08 : 1;
       cameraPosition.lerp(wantPosition, ease); cameraLook.lerp(wantLook, ease);
       camera.position.copy(cameraPosition); camera.lookAt(cameraLook);

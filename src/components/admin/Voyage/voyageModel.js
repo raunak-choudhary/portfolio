@@ -60,6 +60,34 @@ export function cameraTarget({ index, frac }, fly = true, anchors = ANCHORS) {
   return { position, look };
 }
 
+/**
+ * Prologue framing on narrow screens. The camera's vertical field of view is
+ * fixed, so a portrait screen sees a much narrower slice of the scene and the
+ * Earth (placed to the right of anchor 0) runs off the right edge. Below
+ * `wide` aspect the camera slides toward the Earth and backs away, fully so at
+ * `narrow` and beyond; landscape screens (desktop and laptop) get no offset.
+ */
+export const NARROW_FRAMING = Object.freeze({ wide: 1.25, narrow: 0.5, shiftX: 330, lift: -40, pullBack: 900 });
+
+/** 0 on landscape screens, rising to 1 on a tall phone (width / height). */
+export function narrowWeight(aspect, framing = NARROW_FRAMING) {
+  if (!Number.isFinite(aspect) || aspect <= 0) return 0;
+  return clamp01((framing.wide - aspect) / (framing.wide - framing.narrow));
+}
+
+/**
+ * Offset for the camera (position and look) at chapter coordinate `f`: the
+ * full narrow offset in the prologue, easing out over the way to Mission
+ * Control so the constellation route is the same on every screen.
+ * @returns {{x: number, y: number, z: number}} z applies to the position only (backing away).
+ */
+export function prologueFraming(aspect, f, framing = NARROW_FRAMING) {
+  const w = narrowWeight(aspect, framing) * (1 - clamp01(f));
+  const k = w * w * (3 - 2 * w);   // smoothstep keeps the hand-off gentle
+  if (k === 0) return { x: 0, y: 0, z: 0 };   // no signed zeros from a negative lift
+  return { x: framing.shiftX * k, y: framing.lift * k, z: framing.pullBack * k };
+}
+
 /** Where in the approach a figure starts to draw: the first chapter waits until the Earth is behind the camera. */
 export const drawStartFor = (i) => (i === 1 ? 0.5 : 0.15);
 
