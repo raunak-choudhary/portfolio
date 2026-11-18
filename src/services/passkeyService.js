@@ -22,7 +22,7 @@ export const PASSKEY_MESSAGES = {
   unsupported: 'This browser cannot use passkeys. Enter a code instead.',
   noPasskey: 'No passkey is registered for this site yet. Enter a code, then add this device on the Security screen.',
   alreadyRegistered: 'This device already has a passkey for the admin.',
-  rateLimited: 'Too many passkey attempts. Wait a few minutes and try again.',
+  rateLimited: 'Too many passkey attempts. Enter a code instead, or wait a few minutes and try again.',
   sessionExpired: 'Your session has expired. Sign in again.',
   notSwitchedOn: "Passkey sign-in isn't switched on yet.",
   network: 'Could not reach the passkey service. Check the connection, or enter a code.',
@@ -42,6 +42,7 @@ const SERVER_CODES = {
   rate_limited: 'rateLimited',
   unauthorized: 'sessionExpired',
   not_configured: 'notSwitchedOn',
+  origin_not_allowed: 'notSwitchedOn',
   no_passkey: 'noPasskey',
   challenge_invalid: 'challenge',
   verification_failed: 'verification',
@@ -105,6 +106,35 @@ export const isSupported = () =>
   typeof window.navigator?.credentials?.get === 'function';
 
 /**
+ * What the function reports for this site:
+ *   known           the function answered (false when it is not deployed,
+ *                   not switched on for this origin, or unreachable)
+ *   available       a passkey for this site and a working bridge exist, and
+ *                   this browser can use passkeys
+ *   bridgeFactorId  the id of the server-held bridge factor, null when there
+ *                   is none, undefined when unknown; screens hide exactly this
+ *                   factor from the typed-code lists
+ *   passkeyCount    passkeys on every site, so the Security screen can keep a
+ *                   typed authenticator while any exist
+ * Never throws; any failure reads as unknown.
+ */
+export const getPasskeyStatus = async () => {
+  const unknown = { known: false, available: false, bridgeFactorId: undefined, passkeyCount: 0 };
+  const result = await callFunction('status');
+  if (!result.success || !result.data || typeof result.data !== 'object') return unknown;
+  const { available, bridgeFactorId, passkeyCount } = result.data;
+  return {
+    known: true,
+    available: Boolean(available) && isSupported(),
+    // An older function without the field leaves the id unknown, not "none".
+    bridgeFactorId: typeof bridgeFactorId === 'string' && bridgeFactorId
+      ? bridgeFactorId
+      : bridgeFactorId === null ? null : undefined,
+    passkeyCount: Number.isInteger(passkeyCount) && passkeyCount > 0 ? passkeyCount : 0
+  };
+};
+
+/**
  * Whether passkey sign-in can be offered on this site: the owner has a
  * passkey registered for it and the bridge is in place. Any failure,
  * including a function that is not deployed yet, reads as false so the code
@@ -112,8 +142,7 @@ export const isSupported = () =>
  */
 export const hasPasskey = async () => {
   if (!isSupported()) return false;
-  const result = await callFunction('status');
-  return Boolean(result.success && result.data?.available);
+  return (await getPasskeyStatus()).available;
 };
 
 /** Adopts a session the function returned. */
@@ -215,6 +244,6 @@ export const suggestDeviceName = (nav = typeof navigator !== 'undefined' ? navig
   return 'This device';
 };
 
-const passkeyService = { isSupported, hasPasskey, signInWithPasskey, registerPasskey, listPasskeys, removePasskey, suggestDeviceName };
+const passkeyService = { isSupported, getPasskeyStatus, hasPasskey, signInWithPasskey, registerPasskey, listPasskeys, removePasskey, suggestDeviceName };
 
 export default passkeyService;
