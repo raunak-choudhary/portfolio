@@ -554,13 +554,16 @@
 .file-list__text { min-width: 0; font-size: 13px; overflow-wrap: anywhere; }
 .pairs { display: grid; gap: 8px; min-width: 0; }
 .pairs__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-.pairs__row { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "key tools" "value value"; gap: 6px; padding: 8px; border-radius: 10px; border: 1px solid var(--voyage-line); background: rgba(255, 255, 255, .03); min-width: 0; }
+.pairs__row { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "key tools" "value value"; align-items: start; gap: 6px; padding: 8px; border-radius: 10px; border: 1px solid var(--voyage-line); background: rgba(255, 255, 255, .03); min-width: 0; }
 .pairs__key { grid-area: key; }
 .pairs__value { grid-area: value; }
 .pairs__tools { grid-area: tools; display: flex; gap: 4px; }
-.pairs__row input { width: 100%; min-width: 0; box-sizing: border-box; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--voyage-line); background: rgba(255, 255, 255, .06); color: var(--voyage-fg); font: inherit; font-size: 14px; outline: 0; }
-.pairs__row input:focus { border-color: var(--voyage-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--voyage-accent) 25%, transparent); }
-.field.has-error .pairs__row input { border-color: var(--voyage-bad); }
+.pairs__row input, .pairs__row textarea { width: 100%; min-width: 0; box-sizing: border-box; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--voyage-line); background: rgba(255, 255, 255, .06); color: var(--voyage-fg); font: inherit; font-size: 14px; line-height: 1.4; outline: 0; }
+/* the value grows with its text (Field.js GrowingText), so it never hides
+   the end of a long value; no resize handle and no inner scrollbar */
+.pairs__row textarea { display: block; resize: none; overflow: hidden; min-height: 0; overflow-wrap: anywhere; }
+.pairs__row input:focus, .pairs__row textarea:focus { border-color: var(--voyage-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--voyage-accent) 25%, transparent); }
+.field.has-error .pairs__row input, .field.has-error .pairs__row textarea { border-color: var(--voyage-bad); }
 .pairs__tool { display: inline-grid; place-items: center; width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--voyage-line); background: var(--voyage-soft); color: var(--voyage-fg); cursor: pointer; padding: 0; }
 .pairs__tool:hover:not(:disabled) { border-color: var(--voyage-accent); }
 .pairs__tool:disabled { opacity: .35; cursor: default; }

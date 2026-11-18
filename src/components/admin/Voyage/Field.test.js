@@ -91,8 +91,16 @@ describe('Field', () => {
     const value = [{ key: 'A', value: '1' }, { key: 'B', value: '2' }];
     const view = show({ field: { key: 'p', label: 'Basic info', kind: 'pairs', max: 10 }, value, onChange });
     expect(view.container.querySelector('[role="group"]')).not.toBeNull();
-    setInputValue(view.container.querySelector('input[aria-label="Value 2"]'), '22');
+    // the value is a one-row textarea that grows, so a long value is never cut off at the edge
+    const valueBox = view.container.querySelector('textarea[aria-label="Value 2"]');
+    expect(valueBox.getAttribute('rows')).toBe('1');
+    setInputValue(valueBox, '22');
     expect(onChange).toHaveBeenLastCalledWith([{ key: 'A', value: '1' }, { key: 'B', value: '22' }]);
+    setInputValue(valueBox, 'Open to\nwork');   // a pasted line break becomes a space
+    expect(onChange).toHaveBeenLastCalledWith([{ key: 'A', value: '1' }, { key: 'B', value: 'Open to work' }]);
+    const enter = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true });
+    act(() => { valueBox.dispatchEvent(enter); });
+    expect(enter.defaultPrevented).toBe(true);
     expect(button(view.container, 'Move row 1 up').disabled).toBe(true);
     click(button(view.container, 'Move row 1 down'));
     expect(onChange).toHaveBeenLastCalledWith([{ key: 'B', value: '2' }, { key: 'A', value: '1' }]);
