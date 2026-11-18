@@ -379,6 +379,19 @@ export const getMediaLibrarySnapshot = async ({
   };
 };
 
+/**
+ * A fresh short-lived link to one file in a private bucket. The snapshot
+ * signs private files once at load; a click after those links lapse asks
+ * for a new one here instead of opening a dead link.
+ */
+export const createMediaSignedUrl = async (bucketId, filePath, expiresIn = 300) => {
+  const { data, error } = await supabase.storage.from(bucketId).createSignedUrl(filePath, expiresIn);
+  if (error) {
+    throw error;
+  }
+  return data.signedUrl;
+};
+
 const mediaLibraryService = {
   MEDIA_LIBRARY_BUCKETS,
   collectReferencedMediaPaths,
