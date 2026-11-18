@@ -6,7 +6,7 @@
 // are chips with an input that adds on Enter; images are thumbnails with a
 // remove button, a file picker and a per-file problem list; single images
 // and files show what is stored with Replace and Remove; pairs are rows of
-// label and value with move buttons.
+// label and value (the value grows to show all of its text) with move buttons.
 //
 // Accessibility: the control carries aria-invalid and aria-describedby
 // pointing at the error (or the help line), and the error starts with an
@@ -15,7 +15,7 @@
 // in an element with role="group" labelled by the field's label.
 // `data-field` lets the dialog focus the first invalid field after Save.
 
-import React, { useId, useState } from 'react';
+import React, { useId, useLayoutEffect, useRef, useState } from 'react';
 import { AlertCircle, ArrowDown, ArrowUp, ExternalLink, FileText, Plus, Star, Upload, X } from 'lucide-react';
 import { COUNTED_KINDS, addListItem, fileNameFromUrl, isDisabledBy, isFileUrl, moveItem, todayIso } from './managers/schemaModel';
 
@@ -157,6 +157,30 @@ function FilesInput({ field, value, onChange, upload, inputId, problemsId, label
   );
 }
 
+/** Sets a textarea's height to its content (height auto first, so it can also shrink). */
+const fitHeight = (el) => { if (!el) return; el.style.height = 'auto'; el.style.height = `${el.scrollHeight}px`; };
+
+/**
+ * A one-line value that grows to show everything typed: a pair's value can
+ * run to 200 characters (About "availability"), which an input would cut off
+ * at the right edge. Enter does not start a new line because the public page
+ * shows each value on one line; pasted line breaks become spaces.
+ */
+export function GrowingText({ value, onChange, ...rest }) {
+  const ref = useRef(null);
+  useLayoutEffect(() => { fitHeight(ref.current); }, [value]);
+  // a narrower column wraps the same text onto more lines, so refit on resize too
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (typeof ResizeObserver === 'undefined' || !el) return undefined;
+    let width = el.clientWidth;
+    const observer = new ResizeObserver(() => { if (el.clientWidth !== width) { width = el.clientWidth; fitHeight(el); } });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  return <textarea ref={ref} rows={1} value={value} onChange={(e) => onChange(e.target.value.replace(/\s*\n+\s*/g, ' '))} onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} {...rest} />;
+}
+
 function PairsInput({ field, value, onChange, inputId, labelId, a11y }) {
   const update = (i, part, text) => onChange(value.map((p, k) => (k === i ? { ...p, [part]: text } : p)));
   const full = field.max && value.length >= field.max;
@@ -167,7 +191,7 @@ function PairsInput({ field, value, onChange, inputId, labelId, a11y }) {
           {value.map((p, i) => (
             <li key={i} className="pairs__row">
               <input id={i === 0 ? inputId : undefined} type="text" className="pairs__key" value={p.key} placeholder="Label" aria-label={`Label ${i + 1}`} aria-invalid={a11y['aria-invalid']} maxLength={field.keyMax ? field.keyMax + 20 : undefined} onChange={(e) => update(i, 'key', e.target.value)} />
-              <input type="text" className="pairs__value" value={p.value} placeholder="Value" aria-label={`Value ${i + 1}`} aria-invalid={a11y['aria-invalid']} maxLength={field.valueMax ? field.valueMax + 20 : undefined} onChange={(e) => update(i, 'value', e.target.value)} />
+              <GrowingText className="pairs__value" value={p.value} placeholder="Value" aria-label={`Value ${i + 1}`} aria-invalid={a11y['aria-invalid']} maxLength={field.valueMax ? field.valueMax + 20 : undefined} onChange={(text) => update(i, 'value', text)} />
               <span className="pairs__tools">
                 <button type="button" className="pairs__tool" aria-label={`Move row ${i + 1} up`} disabled={i === 0} onClick={() => onChange(moveItem(value, i, -1))}><ArrowUp size={14} /></button>
                 <button type="button" className="pairs__tool" aria-label={`Move row ${i + 1} down`} disabled={i === value.length - 1} onClick={() => onChange(moveItem(value, i, 1))}><ArrowDown size={14} /></button>
