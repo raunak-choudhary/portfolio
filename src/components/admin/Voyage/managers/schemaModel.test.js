@@ -1,6 +1,7 @@
 import { FIELD_KINDS, addListItem, buildForm, emptyValue, fieldsForGroup, isDirty, normalizeForm, validateForm } from './schemaModel';
 import { deckOrder, nextOrderIndex, orderWrites, projectsSchema } from './projects.schema';
 import { SCHEMAS, schemaForTable } from './index';
+import { CHAPTERS } from '../chapters';
 
 const row = {
   id: 'p1', title: 'Tallyproof', short_description: ' Counting with proofs ', detailed_description: null, project_type: 'Web app', duration: 'Oct to Nov 2026',
@@ -11,8 +12,10 @@ const row = {
 describe('schema registry', () => {
   it('exposes each schema by its table, and every field of every schema has a known kind and a group', () => {
     expect(schemaForTable('projects')).toBe(projectsSchema);
-    expect(schemaForTable('internships')).toBeNull(); expect(schemaForTable(null)).toBeNull();
-    expect(Object.keys(SCHEMAS)).toEqual(['hero_content', 'about_content', 'projects', 'skills']);
+    expect(schemaForTable('contact_messages')).toBeNull(); expect(schemaForTable(null)).toBeNull();
+    expect(Object.keys(SCHEMAS)).toEqual(['hero_content', 'about_content', 'projects', 'skills', 'education', 'work_experience', 'internships', 'certifications', 'achievements', 'leadership', 'recommendations']);
+    // every deck chapter with a table now has its manager (media has no table; the inbox is not a form)
+    CHAPTERS.filter((c) => c.kind === 'deck' && c.table).forEach((c) => expect(schemaForTable(c.table)).not.toBeNull());
     Object.entries(SCHEMAS).forEach(([table, schema]) => {
       expect(schema.table).toBe(table);
       schema.fields.forEach((f) => expect(FIELD_KINDS).toContain(f.kind));
