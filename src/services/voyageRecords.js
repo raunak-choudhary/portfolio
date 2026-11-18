@@ -5,8 +5,12 @@
 // errors, session facts, public refresh) so the new sheet and the classic
 // managers share one write path. Deleting a project goes through the data
 // service's `deleteProject`, which also clears its images from storage.
+//
+// Failures leave this module as errors the record dialog can sort into a
+// small set of kinds (`failureKind`), so the owner always reads one fixed,
+// actionable sentence and never loses what was typed.
 
-import { getAdminSupabaseClient, removeAdminStorageFiles, saveAdminData, uploadAdminPublicFile } from './adminDataService';
+import { describeAdminWriteError, getAdminSupabaseClient, removeAdminStorageFiles, saveAdminData, uploadAdminPublicFile } from './adminDataService';
 import { deleteProject } from './dataService';
 
 const IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
@@ -48,29 +52,94 @@ export async function reorderRecords(schema, writes) {
   if (results.some((r) => r.error)) throw new Error('The new order could not be saved.');
 }
 
-/** Checks files before upload; returns a fixed sentence or null. */
-export function imageProblem(files, { existing = 0, max = 10 } = {}) {
-  if (!files.length) return 'Choose at least one image.';
-  if (existing + files.length > max) return `At most ${max} images per record.`;
-  for (const f of files) {
-    if (!IMAGE_TYPES.includes(f.type)) return 'Images must be JPEG, PNG or WebP.';
-    if (f.size > IMAGE_MAX_BYTES) return 'Each image must be under 5 MB.';
-  }
-  return null;
+/**
+ * Sorts a failed write into the few kinds the dialog explains differently.
+ * `saveAdminData` already tags session and permission errors with a code;
+ * a request that never reached the server surfaces as a fetch TypeError
+ * (Chromium "Failed to fetch", Safari "Load failed", Firefox "NetworkError").
+ * @param {Error} err
+ * @param {boolean} [online] navigator.onLine at the time of the failure.
+ * @returns {'session'|'permission'|'network'|'unknown'}
+ */
+export function failureKind(err, online = typeof navigator === 'undefined' ? true : navigator.onLine) {
+  if (err?.code === 'SESSION_EXPIRED') return 'session';
+  if (err?.code === 'SECOND_FACTOR_REQUIRED') return 'permission';
+  const text = `${err?.message ?? ''} ${err?.cause?.message ?? ''}`;
+  if (!online || NETWORK_TEXT.test(text)) return 'network';
+  return 'unknown';
+}
+// word boundaries matter: "Upload failed" (a storage refusal) must not read as Safari's "Load failed"
+const NETWORK_TEXT = /failed to fetch|networkerror|network request failed|\bload failed|fetch failed|network error/i;
+
+/** Wraps a raw Supabase error the way `saveAdminData` does, so reads share the same failure kinds. */
+function typedError(error, fallback) {
+  const described = describeAdminWriteError(error);
+  const typed = new Error(described.code === 'WRITE_FAILED' ? (error?.message || fallback) : described.message);
+  typed.code = described.code;
+  typed.cause = error;
+  return typed;
 }
 
-/** Uploads images for a saved record and returns their public URLs, in order. */
+/**
+ * The row's current `updated_at`, read just before an update so a change
+ * made elsewhere (another tab, the classic dashboard) is not overwritten
+ * blindly. Resolves to undefined when the row no longer exists.
+ */
+export async function fetchUpdatedAt(schema, id) {
+  const { data, error } = await getAdminSupabaseClient().from(schema.table).select('updated_at').eq('id', id).maybeSingle();
+  if (error) throw typedError(error, 'The latest version could not be checked.');
+  return data ? data.updated_at ?? null : undefined;
+}
+
+/** One full row, for "Reload latest" after a conflict. */
+export async function getRecord(schema, id) {
+  const { data, error } = await getAdminSupabaseClient().from(schema.table).select('*').eq('id', id).maybeSingle();
+  if (error) throw typedError(error, 'The latest version could not be loaded.');
+  if (!data) throw new Error(`This ${schema.singular} no longer exists. It may have been deleted elsewhere.`);
+  return data;
+}
+
+/**
+ * Checks chosen files before upload, one verdict per file, so a single bad
+ * file does not hide which others were fine. A count over the limit rejects
+ * the whole choice, because which files to drop is the owner's call.
+ * @returns {{accepted: File[], problems: Array<{name: string|null, message: string}>}}
+ */
+export function imageProblems(files, { existing = 0, max = 10 } = {}) {
+  if (!files.length) return { accepted: [], problems: [{ name: null, message: 'Choose at least one image.' }] };
+  if (existing + files.length > max) {
+    const room = Math.max(0, max - existing);
+    return { accepted: [], problems: [{ name: null, message: `At most ${max} images per record. ${room === 0 ? 'Remove one first.' : `There is room for ${room} more; ${files.length} were chosen.`}` }] };
+  }
+  const accepted = [], problems = [];
+  for (const f of files) {
+    if (!IMAGE_TYPES.includes(f.type)) problems.push({ name: f.name, message: 'is not a JPEG, PNG or WebP image.' });
+    else if (f.size > IMAGE_MAX_BYTES) problems.push({ name: f.name, message: `is ${(f.size / 1048576).toFixed(1)} MB; the limit is 5 MB.` });
+    else accepted.push(f);
+  }
+  return { accepted, problems };
+}
+
+/**
+ * Uploads images for a saved record. Each file settles on its own, so one
+ * failed upload is reported by name while the others still land.
+ * @returns {Promise<{urls: string[], failed: Array<{name: string, message: string}>}>}
+ */
 export async function uploadImages(schema, id, files) {
   const stamp = Date.now();
-  const uploads = files.map((file, i) => {
+  const settled = await Promise.allSettled(files.map((file, i) => {
     const ext = (file.name.split('.').pop() || 'bin').toLowerCase().replace(/[^a-z0-9]/g, '') || 'bin';
     return uploadAdminPublicFile({ bucket: schema.images.bucket, filePath: `${schema.images.folder}/${id}/${schema.singular}-${stamp}-${i + 1}.${ext}`, file });
+  }));
+  const urls = [], failed = [];
+  settled.forEach((r, i) => {
+    if (r.status === 'fulfilled') urls.push(r.value.publicUrl);
+    else failed.push({ name: files[i].name, message: failureKind(r.reason) === 'network' ? 'did not upload: the connection dropped.' : 'did not upload: storage refused it.' });
   });
-  const results = await Promise.all(uploads);
-  return results.map((r) => r.publicUrl);
+  return { urls, failed };
 }
 
-/** Removes one stored image file; the record's list is saved separately by the sheet. Storage misses are not errors. */
+/** Removes one stored image file; the record's list is saved separately by the dialog. Storage misses are not errors. */
 export async function removeImage(schema, url) {
   try { await removeAdminStorageFiles(schema.images.bucket, url); } catch { /* the row no longer points at it, which is what matters */ }
 }

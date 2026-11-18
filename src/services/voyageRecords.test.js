@@ -1,6 +1,6 @@
-import { IMAGE_MAX_BYTES, deleteRecord, imageProblem, listRecords, removeImage, reorderRecords, saveRecord, uploadImages } from './voyageRecords';
+import { IMAGE_MAX_BYTES, deleteRecord, failureKind, fetchUpdatedAt, getRecord, imageProblems, listRecords, removeImage, reorderRecords, saveRecord, uploadImages } from './voyageRecords';
 // jest.mock is hoisted above the import by babel-jest, so the service sees the mocks
-jest.mock('./adminDataService', () => ({ getAdminSupabaseClient: jest.fn(), removeAdminStorageFiles: jest.fn(), saveAdminData: jest.fn(), uploadAdminPublicFile: jest.fn() }));
+jest.mock('./adminDataService', () => ({ describeAdminWriteError: jest.fn(), getAdminSupabaseClient: jest.fn(), removeAdminStorageFiles: jest.fn(), saveAdminData: jest.fn(), uploadAdminPublicFile: jest.fn() }));
 jest.mock('./dataService', () => ({ deleteProject: jest.fn() }));
 
 const admin = jest.requireMock('./adminDataService');
@@ -66,19 +66,60 @@ it('rewrites the order column in one go and fails on any error', async () => {
   await expect(reorderRecords(schema, [{ id: 'a', order_index: 1 }])).rejects.toThrow('The new order could not be saved.');
 });
 
-it('checks images before upload and uploads into the record folder', async () => {
+it('checks each chosen image on its own and rejects a choice over the limit', () => {
   const png = { name: 'shot.PNG', type: 'image/png', size: 1000 };
-  expect(imageProblem([])).toBe('Choose at least one image.');
-  expect(imageProblem([png], { existing: 10, max: 10 })).toBe('At most 10 images per record.');
-  expect(imageProblem([{ name: 'a.gif', type: 'image/gif', size: 10 }])).toBe('Images must be JPEG, PNG or WebP.');
-  expect(imageProblem([{ ...png, size: IMAGE_MAX_BYTES + 1 }])).toBe('Each image must be under 5 MB.');
-  expect(imageProblem([png])).toBeNull();
+  const gif = { name: 'a.gif', type: 'image/gif', size: 10 };
+  const big = { name: 'big.png', type: 'image/png', size: IMAGE_MAX_BYTES + 1 };
+  expect(imageProblems([]).problems).toEqual([{ name: null, message: 'Choose at least one image.' }]);
+  expect(imageProblems([png], { existing: 10, max: 10 })).toEqual({ accepted: [], problems: [{ name: null, message: 'At most 10 images per record. Remove one first.' }] });
+  expect(imageProblems([png, png, png], { existing: 8, max: 10 }).problems[0].message).toBe('At most 10 images per record. There is room for 2 more; 3 were chosen.');
+  const mixed = imageProblems([png, gif, big]);
+  expect(mixed.accepted).toEqual([png]);
+  expect(mixed.problems).toEqual([{ name: 'a.gif', message: 'is not a JPEG, PNG or WebP image.' }, { name: 'big.png', message: 'is 5.0 MB; the limit is 5 MB.' }]);
+  expect(imageProblems([png])).toEqual({ accepted: [png], problems: [] });
+});
+
+it('uploads into the record folder and reports a failed file by name while the others land', async () => {
+  const png = { name: 'shot.PNG', type: 'image/png', size: 1000 };
   admin.uploadAdminPublicFile.mockImplementation(async ({ filePath }) => ({ publicUrl: `https://cdn/${filePath}` }));
-  const urls = await uploadImages(schema, 'p1', [png, { name: 'b.webp', type: 'image/webp', size: 5 }]);
-  expect(urls).toHaveLength(2);
-  expect(urls[0]).toMatch(/^https:\/\/cdn\/projects\/p1\/project-\d+-1\.png$/);
-  expect(urls[1]).toMatch(/-2\.webp$/);
+  const ok = await uploadImages(schema, 'p1', [png, { name: 'b.webp', type: 'image/webp', size: 5 }]);
+  expect(ok.failed).toEqual([]);
+  expect(ok.urls[0]).toMatch(/^https:\/\/cdn\/projects\/p1\/project-\d+-1\.png$/);
+  expect(ok.urls[1]).toMatch(/-2\.webp$/);
   expect(admin.uploadAdminPublicFile.mock.calls[0][0].bucket).toBe('project-images');
+  admin.uploadAdminPublicFile.mockImplementation(async ({ file }) => {
+    if (file.name === 'net.png') throw new TypeError('Failed to fetch');
+    if (file.name === 'deny.png') throw new Error('Upload failed: new row violates policy');
+    return { publicUrl: 'https://cdn/ok.png' };
+  });
+  const mixed = await uploadImages(schema, 'p1', [png, { ...png, name: 'net.png' }, { ...png, name: 'deny.png' }]);
+  expect(mixed.urls).toEqual(['https://cdn/ok.png']);
+  expect(mixed.failed).toEqual([{ name: 'net.png', message: 'did not upload: the connection dropped.' }, { name: 'deny.png', message: 'did not upload: storage refused it.' }]);
+});
+
+it('sorts failures into session, permission, network and unknown', () => {
+  const coded = (code) => Object.assign(new Error('x'), { code });
+  expect(failureKind(coded('SESSION_EXPIRED'))).toBe('session');
+  expect(failureKind(coded('SECOND_FACTOR_REQUIRED'))).toBe('permission');
+  expect(failureKind(new Error('TypeError: Failed to fetch'))).toBe('network');
+  expect(failureKind(Object.assign(new Error('The change could not be saved.'), { cause: new TypeError('Load failed') }))).toBe('network');
+  expect(failureKind(new Error('duplicate key'), false)).toBe('network');
+  expect(failureKind(new Error('duplicate key'), true)).toBe('unknown');
+});
+
+it('reads the row stamp for the conflict check and a full row for reload, typing their errors', async () => {
+  admin.describeAdminWriteError.mockImplementation((e) => (e.status === 401 ? { code: 'SESSION_EXPIRED', message: 'Your session expired.' } : { code: 'WRITE_FAILED', message: e.message }));
+  const client = fakeClient({ rows: { updated_at: '2026-11-18T10:00:00Z' } });
+  admin.getAdminSupabaseClient.mockReturnValue(client);
+  await expect(fetchUpdatedAt(schema, 'p1')).resolves.toBe('2026-11-18T10:00:00Z');
+  expect(client.calls[0].ops).toEqual([['select', 'updated_at'], ['eq', 'id', 'p1'], ['maybeSingle']]);
+  admin.getAdminSupabaseClient.mockReturnValue(fakeClient({ rows: null }));
+  await expect(fetchUpdatedAt(schema, 'p1')).resolves.toBeUndefined();
+  await expect(getRecord(schema, 'p1')).rejects.toThrow('This project no longer exists.');
+  admin.getAdminSupabaseClient.mockReturnValue(fakeClient({ rows: { id: 'p1', title: 'T' } }));
+  await expect(getRecord(schema, 'p1')).resolves.toEqual({ id: 'p1', title: 'T' });
+  admin.getAdminSupabaseClient.mockReturnValue(fakeClient({ error: { status: 401, message: 'JWT expired' } }));
+  await expect(fetchUpdatedAt(schema, 'p1')).rejects.toMatchObject({ code: 'SESSION_EXPIRED', message: 'Your session expired.' });
 });
 
 it('removes an image file and swallows storage misses', async () => {
