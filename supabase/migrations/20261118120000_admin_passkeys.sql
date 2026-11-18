@@ -7,9 +7,9 @@
 --
 -- Three tables:
 --   admin_passkeys            registered credentials (public keys only). The
---                             owner may list and delete their own rows at
---                             assurance level 2; only the function inserts
---                             or updates (service role).
+--                             owner may list their own rows at assurance
+--                             level 2; only the function inserts, updates
+--                             or deletes (service role).
 --   admin_passkey_challenges  single-use WebAuthn challenges; service role only.
 --   admin_passkey_bridge      the bridge factor id and its TOTP secret,
 --                             encrypted with AES-256-GCM under a key that
@@ -73,9 +73,9 @@ revoke all on table public.admin_passkeys from anon, authenticated;
 revoke all on table public.admin_passkey_challenges from anon, authenticated;
 revoke all on table public.admin_passkey_bridge from anon, authenticated;
 
--- The owner's Security screen lists and removes passkeys directly; both need
--- the admin identity and a session that has passed the second factor.
-grant select, delete on table public.admin_passkeys to authenticated;
+-- The owner's Security screen lists passkeys directly; reading needs the admin
+-- identity and a session that has passed the second factor.
+grant select on table public.admin_passkeys to authenticated;
 
 drop policy if exists admin_reads_own_passkeys on public.admin_passkeys;
 create policy admin_reads_own_passkeys
@@ -88,16 +88,10 @@ create policy admin_reads_own_passkeys
     and (select auth.jwt() ->> 'aal') = 'aal2'
   );
 
+-- No delete grant or policy on purpose: removal goes only through the
+-- function, which also refuses a localhost credential unless that is switched
+-- on and takes the bridge factor away with the last passkey.
 drop policy if exists admin_deletes_own_passkeys on public.admin_passkeys;
-create policy admin_deletes_own_passkeys
-  on public.admin_passkeys
-  for delete
-  to authenticated
-  using (
-    user_id = (select auth.uid())
-    and (select app_private.is_admin())
-    and (select auth.jwt() ->> 'aal') = 'aal2'
-  );
 
 -- Rate limit and insert in one step (at most 10 challenges per user in 15
 -- minutes). A per-user advisory lock serialises concurrent callers, so two
