@@ -115,4 +115,26 @@ describe('PasskeyManager', () => {
     expect(view.container.textContent).toMatch(/This browser cannot create passkeys/);
     view.unmount();
   });
+
+  it('marks a passkey made on the dev server as localhost', async () => {
+    passkeys.listPasskeys.mockResolvedValue({ success: true, data: [{ ...MAC, rp_id: 'localhost' }, { ...PHONE, rp_id: 'raunakchoudhary.com' }] });
+    const view = mount(<PasskeyManager />);
+    await flush();
+    const tags = Array.from(view.container.querySelectorAll('.mfa-device')).map((row) => row.querySelector('.passkey-site-tag')?.textContent || '');
+    expect(tags).toEqual(['localhost', '']);
+    view.unmount();
+  });
+
+  it('tells the Security screen after a passkey is added or removed', async () => {
+    const onChange = jest.fn();
+    const view = mount(<PasskeyManager onChange={onChange} />);
+    await flush();
+    await submit(view.container.querySelector('.passkey-add'));
+    await flush();
+    expect(onChange).toHaveBeenCalledTimes(1);
+    click(buttonNamed(view.container, 'Remove'));
+    await flush();
+    expect(onChange).toHaveBeenCalledTimes(2);
+    view.unmount();
+  });
 });

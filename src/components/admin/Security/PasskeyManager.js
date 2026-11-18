@@ -6,8 +6,10 @@
 // typing the authenticator code at sign-in on the device that holds it; the
 // authenticator apps above stay as the typed fallback.
 //
-// Rendered only once an authenticator is enrolled, because both the list
-// (row level security) and registration need a level-2 session. Registering
+// Rendered once an authenticator is enrolled, and whenever passkeys or the
+// bridge exist, so they can always be removed. The list (row level security)
+// and registration need a level-2 session. A passkey made on the dev server
+// is marked "localhost"; it is removed before the final deploy. Registering
 // the first passkey creates the bridge factor in Auth and returns a fresh
 // level-2 session, which passkeyService adopts; the assurance state is
 // re-read afterwards so the route sees it.
@@ -25,7 +27,10 @@ import {
 
 const formatDay = (value) => (value ? new Date(value).toLocaleDateString('en-US', { dateStyle: 'medium' }) : '');
 
-const PasskeyManager = () => {
+const LOCALHOST_RP_ID = 'localhost';
+
+/** onChange runs after a passkey is added or removed, so the Security screen can re-read its rules. */
+const PasskeyManager = ({ onChange = () => {} }) => {
   const { refreshAssurance } = useAuthContext();
   const [passkeys, setPasskeys] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -58,6 +63,7 @@ const PasskeyManager = () => {
       setNotice(`Passkey added for "${deviceName.trim().replace(/\s+/g, ' ')}". Next time, choose "Use passkey" at the second step on this device.`);
       await load();
       await refreshAssurance();
+      await onChange();
     } finally {
       setBusy(false);
     }
@@ -82,6 +88,7 @@ const PasskeyManager = () => {
       await load();
       // Removing the last passkey retires the bridge, which can lower this session to level 1.
       if (result.data.bridgeRemoved) await refreshAssurance();
+      await onChange();
     } finally {
       setBusy(false);
     }
@@ -107,7 +114,10 @@ const PasskeyManager = () => {
           {passkeys.map((passkey) => (
             <li key={passkey.id} className="mfa-device">
               <div className="passkey-device-text">
-                <div className="mfa-device-name">{passkey.device_name}</div>
+                <div className="mfa-device-name">
+                  {passkey.device_name}
+                  {passkey.rp_id === LOCALHOST_RP_ID && <span className="passkey-site-tag">localhost</span>}
+                </div>
                 <div className="mfa-muted">
                   Added {formatDay(passkey.created_at)}
                   <span aria-hidden="true"> · </span>
