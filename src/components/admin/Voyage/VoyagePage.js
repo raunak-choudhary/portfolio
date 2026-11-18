@@ -21,6 +21,7 @@ import SkyControls from '../SkyBackground/SkyControls';
 import { SkySettingsProvider, useSkySettings } from '../SkyBackground/SkySettingsContext';
 import { CHAPTERS, chapterIndex, chapterPlace } from './chapters';
 import DeckChapter from './DeckChapter';
+import InboxChapter from './InboxChapter';
 import SingletonChapter from './SingletonChapter';
 import Toast, { useToast } from './Toast';
 import { schemaForTable } from './managers';
@@ -32,7 +33,9 @@ import { isChapterLive, liveChapterIndex, qualityFor, routeFromTops, routePositi
 import './Voyage.css';
 
 /** Names of the constellations, from figures.json, for the rail and the palette. */
-const namesFrom = (figures) => Object.fromEntries((figures || []).map((f) => [f.id, f.name]));
+// chapter kinds with their own component; the rest show the placeholder until their unit
+const BUILT_KINDS = new Set(['prologue', 'bento', 'inbox']);
+const namesFrom =(figures) => Object.fromEntries((figures || []).map((f) => [f.id, f.name]));
 
 /** Set on <html> while the voyage is mounted, so its scrollbars can be styled apart from the public site's. */
 export const VOYAGE_ROOT_CLASS = 'voyage-root';
@@ -187,7 +190,10 @@ function VoyageView({ requireSecurityEnrollment }) {
               : schemaForTable(chapter.table).mode === 'singleton'
                 ? <SingletonChapter schema={schemaForTable(chapter.table)} notify={notify} />
                 : <DeckChapter schema={schemaForTable(chapter.table)} notify={notify} />)}
-            {chapter.kind !== 'bento' && chapter.kind !== 'prologue' && !(chapter.kind === 'deck' && schemaForTable(chapter.table)) && (
+            {chapter.kind === 'inbox' && (requireSecurityEnrollment
+              ? <div className="voyage-pane voyage-notice">Confirm an authenticator app in Security before the managers open.</div>
+              : <InboxChapter notify={notify} />)}
+            {!BUILT_KINDS.has(chapter.kind) && !(chapter.kind === 'deck' && schemaForTable(chapter.table)) && (
               <div className="voyage-pane voyage-placeholder">
                 <p>{countFor(chapter) !== null ? <><b>{countFor(chapter)}</b> {countFor(chapter) === 1 ? 'item' : 'items'} in this section.</> : 'This chapter is on its way.'}</p>
                 <p className="voyage-placeholder__note">The deck and the record dialog arrive in the next unit. Until then this section is edited in the classic dashboard.</p>
