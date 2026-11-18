@@ -19,8 +19,10 @@ import LeadershipPage from './pages/LeadershipPage';
 // Rules the 2025 login stylesheet used to lend every page; kept at the same
 // point in the cascade (after the pages) so nothing outside the login changes.
 import './styles/legacy-login-shared.css';
-import AdminLogin from './components/admin/AdminLogin/AdminLogin';
-import MfaCodeStep from './components/admin/AdminLogin/MfaCodeStep';
+// The login screens carry their own sky, font loader and stylesheet; they load as a
+// small chunk of their own so the public site's main bundle does not pay for them.
+const AdminLogin = lazy(() => import('./components/admin/AdminLogin/AdminLogin'));
+const MfaCodeStep = lazy(() => import('./components/admin/AdminLogin/MfaCodeStep'));
 // The dashboard and the sign-out film carry the sky renderer, the 3D field and their
 // libraries; they load as their own chunk so the public site's bundle does not pay for them.
 const AdminWelcome = lazy(() => import('./components/admin/AdminWelcome/AdminWelcome'));
@@ -61,7 +63,11 @@ const ProtectedAdminRoute = ({ view = 'classic' }) => {
   }
 
   if (assurance.needsSecondFactor) {
-    return <MfaCodeStep />;
+    return (
+      <Suspense fallback={<AdminChunkFallback />}>
+        <MfaCodeStep />
+      </Suspense>
+    );
   }
 
   return (
@@ -112,7 +118,7 @@ const AppShell = () => {
           <Route path="/recommendations" element={<RecommendationsPage />} />
           <Route path="/achievements" element={<AchievementsPage />} />
           <Route path="/leadership" element={<LeadershipPage />} />
-          <Route path="/adminlogin" element={<AdminLogin />} />
+          <Route path="/adminlogin" element={<Suspense fallback={<AdminChunkFallback />}><AdminLogin /></Suspense>} />
           <Route path="/admindashboard" element={<ProtectedAdminRoute />} />
           {/* The voyage (the admin as one sky) lives beside the classic dashboard until it replaces it; see docs/plans/2026-11-12-002. */}
           <Route path="/admindashboard/voyage" element={<ProtectedAdminRoute view="voyage" />} />
