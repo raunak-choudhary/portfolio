@@ -1,0 +1,116 @@
+/* src/components/admin/Voyage/Inbox.css
+   The inbox as a telegraph office: telegrams on strips of tape, filed by
+   number, marked with rubber stamps. Type, rules and stamps only.
+   Owner's overflow rule holds throughout: long names, addresses, subjects
+   and file names wrap (overflow-wrap: anywhere, min-width: 0); nothing is
+   clipped. Mobile first; globals.css forces 16px on buttons, inputs and
+   selects (an iOS zoom guard), so text inside them sets its own size. */
+
+.inbox { display: grid; gap: 12px; min-width: 0; opacity: 0; transform: translateY(30px); transition: opacity .6s .1s, transform .7s .1s; }
+.voyage-chapter.is-live .inbox { opacity: 1; transform: none; }
+.inbox .voyage-bar__button span { display: inline; }
+.inbox .voyage-bar__button { backdrop-filter: none; -webkit-backdrop-filter: none; text-decoration: none; }
+
+/* ---- toolbar ---- */
+.inbox__bar { display: grid; gap: 10px; min-width: 0; }
+.inbox__filters { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
+.inbox__filter { display: inline-flex; align-items: baseline; gap: 8px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--voyage-line); background: var(--voyage-panel); color: var(--voyage-muted); cursor: pointer; font-family: var(--voyage-cond); letter-spacing: .12em; text-transform: uppercase; line-height: 1.2; transition: border-color .15s, color .15s, background .15s; }
+.inbox__filter span { font-size: 13px; }
+.inbox__filter .inbox__filter-count { font-variant-numeric: tabular-nums; letter-spacing: .04em; color: var(--voyage-fg); opacity: .75; }
+.inbox__filter:hover { border-color: var(--voyage-accent); color: var(--voyage-fg); }
+.inbox__filter.is-on { background: var(--voyage-accent); border-color: transparent; color: var(--voyage-accent-ink); }
+.inbox__filter.is-on .inbox__filter-count { color: var(--voyage-accent-ink); opacity: .8; }
+.inbox__filter:focus-visible { outline: 2px solid var(--voyage-accent); outline-offset: 2px; }
+.inbox__tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; min-width: 0; }
+.inbox__search { flex: 1 1 240px; }
+.inbox__sort { display: inline-flex; align-items: center; gap: 8px; color: var(--voyage-muted); font-family: var(--voyage-cond); letter-spacing: .14em; text-transform: uppercase; }
+.inbox__sort > span { font-size: 12px; }
+.inbox__sort select { padding: 5px 10px; border-radius: 999px; border: 1px solid var(--voyage-line); background: var(--voyage-panel); color: var(--voyage-fg); font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; letter-spacing: 0; text-transform: none; outline: 0; max-width: 100%; }
+.inbox__sort select option { color: #111; }
+.inbox__sort select:focus-visible { border-color: var(--voyage-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--voyage-accent) 25%, transparent); }
+
+/* ---- the selection bar: stays under the header while the list scrolls ---- */
+.inbox__selection { position: sticky; top: 64px; z-index: 4; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--voyage-accent); background: var(--voyage-glass-solid, rgba(8, 12, 24, .97)); box-shadow: 0 12px 30px rgba(0, 0, 0, .35); min-width: 0; }
+.inbox__selection-count { font-family: var(--voyage-cond); font-size: 13px; letter-spacing: .16em; text-transform: uppercase; color: var(--voyage-accent); }
+.inbox__selection-actions { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
+
+.inbox__head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; min-height: 28px; }
+.inbox__all { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--voyage-muted); cursor: pointer; }
+.inbox input[type="checkbox"] { width: 18px; height: 18px; margin: 0; accent-color: var(--voyage-accent); cursor: pointer; }
+
+/* ---- telegrams ---- */
+.inbox__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; min-width: 0; }
+.telegram { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; min-width: 0; border-radius: 12px; transition: border-color .15s, box-shadow .2s; }
+/* an unread telegram carries the accent along its left edge, like a fresh strip of tape */
+.telegram.is-unread { box-shadow: inset 3px 0 0 var(--voyage-accent), 0 18px 50px rgba(0, 0, 0, .25); }
+.telegram.is-selected { border-color: var(--voyage-accent); }
+.telegram__pick { display: grid; place-items: center; padding: 16px 6px 16px 14px; cursor: pointer; }
+.telegram__open { display: grid; gap: 6px; min-width: 0; width: 100%; padding: 12px 14px 14px 6px; border: 0; background: none; color: inherit; text-align: left; cursor: pointer; font: inherit; }
+.telegram__open:focus-visible { outline: 2px solid var(--voyage-accent); outline-offset: -2px; border-radius: 10px; }
+.telegram__open > span { display: block; min-width: 0; }
+/* the tape: number and time in a typewriter face over a perforated rule */
+.telegram__tape { display: flex !important; flex-wrap: wrap; justify-content: space-between; gap: 2px 12px; padding-bottom: 6px; border-bottom: 1px dashed var(--voyage-line); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; letter-spacing: .06em; color: var(--voyage-muted); }
+.telegram__no { color: var(--voyage-accent); }
+.telegram__from { display: flex !important; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; }
+.telegram__from b { font-size: 15px; font-weight: 600; overflow-wrap: anywhere; min-width: 0; }
+.telegram__email { font-size: 13px; color: var(--voyage-muted); overflow-wrap: anywhere; min-width: 0; }
+.telegram__subject { font-family: var(--voyage-cond); font-size: 17px; font-weight: 500; letter-spacing: .04em; text-transform: uppercase; line-height: 1.2; overflow-wrap: anywhere; }
+.telegram.is-unread .telegram__subject { font-weight: 600; color: var(--voyage-fg); }
+.telegram:not(.is-unread) .telegram__subject { color: color-mix(in srgb, var(--voyage-fg) 82%, transparent); }
+.telegram__preview { font-size: 14px; line-height: 1.5; color: var(--voyage-muted); overflow-wrap: anywhere; }
+.telegram__marks { display: flex !important; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.telegram__marks:empty { display: none !important; }
+.telegram__files { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--voyage-muted); }
+
+/* ---- rubber stamps ---- */
+.stamps { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.stamp { display: inline-block; padding: 1px 7px; border: 1.5px solid currentColor; border-radius: 3px; font-family: var(--voyage-cond); font-size: 11px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; line-height: 1.5; transform: rotate(-1.5deg); }
+.stamp:nth-child(even) { transform: rotate(1.2deg); }
+.stamp--accent { color: var(--voyage-accent); background: color-mix(in srgb, var(--voyage-accent) 10%, transparent); }
+.stamp--bad { color: var(--voyage-bad); background: color-mix(in srgb, var(--voyage-bad) 10%, transparent); }
+.stamp--warn { color: var(--voyage-warn); background: color-mix(in srgb, var(--voyage-warn) 10%, transparent); }
+.stamp--muted { color: var(--voyage-muted); background: color-mix(in srgb, var(--voyage-muted) 8%, transparent); }
+
+/* ---- the opened telegram ---- */
+.inbox-dialog .record-dialog__titles .stamps { margin-top: 10px; }
+.inbox-dialog__body { display: grid; gap: 4px; align-content: start; }
+.inbox-dialog__section { min-width: 0; }
+.inbox-facts { margin: 0; display: grid; gap: 8px; }
+.inbox-facts__row { display: grid; grid-template-columns: minmax(84px, 120px) minmax(0, 1fr); gap: 12px; min-width: 0; }
+.inbox-facts dt { font-size: 13px; color: var(--voyage-muted); }
+.inbox-facts dd { margin: 0; font-size: 15px; line-height: 1.45; overflow-wrap: anywhere; min-width: 0; }
+.inbox-dialog__text { max-width: 72ch; }
+.inbox-dialog__text p { margin: 0 0 12px; font-size: 15px; line-height: 1.65; color: var(--voyage-fg); white-space: pre-wrap; overflow-wrap: anywhere; }
+.inbox-dialog__text p:last-child { margin-bottom: 0; }
+.inbox-dialog__text .inbox-dialog__none { color: var(--voyage-muted); }
+.inbox-dialog__hint { margin: 8px 0 0; font-size: 12px; color: var(--voyage-muted); }
+.enclosures { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.enclosure { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--voyage-line); background: var(--voyage-soft); min-width: 0; }
+.enclosure__icon { flex: none; color: var(--voyage-muted); }
+.enclosure__name { flex: 1 1 160px; min-width: 0; font-size: 14px; overflow-wrap: anywhere; }
+.enclosure__size { color: var(--voyage-muted); font-size: 13px; }
+.enclosure__busy { font-size: 13px; color: var(--voyage-muted); }
+.inbox-dialog__desk { display: grid; gap: 16px; padding-top: 18px; margin-top: 12px; border-top: 1px solid var(--voyage-line); }
+.inbox-dialog__desk label { font-size: 13px; font-weight: 600; letter-spacing: .02em; }
+.inbox-dialog__notes-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.inbox-dialog__notes-bar .inbox-dialog__hint { margin: 0; }
+.inbox-dialog__actions { flex-wrap: wrap; justify-content: flex-end; }
+
+/* phones: the actions sit in a tidy two-column grid with Reply across the bottom */
+@media (max-width: 767px) {
+  .inbox-dialog__foot { display: grid; grid-template-columns: minmax(0, 1fr); }
+  .inbox-dialog__actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-left: 0; order: -1; }
+  .inbox-dialog__actions .voyage-bar__button { justify-content: center; }
+  .inbox-dialog__actions .voyage-bar__button--primary { grid-column: 1 / -1; }
+  .inbox-dialog__foot > .voyage-bar__button--quiet { justify-self: start; }
+}
+
+@media (min-width: 768px) {
+  .inbox__bar { grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
+  .inbox__tools { justify-content: flex-end; }
+  .inbox__search { flex: 0 1 280px; }
+  .inbox-dialog__desk { grid-template-columns: minmax(0, 2fr) minmax(160px, 1fr); align-items: start; }
+  .telegram__open { padding: 14px 18px 16px 8px; }
+}
+
+@media (prefers-reduced-motion: reduce) { .inbox, .telegram, .inbox__filter { transition: none; } }
