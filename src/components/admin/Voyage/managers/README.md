@@ -14,10 +14,10 @@ one schema file plus its tests. The pure helpers live in `schemaModel.js`.
 | `titleKey` | yes | Column shown as the dialog title. |
 | `fields` | yes | Field list, see below. |
 | `groups` | yes | `[{ label, keys }]`: fieldsets of the form and sections of the read view. Every field belongs to one group. |
-| `card` | yes | `row => ({ title, subtitle, chips, image, flags })`. Flags: `starred`, `featured`, `award`, `current`, `hidden`. |
+| `card` | yes | `row => ({ title, subtitle, chips, image, flags })`. Flags: `starred`, `featured`, `award`, `current`, `expired`, `hidden`. |
 | `searchText` | yes | `row => string` (lower case) used by the deck search from nine records. |
 | `mode` | no | `'singleton'` for one-row tables (hero, about): a read panel with Edit, no deck, no delete, no reorder. All rows are loaded and `pickSingleton` prefers the active one, then the latest, so a save never inserts a second row. |
-| `orderKey` | no | Order column. Only a flat deck with an `orderKey` gets drag to reorder; a drag rewrites the whole column. |
+| `orderKey` | no | Order column. Only a flat deck with an `orderKey` gets drag to reorder; a drag rewrites the whole column. When the order column is also a form field, a new record keeps a typed value; an empty one takes the next number after the others. |
 | `orderDirection` | no | `'desc'` (default, highest first) or `'asc'`. |
 | `sort` | no | `rows => rows` for tables without an order column, or with a custom order (skills: featured, order number, name). |
 | `group` | no | `{ key, priorityKey, emptyLabel, defaultPriority }`: a grouped deck. Groups sort by priority, then name; Up and Down renumber every group 1..n and write only the changed ones. A new record, or one moved to another group, takes its group's priority. |
@@ -40,7 +40,7 @@ Common: `key`, `label`, `kind`, `required`, `help`, `placeholder`, `default`.
 | `number` | number or null | `min`, `max`, `integer` |
 | `rating` | whole number 1..max or null | `max` (default 5) |
 | `toggle` | boolean | `clears` (key or keys emptied when switched on) |
-| `select` | string or null | `options [{value,label}]`, `allowEmpty`, `emptyLabel`, `tolerateUnknown` (a stored value outside the list stays valid), `max` |
+| `select` | string or null | `options [{value,label}]`, `allowEmpty`, `emptyLabel`, `tolerateUnknown` (a stored value outside the list stays valid), `ignoreCase` (a stored value that differs from an option only in case loads as that option and saves in its spelling), `max` |
 | `url` | string or null | `loose` (bare domains saved with https://), `pattern`, `patternMessage`, `max` |
 | `link` | string or null | web address, `/path` or `#anchor`; `max` |
 | `date` | `YYYY-MM-DD` or null | `min`, `max` (a date or `'today'`), `disabledWhen` (toggle key; the date clears and saves null), `disabledHelp` |
@@ -48,7 +48,7 @@ Common: `key`, `label`, `kind`, `required`, `help`, `placeholder`, `default`.
 | `images` | URL array | uploads through `schema.images` |
 | `image`, `file` | URL or null | `upload` |
 | `files` | array of URLs and, with `allowText`, typed names | `upload`, `allowText`, `max`, `itemMax` (typed names only), `nullWhenEmpty` |
-| `pairs` | `[{ key, value, order_index }]` (a legacy object still loads) | `max`, `keyMax`, `valueMax`; labels must be unique |
+| `pairs` | `[{ key, value, order_index }]` (a legacy object still loads) | `max`, `keyMax`, `valueMax`; labels must be unique; the value is a one-line textarea that grows with its text (Enter and newlines are refused) |
 | `derived` | computed on save, read-only | `compute(form)` |
 
 `upload` is `{ bucket, accept, typesLabel, maxBytes, maxCount, perBatch, removeReplaced, path }`.
@@ -57,6 +57,11 @@ Uploads need a saved record: a new record shows "Save the x once, then add ...".
 Each upload writes only its own column at once. With `removeReplaced`, a replaced or
 removed file leaves storage after the row stops pointing at it. Keep `maxBytes`
 within the bucket's own cap (organization-logos is 2 MiB).
+
+Shared pieces for list sections live in `sectionKit.js`: the status field and its
+visibility rule, logo and image upload presets, the public-page sort comparators
+(`orderThenDate`, `featuredFirst`, `newestBy`), and card text helpers
+(`monthYear`, `dateRange`, `isPast`, `joinSet`, `firstOf`, `searchOf`).
 
 ## Behaviour every kind gets
 
@@ -71,3 +76,5 @@ row (`isDirty`), a labelled control with counter, `aria-invalid` and
 2. Register it in `index.js`; the chapter with that table picks it up.
 3. Add a test that round-trips a live-shaped row (`buildForm`, `validateForm`
    gives `{}`, `isDirty` is false) and checks the limits, card and upload paths.
+   The list sections load every recorded live row from `e2e/fixtures/` in
+   `listSchemas.test.js`; add a new table there.

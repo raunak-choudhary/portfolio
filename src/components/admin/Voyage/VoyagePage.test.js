@@ -107,8 +107,10 @@ describe('VoyagePage (2D fallback)', () => {
     expect(view.container.querySelector('#chapter-hero [data-testid="singleton"]')).not.toBeNull();   // one record, no deck
     expect(view.container.querySelector('#chapter-hero [data-testid="deck"]')).toBeNull();
     expect(view.container.querySelector('#chapter-about [data-testid="singleton"]')).not.toBeNull();
-    const internships = view.container.querySelector('#chapter-internships');
-    expect(internships.querySelector('.voyage-placeholder')).not.toBeNull();   // no schema yet: placeholder until its unit
+    ['education', 'work', 'internships', 'certifications', 'achievements', 'leadership', 'recommendations'].forEach((id) => {
+      expect([id, view.container.querySelector(`#chapter-${id} [data-testid="deck"]`) !== null]).toEqual([id, true]);   // V3b: the seven list sections
+    });
+    expect(view.container.querySelector('#chapter-media .voyage-placeholder')).not.toBeNull();   // no table: placeholder until its unit
     view.unmount();
   });
 
