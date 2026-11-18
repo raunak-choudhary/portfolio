@@ -1,4 +1,4 @@
-import { addListItem, buildForm, emptyValue, fieldsForGroup, isDirty, normalizeForm, validateForm } from './schemaModel';
+import { FIELD_KINDS, addListItem, buildForm, emptyValue, fieldsForGroup, isDirty, normalizeForm, validateForm } from './schemaModel';
 import { deckOrder, nextOrderIndex, orderWrites, projectsSchema } from './projects.schema';
 import { SCHEMAS, schemaForTable } from './index';
 
@@ -9,13 +9,17 @@ const row = {
 };
 
 describe('schema registry', () => {
-  it('exposes the projects schema by table and nothing else yet', () => {
+  it('exposes each schema by its table, and every field of every schema has a known kind and a group', () => {
     expect(schemaForTable('projects')).toBe(projectsSchema);
-    expect(schemaForTable('skills')).toBeNull(); expect(schemaForTable(null)).toBeNull();
-    expect(Object.keys(SCHEMAS)).toEqual(['projects']);
-    projectsSchema.fields.forEach((f) => expect(['text', 'textarea', 'number', 'toggle', 'select', 'url', 'urls', 'tags', 'images']).toContain(f.kind));
-    const claimed = projectsSchema.groups.flatMap((g) => g.keys);
-    projectsSchema.fields.forEach((f) => expect(claimed).toContain(f.key));
+    expect(schemaForTable('internships')).toBeNull(); expect(schemaForTable(null)).toBeNull();
+    expect(Object.keys(SCHEMAS)).toEqual(['hero_content', 'about_content', 'projects', 'skills']);
+    Object.entries(SCHEMAS).forEach(([table, schema]) => {
+      expect(schema.table).toBe(table);
+      schema.fields.forEach((f) => expect(FIELD_KINDS).toContain(f.kind));
+      const claimed = schema.groups.flatMap((g) => g.keys);
+      schema.fields.forEach((f) => expect(claimed).toContain(f.key));
+      schema.fields.filter((f) => ['image', 'file', 'files'].includes(f.kind)).forEach((f) => expect(f.upload).toEqual(expect.objectContaining({ bucket: expect.any(String), accept: expect.any(Array), maxBytes: expect.any(Number), path: expect.any(Function) })));
+    });
   });
 });
 
