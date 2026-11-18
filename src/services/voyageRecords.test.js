@@ -1,4 +1,5 @@
-import { IMAGE_MAX_BYTES, deleteRecord, failureKind, fetchUpdatedAt, getRecord, imageProblems, listRecords, removeImage, reorderRecords, saveRecord, uploadImages } from './voyageRecords';
+import { IMAGE_MAX_BYTES, deleteRecord, failureKind, fetchUpdatedAt, fileProblems, getRecord, imageProblems, listRecords, removeImage, removeStoredFiles, reorderGroups, reorderRecords, saveRecord, sizeLabel, uploadFieldFiles, uploadImages } from './voyageRecords';
+import { skillsSchema, certificateUpload, iconUpload } from '../components/admin/Voyage/managers/skills.schema';
 // jest.mock is hoisted above the import by babel-jest, so the service sees the mocks
 jest.mock('./adminDataService', () => ({ describeAdminWriteError: jest.fn(), getAdminSupabaseClient: jest.fn(), removeAdminStorageFiles: jest.fn(), saveAdminData: jest.fn(), uploadAdminPublicFile: jest.fn() }));
 jest.mock('./dataService', () => ({ deleteProject: jest.fn() }));
@@ -128,4 +129,70 @@ it('removes an image file and swallows storage misses', async () => {
   expect(admin.removeAdminStorageFiles).toHaveBeenCalledWith('project-images', 'https://cdn/projects/p1/x.png');
   admin.removeAdminStorageFiles.mockRejectedValue(new Error('gone'));
   await expect(removeImage(schema, 'u')).resolves.toBeUndefined();
+});
+
+const STORE = 'https://x.supabase.co/storage/v1/object/public/skill-icons/';
+
+it('deletes a skill row first, then its icon and certificate files, leaving typed names and other hosts alone', async () => {
+  const client = fakeClient();
+  admin.getAdminSupabaseClient.mockReturnValue(client);
+  admin.removeAdminStorageFiles.mockResolvedValue({});
+  const row = { id: 's1', icon_url: `${STORE}icons/a.png`, certifications: ['AWS Certified Developer', `${STORE}certifications/c.pdf`, 'https://elsewhere.example/c.pdf'] };
+  await deleteRecord(skillsSchema, 's1', row);
+  expect(client.calls[0].ops).toEqual([['delete'], ['eq', 'id', 's1']]);
+  expect(admin.removeAdminStorageFiles).toHaveBeenCalledTimes(1);
+  expect(admin.removeAdminStorageFiles).toHaveBeenCalledWith('skill-icons', [`${STORE}icons/a.png`, `${STORE}certifications/c.pdf`]);
+  // a refused cleanup does not fail a delete that already happened
+  admin.removeAdminStorageFiles.mockRejectedValue(new Error('storage down'));
+  await expect(deleteRecord(skillsSchema, 's1', row)).resolves.toBeUndefined();
+  // a refused row delete keeps the files
+  admin.removeAdminStorageFiles.mockClear();
+  admin.getAdminSupabaseClient.mockReturnValue(fakeClient({ error: { message: 'no' } }));
+  await expect(deleteRecord(skillsSchema, 's1', row)).rejects.toThrow('The skill could not be deleted.');
+  expect(admin.removeAdminStorageFiles).not.toHaveBeenCalled();
+});
+
+it('moves whole groups by writing the priority to every row of each group, matching a missing group with IS NULL', async () => {
+  const client = fakeClient();
+  admin.getAdminSupabaseClient.mockReturnValue(client);
+  await reorderGroups(skillsSchema, [{ value: 'Cloud Platforms', priority: 1 }, { value: null, priority: 2 }]);
+  expect(client.calls[0].ops[0][1]).toMatchObject({ skill_type_priority: 1 });
+  expect(client.calls[0].ops[1]).toEqual(['eq', 'skill_type', 'Cloud Platforms']);
+  expect(client.calls[1].ops[1]).toEqual(['is', 'skill_type', null]);
+  admin.getAdminSupabaseClient.mockReturnValue(fakeClient({ error: { message: 'no' } }));
+  await expect(reorderGroups(skillsSchema, [{ value: 'x', priority: 1 }])).rejects.toThrow('The new group order could not be saved.');
+});
+
+it('checks files against a field upload rule: types, size, per choice and total', () => {
+  const pdf = { name: 'cert.pdf', type: 'application/pdf', size: 1000 };
+  const exe = { name: 'run.exe', type: 'application/x-msdownload', size: 10 };
+  const huge = { name: 'big.pdf', type: 'application/pdf', size: 11 * 1048576 };
+  expect(sizeLabel(10 * 1048576)).toBe('10 MB'); expect(sizeLabel(2 * 1048576)).toBe('2 MB'); expect(sizeLabel(512 * 1024)).toBe('512 KB');
+  expect(fileProblems([], certificateUpload).problems[0].message).toBe('Choose at least one file.');
+  expect(fileProblems([pdf, pdf, pdf, pdf, pdf, pdf], certificateUpload).problems[0].message).toBe('At most 5 files at a time; 6 were chosen.');
+  expect(fileProblems([pdf, pdf], certificateUpload, { existing: 19 }).problems[0].message).toBe('At most 20 entries here. There is room for 1 more; 2 were chosen.');
+  expect(fileProblems([pdf], certificateUpload, { existing: 20 }).problems[0].message).toBe('At most 20 entries here. Remove one first.');
+  const mixed = fileProblems([pdf, exe, huge], certificateUpload);
+  expect(mixed.accepted).toEqual([pdf]);
+  expect(mixed.problems).toEqual([{ name: 'run.exe', message: 'is not a PDF, JPEG, PNG, WebP or Word file.' }, { name: 'big.pdf', message: 'is 11.0 MB; the limit is 10 MB.' }]);
+  const svg = { name: 'i.svg', type: 'image/svg+xml', size: 100 };
+  expect(fileProblems([svg], iconUpload)).toEqual({ accepted: [svg], problems: [] });
+  expect(fileProblems([svg, svg], iconUpload).problems[0].message).toBe('Choose one file.');
+});
+
+it('uploads field files to the schema path and reports failures by name', async () => {
+  admin.uploadAdminPublicFile.mockImplementation(async ({ bucket, filePath }) => ({ publicUrl: `https://cdn/${bucket}/${filePath}` }));
+  const file = { name: 'My Icon.SVG', type: 'image/svg+xml', size: 10 };
+  const { urls, failed } = await uploadFieldFiles(iconUpload, { id: 's1', form: { skill_name: 'C++ & Rust' } }, [file]);
+  expect(failed).toEqual([]);
+  expect(urls[0]).toMatch(/^https:\/\/cdn\/skill-icons\/icons\/skill_s1\/c-rust-icon-\d+\.svg$/);
+  admin.uploadAdminPublicFile.mockRejectedValue(new TypeError('Failed to fetch'));
+  const lost = await uploadFieldFiles(certificateUpload, { id: 's1', form: { skill_name: 'Go' } }, [{ name: 'a.pdf', type: 'application/pdf', size: 1 }]);
+  expect(lost).toEqual({ urls: [], failed: [{ name: 'a.pdf', message: 'did not upload: the connection dropped.' }] });
+});
+
+it('removes stored files quietly', async () => {
+  admin.removeAdminStorageFiles.mockRejectedValue(new Error('miss'));
+  await expect(removeStoredFiles('skill-icons', ['u'])).resolves.toBeUndefined();
+  expect(admin.removeAdminStorageFiles).toHaveBeenCalledWith('skill-icons', ['u']);
 });
