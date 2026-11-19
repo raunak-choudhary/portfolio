@@ -5,6 +5,7 @@ import { VOYAGE_POSITION_KEY } from '../../../services/voyagePosition';
 import VoyagePage, { ENROLMENT_LOCK_TEXT, VOYAGE_ROOT_CLASS } from './VoyagePage';
 import { React, act, click, mount, stubCanvas } from '../SkyBackground/testUtils';
 import { isDashboardReady, resetDashboardReady } from '../AdminWelcome/adminReadiness';
+import { openRecord, queueRequests, recordIntent, showQueue } from './recordIntent';
 
 const mockNavigate = jest.fn();
 jest.mock('react-router-dom', () => ({ useNavigate: () => mockNavigate }));
@@ -229,6 +230,26 @@ describe('VoyagePage (2D fallback)', () => {
     } finally {
       Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 });
     }
+  });
+
+  it('forgets intents and queue requests when the voyage unmounts', async () => {
+    const view = render();
+    await flush();
+    act(() => { showQueue(); openRecord('skills', 'nope'); });
+    expect(queueRequests.get()).toBeGreaterThan(0);
+    view.unmount();
+    expect(queueRequests.get()).toBe(0);
+    expect(recordIntent.get()).toBeNull();
+  });
+
+  it('drops an intent for a chapter held behind the authenticator lock', async () => {
+    const view = mount(<ThemeProvider><VoyagePage requireSecurityEnrollment /></ThemeProvider>);
+    await flush();
+    act(() => openRecord('projects', 'p1', { mode: 'edit' }));
+    await flush();
+    expect(recordIntent.get()).toBeNull();
+    expect(view.container.textContent).toContain('Set up an authenticator app first');
+    view.unmount();
   });
 
   it('holds every chapter but the Earth and Security until an authenticator is confirmed', async () => {
