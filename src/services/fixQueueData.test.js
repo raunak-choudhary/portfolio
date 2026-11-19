@@ -5,7 +5,7 @@ import { getAdminSupabaseClient } from './adminDataService';
 
 jest.mock('./supabaseClient', () => ({ supabase: { from: jest.fn(), rpc: jest.fn() } }));
 jest.mock('./adminDataService', () => ({ getAdminSupabaseClient: jest.fn(), describeAdminWriteError: jest.fn() }));
-jest.mock('./fixDismissalsService', () => ({ listDismissals: jest.fn() }));
+jest.mock('./fixDismissalsService', () => ({ DISMISSALS_NOT_SET_UP: 'DISMISSALS_NOT_SET_UP', listDismissals: jest.fn() }));
 jest.mock('./voyageData', () => ({
   EDITED_TABLES: [['projects', 'Projects', 'title'], ['work_experience', 'Work', 'company']],
   getSectionFreshness: jest.fn(),
@@ -33,14 +33,21 @@ describe('loadFixQueueData', () => {
   it('passes dismissals through and maps freshness labels to tables and rule names', async () => {
     const out = await loadFixQueueData();
     expect(out.dismissalsAvailable).toBe(true);
+    expect(out.dismissalsProblem).toBeNull();
     expect(out.dismissals).toHaveLength(1);
     expect(out.freshness).toEqual([{ section: 'Work Experience', table: 'work_experience', at: '2026-01-01T00:00:00Z' }, { section: 'Projects', table: 'projects', at: null }]);
   });
 
   it('keeps working when the dismissals table is missing', async () => {
-    listDismissals.mockRejectedValue(new Error('relation does not exist'));
+    listDismissals.mockRejectedValue(Object.assign(new Error('not set up'), { code: 'DISMISSALS_NOT_SET_UP' }));
     getSectionFreshness.mockRejectedValue(new Error('offline'));
     const out = await loadFixQueueData();
-    expect(out).toMatchObject({ dismissals: [], dismissalsAvailable: false, freshness: [] });
+    expect(out).toMatchObject({ dismissals: [], dismissalsAvailable: false, dismissalsProblem: 'not-set-up', freshness: [] });
+  });
+
+  it('tells a failed dismissals load apart from a missing table', async () => {
+    listDismissals.mockRejectedValue(Object.assign(new Error('expired'), { code: 'SESSION_EXPIRED' }));
+    const out = await loadFixQueueData();
+    expect(out).toMatchObject({ dismissalsAvailable: false, dismissalsProblem: 'failed' });
   });
 });
