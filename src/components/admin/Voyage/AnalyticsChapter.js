@@ -8,8 +8,9 @@
 // starts. Rolling ranges compare items with each other.
 //
 // Data: one paged read per range through insightsService, reduced by the
-// pure insightsModel (contract section 2). Reads start only when the chapter
-// comes near the viewport, and each range is kept for a few minutes so
+// pure insightsModel (contract section 2). Reads start in an idle period a
+// few seconds after mount (or earlier if the chapter comes near the
+// viewport first), and each range is kept for a few minutes so
 // switching back is instant. The range choice is remembered per viewer in
 // localStorage (a convenience: it may be unavailable, so every access is
 // guarded).
@@ -18,6 +19,7 @@ import React, { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useStat
 import { AlertCircle, ArrowDownRight, ArrowUpRight, Clock, Eye, Info, HelpCircle, Laptop, Link2, ExternalLink, RefreshCw, Smartphone, Star, Tablet } from 'lucide-react';
 import WaterCard, { CardTag } from './WaterCard';
 import ReportsPanel from './ReportsPanel';
+import { whenIdle } from './idle';
 import { DEFAULT_RANGE, RANGES, RANGE_ORDER, chartDay, windowsFor } from './insightsTime';
 import {
   MARK, STEP_ACTIONS, bestRateSource, comparisonLabel, funnelCards, levelFor, mostVisitsSource, phonesLeaveMore,
@@ -41,6 +43,8 @@ export const RANGE_KEY = 'rc-admin-insights-range';
 /** How long a loaded range is reused before it is read again. */
 const CACHE_MS = 5 * 60 * 1000;
 const TOP_PROJECTS = 12;
+/** How long after mount the idle preload of the chart and the data waits. */
+export const PRELOAD_DELAY_MS = 2500;
 
 const LOAD_FAILURE = {
   session: 'Your session has expired. Sign in again in a new tab, then try again.',
@@ -370,7 +374,15 @@ export default function AnalyticsChapter({ notify, motion = true, clock = Date.n
   const cache = useRef(new Map());
   const request = useRef(0);
 
-  // start reading only when the chapter comes near the viewport
+  // Preload while the voyage is at rest: a few seconds after mount, in an idle
+  // period, fetch the chart's chunk and the remembered range's data, so neither
+  // is parsed nor fetched while the page is scrolling toward this chapter.
+  useEffect(() => whenIdle(() => {
+    import('./TrendChart').catch(() => { /* the lazy chart retries when it renders */ });
+    setNear(true);
+  }, { delay: PRELOAD_DELAY_MS, timeout: 3000 }), []);
+
+  // a fast scroller can arrive before the idle preload: start then instead
   useEffect(() => {
     const el = rootRef.current;
     if (!el || typeof IntersectionObserver === 'undefined') { setNear(true); return undefined; }
