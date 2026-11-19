@@ -30,8 +30,11 @@
   /* the dialog: a large surface, so it alone gets a strong blur; the fill is
      dense enough that light text keeps WCAG AA contrast over any sky even
      where the blur is not drawn (software compositing, older browsers) */
-  --voyage-glass-fill: linear-gradient(180deg, rgba(18, 26, 46, 0.88), rgba(8, 12, 24, 0.92));
+  --voyage-glass-fill: linear-gradient(180deg, rgba(18, 26, 46, 0.92), rgba(8, 12, 24, 0.94));
   --voyage-glass-solid: rgba(8, 12, 24, 0.97);
+  /* the opaque floor under the dialog's frosted still: the deck behind never
+     reads through, even before the first snapshot or without WebGL */
+  --voyage-glass-base: #0a0f1d;
   --voyage-glass-edge: rgba(255, 255, 255, 0.16);
   --voyage-glass-sheen: rgba(255, 255, 255, 0.07);
   --voyage-soft: rgba(255, 255, 255, 0.06);
@@ -52,8 +55,9 @@
   --voyage-bad: #ff7a90;
   --voyage-warn: #ffcf7a;
   --voyage-good: #7fe3b0;
-  --voyage-glass-fill: linear-gradient(180deg, rgba(48, 26, 16, 0.88), rgba(26, 14, 8, 0.92));
+  --voyage-glass-fill: linear-gradient(180deg, rgba(48, 26, 16, 0.92), rgba(26, 14, 8, 0.94));
   --voyage-glass-solid: rgba(26, 14, 8, 0.97);
+  --voyage-glass-base: #1e100a;
   --voyage-glass-edge: rgba(255, 214, 186, 0.24);
   --voyage-glass-sheen: rgba(255, 230, 210, 0.08);
 }
@@ -363,13 +367,14 @@
   height: 100dvh;
   /* the dense fill over the frosted still: the dialog reads the same as with a live blur, for a fraction of the GPU work */
   background: var(--voyage-glass-fill), var(--voyage-snap);
+  background-color: var(--voyage-glass-base);
   box-shadow: inset 0 1px 0 var(--voyage-glass-sheen);
   overflow: hidden;
   animation: record-in .26s cubic-bezier(.2, .8, .2, 1) both;
 }
-/* full screen on phones: nothing to see behind it, so the surface is all but
-   solid and the deck's text cannot read through the form */
-@media (max-width: 767px) { .record-dialog { background: var(--voyage-glass-solid); } }
+/* full screen on phones: nothing to see behind it, so the surface is solid
+   and the deck's text cannot read through the form */
+@media (max-width: 767px) { .record-dialog { background: var(--voyage-glass-base); } }
 @keyframes record-in { from { opacity: 0; transform: translateY(14px) scale(.985); } to { opacity: 1; transform: none; } }
 
 .record-dialog__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: calc(16px + env(safe-area-inset-top)) 16px 14px; border-bottom: 1px solid var(--voyage-line); flex: none; }
