@@ -45,7 +45,8 @@ describe('ActivityPane', () => {
   it('groups rows into New York days with sentences, sub lines and the outside tag', async () => {
     render();
     await flush();
-    expect(service.listActivity).toHaveBeenCalledWith({ limit: PAGE_SIZE, filter: 'all' });
+    expect(PAGE_SIZE).toBe(20);
+    expect(service.listActivity).toHaveBeenCalledWith({ limit: 20, filter: 'all' });
     expect([...pane().querySelectorAll('.act-day h4')].map((h) => h.textContent)).toEqual(['Today', 'Yesterday', 'Tue 17 Nov']);
     expect(pane().querySelector('.v5-head__sum').textContent).toBe('Last 3 days · 6 events');
     const first = pane().querySelector('.act-row');
@@ -80,7 +81,7 @@ describe('ActivityPane', () => {
     service.listActivity.mockResolvedValue({ rows: [ROWS[5], row(7, { at: '2026-11-10T16:00:00.000Z', recordId: 'p2', recordTitle: 'CareVault' })], hasMore: false });
     click(buttonNamed('Show earlier'));
     await flush();
-    expect(service.listActivity).toHaveBeenLastCalledWith({ before: { at: ROWS[5].at, id: ROWS[5].id }, limit: PAGE_SIZE, filter: 'all' });
+    expect(service.listActivity).toHaveBeenLastCalledWith({ before: { at: ROWS[5].at, id: ROWS[5].id }, limit: 20, filter: 'all' });
     expect(pane().querySelectorAll('.act-row')).toHaveLength(7);
     expect(pane().textContent).toContain('Tue 10 Nov');
     expect(buttonNamed('Show earlier')).toBeUndefined();
