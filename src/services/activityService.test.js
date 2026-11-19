@@ -4,7 +4,7 @@
 // leaves the test.
 
 import {
-  ACTIVITY_NOT_SET_UP, LOG_TIMEOUT_MS, SIGN_IN_FLAG, cleanSecurityLabel, isActivityAvailable, listActivity,
+  ACTIVITY_NOT_SET_UP, LOG_TIMEOUT_MS, SIGN_IN_FLAG, cleanSecurityLabel, isActivityAvailable, listActivity, listDeletedRecords,
   logSecurityEvent, noteSecondFactorSignIn, recordHistory, sessionIdFromToken, signInLabel, toActivityRow,
 } from './activityService';
 import { failureKind } from './voyageRecords';
@@ -158,6 +158,36 @@ describe('listActivity', () => {
     supabase.from.mockReturnValue(query(Promise.reject(new TypeError('Failed to fetch'))));
     const thrown = await listActivity().catch((e) => e);
     expect(failureKind(thrown, true)).toBe('network');
+  });
+});
+
+describe('listDeletedRecords', () => {
+  it('asks once for the newest create or delete per record and returns the asked-for records deleted last', async () => {
+    const q = query({ data: [
+      { section: 'projects', record_id: 'p9', action: 'delete' },
+      { section: 'projects', record_id: 'p9', action: 'create' },
+      { section: 'projects', record_id: 'p9', action: 'delete' },     // an older delete adds nothing
+      { section: 'projects', record_id: 'p1', action: 'create' },     // made again after its delete: it exists
+      { section: 'projects', record_id: 'p1', action: 'delete' },
+      { section: 'internships', record_id: 'p1', action: 'delete' },  // an id from one table paired with another section
+    ], error: null });
+    supabase.from.mockReturnValue(q);
+    const found = await listDeletedRecords([{ section: 'projects', recordId: 'p9' }, { section: 'projects', recordId: 'p1' }, { section: 'internships', recordId: 'i4' }]);
+    expect(supabase.from).toHaveBeenCalledTimes(1);
+    expect(supabase.from).toHaveBeenCalledWith('admin_activity');
+    expect(q.calls).toEqual([
+      ['select', 'section, record_id, action'], ['in', 'action', ['create', 'delete']], ['in', 'section', ['projects', 'internships']], ['in', 'record_id', ['p9', 'p1', 'i4']],
+      ['order', 'at', { ascending: false }], ['order', 'id', { ascending: false }], ['limit', 1000],
+    ]);
+    expect(found).toEqual([{ section: 'projects', recordId: 'p9' }]);
+  });
+
+  it('makes no request for nothing, and throws typed errors', async () => {
+    await expect(listDeletedRecords([])).resolves.toEqual([]);
+    await expect(listDeletedRecords([{ section: 'projects', recordId: null }])).resolves.toEqual([]);
+    expect(supabase.from).not.toHaveBeenCalled();
+    supabase.from.mockReturnValue(query({ data: null, error: { code: 'PGRST205', message: 'missing' } }));
+    await expect(listDeletedRecords([{ section: 'projects', recordId: 'p1' }])).rejects.toMatchObject({ code: ACTIVITY_NOT_SET_UP });
   });
 });
 

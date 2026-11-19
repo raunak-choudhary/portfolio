@@ -163,6 +163,42 @@ export async function recordHistory(table, recordId, limit = 20) {
 }
 
 /**
+ * Which of the given records have been deleted: one query for the delete
+ * rows among them. The activity pane asks this for the records it shows,
+ * because a filtered list (Files, Security) or a delete on a later page
+ * holds no delete row of its own to strike a record through with.
+ * @param {Array<{section: string, recordId: string|number}>} records
+ * @returns {Promise<Array<{section: string, recordId: string}>>}
+ */
+export async function listDeletedRecords(records) {
+  const list = (Array.isArray(records) ? records : [])
+    .filter((r) => r && r.section && r.recordId !== null && r.recordId !== undefined && r.recordId !== '')
+    .slice(0, 200);
+  if (!list.length) return [];
+  const sections = [...new Set(list.map((r) => String(r.section)))];
+  const ids = [...new Set(list.map((r) => String(r.recordId)))];
+  const { data, error } = await supabase
+    .from(ACTIVITY_TABLE)
+    .select('section, record_id, action')
+    .in('action', ['create', 'delete'])
+    .in('section', sections)
+    .in('record_id', ids)
+    .order('at', { ascending: false })
+    .order('id', { ascending: false })
+    .limit(1000);
+  if (error) throw toServiceError(error, 'The activity could not be loaded.');
+  // The two in() lists can pair a section with an id from another, so only asked-for pairs count.
+  // Newest first, the first create or delete per record decides: a record made again after a delete exists.
+  const asked = new Set(list.map((r) => `${r.section}\u0000${r.recordId}`));
+  const latest = new Map();
+  for (const row of Array.isArray(data) ? data : []) {
+    const key = `${row.section}\u0000${row.record_id}`;
+    if (asked.has(key) && !latest.has(key)) latest.set(key, row);
+  }
+  return [...latest.values()].filter((row) => row.action === 'delete').map((row) => ({ section: row.section, recordId: String(row.record_id) }));
+}
+
+/**
  * False only when the server says the table does not exist (the migration
  * has not been run), so the UI can say "not set up yet" calmly. Any other
  * answer, a network failure included, reads as true and the list call
@@ -307,6 +343,6 @@ async function recordSignIn(storage) {
   return logSecurityEvent('sign-in', signInLabel(methods, passkeys));
 }
 
-const activityService = { listActivity, recordHistory, logSecurityEvent, isActivityAvailable, noteSecondFactorSignIn };
+const activityService = { listActivity, listDeletedRecords, recordHistory, logSecurityEvent, isActivityAvailable, noteSecondFactorSignIn };
 
 export default activityService;
