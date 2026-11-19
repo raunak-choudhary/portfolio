@@ -132,7 +132,7 @@ describe('SecurityChapter', () => {
     expect(facts.textContent).toContain('Desktop browser');
     const out = buttonNamed(root, 'Sign out everywhere');
     expect(out.getAttribute('aria-describedby')).toBe('sec-everywhere');
-    expect(root.querySelector('#sec-everywhere').textContent).toMatch(/^Ends every session on every device, including this one\./);
+    expect(root.querySelector('#sec-everywhere').textContent).toBe('Ends this session and every other browser or device signed in as you.');
   });
 
   it('leaves the sign-in time out when the session does not carry one', async () => {
