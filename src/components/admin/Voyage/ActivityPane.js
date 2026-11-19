@@ -13,8 +13,8 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowUpDown, ChevronDown, FileX, Fingerprint, History, Inbox, Info, LogIn, LogOut, Pencil, Plus, RefreshCw, Smartphone, Trash2, UploadCloud } from 'lucide-react';
-import { isActivityAvailable, listActivity } from '../../../services/activityService';
-import { FILTERS, TILE_ROWS, activityFailure, canOpen, describe, goneRecords, groupByDay, isGone, isOutside, mergeRows, nyTime, paneSummary, subLine, toneFor } from './activityModel';
+import { ACTIVITY_NOT_SET_UP, listActivity } from '../../../services/activityService';
+import { FILTERS, TILE_ROWS, activityFailure, canOpen, collapseBulk, describe, goneRecords, groupByDay, isGone, isOutside, mergeRows, nyTime, paneSummary, subLine, toneFor } from './activityModel';
 import './Activity.css';
 
 /** Rows per page; "Show earlier" asks for the next page before the oldest row shown. */
@@ -44,16 +44,15 @@ export function useActivityFeed({ pageSize = PAGE_SIZE } = {}) {
     const ticket = ++request.current;
     setState((s) => ({ ...s, status: 'loading', filter, rows: [], hasMore: false, error: '', more: false, moreError: '' }));
     try {
-      const available = await isActivityAvailable();
-      if (ticket !== request.current) return;
-      if (!available) { setState((s) => ({ ...s, status: 'missing' })); return; }
       const page = await listActivity({ limit: pageSize, filter });
       if (ticket !== request.current) return;
       const rows = Array.isArray(page?.rows) ? page.rows : [];
       setState((s) => ({ ...s, status: 'ready', rows, hasMore: Boolean(page?.hasMore), seen: s.seen || rows.length > 0 || filter !== 'all' }));
-      if (filter === 'all') setLatest(rows.slice(0, TILE_ROWS));
+      if (filter === 'all') setLatest(collapseBulk(rows).slice(0, TILE_ROWS));
     } catch (err) {
-      if (ticket === request.current) setState((s) => ({ ...s, status: 'error', error: activityFailure(err) }));
+      if (ticket !== request.current) return;
+      if (err?.code === ACTIVITY_NOT_SET_UP) setState((s) => ({ ...s, status: 'missing' }));
+      else setState((s) => ({ ...s, status: 'error', error: activityFailure(err) }));
     }
   }, [pageSize]);
 
@@ -67,7 +66,9 @@ export function useActivityFeed({ pageSize = PAGE_SIZE } = {}) {
     const ticket = request.current;
     setState((s) => ({ ...s, more: true, moreError: '' }));
     try {
-      const page = await listActivity({ before: rows[rows.length - 1].at, limit: pageSize, filter });
+      // the last row itself, not only its time, so rows sharing an instant are not skipped
+      const last = rows[rows.length - 1];
+      const page = await listActivity({ before: { at: last.at, id: last.id }, limit: pageSize, filter });
       if (ticket !== request.current) return;
       setState((s) => ({ ...s, rows: mergeRows(s.rows, page?.rows), hasMore: Boolean(page?.hasMore), more: false }));
     } catch (err) {
@@ -105,7 +106,9 @@ function ActivityRow({ row, gone, onOpen }) {
  * @param {Date} [props.now] the clock, for tests.
  */
 export default function ActivityPane({ feed, onOpen, now }) {
-  const { status, rows, filter, hasMore, more, moreError, error, seen } = feed;
+  const { status, rows: loaded, filter, hasMore, more, moreError, error, seen } = feed;
+  // a bulk inbox change reads as one sentence; paging still works on the rows as loaded
+  const rows = useMemo(() => collapseBulk(loaded), [loaded]);
   // "Today" is read again whenever the rows change (a reload, a filter, a page)
   const clock = useMemo(() => now || new Date(), [now, rows]); // eslint-disable-line react-hooks/exhaustive-deps
   const gone = useMemo(() => goneRecords(rows), [rows]);

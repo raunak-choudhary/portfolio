@@ -2,7 +2,7 @@
 import HistoryLine, { HISTORY_LIMIT } from './HistoryLine';
 import { React, act, click, mount } from '../SkyBackground/testUtils';
 
-jest.mock('../../../services/activityService', () => ({ listActivity: jest.fn(), recordHistory: jest.fn(), isActivityAvailable: jest.fn(), logSecurityEvent: jest.fn() }));
+jest.mock('../../../services/activityService', () => ({ ACTIVITY_NOT_SET_UP: 'ACTIVITY_NOT_SET_UP', listActivity: jest.fn(), recordHistory: jest.fn(), isActivityAvailable: jest.fn(), logSecurityEvent: jest.fn() }));
 const service = jest.requireMock('../../../services/activityService');
 
 const NOW = new Date('2026-11-19T19:00:00.000Z');
@@ -18,7 +18,6 @@ describe('HistoryLine', () => {
   let view;
   const render = (props = {}) => { view = mount(<HistoryLine table="projects" recordId="p1" now={NOW} {...props} />); return view; };
   beforeEach(() => {
-    service.isActivityAvailable.mockResolvedValue(true);
     service.recordHistory.mockResolvedValue(HISTORY);
   });
   afterEach(() => { view?.unmount(); view = null; });
@@ -66,11 +65,10 @@ describe('HistoryLine', () => {
   });
 
   it('renders nothing while the activity table is missing', async () => {
-    service.isActivityAvailable.mockResolvedValue(false);
+    service.recordHistory.mockRejectedValue(Object.assign(new Error('This is not set up yet.'), { code: 'ACTIVITY_NOT_SET_UP' }));
     render();
     await flush();
     expect(view.container.innerHTML).toBe('');
-    expect(service.recordHistory).not.toHaveBeenCalled();
   });
 
   it('says so in one line when nothing is recorded or the read fails', async () => {
