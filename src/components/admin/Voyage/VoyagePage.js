@@ -40,7 +40,7 @@ import { schemaForTable } from './managers';
 import MissionControl from './MissionControl';
 import FixQueuePane, { FIX_QUEUE_ID, useFixQueue } from './FixQueuePane';
 import { chapterForTable } from './fixQueueModel';
-import { fixesChanged, queueRequests, recordIntent } from './recordIntent';
+import { clearIntent, fixesChanged, queueRequests, recordIntent, resetRecordIntent } from './recordIntent';
 import CommandPalette from './CommandPalette';
 import StarRail from './StarRail';
 import { createSkyField, webglAvailable } from './skyField';
@@ -261,12 +261,21 @@ function VoyageView({ requireSecurityEnrollment }) {
   // ---- the fix queue and record intents ----
   // A new intent travels to its table's chapter (the chapter then opens the record);
   // the steps of one walk stay in that chapter, so only a change of table moves the page.
+  // A chapter held behind the authenticator lock never mounts, so an intent for
+  // it would wait there and fire later; it is dropped with a word instead.
   const intentTable = useRef(null);
   useEffect(() => {
     const table = intent?.table || null;
-    if (table && table !== intentTable.current) { const id = chapterForTable(table); if (id) go(id); }
-    intentTable.current = table;
-  }, [intent, go]);
+    if (table && table !== intentTable.current) {
+      const id = chapterForTable(table);
+      if (id && requireSecurityEnrollment) { clearIntent(); notify('Set up an authenticator app first; the chapters open once it is confirmed.', 'bad'); go('security'); }
+      else if (id) go(id);
+    }
+    intentTable.current = intent ? table : null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [intent, go, requireSecurityEnrollment]);
+  // intents and queue requests belong to one visit
+  useEffect(() => () => resetRecordIntent(), []);
   useEffect(() => {
     if (!queueAsked) return;
     document.getElementById(FIX_QUEUE_ID)?.scrollIntoView({ behavior: effectiveMotion ? 'smooth' : 'auto', block: 'start' });
