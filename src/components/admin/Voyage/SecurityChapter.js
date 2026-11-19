@@ -268,7 +268,7 @@ export default function SecurityChapter({ notify, onLeave }) {
       <div className="sec-actions">
         <button type="button" className="voyage-bar__button" onClick={everywhere} disabled={leaving} aria-describedby="sec-everywhere"><LogOut size={15} aria-hidden="true" /><span>{leaving ? 'Signing out everywhere' : 'Sign out everywhere'}</span></button>
       </div>
-      <p className="sec-note" id="sec-everywhere">Ends every session on every device, including this one. Use it if a device is lost or you signed in somewhere you should not have.</p>
+      <p className="sec-note" id="sec-everywhere">Ends this session and every other browser or device signed in as you.</p>
     </Pane>
   );
 

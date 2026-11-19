@@ -571,9 +571,14 @@ export const signInAdmin = async (email) => {
   return requestAdminLoginOtp(email);
 };
 
+/**
+ * Ends the session in this browser only. Other browsers and devices signed in
+ * as the admin stay signed in; signOutEverywhere below ends those too. The
+ * scope is stated explicitly because supabase-js defaults to 'global'.
+ */
 export const signOutAdmin = async () => {
   try {
-    const { error } = await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut({ scope: 'local' });
 
     if (error) {
       return {

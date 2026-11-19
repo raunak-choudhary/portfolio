@@ -230,13 +230,26 @@ describe('authService secure admin auth', () => {
       expect(adminQuery.eq).toHaveBeenCalledWith('is_active', true);
     });
 
-    it('clears the Supabase Auth session on sign out', async () => {
+    it('clears the Supabase Auth session in this browser only on sign out', async () => {
       supabase.auth.signOut.mockResolvedValue({ error: null });
+      localStorage.setItem('admin_analytics_session', 'x');
 
       const result = await signOutAdmin();
 
       expect(result.success).toBe(true);
       expect(supabase.auth.signOut).toHaveBeenCalledTimes(1);
+      expect(supabase.auth.signOut).toHaveBeenCalledWith({ scope: 'local' });
+      expect(localStorage.getItem('admin_analytics_session')).toBeNull();
+    });
+
+    it('reports a refused sign out and keeps the caller informed', async () => {
+      supabase.auth.signOut.mockResolvedValue({ error: { message: 'network' } });
+
+      const result = await signOutAdmin();
+
+      expect(result.success).toBe(false);
+      expect(result.error.code).toBe('SIGN_OUT_FAILED');
+      expect(supabase.auth.signOut).toHaveBeenCalledWith({ scope: 'local' });
     });
 
     it('returns the current admin with the real second-factor state', async () => {
