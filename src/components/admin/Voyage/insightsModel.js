@@ -15,7 +15,12 @@
 // service's narrow select, which lifts the three metadata fields used here
 // to `visitor`, `kind` and `section`; both shapes are read.
 
-import { dayIndex, shortDate, nyDate } from './insightsTime';
+import { addDays, chartDay, dayIndex, shortDate, nyDate, parseDbInstant } from './insightsTime';
+
+export { parseDbInstant };
+
+const n = (v) => Math.round(v).toLocaleString('en-US');
+const pct = (v) => `${Math.round(v * 100)}%`;
 
 /* ---------- reading one event ---------- */
 
@@ -28,7 +33,7 @@ const PAGE_SUFFIXES = ['-no-storage', '-disabled', '-enabled', '-dedup'];
  */
 export function foldPage(label) {
   if (label === null || label === undefined) return null;
-  let page = String(label).trim().toLowerCase().replace(/^\/+/, '');
+  let page = String(label).trim().toLowerCase().replace(/^\/+/, '').replace(/\s+/g, '-');
   for (let changed = true; changed;) {
     changed = false;
     for (const suffix of PAGE_SUFFIXES) {
@@ -51,7 +56,7 @@ export function sectionOf(row) {
 }
 
 /** Rows that never count: admin activity and the old admin section_visit events. */
-export const isCounted = (row) => (row.user_type === undefined || row.user_type === 'visitor') && row.event_type !== 'section_visit';
+export const isCounted = (row) => (row.user_type === undefined || row.user_type === null || row.user_type === 'visitor') && row.event_type !== 'section_visit';
 
 /** The four ways in, in screen order. Counted per event. */
 export const CHANNELS = Object.freeze([
@@ -62,40 +67,74 @@ export const CHANNELS = Object.freeze([
 ]);
 
 /**
- * Which way in a reach-out row is, or null when the row is not a reach-out.
- * New rows say so in event_action; legacy rows keep counting (contract 1).
+ * Which way in a reach-out row is, and whether it is a legacy row, or null
+ * when the row is not a reach-out. New rows say so in event_action; legacy
+ * rows keep counting unless the same visit also sent the new row (contract 1).
+ * @returns {{channel: string, legacy: boolean}|null}
  */
-export function channelOf(row) {
+export function reachOf(row) {
   const action = row.event_action;
-  if (action === 'reach_out') { const label = labelOf(row); return CHANNELS.some((c) => c.id === label) ? label : null; }
-  if (row.event_type === 'form_submission') return 'contact_form';
-  if (action === 'click_contact_email') return 'email';
-  if (action === 'click_social_media' && labelOf(row) === 'linkedin') return 'linkedin';
+  if (action === 'reach_out') { const label = labelOf(row); return CHANNELS.some((c) => c.id === label) ? { channel: label, legacy: false } : null; }
+  if (row.event_type === 'form_submission') return { channel: 'contact_form', legacy: true };
+  if (action === 'click_social_media' && labelOf(row) === 'linkedin') return { channel: 'linkedin', legacy: true };
+  if (action === 'click_contact_email') return { channel: 'email', legacy: true };
   return null;
 }
+
+/** Which way in a reach-out row is, or null when the row is not a reach-out. */
+export const channelOf = (row) => reachOf(row)?.channel ?? null;
 
 /** Pages and sections that count as looking at the work. */
 const WORK_PLACES = new Set(['projects', 'work-experience', 'internships']);
 /** Sections whose view alone does not count as going deeper. */
 const SHALLOW_SECTIONS = new Set(['hero', 'navigation']);
 
-/** The source group of a referrer host (contract 2). */
+/** The source groups in their fixed order, which also breaks ranking ties (contract 2). */
 export const SOURCE_GROUPS = Object.freeze(['LinkedIn', 'Google', 'GitHub', 'Direct or unknown', 'Other sites']);
-export function sourceGroup(host) {
-  const h = String(host ?? '').trim().toLowerCase();
-  if (!h || h === 'direct') return 'Direct or unknown';
+/** The site's own hosts: a referrer from these says nothing about where a visit came from. */
+const OWN_HOSTS = new Set(['raunakchoudhary.com', 'www.raunakchoudhary.com', 'localhost', '127.0.0.1']);
+
+/** Bare lower-case host of a stored referrer ("www.google.com" or "https://www.google.com/"). */
+export function referrerHost(referrer) {
+  if (typeof referrer !== 'string') return '';
+  const text = referrer.trim().toLowerCase();
+  if (!text) return '';
+  if (text.includes('://')) {
+    try { return new URL(text).hostname; } catch { return ''; }
+  }
+  return text.split('/')[0];
+}
+
+/** The source group of a stored referrer (host or full address). */
+export function sourceGroup(referrer) {
+  const h = referrerHost(referrer);
+  if (!h || h === 'direct' || OWN_HOSTS.has(h)) return 'Direct or unknown';
   if (h.includes('linkedin.') || h === 'lnkd.in' || h === 'com.linkedin.android') return 'LinkedIn';
-  if (h.includes('google.')) return 'Google';
-  if (h === 'github.com') return 'GitHub';
+  if (/(^|\.)google\./.test(h)) return 'Google';
+  if (h === 'github.com' || h.endsWith('.github.com')) return 'GitHub';
   return 'Other sites';
 }
 
-/** The three device classes, in screen order, with the copy the Health tab shows. */
+/**
+ * The device classes, in screen order, with the copy the Health tab shows.
+ * "unknown" is listed only when a window has such visits.
+ */
 export const DEVICES = Object.freeze([
   { id: 'desktop', name: 'Laptop or desktop', note: '1280 px and wider' },
   { id: 'phone', name: 'Phone', note: 'Under 768 px' },
   { id: 'tablet', name: 'Tablet', note: '768 to 1279 px' },
+  { id: 'unknown', name: 'Unknown device', note: 'No screen size recorded' },
 ]);
+
+/** Device class of a visitor_info object; old rows carry only a screen width. */
+export function deviceOf(info) {
+  if (!info || typeof info !== 'object') return 'unknown';
+  if (info.deviceClass === 'desktop' || info.deviceClass === 'phone' || info.deviceClass === 'tablet') return info.deviceClass;
+  const width = Number(info.screenWidth);
+  if (!Number.isFinite(width) || width <= 0) return 'unknown';
+  if (width < 768) return 'phone';
+  return width < 1280 ? 'tablet' : 'desktop';
+}
 
 /** The home page's tracked sections in page order; navigation is shown as "Explore". */
 export const HOME_SECTIONS = Object.freeze([
@@ -108,11 +147,11 @@ const HOME_PAGE = 'home';
 
 /* ---------- visits ---------- */
 
-const timeOf = (row) => { const t = Date.parse(row.created_at); return Number.isFinite(t) ? t : null; };
+const timeOf = (row) => parseDbInstant(row.created_at);
 
 /**
  * Reduces rows to one record per visit (session_id).
- * @returns {Map<string, {first: number, info: object|null, infoAt: number, reached: boolean, work: boolean, deeper: boolean, engaged: boolean, pages: Set<string>, sections: Set<string>, opened: Set<string>}>}
+ * @returns {Map<string, {first: number, info: object|null, infoAt: number, reached: boolean, work: boolean, deeper: boolean, engaged: boolean, pages: Set<string>, sections: Set<string>, opened: Set<string>, channels: string[], links: Array<{project: string, kind: string}>}>}
  */
 export function visitsOf(rows) {
   const visits = new Map();
@@ -121,17 +160,22 @@ export function visitsOf(rows) {
     const at = timeOf(row);
     if (at === null) continue;
     let v = visits.get(row.session_id);
-    if (!v) { v = { first: at, info: null, infoAt: Infinity, reached: false, work: false, deeper: false, engaged: false, pages: new Set(), sections: new Set(), opened: new Set() }; visits.set(row.session_id, v); }
+    if (!v) { v = { first: at, info: null, infoAt: Infinity, reached: false, work: false, deeper: false, engaged: false, pages: new Set(), sections: new Set(), opened: new Set(), fresh: [], legacy: [], links: [] }; visits.set(row.session_id, v); }
     if (at < v.first) v.first = at;
     // source and device come from the earliest event that carries them (the earliest event, once tracking A ships)
     const info = visitorOf(row);
-    if (info && at < v.infoAt) { v.info = info; v.infoAt = at; }
+    if (info && typeof info === 'object' && at < v.infoAt) { v.info = info; v.infoAt = at; }
 
-    if (channelOf(row)) v.reached = true;
+    const reach = reachOf(row);
+    if (reach) (reach.legacy ? v.legacy : v.fresh).push(reach.channel);
     const action = row.event_action;
     if (action === 'engaged') v.engaged = true;
-    if (action === 'project_open') { v.work = true; if (row.event_label) v.opened.add(String(row.event_label)); }
-    if (action === 'project_link') v.work = true;
+    if (action === 'project_open' && row.event_label) { v.work = true; v.opened.add(String(row.event_label)); }
+    if (action === 'project_link' && row.event_label) {
+      v.work = true;
+      const kind = kindOf(row);
+      if (kind === 'repo' || kind === 'demo') v.links.push({ project: String(row.event_label), kind });
+    }
     if (action === 'click_social_media' && labelOf(row) === 'github') v.work = true;
     if (row.event_type === 'page_view') {
       const page = foldPage(row.event_label);
@@ -146,8 +190,13 @@ export function visitsOf(rows) {
       }
     }
   }
-  // the funnel nests: reached implies work, work implies deeper
   for (const v of visits.values()) {
+    // a legacy reach-out row is dropped when the same visit sent the new row of that channel
+    const seen = new Set(v.fresh);
+    v.channels = [...v.fresh, ...v.legacy.filter((c) => !seen.has(c))];
+    v.reached = v.channels.length > 0;
+    delete v.fresh; delete v.legacy;
+    // the funnel nests: reached implies work, work implies deeper
     if (v.reached) v.work = true;
     if (v.work || v.pages.size >= 2) v.deeper = true;
   }
@@ -175,6 +224,7 @@ export function summarizeWindow(rows, { start, days, projects = [], quickFrom = 
   const sourceBy = Object.fromEntries(sources.map((s) => [s.name, s]));
   // devices: share of all visits, quick leaves among the measured ones
   const devices = DEVICES.map((d) => ({ ...d, visits: 0, measured: 0, quickLeaves: 0 }));
+  for (const v of all) v.device = deviceOf(v.info);
   const deviceBy = Object.fromEntries(devices.map((d) => [d.id, d]));
   const series = new Array(Math.max(0, days)).fill(0);
   let measured = 0, quickLeaves = 0;
@@ -183,7 +233,7 @@ export function summarizeWindow(rows, { start, days, projects = [], quickFrom = 
     const source = sourceBy[sourceGroup(v.info?.referrer)];
     source.visits += 1;
     if (v.reached) source.reached += 1;
-    const device = deviceBy[v.info?.deviceClass];
+    const device = deviceBy[v.device];
     if (device) device.visits += 1;
     if (quickFrom !== null && v.first >= quickFrom) {
       const quick = !v.deeper && !v.engaged;
@@ -194,20 +244,16 @@ export function summarizeWindow(rows, { start, days, projects = [], quickFrom = 
     if (i >= 0 && i < series.length) series[i] += 1;
   }
 
-  // channels and project links count events, not visits
+  // channels and project links count events (after the legacy dedupe), not visits
   const channels = CHANNELS.map((c) => ({ ...c, count: 0 }));
   const channelBy = Object.fromEntries(channels.map((c) => [c.id, c]));
   const links = new Map();   // project id -> { repo, demo }
-  for (const row of rows) {
-    if (!isCounted(row)) continue;
-    const channel = channelOf(row);
-    if (channel) channelBy[channel].count += 1;
-    if (row.event_action === 'project_link' && row.event_label) {
-      const id = String(row.event_label);
-      const entry = links.get(id) || { repo: 0, demo: 0 };
-      const kind = kindOf(row);
-      if (kind === 'repo') entry.repo += 1; else if (kind === 'demo') entry.demo += 1;
-      links.set(id, entry);
+  for (const v of all) {
+    for (const c of v.channels) channelBy[c].count += 1;
+    for (const { project, kind } of v.links) {
+      const entry = links.get(project) || { repo: 0, demo: 0 };
+      entry[kind] += 1;
+      links.set(project, entry);
     }
   }
 
@@ -216,13 +262,13 @@ export function summarizeWindow(rows, { start, days, projects = [], quickFrom = 
   const projectRows = projects.map((p) => {
     const l = links.get(String(p.id)) || { repo: 0, demo: 0 };
     return { id: String(p.id), title: p.title || 'Untitled project', starred: Boolean(p.featured), hasDemo: Boolean(p.live_url), opens: opens.get(String(p.id)) || 0, repo: l.repo, demo: l.demo };
-  });
+  }).sort((x, y) => y.opens - x.opens || x.title.localeCompare(y.title));
 
   // home page reach: of visits that viewed the home page, the share that viewed each section
   const home = all.filter((v) => v.pages.has(HOME_PAGE));
   const sections = HOME_SECTIONS.map((s) => {
     const reached = home.filter((v) => v.sections.has(s.id)).length;
-    return { ...s, count: reached, share: home.length ? reached / home.length : 0 };
+    return { ...s, count: reached, share: home.length ? reached / home.length : null };
   });
 
   return {
@@ -230,13 +276,13 @@ export function summarizeWindow(rows, { start, days, projects = [], quickFrom = 
     deeper: count((v) => v.deeper),
     work: count((v) => v.work),
     reached: count((v) => v.reached),
-    sources,
+    sources: rankSources(sources),
     channels,
     projects: projectRows,
     home: { visits: home.length, sections },
-    devices: devices.map((d) => ({
+    devices: devices.filter((d) => d.id !== 'unknown' || d.visits > 0).map((d) => ({
       ...d,
-      share: all.length ? d.visits / all.length : 0,
+      share: all.length ? d.visits / all.length : null,   // null, never 0, with nothing to divide by
       quick: d.measured ? d.quickLeaves / d.measured : null,
     })),
     measured,
@@ -251,6 +297,49 @@ export function bucketSeries(series, size) {
   const out = [];
   for (let i = 0; i < series.length; i += size) out.push(series.slice(i, i + size).reduce((a, b) => a + b, 0));
   return out;
+}
+
+/**
+ * Points for the visits chart: one per day (per week past 92 days) with the
+ * comparison laid over the same positions. In quarter mode the chart spans the
+ * whole quarter, so the current line stops at today and the axis shows the
+ * first of each month and the quarter's last day.
+ *
+ * @param {number[]} cur daily visits of the current window (summarizeWindow().series)
+ * @param {number[]} prev daily visits of the comparison window
+ * @param {object} windows windowsFor(...)
+ * @returns {{points: Array<{label: string, prevLabel: string, cur: number|null, prev: number|null}>, ticks: string[], unit: 'day'|'week'}}
+ */
+export function trendPoints(cur, prev, windows) {
+  const step = windows.bucket;
+  const a = bucketSeries(cur, step), b = bucketSeries(prev, step);
+  const q = windows.quarter;
+  const length = q ? Math.max(q.length, windows.lastQuarter.length) : a.length;
+  const label = (start, i) => (step > 1 ? `Week of ${chartDay(addDays(start, i * step))}` : chartDay(addDays(start, i)));
+  const points = Array.from({ length }, (_, i) => ({
+    label: label(windows.current.start, i),
+    prevLabel: label(windows.before.start, i),
+    cur: i < a.length ? a[i] : null,
+    prev: i < b.length ? b[i] : null,
+  }));
+  let ticks;
+  if (q) {
+    ticks = [0, 1, 2].map((k) => chartDay({ m: q.start.m + k, d: 1 }));
+    ticks.push(points[q.length - 1].label);
+  } else {
+    const last = points.length - 1;
+    ticks = [...new Set([0, Math.round(last / 2), last].map((i) => points[i].label))];
+  }
+  return { points, ticks, unit: step > 1 ? 'week' : 'day' };
+}
+
+/** One sentence for screen readers: totals of both lines and the busiest point. */
+export function trendSummary({ points, unit }, curName, prevName) {
+  const total = (key) => points.reduce((sum, p) => sum + (p[key] || 0), 0);
+  const peak = points.reduce((best, p) => (p.cur !== null && (best === null || p.cur > best.cur) ? p : best), null);
+  const head = `Visits per ${unit}. ${curName}: ${n(total('cur'))} visits`;
+  const most = peak && peak.cur > 0 ? `, most on ${unit === 'week' ? peak.label.replace('Week of ', 'the week of ') : peak.label} (${n(peak.cur)})` : '';
+  return `${head}${most}. ${prevName}: ${n(total('prev'))} visits.`;
 }
 
 /* ---------- comparison ---------- */
@@ -321,7 +410,7 @@ export function funnelCards(now, before, quarter) {
 }
 
 /** Sources ranked for the screen: by reach-outs, then visits (contract 2). */
-export const rankSources = (sources) => [...sources].sort((x, y) => y.reached - x.reached || y.visits - x.visits);
+export const rankSources = (sources) => [...sources].sort((x, y) => y.reached - x.reached || y.visits - x.visits || SOURCE_GROUPS.indexOf(x.name) - SOURCE_GROUPS.indexOf(y.name));
 
 /** The source that turns visits into reach-outs best, or null when nobody reached out. Ties go to the bigger source. */
 export function bestRateSource(sources) {
@@ -361,8 +450,6 @@ export function phonesLeaveMore(devices) {
 
 /* ---------- "What changed" ---------- */
 
-const n = (v) => Math.round(v).toLocaleString('en-US');
-const pct = (v) => `${Math.round(v * 100)}%`;
 const capital = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
 /**
@@ -440,6 +527,6 @@ export const STALE_DAYS = 90;
  * @returns {{stale: Array<{section: string, days: number}>, fresh: number}}
  */
 export function staleSections(freshness, now) {
-  const rows = (freshness || []).map((f) => ({ section: f.section, days: Math.floor((now - Date.parse(f.at)) / 86400000) })).filter((f) => Number.isFinite(f.days));
+  const rows = (freshness || []).map((f) => { const at = parseDbInstant(f.at); return { section: f.section, days: at === null ? NaN : Math.floor((now - at) / 86400000) }; }).filter((f) => Number.isFinite(f.days));
   return { stale: rows.filter((f) => f.days > STALE_DAYS).sort((x, y) => y.days - x.days), fresh: rows.filter((f) => f.days <= STALE_DAYS).length };
 }
