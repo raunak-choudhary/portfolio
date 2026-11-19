@@ -75,6 +75,7 @@ const Contact = () => {
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="contact-link linkedin"
+                onClick={() => visitorTracking.trackReachOut('linkedin', 'contact')}
               >
                 <span className="link-icon">💼</span>
                 <span>LinkedIn</span>
@@ -82,6 +83,7 @@ const Contact = () => {
               <a
                 href="mailto:raunakchoudhary17@gmail.com"
                 className="contact-link email"
+                onClick={() => visitorTracking.trackReachOut('email', 'contact')}
               >
                 <span className="link-icon">📧</span>
                 <span>Direct Email</span>

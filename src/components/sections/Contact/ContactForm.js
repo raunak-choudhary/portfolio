@@ -272,6 +272,10 @@ const ContactForm = () => {
           formData.inquiryType || 'general-inquiry',
           formData.subject
         );
+        // The legacy form_submission row stays; reach_out is the V4b event.
+        // Not awaited, so the success message waits on no extra round trip;
+        // the tracker catches its own failures.
+        visitorTracking.trackReachOut('contact_form', 'contact');
         
         setSubmitStatus('success');
         setShowForm(false); // Hide form on success
@@ -591,7 +595,12 @@ For collaborations: project scope, your background, and how we can work together
             <p>
               <strong>📧 Direct Response:</strong> I personally read and respond to every message. 
               For urgent matters, feel free to connect with me on{' '}
-              <a href="https://linkedin.com/in/raunak-choudhary" target="_blank" rel="noopener noreferrer">
+              <a
+                href="https://linkedin.com/in/raunak-choudhary"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => visitorTracking.trackReachOut('linkedin', 'contact_form')}
+              >
                 LinkedIn
               </a>.
             </p>
