@@ -600,6 +600,70 @@ export const signOutAdmin = async () => {
   }
 };
 
+/** The fixed sentence shown when ending every session did not reach the server. */
+export const SIGN_OUT_EVERYWHERE_FAILED_MESSAGE =
+  'Could not sign out everywhere. Nothing was changed. Check the connection and try again.';
+
+/**
+ * Ends every session of the admin account on every device, this one included
+ * (Supabase revokes all refresh tokens of the user). The scope is stated
+ * explicitly so the intent survives any change of the library's default.
+ * supabase-js keeps the local session when the server call fails for any
+ * reason other than an already-dead session, so a failure here means nothing
+ * changed and the caller can stay where it is.
+ */
+export const signOutEverywhere = async () => {
+  try {
+    const { error } = await supabase.auth.signOut({ scope: 'global' });
+    if (error) {
+      return { success: false, error: authError('SIGN_OUT_EVERYWHERE_FAILED', SIGN_OUT_EVERYWHERE_FAILED_MESSAGE, error.message) };
+    }
+    if (typeof window !== 'undefined') {
+      try { localStorage.removeItem('admin_analytics_session'); } catch { /* storage unavailable */ }
+    }
+    return { success: true, data: { scope: 'global' } };
+  } catch (error) {
+    return { success: false, error: authError('SIGN_OUT_EVERYWHERE_FAILED', SIGN_OUT_EVERYWHERE_FAILED_MESSAGE, error?.message) };
+  }
+};
+
+/**
+ * What can truthfully be said about the current session, for the Security
+ * chapter: the assurance level, the authentication methods with the times
+ * they were used (from the access token's amr claim, decoded locally by
+ * supabase-js), and the access token's lifetime in seconds. Methods that
+ * arrive in the plain string form carry no time; their timestamp is null.
+ * Never throws; a failure reports { success: false }.
+ */
+export const getSessionFacts = async () => {
+  try {
+    const [levels, session] = await Promise.all([
+      supabase.auth.mfa.getAuthenticatorAssuranceLevel(),
+      supabase.auth.getSession()
+    ]);
+    if (levels.error || !levels.data) {
+      return { success: false, error: authError('SESSION_FACTS_ERROR', 'Could not read this session.') };
+    }
+    const raw = Array.isArray(levels.data.currentAuthenticationMethods) ? levels.data.currentAuthenticationMethods : [];
+    const methods = raw
+      .map((entry) => (typeof entry === 'string'
+        ? { method: entry, timestamp: null }
+        : { method: String(entry?.method || ''), timestamp: Number.isFinite(entry?.timestamp) ? entry.timestamp : null }))
+      .filter((entry) => entry.method);
+    const expiresIn = Number(session?.data?.session?.expires_in);
+    return {
+      success: true,
+      data: {
+        level: levels.data.currentLevel || 'aal1',
+        methods,
+        expiresIn: Number.isFinite(expiresIn) && expiresIn > 0 ? expiresIn : null
+      }
+    };
+  } catch (error) {
+    return { success: false, error: authError('SESSION_FACTS_ERROR', 'Could not read this session.', error?.message) };
+  }
+};
+
 export const getCurrentAdmin = async () => {
   try {
     const { data, error } = await supabase.auth.getSession();
@@ -724,6 +788,8 @@ const authService = {
   removeUnverifiedFactors,
   signInAdmin,
   signOutAdmin,
+  signOutEverywhere,
+  getSessionFacts,
   getCurrentAdmin,
   getCurrentSession,
   verifyAdminSession,
