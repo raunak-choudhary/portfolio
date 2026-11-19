@@ -10,7 +10,8 @@ import SingletonChapter from './SingletonChapter';
 import { fixBannerCopy } from './RecordDialog';
 import { buildFixQueue } from './fixQueueModel';
 import { startWalk } from './FixQueuePane';
-import { clearIntent, fixesChanged, openRecord, queueRequests, recordIntent } from './recordIntent';
+import { clearIntent, fixesChanged, openRecord, queueRequests, recordIntent, setIntent } from './recordIntent';
+import { walkIntent } from './fixQueueModel';
 import { projectsSchema } from './managers/projects.schema';
 import { heroSchema } from './managers/hero.schema';
 import { React, act, click, mount, setInputValue } from '../SkyBackground/testUtils';
@@ -46,7 +47,7 @@ describe('the fix walk', () => {
     records.saveRecord.mockImplementation(async (_s, payload, id) => ({ ...rows.find((r) => r.id === id), ...payload, id }));
     records.fetchUpdatedAt.mockResolvedValue(null);
   });
-  afterEach(() => { views.forEach((v) => v.unmount()); views = []; act(() => clearIntent()); document.body.innerHTML = ''; });
+  afterEach(() => { views.forEach((v) => v.unmount()); views = []; act(() => clearIntent()); document.body.innerHTML = ''; delete Element.prototype.scrollIntoView; });
 
   it('walks two records with mocked saves: banner, Missing tag, focus, Save and next, Fixed, Next, Back to the queue', async () => {
     const model = buildFixQueue({ rowsByTable: { projects: rows } });
@@ -188,6 +189,109 @@ describe('the fix walk', () => {
     await flush();
     expect(dialog()).not.toBeNull();
     expect(dialog().dataset.mode).toBe('edit');
+  });
+});
+
+describe('uploads, deletes and vanished records in a walk', () => {
+  let notify;
+  const noImages = rows.map((r) => (r.id === 'b' ? r : { ...r, image_urls: [] }));
+  beforeEach(() => {
+    notify = jest.fn();
+    records.listRecords.mockResolvedValue(noImages.map((r) => ({ ...r })));
+    records.saveRecord.mockImplementation(async (_s, payload, id) => ({ ...noImages.find((r) => r.id === id), ...payload, id }));
+    records.fetchUpdatedAt.mockResolvedValue(null);
+  });
+  afterEach(() => { views.forEach((v) => v.unmount()); views = []; act(() => clearIntent()); document.body.innerHTML = ''; delete Element.prototype.scrollIntoView; });
+
+  it('counts an upload to the ringed image field as the fix: Fixed, the new score and Next', async () => {
+    const model = buildFixQueue({ rowsByTable: { projects: noImages } });
+    const group = model.groups.find((g) => g.ruleKey === 'projects:images');
+    const [first, second] = group.items;
+    show(<DeckChapter schema={projectsSchema} notify={notify} />);
+    await flush();
+    act(() => startWalk(group, model));
+    await flush();
+    const target = document.querySelector('.record-form__cell.is-target');
+    expect(target.querySelector('[data-field]').dataset.field).toBe('image_urls');
+    expect(target.contains(document.activeElement)).toBe(true);
+
+    const file = new File(['x'], 'shot.png', { type: 'image/png' });
+    records.imageProblems.mockReturnValue({ accepted: [file], problems: [] });
+    records.uploadImages.mockResolvedValue({ urls: ['https://cdn/shot.png'], failed: [] });
+    const v = fixesChanged.get();
+    const input = target.querySelector('input[type="file"]');
+    Object.defineProperty(input, 'files', { configurable: true, value: [file] });
+    await act(async () => { input.dispatchEvent(new Event('change', { bubbles: true })); });
+    await flush();
+    expect(records.saveRecord).toHaveBeenCalledWith(projectsSchema, { image_urls: ['https://cdn/shot.png'] }, first.recordId);
+    expect(fixesChanged.get()).toBeGreaterThan(v);
+    const before = model.preciseScore, after = before + first.gain;
+    expect(banner().textContent).toContain(`Fixed. Health ${(Math.round(before * 10) / 10).toFixed(1)} → ${(Math.round(after * 10) / 10).toFixed(1)}`);
+    expect(dialog().dataset.mode).toBe('read');
+    const next = [...banner().querySelectorAll('button')].find((b) => b.textContent === `Next: ${second.label}`);
+    expect(document.activeElement).toBe(next);
+    click(next);
+    await flush();
+    expect(document.querySelector('#record-title').textContent).toBe(second.label);
+    expect(recordIntent.get().walk.fixed).toEqual([first.recordId]);
+  });
+
+  it('scrolls the whole ringed cell to the top of the form and rings only the target', async () => {
+    const scrolled = [];
+    Element.prototype.scrollIntoView = function scrollIntoView(opts) { scrolled.push([this, opts]); };
+    const model = buildFixQueue({ rowsByTable: { projects: noImages } });
+    const group = model.groups.find((g) => g.ruleKey === 'projects:proof');
+    show(<DeckChapter schema={projectsSchema} notify={notify} />);
+    await flush();
+    act(() => startWalk(group, model));
+    await flush();
+    const ringed = document.querySelectorAll('.is-target');
+    expect(ringed).toHaveLength(1);
+    expect(ringed[0].contains(document.activeElement)).toBe(true);
+    expect(scrolled.some(([el, opts]) => el === ringed[0] && opts.block === 'start')).toBe(true);
+  });
+
+  it('ends the walk when its record is deleted after Cancel, so a card opened by hand opens to read', async () => {
+    const model = buildFixQueue({ rowsByTable: { projects: noImages } });
+    const group = model.groups.find((g) => g.ruleKey === 'projects:proof');
+    const view = show(<DeckChapter schema={projectsSchema} notify={notify} />);
+    await flush();
+    act(() => startWalk(group, model));
+    await flush();
+    records.deleteRecord.mockResolvedValue();
+    click(dialogButton('Cancel'));
+    expect(dialog().dataset.mode).toBe('read');
+    const v = fixesChanged.get();
+    click(dialogButton('Delete'));
+    await act(async () => { click([...document.querySelectorAll('.dialog button')].find((b) => b.textContent === 'Delete')); });
+    await flush();
+    expect(recordIntent.get()).toBeNull();
+    expect(fixesChanged.get()).toBeGreaterThan(v);
+    await act(async () => { await new Promise((r) => setTimeout(r, 600)); });
+    click(view.container.querySelector('.card__open'));
+    await flush();
+    expect(dialog().dataset.mode).toBe('read');
+    expect(banner()).toBeNull();
+  });
+
+  it('skips a record that vanished mid-walk with a short note', async () => {
+    const model = buildFixQueue({ rowsByTable: { projects: noImages } });
+    const group = model.groups.find((g) => g.ruleKey === 'projects:proof');
+    const gone = { ...group.items[0], recordId: 'zzz', label: 'Ghost' };
+    const walk = walkIntent({ ...group, items: [gone, ...group.items] }, { field: 'github_urls', score: model.preciseScore });
+    show(<DeckChapter schema={projectsSchema} notify={notify} />);
+    await flush();
+    act(() => setIntent(walk));
+    await flush();
+    expect(notify).toHaveBeenCalledWith('Ghost is no longer here, so the walk moved on.');
+    expect(document.querySelector('#record-title').textContent).toBe(group.items[0].label);
+    expect(banner().textContent).toContain('2 of 3');
+  });
+
+  it('tells the owner a hidden record is not a fix', () => {
+    const copy = fixBannerCopy({ task: 'Add a link', step: 1, total: 2, gain: 0.3, next: { label: 'Bravo' } }, { passes: false, state: 'hidden', inactive: true });
+    expect(copy).toMatchObject({ tone: 'warn', title: 'Saved, but hiding it is not a fix.' });
+    expect(copy.body).toContain('Next: Bravo.');
   });
 });
 

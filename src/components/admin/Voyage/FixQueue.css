@@ -77,6 +77,8 @@
 
 /* stale sections, the hidden list and the explainer */
 .fx-sub { display: grid; gap: 8px; padding-top: 12px; border-top: 1px solid var(--voyage-line); min-width: 0; }
+.fx-sub h4:focus { outline: none; }
+.fx-sub h4:focus-visible { outline: 2px solid var(--voyage-accent); outline-offset: 3px; border-radius: 4px; }
 .fx-sub h4 { margin: 0; display: flex; align-items: center; gap: 6px; font-family: var(--voyage-cond); font-weight: 500; font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--voyage-muted); }
 .fx-plain { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
 .fx-plain li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; padding: 9px 0; border-top: 1px solid color-mix(in srgb, var(--voyage-line) 50%, transparent); font-size: 14px; min-width: 0; color: var(--voyage-fg); }
@@ -108,7 +110,7 @@
 .record-banner--good .record-banner__icon { color: var(--voyage-good); }
 .record-banner__step { font-family: var(--voyage-cond); letter-spacing: .08em; color: var(--voyage-muted); font-size: 13px; font-weight: 500; }
 
-.record-form__cell.is-target { position: relative; padding: 12px; margin: 0 -2px; border-radius: 12px; box-shadow: 0 0 0 2px var(--voyage-accent); background: color-mix(in srgb, var(--voyage-accent) 7%, transparent); }
+.record-form__cell.is-target { position: relative; scroll-margin: 20px 0 12px; padding: 12px; margin: 0 -2px; border-radius: 12px; box-shadow: 0 0 0 2px var(--voyage-accent); background: color-mix(in srgb, var(--voyage-accent) 7%, transparent); }
 .fix-missing { position: absolute; top: -10px; right: 12px; z-index: 1; display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border-radius: 999px; background: var(--voyage-accent); color: var(--voyage-accent-ink); font-size: 11px; font-weight: 700; letter-spacing: .04em; }
 
 @media (min-width: 768px) {

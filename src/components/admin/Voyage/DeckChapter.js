@@ -49,7 +49,7 @@ export default function DeckChapter({ schema, notify }) {
 
   const open = useCallback((record) => setDialog({ open: true, record }), []);
   const create = useCallback(() => setDialog({ open: true, record: null }), []);
-  const { fix, startInEdit, onCloseDialog } = useFixWalk({ table: schema.table, records, ready: !loading && !error, open: setDialog, notify, current: dialog });
+  const { fix, startInEdit, onCloseDialog, onDeleted: walkDeleted } = useFixWalk({ table: schema.table, records, ready: !loading && !error, open: setDialog, notify, current: dialog });
   const close = useCallback(() => { setDialog((s) => ({ ...s, open: false })); onCloseDialog(); }, [onCloseDialog]);
 
   const saved = useCallback((row, isNew) => {
@@ -60,9 +60,10 @@ export default function DeckChapter({ schema, notify }) {
 
   const deleted = useCallback((id) => {
     setDialog({ open: false, record: null });
+    walkDeleted();
     setLeaving((s) => new Set([...s, id]));
     setTimeout(() => { if (!alive.current) return; setRecords((rows) => rows.filter((r) => r.id !== id)); setLeaving((s) => { const n = new Set(s); n.delete(id); return n; }); }, LEAVE_MS);
-  }, []);
+  }, [walkDeleted]);
 
   const reorder = useCallback(async (ids) => {
     const before = records;

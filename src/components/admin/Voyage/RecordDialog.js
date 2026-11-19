@@ -52,6 +52,7 @@ import HistoryLine from './HistoryLine';
 import useOnline from './useOnline';
 import { UPLOAD_KINDS, applyChange, buildForm, cleanupTargets, fieldsForGroup, isDirty, normalizeForm, validateForm } from './managers/schemaModel';
 import { round1, gainText } from './fixQueueModel';
+import { noteContentChanged } from './contentChanged';
 import './FixQueue.css';
 import { deleteRecord, failureKind, fetchUpdatedAt, fileProblems, getRecord, imageProblems, removeImage, removeStoredFiles, saveRecord, uploadFieldFiles, uploadImages } from '../../../services/voyageRecords';
 
@@ -181,6 +182,8 @@ export default function RecordDialog({ schema, record, open, onClose, onSaved, o
   // (in fix mode: the target field, then the banner's next step once saved)
   const fixField = fix?.field || null;
   const ringedFocusable = 'input:not([type="hidden"]):not(:disabled), textarea:not(:disabled), select:not(:disabled), button:not(:disabled), [tabindex]:not([tabindex="-1"])';
+  // the whole ringed cell, Missing tag included, sits at the top of the scrolling body, under the banners
+  const revealTarget = (node) => node.closest('.record-form__cell')?.scrollIntoView?.({ block: 'start', inline: 'nearest' });
   const fixFocusPending = useRef(false);   // the ringed field could not take focus yet (the row was still arriving, or an upload was busy)
   useEffect(() => {
     if (!open || !panelRef.current) return;
@@ -189,7 +192,8 @@ export default function RecordDialog({ schema, record, open, onClose, onSaved, o
     fixFocusPending.current = Boolean(ringed && !fixResult && !ringedTarget);
     const target = fixResult ? panelRef.current.querySelector('[data-fix-step]')
       : ringedTarget || (mode === 'edit' ? panelRef.current.querySelector('.record-form [data-field] input, .record-form [data-field] textarea, .record-form [data-field] select') : panelRef.current.querySelector('[data-action="edit"]'));
-    (target || panelRef.current.querySelector(FOCUSABLE))?.focus();
+    (target || panelRef.current.querySelector(FOCUSABLE))?.focus(ringed && !fixResult ? { preventScroll: true } : undefined);
+    if (ringed && !fixResult) revealTarget(ringed);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, mode, recordId, fixField, fixResult]);
   // once the ringed field can take focus it does, for the step that just opened only
@@ -197,7 +201,7 @@ export default function RecordDialog({ schema, record, open, onClose, onSaved, o
   useEffect(() => {
     if (busyImages || !fixFocusPending.current || !panelRef.current || !fixField) return;
     const input = panelRef.current.querySelector(`.record-form [data-field="${fixField}"]`)?.querySelector(ringedFocusable);
-    if (input) { fixFocusPending.current = false; input.focus(); }
+    if (input) { fixFocusPending.current = false; input.focus({ preventScroll: true }); revealTarget(input); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [busyImages, isNew, online]);
 
@@ -233,6 +237,7 @@ export default function RecordDialog({ schema, record, open, onClose, onSaved, o
       const row = await saveRecord(schema, payload, base?.id || null);
       setBase(row); setForm(buildForm(schema, row)); setMode(editOnly && !fix ? 'edit' : 'read'); setTouched(new Set()); setSubmitted(false);
       onSaved(row, isNew);
+      noteContentChanged();
       notify(isNew ? `${capital(schema.singular)} added.` : 'Saved.');
       if (fix) {
         const result = fix.check ? fix.check(row) : { passes: true, state: null };
@@ -253,7 +258,7 @@ export default function RecordDialog({ schema, record, open, onClose, onSaved, o
 
   const remove = async () => {
     setConfirm(null); setSaving(true); setFailure(null);
-    try { await deleteRecord(schema, base.id, base); onDeleted(base.id); notify(`${capital(schema.singular)} deleted.`); } catch (err) { fail(err, 'delete'); } finally { setSaving(false); }
+    try { await deleteRecord(schema, base.id, base); onDeleted(base.id); noteContentChanged(); notify(`${capital(schema.singular)} deleted.`); } catch (err) { fail(err, 'delete'); } finally { setSaving(false); }
   };
 
   const imageField = schema.fields.find((f) => f.kind === 'images');
@@ -264,6 +269,19 @@ export default function RecordDialog({ schema, record, open, onClose, onSaved, o
     setBase(row);
     setForm((f) => ({ ...f, [imageField.key]: urls }));
     onSaved(row, false);
+    noteContentChanged();
+    fixedByUpload(row, imageField.key, urls);
+  };
+  // In fix mode an upload is the save: the column is written at once, so the
+  // form never gets dirty and "Save and next" would never light up. When the
+  // stored row now passes the check, the step reports Fixed exactly as a save
+  // does (and stays in the form if other edits are still unsaved).
+  const fixedByUpload = (row, key, value) => {
+    if (!fix || fixResult || !fix.check) return;
+    const result = fix.check(row);
+    if (!result.passes) return;
+    setFixResult({ ...result, before: fix.score, after: fix.score + fix.gain });
+    if (!isDirty(schema, { ...form, [key]: value }, row)) { setMode('read'); setTouched(new Set()); setSubmitted(false); }
   };
   const images = imageField ? {
     singular: schema.singular, busy: busyImages, canUpload: !isNew && online, problems: imageIssues,
@@ -295,6 +313,8 @@ export default function RecordDialog({ schema, record, open, onClose, onSaved, o
     setBase(row);
     setForm((f) => ({ ...f, [key]: value }));
     onSaved(row, false);
+    noteContentChanged();
+    fixedByUpload(row, key, value);
   };
   const uploaderFor = (field) => {
     const rule = field.upload;
@@ -358,7 +378,9 @@ export default function RecordDialog({ schema, record, open, onClose, onSaved, o
         </header>
 
         <div className="record-dialog__banners">
-          {fix && <FixBanner fix={fix} result={fixResult} busy={busy} onSkip={() => (mode === 'edit' && dirty ? setConfirm('skip') : fix.onSkip())} onStop={() => (mode === 'edit' && dirty ? setConfirm('stop') : fix.onStop())} onEditAgain={() => { setFixResult(null); setMode('edit'); }} />}
+          {fix && <FixBanner fix={fix} result={fixResult} busy={busy} onSkip={() => (mode === 'edit' && dirty ? setConfirm('skip') : fix.onSkip())} onStop={() => (mode === 'edit' && dirty ? setConfirm('stop') : fix.onStop())} onEditAgain={() => { setFixResult(null); setMode('edit'); }}
+            onNext={() => (mode === 'edit' && dirty ? setConfirm('next') : fix.onNext(fixResult?.passes ? fix.gain : 0))}
+            onQueue={() => (mode === 'edit' && dirty ? setConfirm('queue') : fix.onQueue())} />}
           {!online && (
             <Banner id="record-offline" tone="warn" icon={WifiOff} title="You are offline." live="status">
               <p>{mode === 'edit' ? 'Saving waits until the connection comes back. Your changes stay here.' : 'Changes wait until the connection comes back.'}</p>
@@ -446,6 +468,8 @@ export default function RecordDialog({ schema, record, open, onClose, onSaved, o
         <ConfirmDialog open={confirm === 'close'} title="Discard the changes?" body="What was typed in this dialog will be lost." confirmLabel="Discard" tone="danger" onConfirm={() => { setConfirm(null); onClose(); }} onCancel={() => setConfirm(null)} />
         <ConfirmDialog open={confirm === 'cancel'} title="Discard the edits?" body="The saved version stays as it is." confirmLabel="Discard" tone="danger" onConfirm={() => { setConfirm(null); backToRead(); }} onCancel={() => setConfirm(null)} />
         <ConfirmDialog open={confirm === 'skip'} title="Skip without saving?" body="What was typed for this one will be lost." confirmLabel="Skip" tone="danger" onConfirm={() => { setConfirm(null); fix?.onSkip(); }} onCancel={() => setConfirm(null)} />
+        <ConfirmDialog open={confirm === 'next'} title="Move on without saving?" body="The upload is saved; other changes typed here will be lost." confirmLabel="Move on" tone="danger" onConfirm={() => { setConfirm(null); fix?.onNext(fixResult?.passes ? fix.gain : 0); }} onCancel={() => setConfirm(null)} />
+        <ConfirmDialog open={confirm === 'queue'} title="Back to the queue without saving?" body="The upload is saved; other changes typed here will be lost." confirmLabel="Back to the queue" tone="danger" onConfirm={() => { setConfirm(null); fix?.onQueue(); }} onCancel={() => setConfirm(null)} />
         <ConfirmDialog open={confirm === 'stop'} title="Stop without saving?" body="What was typed for this one will be lost." confirmLabel="Stop fixing" tone="danger" onConfirm={() => { setConfirm(null); fix?.onStop(); }} onCancel={() => setConfirm(null)} />
         <ConfirmDialog open={confirm === 'delete'} title={`Delete this ${schema.singular}?`} body={ownsFiles ? 'Its files in storage go with it. This cannot be undone.' : 'This cannot be undone.'} confirmLabel="Delete" tone="danger" onConfirm={remove} onCancel={() => setConfirm(null)} />
       </div>
@@ -467,6 +491,9 @@ export function fixBannerCopy(fix, result) {
   if (!result) {
     return { tone: 'fix', title: `Fixing: ${fix.task}`, step, body: `Worth ${gainText(fix.gain)} to the health score. ${fix.next ? `Save, then move on to ${fix.next.label}.` : 'This is the last one in this group.'}` };
   }
+  if (result.inactive) {
+    return { tone: 'warn', title: 'Saved, but hiding it is not a fix.', step: null, body: `A hidden record leaves the score, and the gap is still there for when it comes back. ${nextLine}` };
+  }
   if (result.passes) {
     return { tone: 'good', title: `Fixed. Health ${round1(result.before).toFixed(1)} → ${round1(result.after).toFixed(1)}`, step: null, body: `${left ? `${left} left in this group. ` : ''}${nextLine}` };
   }
@@ -476,7 +503,7 @@ export function fixBannerCopy(fix, result) {
   };
 }
 
-function FixBanner({ fix, result, busy, onSkip, onStop, onEditAgain }) {
+function FixBanner({ fix, result, busy, onSkip, onStop, onEditAgain, onNext, onQueue }) {
   const copy = fixBannerCopy(fix, result);
   const Icon = copy.tone === 'good' ? Check : copy.tone === 'warn' ? AlertTriangle : Wrench;
   return (
@@ -489,8 +516,8 @@ function FixBanner({ fix, result, busy, onSkip, onStop, onEditAgain }) {
           {!result && <button type="button" className="voyage-bar__button voyage-bar__button--small" onClick={onSkip} disabled={busy}><ArrowRight size={15} /><span>Skip this one</span></button>}
           {!result && <button type="button" className="voyage-bar__button voyage-bar__button--small" onClick={onStop} disabled={busy}><span>Stop fixing</span></button>}
           {result && !result.passes && <button type="button" className="voyage-bar__button voyage-bar__button--small" onClick={onEditAgain}><Pencil size={14} /><span>Edit again</span></button>}
-          {result && fix.next && <button type="button" data-fix-step className="voyage-bar__button voyage-bar__button--small voyage-bar__button--primary" onClick={() => fix.onNext(result.passes ? fix.gain : 0)}><ArrowRight size={15} /><span>Next: {fix.next.label}</span></button>}
-          {result && <button type="button" data-fix-step={fix.next ? undefined : true} className="voyage-bar__button voyage-bar__button--small" onClick={fix.onQueue}><span>Back to the queue</span></button>}
+          {result && fix.next && <button type="button" data-fix-step className="voyage-bar__button voyage-bar__button--small voyage-bar__button--primary" onClick={onNext}><ArrowRight size={15} /><span>Next: {fix.next.label}</span></button>}
+          {result && <button type="button" data-fix-step={fix.next ? undefined : true} className="voyage-bar__button voyage-bar__button--small" onClick={onQueue}><span>Back to the queue</span></button>}
         </div>
       </div>
     </div>
