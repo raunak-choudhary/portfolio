@@ -1,0 +1,77 @@
+{
+  "visits": 10,
+  "deeper": 6,
+  "work": 5,
+  "reached": 3,
+  "sources": [
+    { "name": "LinkedIn", "visits": 3, "reached": 3 },
+    { "name": "Direct or unknown", "visits": 4, "reached": 0 },
+    { "name": "Google", "visits": 1, "reached": 0 },
+    { "name": "GitHub", "visits": 1, "reached": 0 },
+    { "name": "Other sites", "visits": 1, "reached": 0 }
+  ],
+  "devices": [
+    {
+      "key": "desktop",
+      "name": "Laptop or desktop",
+      "visits": 3,
+      "share": 0.3,
+      "measured": 2,
+      "quickLeaves": 0,
+      "quick": 0
+    },
+    { "key": "phone", "name": "Phone", "visits": 5, "share": 0.5, "measured": 5, "quickLeaves": 2, "quick": 0.4 },
+    { "key": "tablet", "name": "Tablet", "visits": 1, "share": 0.1, "measured": 1, "quickLeaves": 1, "quick": 1 },
+    {
+      "key": "unknown",
+      "name": "Unknown device",
+      "visits": 1,
+      "share": 0.1,
+      "measured": 1,
+      "quickLeaves": 1,
+      "quick": 1
+    }
+  ],
+  "quickLeave": { "measured": 9, "quickLeaves": 4, "rate": 0.4444444444444444 },
+  "channels": [
+    { "key": "linkedin", "name": "LinkedIn profile", "count": 1 },
+    { "key": "email", "name": "Email link", "count": 1 },
+    { "key": "contact_form", "name": "Contact form", "count": 2 },
+    { "key": "resume", "name": "Resume download", "count": 1 }
+  ],
+  "homeReach": {
+    "homeVisits": 8,
+    "sections": [
+      { "key": "hero", "name": "Hero", "visits": 5, "share": 0.625 },
+      { "key": "about", "name": "About", "visits": 2, "share": 0.25 },
+      { "key": "navigation", "name": "Explore", "visits": 2, "share": 0.25 },
+      { "key": "contact", "name": "Contact", "visits": 2, "share": 0.25 }
+    ]
+  },
+  "projects": [
+    {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "title": "Alpha",
+      "hasDemo": true,
+      "opens": 1,
+      "repo": 1,
+      "demo": 1
+    },
+    {
+      "id": "22222222-2222-4222-8222-222222222222",
+      "title": "Beta",
+      "hasDemo": false,
+      "opens": 1,
+      "repo": 0,
+      "demo": 0
+    },
+    {
+      "id": "33333333-3333-4333-8333-333333333333",
+      "title": "Gamma",
+      "hasDemo": true,
+      "opens": 0,
+      "repo": 0,
+      "demo": 0
+    }
+  ]
+}

@@ -1,0 +1,608 @@
+{
+  "description": "Hand-built analytics_events rows for one window (Q3 2026). See README.md for what each session tests.",
+  "window": {
+    "start": "2026-07-01T04:00:00.000Z",
+    "end": "2026-10-01T04:00:00.000Z"
+  },
+  "engagementStart": "2026-08-01T04:00:00.000Z",
+  "projects": [
+    {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "title": "Alpha",
+      "hasDemo": true
+    },
+    {
+      "id": "22222222-2222-4222-8222-222222222222",
+      "title": "Beta",
+      "hasDemo": false
+    },
+    {
+      "id": "33333333-3333-4333-8333-333333333333",
+      "title": "Gamma",
+      "hasDemo": true
+    }
+  ],
+  "events": [
+    {
+      "session_id": "s01",
+      "event_type": "page_view",
+      "event_action": "view_page",
+      "event_label": "home",
+      "user_type": "visitor",
+      "created_at": "2026-07-05T14:00:00.000",
+      "metadata": {
+        "page_title": "",
+        "visitor_info": {
+          "referrer": "www.linkedin.com",
+          "deviceClass": "desktop",
+          "isReturningVisitor": false
+        }
+      }
+    },
+    {
+      "session_id": "s01",
+      "event_type": "section_view",
+      "event_action": "view_hero",
+      "event_label": "main",
+      "user_type": "visitor",
+      "created_at": "2026-07-05T14:00:01.000",
+      "metadata": {
+        "section_type": "hero",
+        "time_spent_seconds": 0
+      }
+    },
+    {
+      "session_id": "s01",
+      "event_type": "section_view",
+      "event_action": "view_about",
+      "event_label": "main",
+      "user_type": "visitor",
+      "created_at": "2026-07-05T14:00:02.000",
+      "metadata": {
+        "section_type": "about",
+        "time_spent_seconds": 0
+      }
+    },
+    {
+      "session_id": "s01",
+      "event_type": "section_view",
+      "event_action": "view_navigation",
+      "event_label": "main",
+      "user_type": "visitor",
+      "created_at": "2026-07-05T14:00:03.000",
+      "metadata": {
+        "section_type": "navigation",
+        "time_spent_seconds": 0
+      }
+    },
+    {
+      "session_id": "s01",
+      "event_type": "section_view",
+      "event_action": "view_contact",
+      "event_label": "main",
+      "user_type": "visitor",
+      "created_at": "2026-07-05T14:00:04.000",
+      "metadata": {
+        "section_type": "contact",
+        "time_spent_seconds": 0
+      }
+    },
+    {
+      "session_id": "s01",
+      "event_type": "click",
+      "event_action": "reach_out",
+      "event_label": "linkedin",
+      "user_type": "visitor",
+      "created_at": "2026-07-05T14:01:00.000",
+      "metadata": {
+        "from": "contact",
+        "visitor_info": {
+          "referrer": "www.linkedin.com",
+          "deviceClass": "desktop",
+          "isReturningVisitor": false
+        }
+      }
+    },
+    {
+      "session_id": "s01",
+      "event_type": "click",
+      "event_action": "click_social_media",
+      "event_label": "linkedin",
+      "user_type": "visitor",
+      "created_at": "2026-07-05T14:01:00.500",
+      "metadata": {
+        "element_type": "social_media"
+      }
+    },
+    {
+      "session_id": "s02",
+      "event_type": "page_view",
+      "event_action": "view_page",
+      "event_label": "home",
+      "user_type": "visitor",
+      "created_at": "2026-08-03T16:00:00.000",
+      "metadata": {
+        "page_title": "",
+        "visitor_info": {
+          "referrer": "https://www.google.com/",
+          "deviceClass": "phone",
+          "isReturningVisitor": false
+        }
+      }
+    },
+    {
+      "session_id": "s02",
+      "event_type": "section_view",
+      "event_action": "view_hero",
+      "event_label": "main",
+      "user_type": "visitor",
+      "created_at": "2026-08-03T16:00:01.000",
+      "metadata": {
+        "section_type": "hero",
+        "time_spent_seconds": 0
+      }
+    },
+    {
+      "session_id": "s03",
+      "event_type": "page_view",
+      "event_action": "view_page",
+      "event_label": "home",
+      "user_type": "visitor",
+      "created_at": "2026-08-04T16:00:00.000",
+      "metadata": {
+        "page_title": "",
+        "visitor_info": {
+          "referrer": "direct",
+          "deviceClass": "phone",
+          "isReturningVisitor": false
+        }
+      }
+    },
+    {
+      "session_id": "s03",
+      "event_type": "section_view",
+      "event_action": "view_hero",
+      "event_label": "main",
+      "user_type": "visitor",
+      "created_at": "2026-08-04T16:00:01.000",
+      "metadata": {
+        "section_type": "hero",
+        "time_spent_seconds": 0
+      }
+    },
+    {
+      "session_id": "s03",
+      "event_type": "section_view",
+      "event_action": "view_contact",
+      "event_label": "main",
+      "user_type": "visitor",
+      "created_at": "2026-08-04T16:00:20.000",
+      "metadata": {
+        "section_type": "contact",
+        "time_spent_seconds": 0
+      }
+    },
+    {
+      "session_id": "s03",
+      "event_type": "click",
+      "event_action": "engaged",
+      "event_label": "home",
+      "user_type": "visitor",
+      "created_at": "2026-08-04T16:00:10.000",
+      "metadata": {
+        "seconds": 10,
+        "visitor_info": {
+          "referrer": "direct",
+          "deviceClass": "phone",
+          "isReturningVisitor": false
+        }
+      }
+    },
+    {
+      "session_id": "s04",
+      "event_type": "page_view",
+      "event_action": "view_page",
+      "event_label": "home",
+      "user_type": "visitor",
+      "created_at": "2026-08-10T18:00:00.000",
+      "metadata": {
+        "page_title": "",
+        "visitor_info": {
+          "referrer": "github.com",
+          "deviceClass": "desktop",
+          "isReturningVisitor": false
+        }
+      }
+    },
+    {
+      "session_id": "s04",
+      "event_type": "page_view",
+      "event_action": "view_page",
+      "event_label": "projects",
+      "user_type": "visitor",
+      "created_at": "2026-08-10T18:00:30.000",
+      "metadata": {
+        "page_title": "",
+        "visitor_info": {
+          "referrer": "github.com",
+          "deviceClass": "desktop",
+          "isReturningVisitor": false
+        }
+      }
+    },
+    {
+      "session_id": "s04",
+      "event_type": "click",
+      "event_action": "project_open",
+      "event_label": "11111111-1111-4111-8111-111111111111",
+      "user_type": "visitor",
+      "created_at": "2026-08-10T18:01:00.000",
+      "metadata": {
+        "title": "Alpha",
+        "surface": "card",
+        "visitor_info": {
+          "referrer": "github.com",
+          "deviceClass": "desktop",
+          "isReturningVisitor": false
+        }
+      }
+    },
+    {
+      "session_id": "s04",
+      "event_type": "click",
+      "event_action": "project_link",
+      "event_label": "11111111-1111-4111-8111-111111111111",
+      "user_type": "visitor",
+      "created_at": "2026-08-10T18:01:30.000",
+      "metadata": {
+        "title": "Alpha",
+        "kind": "repo",
+        "url": "https://github.com/example/alpha",
+        "visitor_info": {
+          "referrer": "github.com",
+          "deviceClass": "desktop",
+          "isReturningVisitor": false
+        }
+      }
+    },
+    {
+      "session_id": "s04",
+      "event_type": "click",
+      "event_action": "project_link",
+      "event_label": "11111111-1111-4111-8111-111111111111",
+      "user_type": "visitor",
+      "created_at": "2026-08-10T18:01:40.000",
+      "metadata": {
+        "title": "Alpha",
+        "kind": "demo",
+        "url": "https://alpha.example.com",
+        "visitor_info": {
+          "referrer": "github.com",
+          "deviceClass": "desktop",
+          "isReturningVisitor": false
+        }
+      }
+    },
+    {
+      "session_id": "s04",
+      "event_type": "click",
+      "event_action": "project_open",
+      "event_label": "11111111-1111-4111-8111-111111111111",
+      "user_type": "visitor",
+      "created_at": "2026-08-10T18:02:00.000",
+      "metadata": {
+        "title": "Alpha",
+        "surface": "page",
+        "visitor_info": {
+          "referrer": "github.com",
+          "deviceClass": "desktop",
+          "isReturningVisitor": false
+        }
+      }
+    },
+    {
+      "session_id": "s05",
+      "event_type": "page_view",
+      "event_action": "view_page",
+      "event_label": "home-no-storage",
+      "user_type": "visitor",
+      "created_at": "2026-08-12T12:00:00.000",
+      "metadata": {
+        "page_title": "",
+        "visitor_info": {
+          "referrer": "www.raunakchoudhary.com",
+          "deviceClass": "tablet",
+          "isReturningVisitor": false
+        }
+      }
+    },
+    {
+      "session_id": "s05",
+      "event_type": "page_view",
+      "event_action": "view_page",
+      "event_label": "/Home",
+      "user_type": "visitor",
+      "created_at": "2026-08-12T12:00:00.500",
+      "metadata": {
+        "page_title": "",
+        "visitor_info": {
+          "referrer": "www.raunakchoudhary.com",
+          "deviceClass": "tablet",
+          "isReturningVisitor": false
+        }
+      }
+    },
+    {
+      "session_id": "s05",
+      "event_type": "section_view",
+      "event_action": "view_hero",
+      "event_label": "main",
+      "user_type": "visitor",
+      "created_at": "2026-08-12T12:00:01.000",
+      "metadata": {
+        "section_type": "hero",
+        "time_spent_seconds": 0
+      }
+    },
+    {
+      "session_id": "s05",
+      "event_type": "section_view",
+      "event_action": "view_navigation",
+      "event_label": "main",
+      "user_type": "visitor",
+      "created_at": "2026-08-12T12:00:02.000",
+      "metadata": {
+        "section_type": "navigation",
+        "time_spent_seconds": 0
+      }
+    },
+    {
+      "session_id": "s06",
+      "event_type": "section_view",
+      "event_action": "view_hero",
+      "event_label": "main",
+      "user_type": "visitor",
+      "created_at": "2026-08-15T13:00:00.000",
+      "metadata": {
+        "section_type": "hero",
+        "time_spent_seconds": 0
+      }
+    },
+    {
+      "session_id": "s06",
+      "event_type": "page_view",
+      "event_action": "view_page",
+      "event_label": "home",
+      "user_type": "visitor",
+      "created_at": "2026-08-15T13:00:00.200",
+      "metadata": {
+        "page_title": "",
+        "visitor_info": {
+          "referrer": "lnkd.in",
+          "deviceClass": "phone",
+          "isReturningVisitor": false
+        }
+      }
+    },
+    {
+      "session_id": "s06",
+      "event_type": "form_submission",
+      "event_action": "submit_contact_form",
+      "event_label": "full-time-opportunity",
+      "user_type": "visitor",
+      "created_at": "2026-08-15T13:05:00.000",
+      "metadata": {
+        "contact_type": "full-time-opportunity"
+      }
+    },
+    {
+      "session_id": "s06",
+      "event_type": "click",
+      "event_action": "click_contact_email",
+      "event_label": "footer",
+      "user_type": "visitor",
+      "created_at": "2026-08-15T13:06:00.000",
+      "metadata": {
+        "element_type": "contact_email"
+      }
+    },
+    {
+      "session_id": "s07",
+      "event_type": "page_view",
+      "event_action": "view_page",
+      "event_label": "home",
+      "user_type": "visitor",
+      "created_at": "2026-08-20T20:00:00.000",
+      "metadata": {
+        "page_title": "",
+        "visitor_info": {
+          "referrer": "l.instagram.com",
+          "deviceClass": "desktop",
+          "isReturningVisitor": false
+        }
+      }
+    },
+    {
+      "session_id": "s07",
+      "event_type": "section_view",
+      "event_action": "view_about",
+      "event_label": "main",
+      "user_type": "visitor",
+      "created_at": "2026-08-20T20:00:05.000",
+      "metadata": {
+        "section_type": "about",
+        "time_spent_seconds": 0
+      }
+    },
+    {
+      "session_id": "s07",
+      "event_type": "click",
+      "event_action": "engaged",
+      "event_label": "home",
+      "user_type": "visitor",
+      "created_at": "2026-08-20T20:00:10.000",
+      "metadata": {
+        "seconds": 10,
+        "visitor_info": {
+          "referrer": "l.instagram.com",
+          "deviceClass": "desktop",
+          "isReturningVisitor": false
+        }
+      }
+    },
+    {
+      "session_id": "s07",
+      "event_type": "click",
+      "event_action": "click_social_media",
+      "event_label": "github",
+      "user_type": "visitor",
+      "created_at": "2026-08-20T20:01:00.000",
+      "metadata": {
+        "element_type": "social_media"
+      }
+    },
+    {
+      "session_id": "s08",
+      "event_type": "page_view",
+      "event_action": "view_page",
+      "event_label": "internships",
+      "user_type": "visitor",
+      "created_at": "2026-09-02T15:00:00.000",
+      "metadata": {
+        "page_title": "",
+        "visitor_info": {
+          "referrer": "com.linkedin.android",
+          "deviceClass": "phone",
+          "isReturningVisitor": false
+        }
+      }
+    },
+    {
+      "session_id": "s08",
+      "event_type": "click",
+      "event_action": "project_open",
+      "event_label": "22222222-2222-4222-8222-222222222222",
+      "user_type": "visitor",
+      "created_at": "2026-09-02T15:01:00.000",
+      "metadata": {
+        "title": "Beta",
+        "surface": "card",
+        "visitor_info": {
+          "referrer": "com.linkedin.android",
+          "deviceClass": "phone",
+          "isReturningVisitor": false
+        }
+      }
+    },
+    {
+      "session_id": "s08",
+      "event_type": "click",
+      "event_action": "reach_out",
+      "event_label": "resume",
+      "user_type": "visitor",
+      "created_at": "2026-09-02T15:02:00.000",
+      "metadata": {
+        "from": "hero",
+        "visitor_info": {
+          "referrer": "com.linkedin.android",
+          "deviceClass": "phone",
+          "isReturningVisitor": false
+        }
+      }
+    },
+    {
+      "session_id": "s08",
+      "event_type": "click",
+      "event_action": "reach_out",
+      "event_label": "contact_form",
+      "user_type": "visitor",
+      "created_at": "2026-09-02T15:03:00.000",
+      "metadata": {
+        "from": "contact",
+        "visitor_info": {
+          "referrer": "com.linkedin.android",
+          "deviceClass": "phone",
+          "isReturningVisitor": false
+        }
+      }
+    },
+    {
+      "session_id": "s08",
+      "event_type": "form_submission",
+      "event_action": "submit_contact_form",
+      "event_label": "general-inquiry",
+      "user_type": "visitor",
+      "created_at": "2026-09-02T15:03:00.100",
+      "metadata": {
+        "contact_type": "general-inquiry"
+      }
+    },
+    {
+      "session_id": "s09",
+      "event_type": "page_view",
+      "event_action": "view_page",
+      "event_label": "home",
+      "user_type": "admin",
+      "created_at": "2026-09-03T15:00:00.000",
+      "metadata": {
+        "visitor_info": {
+          "referrer": "direct",
+          "deviceClass": "desktop",
+          "isReturningVisitor": false
+        }
+      }
+    },
+    {
+      "session_id": "s09",
+      "event_type": "section_visit",
+      "event_action": "visit_section",
+      "event_label": "projects",
+      "user_type": "admin",
+      "created_at": "2026-09-03T15:00:01.000",
+      "metadata": {}
+    },
+    {
+      "session_id": "s10",
+      "event_type": "page_view",
+      "event_action": "view_page",
+      "event_label": "home",
+      "user_type": "visitor",
+      "created_at": "2026-09-05T11:00:00.000",
+      "metadata": {
+        "page_title": "",
+        "visitor_info": {
+          "referrer": "direct",
+          "screenWidth": 500,
+          "screenHeight": 900,
+          "isReturningVisitor": true
+        }
+      }
+    },
+    {
+      "session_id": "s11",
+      "event_type": "click",
+      "event_action": "click_mobile_menu",
+      "event_label": "open",
+      "user_type": "visitor",
+      "created_at": "2026-09-06T11:00:00.000",
+      "metadata": {
+        "element_type": "mobile_menu"
+      }
+    },
+    {
+      "session_id": null,
+      "event_type": "page_view",
+      "event_action": "view_page",
+      "event_label": "home",
+      "user_type": "visitor",
+      "created_at": "2026-09-07T11:00:00.000",
+      "metadata": {
+        "visitor_info": {
+          "referrer": "direct",
+          "deviceClass": "desktop",
+          "isReturningVisitor": false
+        }
+      }
+    }
+  ]
+}
