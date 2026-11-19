@@ -34,16 +34,25 @@
 // Singleton managers (hero, about) open with `editOnly`: the chapter itself
 // is the read view, so the dialog is only the form, Save closes it, and
 // there is no Delete.
+//
+// Fix mode (`fix`, from the fix queue's walk): the dialog opens in the form
+// with a banner naming the task and the place in the walk, the target field
+// ringed, tagged and focused, and Save labelled "Save and next". After the
+// save the banner says honestly whether the item now passes ("Fixed. Health
+// a → b") and offers the next record or the way back to the queue; an
+// editOnly dialog stays open for that instead of closing.
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { AlertCircle, AlertTriangle, LogIn, Pencil, RefreshCw, Trash2, WifiOff, X } from 'lucide-react';
+import { AlertCircle, AlertTriangle, ArrowRight, Check, LogIn, Pencil, RefreshCw, Trash2, WifiOff, Wrench, X } from 'lucide-react';
 import Field from './Field';
 import ConfirmDialog from './ConfirmDialog';
 import RecordView, { WIDE_KINDS } from './RecordView';
 import HistoryLine from './HistoryLine';
 import useOnline from './useOnline';
 import { UPLOAD_KINDS, applyChange, buildForm, cleanupTargets, fieldsForGroup, isDirty, normalizeForm, validateForm } from './managers/schemaModel';
+import { round1, gainText } from './fixQueueModel';
+import './FixQueue.css';
 import { deleteRecord, failureKind, fetchUpdatedAt, fileProblems, getRecord, imageProblems, removeImage, removeStoredFiles, saveRecord, uploadFieldFiles, uploadImages } from '../../../services/voyageRecords';
 
 const FOCUSABLE = 'input, textarea, select, button, [href], [tabindex]:not([tabindex="-1"])';
@@ -95,10 +104,14 @@ function Banner({ tone, icon: Icon, title, children, id, live = 'alert' }) {
  * @param {number} [props.nextOrder] order value for a new record (schemas with an orderKey).
  * @param {(payload: object, ctx: {isNew: boolean, base: object|null}) => object} [props.prepare] adds columns the deck owns (a group's priority) to a payload before it is written.
  * @param {boolean} [props.editOnly] the form only: no read view, Save closes, no Delete (singleton chapters).
+ * @param {boolean} [props.startInEdit] a saved record opens straight in the form (a record intent with mode 'edit').
+ * @param {object|null} [props.fix] the fix walk step, see `fixBannerCopy`: { field, task, step, total, gain, score, next, fieldLabel,
+ *   check(row) -> {passes, state}, onSkip(), onStop(), onNext(fixedGain), onQueue() }.
  */
-export default function RecordDialog({ schema, record, open, onClose, onSaved, onDeleted, notify, nextOrder = 1, prepare, editOnly = false }) {
+export default function RecordDialog({ schema, record, open, onClose, onSaved, onDeleted, notify, nextOrder = 1, prepare, editOnly = false, startInEdit = false, fix = null }) {
   const online = useOnline();
-  const [mode, setMode] = useState(record?.id && !editOnly ? 'read' : 'edit');
+  const opensInForm = Boolean(fix) || startInEdit || editOnly;
+  const [mode, setMode] = useState(record?.id && !opensInForm ? 'read' : 'edit');
   const [base, setBase] = useState(record);                 // the saved row this dialog compares against
   const [form, setForm] = useState(() => buildForm(schema, record));
   const [touched, setTouched] = useState(() => new Set());
@@ -112,6 +125,7 @@ export default function RecordDialog({ schema, record, open, onClose, onSaved, o
   const [uploadIssues, setUploadIssues] = useState({});       // field key -> per-file problems
   const [busyField, setBusyField] = useState(null);           // the upload field mid-request
   const [focusTick, setFocusTick] = useState(0);
+  const [fixResult, setFixResult] = useState(null);         // after a save in fix mode: { passes, state, before, after }
   const panelRef = useRef(null), openerRef = useRef(null), recordRef = useRef(record);
   recordRef.current = record;
 
@@ -128,9 +142,9 @@ export default function RecordDialog({ schema, record, open, onClose, onSaved, o
   useEffect(() => {
     if (!open) return;
     const row = recordRef.current;
-    setBase(row); setForm(buildForm(schema, row)); setMode(row?.id && !editOnly ? 'read' : 'edit');
-    setTouched(new Set()); setSubmitted(false); setConfirm(null); setFailure(null); setConflict(false); setImageIssues([]); setUploadIssues({});
-  }, [open, recordId, schema, editOnly]);
+    setBase(row); setForm(buildForm(schema, row)); setMode(row?.id && !opensInForm ? 'read' : 'edit');
+    setTouched(new Set()); setSubmitted(false); setConfirm(null); setFailure(null); setConflict(false); setImageIssues([]); setUploadIssues({}); setFixResult(null);
+  }, [open, recordId, schema, opensInForm]);
 
   const backToRead = useCallback(() => {
     setForm(buildForm(schema, base)); setMode('read'); setTouched(new Set()); setSubmitted(false); setFailure(null); setConflict(false); setImageIssues([]); setUploadIssues({});
@@ -164,11 +178,16 @@ export default function RecordDialog({ schema, record, open, onClose, onSaved, o
   }, [open]);
 
   // first focus per view: the first field when editing, the Edit button when reading
+  // (in fix mode: the target field, then the banner's next step once saved)
+  const fixField = fix?.field || null;
   useEffect(() => {
     if (!open || !panelRef.current) return;
-    const target = mode === 'edit' ? panelRef.current.querySelector('.record-form [data-field] input, .record-form [data-field] textarea, .record-form [data-field] select') : panelRef.current.querySelector('[data-action="edit"]');
+    const ringed = mode === 'edit' && fixField ? panelRef.current.querySelector(`.record-form [data-field="${fixField}"]`) : null;
+    const target = fixResult ? panelRef.current.querySelector('[data-fix-step]')
+      : ringed ? ringed.querySelector('input:not([type="hidden"]), textarea, select, button, [tabindex]:not([tabindex="-1"])')
+        : mode === 'edit' ? panelRef.current.querySelector('.record-form [data-field] input, .record-form [data-field] textarea, .record-form [data-field] select') : panelRef.current.querySelector('[data-action="edit"]');
     (target || panelRef.current.querySelector(FOCUSABLE))?.focus();
-  }, [open, mode, recordId]);
+  }, [open, mode, recordId, fixField, fixResult]);
 
   // after a refused Save, the first invalid field in reading order takes focus
   useEffect(() => {
@@ -200,10 +219,13 @@ export default function RecordDialog({ schema, record, open, onClose, onSaved, o
       if (isNew && schema.orderKey && (payload[schema.orderKey] === null || payload[schema.orderKey] === undefined)) payload[schema.orderKey] = nextOrder;
       if (prepare) payload = prepare(payload, { isNew, base });
       const row = await saveRecord(schema, payload, base?.id || null);
-      setBase(row); setForm(buildForm(schema, row)); setMode(editOnly ? 'edit' : 'read'); setTouched(new Set()); setSubmitted(false);
+      setBase(row); setForm(buildForm(schema, row)); setMode(editOnly && !fix ? 'edit' : 'read'); setTouched(new Set()); setSubmitted(false);
       onSaved(row, isNew);
       notify(isNew ? `${capital(schema.singular)} added.` : 'Saved.');
-      if (editOnly) onClose();
+      if (fix) {
+        const result = fix.check ? fix.check(row) : { passes: true, state: null };
+        setFixResult({ ...result, before: fix.score, after: fix.score + (result.passes ? fix.gain : 0) });
+      } else if (editOnly) onClose();
     } catch (err) { fail(err, 'save'); } finally { setSaving(false); }
   };
 
@@ -324,6 +346,7 @@ export default function RecordDialog({ schema, record, open, onClose, onSaved, o
         </header>
 
         <div className="record-dialog__banners">
+          {fix && <FixBanner fix={fix} result={fixResult} busy={busy} onSkip={() => (mode === 'edit' && dirty ? setConfirm('skip') : fix.onSkip())} onStop={() => (mode === 'edit' && dirty ? setConfirm('stop') : fix.onStop())} onEditAgain={() => { setFixResult(null); setMode('edit'); }} />}
           {!online && (
             <Banner id="record-offline" tone="warn" icon={WifiOff} title="You are offline." live="status">
               <p>{mode === 'edit' ? 'Saving waits until the connection comes back. Your changes stay here.' : 'Changes wait until the connection comes back.'}</p>
@@ -360,7 +383,8 @@ export default function RecordDialog({ schema, record, open, onClose, onSaved, o
                     {group.label && <legend>{group.label}</legend>}
                     <div className="record-form__grid">
                       {fieldsForGroup(schema, group, i).map((field) => (
-                        <div key={field.key} className={`record-form__cell${WIDE_KINDS.has(field.kind) ? ' is-wide' : ''}`}>
+                        <div key={field.key} className={`record-form__cell${WIDE_KINDS.has(field.kind) ? ' is-wide' : ''}${field.key === fixField ? ' is-target' : ''}`}>
+                          {field.key === fixField && <span className="fix-missing" aria-hidden="true">{fix.state === 'weak' ? 'Too short' : 'Missing'}</span>}
                           <Field field={field} value={form[field.key]} form={form} error={errors[field.key]} onChange={set(field.key)} onLeave={leave(field.key)} images={images} upload={UPLOAD_KINDS.has(field.kind) && field.upload ? uploaderFor(field) : undefined} />
                         </div>
                       ))}
@@ -373,7 +397,16 @@ export default function RecordDialog({ schema, record, open, onClose, onSaved, o
         </div>
 
         <footer className="record-dialog__foot">
-          {mode === 'read'
+          {fixResult && mode === 'read'
+            ? (
+              <>
+                <span className="record-dialog__status"><Check size={14} aria-hidden="true" />Saved just now</span>
+                <div className="record-dialog__actions">
+                  <button type="button" className="voyage-bar__button voyage-bar__button--primary" onClick={fix.onStop}><Check size={14} /><span>Done</span></button>
+                </div>
+              </>
+            )
+            : mode === 'read'
             ? (
               <>
                 {schema.mode === 'singleton' ? <span /> : <button type="button" className="voyage-bar__button voyage-bar__button--quiet" onClick={() => setConfirm('delete')} disabled={busy || !online}><Trash2 size={15} /><span>Delete</span></button>}
@@ -391,7 +424,7 @@ export default function RecordDialog({ schema, record, open, onClose, onSaved, o
                 <div className="record-dialog__actions">
                   <button type="button" className="voyage-bar__button voyage-bar__button--plain" onClick={cancelEdit} disabled={busy}><span>Cancel</span></button>
                   <button type="button" className="voyage-bar__button voyage-bar__button--primary" onClick={() => save()} disabled={busy || !online || (!dirty && !isNew)} aria-describedby={!online ? 'record-offline' : undefined} title={!online ? 'Saving waits until the connection comes back' : undefined}>
-                    <span>{saving ? 'Saving' : isNew ? `Add ${schema.singular}` : 'Save'}</span>
+                    <span>{saving ? 'Saving' : isNew ? `Add ${schema.singular}` : fix ? 'Save and next' : 'Save'}</span>
                   </button>
                 </div>
               </>
@@ -400,6 +433,8 @@ export default function RecordDialog({ schema, record, open, onClose, onSaved, o
 
         <ConfirmDialog open={confirm === 'close'} title="Discard the changes?" body="What was typed in this dialog will be lost." confirmLabel="Discard" tone="danger" onConfirm={() => { setConfirm(null); onClose(); }} onCancel={() => setConfirm(null)} />
         <ConfirmDialog open={confirm === 'cancel'} title="Discard the edits?" body="The saved version stays as it is." confirmLabel="Discard" tone="danger" onConfirm={() => { setConfirm(null); backToRead(); }} onCancel={() => setConfirm(null)} />
+        <ConfirmDialog open={confirm === 'skip'} title="Skip without saving?" body="What was typed for this one will be lost." confirmLabel="Skip" tone="danger" onConfirm={() => { setConfirm(null); fix?.onSkip(); }} onCancel={() => setConfirm(null)} />
+        <ConfirmDialog open={confirm === 'stop'} title="Stop without saving?" body="What was typed for this one will be lost." confirmLabel="Stop fixing" tone="danger" onConfirm={() => { setConfirm(null); fix?.onStop(); }} onCancel={() => setConfirm(null)} />
         <ConfirmDialog open={confirm === 'delete'} title={`Delete this ${schema.singular}?`} body={ownsFiles ? 'Its files in storage go with it. This cannot be undone.' : 'This cannot be undone.'} confirmLabel="Delete" tone="danger" onConfirm={remove} onCancel={() => setConfirm(null)} />
       </div>
     </div>,
@@ -408,3 +443,44 @@ export default function RecordDialog({ schema, record, open, onClose, onSaved, o
 }
 
 const capital = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+
+/**
+ * The fix banner's words for one step of the walk, before and after the save.
+ * Pure, so the copy is tested without rendering.
+ */
+export function fixBannerCopy(fix, result) {
+  const step = `${fix.step} of ${fix.total}`;
+  const left = fix.total - fix.step;
+  const nextLine = fix.next ? `Next: ${fix.next.label}.` : 'That was the last one in this group.';
+  if (!result) {
+    return { tone: 'fix', title: `Fixing: ${fix.task}`, step, body: `Worth ${gainText(fix.gain)} to the health score. ${fix.next ? `Save, then move on to ${fix.next.label}.` : 'This is the last one in this group.'}` };
+  }
+  if (result.passes) {
+    return { tone: 'good', title: `Fixed. Health ${round1(result.before).toFixed(1)} → ${round1(result.after).toFixed(1)}`, step: null, body: `${left ? `${left} left in this group. ` : ''}${nextLine}` };
+  }
+  return {
+    tone: 'warn', title: 'Saved, but this one still needs work.', step: null,
+    body: `${result.state === 'weak' ? `The ${fix.fieldLabel.toLowerCase()} is still under 40 characters.` : `The ${fix.fieldLabel.toLowerCase()} is still empty.`} ${nextLine}`,
+  };
+}
+
+function FixBanner({ fix, result, busy, onSkip, onStop, onEditAgain }) {
+  const copy = fixBannerCopy(fix, result);
+  const Icon = copy.tone === 'good' ? Check : copy.tone === 'warn' ? AlertTriangle : Wrench;
+  return (
+    <div className={`record-banner record-banner--${copy.tone}`} role="status" data-testid="fix-banner">
+      <Icon size={18} aria-hidden="true" className="record-banner__icon" />
+      <div className="record-banner__text">
+        <p className="record-banner__title">{copy.title}{copy.step && <span className="record-banner__step"> · {copy.step}</span>}</p>
+        <p>{copy.body}</p>
+        <div className="record-banner__actions">
+          {!result && <button type="button" className="voyage-bar__button voyage-bar__button--small" onClick={onSkip} disabled={busy}><ArrowRight size={15} /><span>Skip this one</span></button>}
+          {!result && <button type="button" className="voyage-bar__button voyage-bar__button--small" onClick={onStop} disabled={busy}><span>Stop fixing</span></button>}
+          {result && !result.passes && <button type="button" className="voyage-bar__button voyage-bar__button--small" onClick={onEditAgain}><Pencil size={14} /><span>Edit again</span></button>}
+          {result && fix.next && <button type="button" data-fix-step className="voyage-bar__button voyage-bar__button--small voyage-bar__button--primary" onClick={() => fix.onNext(result.passes ? fix.gain : 0)}><ArrowRight size={15} /><span>Next: {fix.next.label}</span></button>}
+          {result && <button type="button" data-fix-step={fix.next ? undefined : true} className="voyage-bar__button voyage-bar__button--small" onClick={fix.onQueue}><span>Back to the queue</span></button>}
+        </div>
+      </div>
+    </div>
+  );
+}
