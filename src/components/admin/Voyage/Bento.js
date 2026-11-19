@@ -8,9 +8,10 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { DndContext, PointerSensor, KeyboardSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, arrayMove, rectSortingStrategy, sortableKeyboardCoordinates, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Activity, Inbox, ListChecks, Moon, Pencil, Sparkles, TrendingUp, Wrench } from 'lucide-react';
+import { Activity, Inbox, ListChecks, Moon, ShieldCheck, Sparkles, TrendingUp, Wrench } from 'lucide-react';
 import { moonPhase } from '../SkyBackground/skyModel';
 import { relativeTime } from '../../../services/voyageData';
+import { describe as describeActivity, tileWhen } from './activityModel';
 import { BENTO_ORDER_KEY, percentChange, sanitizeOrder, sectionTallies, topIssues, weakestSections } from './bentoModel';
 
 const readOrder = () => { try { return sanitizeOrder(JSON.parse(localStorage.getItem(BENTO_ORDER_KEY))); } catch { return sanitizeOrder(null); } };
@@ -40,12 +41,12 @@ const Bars = ({ rows }) => (
 );
 
 /** Tile contents by id; each receives the loaded data and the navigation callbacks. */
-function TileBody({ id, data, onGo }) {
+function TileBody({ id, data, onGo, onSeeActivity, now }) {
   const health = data.health, sections = health?.sections || [];
   switch (id) {
     case 'health': {
       const t = sectionTallies(sections);
-      return <><h5><Activity size={14} /> Health</h5><div className="tile__row"><Ring value={health?.summary?.score ?? 0} /><div><div className="tile__big">{health?.summary?.score ?? '…'}<small>/100</small></div><div className="tile__muted">{health ? `${t.strong} strong · ${t.attention} need attention` : 'Checking…'}</div></div></div></>;
+      return <><h5><ShieldCheck size={14} /> Health</h5><div className="tile__row"><Ring value={health?.summary?.score ?? 0} /><div><div className="tile__big">{health?.summary?.score ?? '…'}<small>/100</small></div><div className="tile__muted">{health ? `${t.strong} strong · ${t.attention} need attention` : 'Checking…'}</div></div></div></>;
     }
     case 'visitors': {
       const v = data.visitors; const change = v ? percentChange(v.totalVisitors, v.previousVisitors) : null;
@@ -60,7 +61,7 @@ function TileBody({ id, data, onGo }) {
     case 'sections':
       return <><h5><ListChecks size={14} /> Sections</h5><Bars rows={weakestSections(sections, sections.length).map((s) => ({ label: s.name, value: s.completeness || 0, tone: (s.completeness || 0) < 50 ? 'bad' : undefined }))} /></>;
     case 'edits':
-      return <><h5><Pencil size={14} /> Recent edits</h5>{data.edits?.length ? <div className="tile__feed">{data.edits.map((e, k) => <div key={k}><time>{relativeTime(e.at)}</time>{e.section} · {e.label}</div>)}</div> : <p className="tile__empty">No edits recorded yet.</p>}</>;
+      return <RecentActivity data={data} onSeeActivity={onSeeActivity} now={now} />;
     case 'pages':
       return <><h5><Sparkles size={14} /> Top pages · 30 days</h5>{data.pages?.length ? <Bars rows={data.pages.map((p) => ({ label: p.page, value: (p.views / data.pages[0].views) * 100, text: p.views }))} /> : <p className="tile__empty">No page views yet.</p>}</>;
     case 'tonight': {
@@ -69,6 +70,36 @@ function TileBody({ id, data, onGo }) {
     }
     default: return null;
   }
+}
+
+/**
+ * The Recent activity tile: the newest rows of the activity log. While the
+ * log's table is missing (or it fails to load, or the bento is shown
+ * without Mission Control's feed) it falls back to the latest save per
+ * section, read from each table's updated_at, as the tile did before V5.
+ */
+function RecentActivity({ data, onSeeActivity, now }) {
+  const activity = data.activity;
+  const link = onSeeActivity ? <button type="button" className="tile__link" onClick={onSeeActivity}>See all activity</button> : null;
+  const head = <h5><Activity size={14} /> Recent activity</h5>;
+  if (activity?.status === 'loading') {
+    return <>{head}<div className="tile__act" aria-hidden="true" data-testid="tile-activity-loading">{[90, 70, 80].map((w) => <div key={w} className="v5-skel" style={{ width: `${w}%` }} />)}</div></>;
+  }
+  if (activity?.status === 'ready') {
+    if (!activity.rows.length) return <>{head}<p className="tile__empty">Nothing recorded yet.</p></>;
+    return (
+      <>{head}
+        <div className="tile__act">{activity.rows.map((row) => { const { lead, title } = describeActivity(row); return <div key={row.id}><time dateTime={row.at}>{tileWhen(row.at, now)}</time>{lead}{title ? <> <b>{title}</b></> : null}</div>; })}</div>
+        {link}
+      </>
+    );
+  }
+  return (
+    <>{head}
+      {data.edits?.length ? <div className="tile__feed">{data.edits.map((e, k) => <div key={k}><time>{relativeTime(e.at)}</time>{e.section} · {e.label}</div>)}</div> : <p className="tile__empty">No edits recorded yet.</p>}
+      {link}
+    </>
+  );
 }
 
 // Every tile is one row tall and two columns wide: rows size to their tallest
@@ -87,10 +118,12 @@ function SortableTile({ id, children }) {
 
 /**
  * @param {object} props
- * @param {object} props.data { health, visitors, inbox, edits, pages, assetBase }
+ * @param {object} props.data { health, visitors, inbox, edits, pages, assetBase, activity: { status, rows } }
  * @param {(chapterId: string) => void} props.onGo
+ * @param {() => void} [props.onSeeActivity] scrolls to the activity pane (Mission Control).
+ * @param {Date} [props.now] the clock for the activity tile, for tests.
  */
-export default function Bento({ data, onGo }) {
+export default function Bento({ data, onGo, onSeeActivity, now }) {
   const [order, setOrder] = useState(readOrder);
   useEffect(() => { writeOrder(order); }, [order]);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
@@ -104,7 +137,7 @@ export default function Bento({ data, onGo }) {
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
       <SortableContext items={items} strategy={rectSortingStrategy}>
         <div className="voyage-bento" data-testid="bento">
-          {items.map((id) => <SortableTile key={id} id={id}><TileBody id={id} data={data} onGo={onGo} /></SortableTile>)}
+          {items.map((id) => <SortableTile key={id} id={id}><TileBody id={id} data={data} onGo={onGo} onSeeActivity={onSeeActivity} now={now} /></SortableTile>)}
         </div>
       </SortableContext>
     </DndContext>
