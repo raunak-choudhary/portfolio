@@ -136,6 +136,7 @@ describe('VoyagePage (2D fallback)', () => {
     // V5: Mission Control adds the split with the activity pane under the bento
     const split = view.container.querySelector('#chapter-overview [data-testid="mission-split"]');
     expect(split.querySelector('[data-testid="activity-pane"]').textContent).toContain('Not set up yet.');
+    expect(split.firstElementChild.dataset.testid).toBe('fix-queue');   // the fix queue fills Mission Control's slot, left of the activity
     const projects = view.container.querySelector('#chapter-projects');
     expect(projects.querySelector('[data-testid="deck"]')).not.toBeNull();   // Projects has a schema: it gets the deck
     expect(projects.textContent).toContain('Tallyproof'); expect(projects.textContent).toContain('New project');

@@ -2,6 +2,7 @@
 // Integration: the bento and the activity pane share one feed, and every row click goes through openRecord.
 import MissionControl, { chapterForTable } from './MissionControl';
 import { ACTIVITY_PANE_ID, ACTIVITY_TITLE_ID } from './ActivityPane';
+import { clearIntent, recordIntent } from './recordIntent';
 import { React, act, click, mount } from '../SkyBackground/testUtils';
 
 jest.mock('../../../services/activityService', () => ({ ACTIVITY_NOT_SET_UP: 'ACTIVITY_NOT_SET_UP', listActivity: jest.fn(), listDeletedRecords: jest.fn(), recordHistory: jest.fn(), isActivityAvailable: jest.fn(), logSecurityEvent: jest.fn() }));
@@ -54,11 +55,22 @@ describe('MissionControl', () => {
     expect(Element.prototype.scrollIntoView.mock.instances[0].id).toBe(ACTIVITY_PANE_ID);
   });
 
-  it('opens a row through openRecord, which travels to the record\'s chapter', async () => {
+  it('opens a row through openRecord, which sets a read intent for the record', async () => {
     render();
     await flush();
     click(view.container.querySelector(`#${ACTIVITY_PANE_ID} button.act-row`));
-    expect(onGo).toHaveBeenCalledWith('projects');
+    expect(recordIntent.get()).toEqual({ table: 'projects', recordId: 'p1', mode: 'read', field: null, walk: null });
+    expect(onGo).not.toHaveBeenCalled();   // the page travels on the intent
+    act(() => clearIntent());
+  });
+
+  it('fills the fix queue slot beside the activity pane', async () => {
+    render({ fixQueue: <section data-testid="fix-slot" /> });
+    await flush();
+    const split = view.container.querySelector('[data-testid="mission-split"]');
+    expect(split.className).toBe('v5-split');
+    expect(split.firstElementChild.dataset.testid).toBe('fix-slot');
+    expect(split.lastElementChild.id).toBe(ACTIVITY_PANE_ID);
   });
 
   it('keeps the tile while the pane is filtered', async () => {
