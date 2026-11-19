@@ -25,6 +25,11 @@
   --pf-field-edge: rgba(255, 255, 255, 0.18);
   --pf-danger: #ff5c7a;
   --pf-danger-rgb: 255, 92, 122;
+  /* "Leave" (Sign out): a soft coral, apart from the danger pink. On the card
+     (#070b16): text 9.0:1, the 60% border 3.8:1, text on the hover fill 7.6:1. */
+  --pf-leave: #f4978e;
+  --pf-leave-rgb: 244, 151, 142;
+  --pf-leave-edge: 0.6;
   --pf-cond: 'Oswald', 'Avenir Next Condensed', 'Arial Narrow', sans-serif;
   --pf-mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
   --pf-radius: 10px;
@@ -56,6 +61,11 @@
   --pf-field-edge: rgba(255, 220, 196, 0.22);
   --pf-danger: #ff7a90;
   --pf-danger-rgb: 255, 122, 144;
+  /* Brick red, kept light enough for the dawn card (#1b100a): text 6.0:1,
+     the 72% border 3.7:1, text on the hover fill 5.1:1. */
+  --pf-leave: #e0725a;
+  --pf-leave-rgb: 224, 114, 90;
+  --pf-leave-edge: 0.72;
 }
 
 .preflight .visually-hidden {
@@ -316,36 +326,6 @@
   cursor: not-allowed;
 }
 
-/* Second place when a passkey leads: an accent outline that fills on hover. */
-.preflight .preflight-primary--quiet:not(:disabled) {
-  background: transparent;
-  color: var(--pf-accent);
-}
-
-.preflight .preflight-primary--quiet:hover:not(:disabled) {
-  background: rgba(var(--pf-accent-rgb), 0.12);
-}
-
-.preflight-passkey__mark { flex: none; }
-
-/* "Or enter a code": a hairline either side of the words. */
-.preflight .preflight-divider {
-  margin: 4px 0 0;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 13px;
-  color: var(--pf-muted);
-}
-
-.preflight .preflight-divider::before,
-.preflight .preflight-divider::after {
-  content: '';
-  flex: 1 1 0;
-  min-width: 0;
-  border-top: 1px solid var(--pf-line);
-}
-
 .preflight .preflight-google:disabled { opacity: 0.6; cursor: progress; }
 
 .preflight .preflight-quiet {
@@ -403,6 +383,277 @@
 .preflight-msg--notice { border-color: transparent; padding: 0; }
 .preflight-msg--notice svg { color: var(--pf-accent); }
 
+/* ---- step 02: the second key ---- */
+
+/* The unlock row: one quiet glass row, the accent only in the fingerprint ring. */
+.preflight .preflight-unlock {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 64px;
+  padding: 9px 14px 9px 10px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-align: left;
+  background: var(--pf-field);
+  border: 1px solid var(--pf-field-edge);
+  border-radius: var(--pf-radius);
+  color: var(--pf-fg);
+  transition: background-color 160ms ease, border-color 160ms ease;
+}
+
+.preflight .preflight-unlock:hover:not(.preflight-unlock--waiting) {
+  background: rgba(var(--pf-accent-rgb), 0.07);
+  border-color: rgba(var(--pf-accent-rgb), 0.5);
+}
+
+.preflight .preflight-unlock--waiting { border-color: rgba(var(--pf-accent-rgb), 0.5); cursor: default; }
+
+.preflight-unlock__ring {
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid rgba(var(--pf-accent-rgb), 0.42);
+  color: var(--pf-accent);
+}
+
+.preflight-unlock__sweep {
+  position: absolute;
+  inset: -1px;
+  width: 44px;
+  height: 44px;
+  opacity: 0;
+  fill: none;
+  stroke: var(--pf-accent);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-dasharray: 34 200;
+  transform-origin: 50% 50%;
+}
+
+.preflight-unlock--waiting .preflight-unlock__ring { border-color: rgba(var(--pf-accent-rgb), 0.18); }
+.preflight-unlock--waiting .preflight-unlock__sweep { opacity: 1; animation: preflight-sweep 1.6s linear infinite; }
+.preflight-unlock--waiting .preflight-fingerprint { animation: preflight-breathe 1.6s ease-in-out infinite; }
+
+@keyframes preflight-sweep { to { transform: rotate(360deg); } }
+@keyframes preflight-breathe { 50% { opacity: 0.45; } }
+
+.preflight-unlock__text { display: grid; gap: 3px; min-width: 0; }
+.preflight .preflight-unlock__label { font-size: 15px; font-weight: 600; line-height: 1.25; }
+.preflight .preflight-unlock__hint { font-size: 13px; line-height: 1.35; color: var(--pf-muted); }
+
+/* "Use a code instead" and the way back: a text link with a small mark. */
+.preflight .preflight-switch {
+  justify-self: start;
+  min-height: 44px;
+  margin: -8px 0 -10px;
+  padding: 0 2px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--pf-muted);
+  font-size: 14px !important; /* beats the global 16px button rule */
+  text-decoration: underline;
+  text-decoration-color: var(--pf-line);
+  text-underline-offset: 4px;
+}
+
+.preflight .preflight-switch:hover:not(:disabled) { color: var(--pf-fg); text-decoration-color: currentColor; }
+.preflight .preflight-switch:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* Messages inside the step are lines, not boxes: the mark and the words. */
+.preflight-step__body .preflight-actions .preflight-msg,
+.preflight-code .preflight-msg {
+  padding: 0;
+  border: 0;
+  background: none;
+  grid-template-columns: 16px minmax(0, 1fr);
+  gap: 8px;
+  font-size: 13px;
+}
+
+.preflight-step__body .preflight-actions .preflight-msg svg,
+.preflight-code .preflight-msg svg { width: 16px; height: 16px; margin-top: 2px; }
+
+.preflight-msg--calm svg { color: var(--pf-muted); }
+.preflight .preflight-msg--calm p { color: var(--pf-muted); }
+
+/* Six cells over one real input. */
+.preflight-code { display: grid; gap: 8px; }
+
+.preflight-cells { display: grid; gap: 8px; }
+.preflight-cells__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 28px; }
+
+.preflight .preflight-reveal {
+  min-height: 44px;
+  margin: -8px -8px -8px 0;
+  padding: 0 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--pf-muted);
+  font-size: 12px !important; /* beats the global 16px button rule */
+}
+
+.preflight .preflight-reveal:hover:not(:disabled) { color: var(--pf-fg); }
+
+.preflight-cells__box { position: relative; }
+
+.preflight-cells__row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) 12px repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.preflight-cell {
+  position: relative;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  background: var(--pf-field);
+  /* 40% of the text colour: 3.4:1 (night) and 3.6:1 (dawn) against the cell, the 3:1 an input's edge needs */
+  border: 1px solid rgba(232, 238, 248, 0.4);
+  border: 1px solid color-mix(in srgb, var(--pf-fg) 40%, transparent);
+  border-radius: 8px;
+  font: 400 22px/1 var(--pf-mono);
+  color: var(--pf-fg);
+  transition: border-color 140ms ease, background-color 140ms ease;
+}
+
+/* empty places show a short baseline so the six read before anything is typed */
+.preflight-cell:empty::after {
+  content: '';
+  position: absolute;
+  bottom: 14px;
+  width: 12px;
+  height: 1px;
+  background: var(--pf-dim);
+}
+
+.preflight-cell__dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.preflight-cells__gap { align-self: center; justify-self: center; width: 8px; height: 1px; background: var(--pf-dim); }
+
+/* the next place to type, marked only while the input has focus */
+.preflight-cells__box:focus-within .preflight-cell--next {
+  border-color: var(--pf-accent);
+  box-shadow: 0 0 0 3px rgba(var(--pf-accent-rgb), 0.22);
+}
+
+.preflight-cells__box:focus-within .preflight-cell--next::before {
+  content: '';
+  position: absolute;
+  width: 1.5px;
+  height: 22px;
+  background: var(--pf-accent);
+  animation: preflight-caret 1.1s steps(1) infinite;
+}
+
+.preflight-cells__box:focus-within .preflight-cell--next:empty::after { display: none; }
+.preflight-cells--full .preflight-cells__box:focus-within .preflight-cell { border-color: rgba(var(--pf-accent-rgb), 0.6); }
+
+@keyframes preflight-caret { 50% { opacity: 0; } }
+
+/* The real input lies transparent over the cells. 16 px keeps iOS from zooming. */
+.preflight .preflight-cells__input {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: transparent;
+  caret-color: transparent;
+  font-size: 16px !important;
+  outline: none;
+  opacity: 1;
+}
+
+.preflight-cells__input::selection { background: transparent; }
+.preflight-cells__input:disabled { cursor: not-allowed; }
+.preflight-cells__input:disabled + .preflight-cells__row { opacity: 0.6; }
+
+.preflight-cells--wrong .preflight-cell {
+  border-color: rgba(var(--pf-danger-rgb), 0.7);
+  background: rgba(var(--pf-danger-rgb), 0.07);
+}
+
+.preflight-cells--wrong .preflight-cells__row { animation: preflight-shake 360ms cubic-bezier(0.36, 0.07, 0.19, 0.97) both; }
+
+@keyframes preflight-shake {
+  15%, 85% { transform: translateX(-2px); }
+  30%, 70% { transform: translateX(5px); }
+  45%, 55% { transform: translateX(-6px); }
+}
+
+.preflight-cells--checking .preflight-cell { opacity: 0.55; }
+
+.preflight .preflight-code__note {
+  margin: 0;
+  min-height: 20px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--pf-muted);
+}
+
+/* Checking: an indeterminate hairline under the cells. */
+.preflight-progress {
+  position: relative;
+  display: block;
+  height: 2px;
+  margin-top: -2px;
+  overflow: hidden;
+  background: var(--pf-line);
+  border-radius: 1px;
+}
+
+.preflight-progress::after {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 35%;
+  background: var(--pf-accent);
+  animation: preflight-progress 1s ease-in-out infinite;
+}
+
+@keyframes preflight-progress { from { transform: translateX(-100%); } to { transform: translateX(290%); } }
+
+/* Sign out: a real button in the footer, coral by night and brick by dawn,
+   calm until hovered. 44 px tall for a thumb. */
+.preflight .preflight-signout {
+  flex: none;
+  box-sizing: border-box;
+  min-height: 44px;
+  padding: 0 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(var(--pf-leave-rgb), var(--pf-leave-edge));
+  border-radius: 999px;
+  background: transparent;
+  color: var(--pf-leave);
+  font: 500 12px/1 var(--pf-mono);
+  font-size: 12px !important; /* beats the global 16px button rule */
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  transition: background-color 160ms ease, border-color 160ms ease;
+}
+
+.preflight .preflight-signout:hover:not(:disabled) {
+  background: rgba(var(--pf-leave-rgb), 0.12);
+  border-color: var(--pf-leave);
+}
+
+.preflight .preflight-signout:focus-visible { outline-color: var(--pf-leave); }
+.preflight .preflight-signout:disabled { opacity: 0.45; cursor: not-allowed; }
+
 /* ---- launch ---- */
 .preflight .preflight-launch {
   margin: 0;
@@ -443,10 +694,20 @@
   border-top: 1px solid var(--pf-line);
 }
 
+/* With a control beside it (step 02's Sign out) the readout sits left and
+   the control right, centred on the readout's two lines. */
+.preflight-panel__foot--action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
 .preflight .preflight-readout {
   margin: 0;
   display: flex;
-  flex-wrap: wrap;
+  /* two lines, time over Moon: steady at every width and room for a control beside */
+  flex-direction: column;
   row-gap: 6px;
   font: 500 11px/1.2 var(--pf-mono);
   letter-spacing: 0.1em;
@@ -455,20 +716,6 @@
 
 .preflight-readout__part { display: inline-flex; align-items: center; white-space: nowrap; }
 
-.preflight-readout__rule {
-  display: inline-block;
-  width: 14px;
-  height: 1px;
-  margin: 0 10px;
-  background: var(--pf-dim);
-}
-
-/* Below 360 px the two facts do not fit on one line: stack them and drop the
-   rule, which would otherwise lead the second line. */
-@media (max-width: 359px) {
-  .preflight .preflight-readout { flex-direction: column; }
-  .preflight-readout__rule { display: none; }
-}
 
 /* ---- hand-off to the entry ---- */
 .preflight__blackout {
@@ -487,4 +734,10 @@
   .preflight *,
   .preflight__blackout { transition: none !important; }
   .preflight-launch__bar::after { animation: none; transform: scaleX(1); }
+  /* step 02: the waiting ring turns into a still dashed circle; no shake, caret blink or sliding bar */
+  .preflight-unlock--waiting .preflight-unlock__sweep { animation: none; stroke-dasharray: 3 5; }
+  .preflight-unlock--waiting .preflight-fingerprint,
+  .preflight-cells--wrong .preflight-cells__row,
+  .preflight-cells__box:focus-within .preflight-cell--next::before { animation: none; }
+  .preflight-progress::after { animation: none; width: 100%; opacity: 0.6; }
 }
