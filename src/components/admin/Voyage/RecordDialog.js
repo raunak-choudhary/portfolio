@@ -28,6 +28,9 @@
 // added only after the first save. That covers the projects gallery
 // (`images`) and every field with an upload rule (`image`, `file`, `files`).
 //
+// The read view opens with the record's history line (HistoryLine): when
+// it last changed and its own timeline, from the activity log.
+//
 // Singleton managers (hero, about) open with `editOnly`: the chapter itself
 // is the read view, so the dialog is only the form, Save closes it, and
 // there is no Delete.
@@ -38,6 +41,7 @@ import { AlertCircle, AlertTriangle, LogIn, Pencil, RefreshCw, Trash2, WifiOff, 
 import Field from './Field';
 import ConfirmDialog from './ConfirmDialog';
 import RecordView, { WIDE_KINDS } from './RecordView';
+import HistoryLine from './HistoryLine';
 import useOnline from './useOnline';
 import { UPLOAD_KINDS, applyChange, buildForm, cleanupTargets, fieldsForGroup, isDirty, normalizeForm, validateForm } from './managers/schemaModel';
 import { deleteRecord, failureKind, fetchUpdatedAt, fileProblems, getRecord, imageProblems, removeImage, removeStoredFiles, saveRecord, uploadFieldFiles, uploadImages } from '../../../services/voyageRecords';
@@ -348,7 +352,7 @@ export default function RecordDialog({ schema, record, open, onClose, onSaved, o
 
         <div className="record-dialog__body">
           {mode === 'read' && base
-            ? <RecordView schema={schema} row={base} />
+            ? <>{schema.table && base.id ? <HistoryLine table={schema.table} recordId={base.id} /> : null}<RecordView schema={schema} row={base} /></>
             : (
               <form className="record-form" onSubmit={(e) => { e.preventDefault(); save(); }} noValidate>
                 {(schema.groups || [{ label: '', keys: schema.fields.map((f) => f.key) }]).map((group, i) => (

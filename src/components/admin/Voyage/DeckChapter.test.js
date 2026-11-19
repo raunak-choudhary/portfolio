@@ -3,6 +3,8 @@ import DeckChapter from './DeckChapter';
 import { projectsSchema } from './managers/projects.schema';
 import { React, act, click, mount, setInputValue } from '../SkyBackground/testUtils';
 
+// the history line and the activity pane read through the activity service, which opens the Supabase client
+jest.mock('../../../services/activityService', () => ({ listActivity: jest.fn(), recordHistory: jest.fn(), isActivityAvailable: jest.fn(), logSecurityEvent: jest.fn() }));
 jest.mock('../../../services/voyageRecords', () => ({ listRecords: jest.fn(), saveRecord: jest.fn(), deleteRecord: jest.fn(), reorderRecords: jest.fn(), uploadImages: jest.fn(), removeImage: jest.fn(), imageProblems: jest.fn(), failureKind: jest.fn(), fetchUpdatedAt: jest.fn(), getRecord: jest.fn() }));
 const records = jest.requireMock('../../../services/voyageRecords');
 const flush = () => act(async () => { await Promise.resolve(); await new Promise((r) => setTimeout(r, 0)); });
