@@ -2,7 +2,7 @@
 import { ThemeProvider } from '../../../contexts/ThemeContext';
 import { CHAPTERS } from './chapters';
 import { VOYAGE_POSITION_KEY } from '../../../services/voyagePosition';
-import VoyagePage, { VOYAGE_ROOT_CLASS } from './VoyagePage';
+import VoyagePage, { ENROLMENT_LOCK_TEXT, VOYAGE_ROOT_CLASS } from './VoyagePage';
 import { React, act, click, mount, stubCanvas } from '../SkyBackground/testUtils';
 import { isDashboardReady, resetDashboardReady } from '../AdminWelcome/adminReadiness';
 
@@ -36,6 +36,11 @@ jest.mock('../../../services/inboxService', () => ({ listMessages: jest.fn(), up
 const inboxService = jest.requireMock('../../../services/inboxService');
 jest.mock('../../../services/mediaLibraryService', () => ({ getMediaLibrarySnapshot: jest.fn(), createMediaSignedUrl: jest.fn(), MEDIA_LIBRARY_BUCKETS: [] }));
 const mediaLibrary = jest.requireMock('../../../services/mediaLibraryService');
+// the Security chapter has its own tests; here only its place on the page and the sign-out hand-over are checked
+jest.mock('./SecurityChapter', () => {
+  const React = require('react');
+  return function MockSecurity({ onLeave }) { return React.createElement('button', { 'data-testid': 'security-chapter', onClick: onLeave }, 'Sign out everywhere'); };
+});
 const { getPortfolioStats } = jest.requireMock('../../../services/dataService');
 const analyticsService = jest.requireMock('../../../services/analyticsService').default;
 const voyageData = jest.requireMock('../../../services/voyageData');
@@ -205,14 +210,44 @@ describe('VoyagePage (2D fallback)', () => {
     }
   });
 
-  it('holds the managers back until an authenticator is confirmed', async () => {
+  it('holds every chapter but the Earth and Security until an authenticator is confirmed', async () => {
     const view = mount(<ThemeProvider><VoyagePage requireSecurityEnrollment /></ThemeProvider>);
     await flush();
-    expect(view.container.querySelector('.voyage-notice').textContent).toMatch(/authenticator/);
+    const notices = view.container.querySelectorAll('.voyage-notice');
+    expect(notices).toHaveLength(CHAPTERS.length - 2);
+    notices.forEach((n) => expect(n.textContent).toContain(ENROLMENT_LOCK_TEXT));
+    expect(view.container.querySelector('#chapter-earth .voyage-notice')).toBeNull();
+    expect(view.container.querySelector('#chapter-security .voyage-notice')).toBeNull();
+    expect(view.container.querySelector('#chapter-security [data-testid="security-chapter"]')).not.toBeNull();
+    expect(view.container.querySelector('#chapter-analytics .voyage-placeholder')).toBeNull();   // placeholders are locked too
     expect(view.container.querySelector('[data-testid="bento"]')).toBeNull();
     expect(view.container.querySelector('[data-testid="inbox"]')).toBeNull();
     expect(inboxService.listMessages).not.toHaveBeenCalled();
     expect(mediaLibrary.getMediaLibrarySnapshot).not.toHaveBeenCalled();
+    expect(voyageRecords.listRecords).not.toHaveBeenCalled();
+    // the request leads straight to Security
+    window.scrollTo.mockClear();
+    click(view.container.querySelector('#chapter-projects .voyage-notice button'));
+    expect(window.scrollTo).toHaveBeenCalledTimes(1);
     view.unmount();
+  });
+
+  it('places the Security chapter and lets it hand over to the sign-out film', async () => {
+    const location = window.location;
+    delete window.location;
+    window.location = { assign: jest.fn() };
+    try {
+      const view = render();
+      await flush();
+      expect(view.container.querySelector('#chapter-security .voyage-chapter__sub').textContent).toBe('Authenticator apps, passkeys and this session.');
+      expect(view.container.querySelector('#chapter-security .voyage-placeholder')).toBeNull();
+      expect(view.container.querySelectorAll('.voyage-notice')).toHaveLength(0);
+      click(view.container.querySelector('[data-testid="security-chapter"]'));
+      expect(window.location.assign).toHaveBeenCalledWith('/adminsignout');
+      expect(JSON.parse(window.sessionStorage.getItem(VOYAGE_POSITION_KEY)).f).toEqual(expect.any(Number));
+      view.unmount();
+    } finally {
+      window.location = location;
+    }
   });
 });

@@ -18,7 +18,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Command as CommandIcon, LogOut } from 'lucide-react';
+import { Command as CommandIcon, Lock, LogOut } from 'lucide-react';
 import { getPortfolioStats } from '../../../services/dataService';
 import analyticsService from '../../../services/analyticsService';
 import { getRecentEdits, getTopPages, getUnreadMessages, getVisitorSeries } from '../../../services/voyageData';
@@ -32,6 +32,7 @@ import { CHAPTERS, chapterIndex, chapterPlace } from './chapters';
 import DeckChapter from './DeckChapter';
 import InboxChapter from './InboxChapter';
 import MediaChapter from './MediaChapter';
+import SecurityChapter from './SecurityChapter';
 import SingletonChapter from './SingletonChapter';
 import Toast, { useToast } from './Toast';
 import { schemaForTable } from './managers';
@@ -46,7 +47,7 @@ import './Voyage.css';
 
 /** Names of the constellations, from figures.json, for the rail and the palette. */
 // chapter kinds with their own component; the rest show the placeholder until their unit
-const BUILT_KINDS = new Set(['prologue', 'bento', 'inbox']);
+const BUILT_KINDS = new Set(['prologue', 'bento', 'inbox', 'security']);
 // the media library is a deck with no table of its own: storage is its source
 const MEDIA_CHAPTER = 'media';
 const namesFrom =(figures) => Object.fromEntries((figures || []).map((f) => [f.id, f.name]));
@@ -63,6 +64,21 @@ function LiveRail({ signal, ...props }) { return <StarRail active={useSignal(sig
 function Progress({ signal }) { return <div className="voyage-progress" style={{ width: `${(useSignal(signal) / (CHAPTERS.length - 1)) * 100}%` }} aria-hidden="true" />; }
 /** The city passing under the camera in the prologue, refreshed once a second by the field. */
 function OverReadout({ signal }) { const over = useSignal(signal); return over ? <p className="voyage-chapter__over" aria-live="off">{over}</p> : null; }
+
+/** The sentence every locked chapter shows until the first authenticator app is confirmed. */
+export const ENROLMENT_LOCK_TEXT = 'Set up an authenticator app in Security to open this chapter.';
+/** Chapters that stay open while enrolment is required: the Earth and Security itself. */
+const OPEN_WHILE_LOCKED = new Set(['prologue', 'security']);
+
+/** The request a locked chapter shows instead of its content. */
+function EnrolmentLock({ onGo }) {
+  return (
+    <div className="voyage-pane voyage-notice" role="note">
+      <p><Lock size={15} aria-hidden="true" /> {ENROLMENT_LOCK_TEXT}</p>
+      <button type="button" className="voyage-bar__button voyage-bar__button--primary" onClick={onGo}><span>Go to Security</span></button>
+    </div>
+  );
+}
 
 function VoyageView({ requireSecurityEnrollment }) {
   const navigate = useNavigate();
@@ -245,6 +261,8 @@ function VoyageView({ requireSecurityEnrollment }) {
   ], [navigate, signOut]);
 
   const greeting = useMemo(() => greetingFor(), []);
+  // First-time enrolment: every chapter but the Earth and Security shows only the request.
+  const locked = (chapter) => Boolean(requireSecurityEnrollment) && !OPEN_WHILE_LOCKED.has(chapter.kind);
   const countFor = (chapter) => { const s = data.stats; if (!s || !chapter.table) return null; const key = { hero_content: null, about_content: null, projects: 'projects', internships: 'internships', education: 'education', work_experience: 'workExperience', skills: 'skills', certifications: 'certifications', recommendations: 'recommendations', achievements: 'achievements', leadership: 'leadership', contact_messages: 'messages' }[chapter.table]; return key ? s[key] ?? null : null; };
 
   return (
@@ -272,27 +290,22 @@ function VoyageView({ requireSecurityEnrollment }) {
                 {chapter.kind === 'prologue' && <OverReadout signal={overSignal} />}
               </div>
             </div>
-            {chapter.kind === 'bento' && (requireSecurityEnrollment
-              ? <div className="voyage-pane voyage-notice">Confirm an authenticator app in Security before the managers open.</div>
-              : <Bento data={data} onGo={go} />)}
-            {chapter.kind === 'deck' && schemaForTable(chapter.table) && (requireSecurityEnrollment
-              ? <div className="voyage-pane voyage-notice">Confirm an authenticator app in Security before the managers open.</div>
-              : schemaForTable(chapter.table).mode === 'singleton'
+            {locked(chapter) ? <EnrolmentLock onGo={() => go('security')} /> : <>
+              {chapter.kind === 'bento' && <Bento data={data} onGo={go} />}
+              {chapter.kind === 'deck' && schemaForTable(chapter.table) && (schemaForTable(chapter.table).mode === 'singleton'
                 ? <SingletonChapter schema={schemaForTable(chapter.table)} notify={notify} />
                 : <DeckChapter schema={schemaForTable(chapter.table)} notify={notify} />)}
-            {chapter.kind === 'inbox' && (requireSecurityEnrollment
-              ? <div className="voyage-pane voyage-notice">Confirm an authenticator app in Security before the managers open.</div>
-              : <InboxChapter notify={notify} />)}
-            {chapter.id === MEDIA_CHAPTER && (requireSecurityEnrollment
-              ? <div className="voyage-pane voyage-notice">Confirm an authenticator app in Security before the managers open.</div>
-              : <MediaChapter notify={notify} />)}
-            {!BUILT_KINDS.has(chapter.kind) && chapter.id !== MEDIA_CHAPTER && !(chapter.kind === 'deck' && schemaForTable(chapter.table)) && (
-              <div className="voyage-pane voyage-placeholder">
-                <p>{countFor(chapter) !== null ? <><b>{countFor(chapter)}</b> {countFor(chapter) === 1 ? 'item' : 'items'} in this section.</> : 'This chapter is on its way.'}</p>
-                <p className="voyage-placeholder__note">The deck and the record dialog arrive in the next unit. Until then this section is edited in the classic dashboard.</p>
-                <button type="button" className="voyage-bar__button" onClick={() => navigate('/admindashboard/classic')}>Open in the classic dashboard</button>
-              </div>
-            )}
+              {chapter.kind === 'inbox' && <InboxChapter notify={notify} />}
+              {chapter.id === MEDIA_CHAPTER && <MediaChapter notify={notify} />}
+              {chapter.kind === 'security' && <SecurityChapter notify={notify} onLeave={signOut} />}
+              {!BUILT_KINDS.has(chapter.kind) && chapter.id !== MEDIA_CHAPTER && !(chapter.kind === 'deck' && schemaForTable(chapter.table)) && (
+                <div className="voyage-pane voyage-placeholder">
+                  <p>{countFor(chapter) !== null ? <><b>{countFor(chapter)}</b> {countFor(chapter) === 1 ? 'item' : 'items'} in this section.</> : 'This chapter is on its way.'}</p>
+                  <p className="voyage-placeholder__note">The deck and the record dialog arrive in the next unit. Until then this section is edited in the classic dashboard.</p>
+                  <button type="button" className="voyage-bar__button" onClick={() => navigate('/admindashboard/classic')}>Open in the classic dashboard</button>
+                </div>
+              )}
+            </>}
           </section>
         ))}
       </main>
