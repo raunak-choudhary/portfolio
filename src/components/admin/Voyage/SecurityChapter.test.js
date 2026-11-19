@@ -88,6 +88,13 @@ describe('SecurityChapter', () => {
     expect(view.container.querySelector('[role="status"]').textContent).toBe('Reading your authenticators.');
   });
 
+  it('leaves the loading state under StrictMode, whose double mount runs the cleanup once', async () => {
+    view = mount(<React.StrictMode><SecurityChapter notify={notify} onLeave={onLeave} /></React.StrictMode>);
+    await flush();
+    expect(chapter().dataset.state).toBe('overview');
+    expect(chapter().getAttribute('aria-busy')).toBeNull();
+  });
+
   it('says nothing was changed when the authenticators cannot be read, and tries again', async () => {
     auth.listTotpFactors.mockResolvedValueOnce({ success: false, error: { message: 'raw server text' } });
     const root = await render();
