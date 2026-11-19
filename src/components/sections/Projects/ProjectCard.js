@@ -145,7 +145,11 @@ const ProjectCard = ({ project }) => {
 
   // Handle keyboard navigation
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
+    // Enter or Space on a link or button inside the card belongs to that
+    // control (open the repository, the demo, the gallery), not to the flip.
+    const control = e.target.closest('a, button');
+    const onInnerControl = control && control !== e.currentTarget;
+    if ((e.key === 'Enter' || e.key === ' ') && !onInnerControl) {
       e.preventDefault();
       handleCardClick(e);
     }
