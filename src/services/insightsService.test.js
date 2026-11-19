@@ -80,6 +80,11 @@ describe('first events and projects', () => {
     expect(await firstEventAt('project_open')).toBeNull();
   });
 
+  it('reads a stored instant without a zone as UTC, not local time', async () => {
+    from.mockReturnValueOnce(chain({ data: [{ created_at: '2026-08-01T04:00:00.000' }], error: null }));
+    expect(await firstEventAt('engaged')).toBe(Date.UTC(2026, 7, 1, 4));
+  });
+
   it('reads active projects with an explicit column list', async () => {
     const calls = [];
     from.mockReturnValueOnce(chain({ data: [{ id: 'p1', title: 'Tallyproof' }], error: null }, calls));
@@ -97,11 +102,12 @@ describe('loadInsights', () => {
       if (table === 'projects') return chain({ data: [{ id: 'p1', title: 'Knaq' }], error: null });
       return chain((calls) => {
         if (calls.some((c) => c[0] === 'limit')) return { data: calls.some((c) => c[2] === 'engaged') ? [{ created_at: '2026-11-19T00:00:00Z' }] : [], error: null };
-        return { data: [row(1, '2026-09-30T12:00:00Z'), row(2, '2026-10-01T04:00:00Z'), row(3, 'bad'), row(4, '2026-11-01T00:00:00Z')], error: null };
+        return { data: [row(1, '2026-09-30T12:00:00Z'), row(2, '2026-10-01T04:00:00Z'), row(3, 'bad'), row(4, '2026-11-01T00:00:00Z'), row(5, '2026-10-01T03:59:59.999')], error: null };
       }, eventCalls.length ? [] : eventCalls);
     });
     const out = await loadInsights(windows);
-    expect(out.before.map((r) => r.id)).toEqual(['r1']);
+    // r5 has no zone: UTC, so one millisecond before the boundary
+    expect(out.before.map((r) => r.id)).toEqual(['r1', 'r5']);
     expect(out.current.map((r) => r.id)).toEqual(['r2', 'r4']);
     expect(out.projects).toHaveLength(1);
     expect(out.firstEngaged).toBe(Date.parse('2026-11-19T00:00:00Z'));

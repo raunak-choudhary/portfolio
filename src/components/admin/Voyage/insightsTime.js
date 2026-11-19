@@ -165,3 +165,16 @@ export function nextReportAt(now) {
   }
   return null;   // unreachable: the next quarter's start is always later than now
 }
+
+/**
+ * An instant from the database in ms. PostgREST may return a timestamp
+ * without a zone; the column is stored in UTC, so a missing zone means UTC
+ * (Date.parse would read it as local time).
+ * @returns {number|null}
+ */
+export function parseDbInstant(value) {
+  if (typeof value !== 'string' || !value) return null;
+  const hasZone = /(?:[zZ]|[+-]\d{2}(?::?\d{2})?)$/.test(value);
+  const t = Date.parse(hasZone ? value : `${value.replace(' ', 'T')}Z`);
+  return Number.isFinite(t) ? t : null;
+}
