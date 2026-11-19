@@ -12,7 +12,7 @@ import { Activity, Inbox, ListChecks, Moon, ShieldCheck, Sparkles, TrendingUp, W
 import { moonPhase } from '../SkyBackground/skyModel';
 import { relativeTime } from '../../../services/voyageData';
 import { describe as describeActivity, sentenceText, tileWhen } from './activityModel';
-import { gainText, round1 } from './fixQueueModel';
+import { gainText, scoreSummary } from './fixQueueModel';
 import { showQueue } from './recordIntent';
 import { BENTO_ORDER_KEY, percentChange, sanitizeOrder, sectionTallies, topIssues, weakestSections } from './bentoModel';
 
@@ -63,7 +63,7 @@ function TileBody({ id, data, onGo, onSeeActivity, now }) {
         const top = queue.groups.slice(0, 3);
         return <><h5><Wrench size={14} /> Fix next</h5>{top.length
           ? <><div className="tile__fix">{top.map((g) => <div key={g.ruleKey}><b>{gainText(g.gain)}</b><span>{g.title}</span></div>)}</div>
-            <div className="tile__gain">Health {round1(queue.scoreWithDismissals).toFixed(1)} now, {round1(queue.afterEveryFix).toFixed(1)} after every fix</div>
+            <div className="tile__gain">Health {scoreSummary(queue).line}</div>
             <button type="button" className="tile__link" onClick={showQueue}>Open the fix queue</button></>
           : <p className="tile__empty">Every section passes its checks.</p>}</>;
       }
