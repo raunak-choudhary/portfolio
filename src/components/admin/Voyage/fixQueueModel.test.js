@@ -78,6 +78,38 @@ describe('rule keys and groups', () => {
     });
     expect(tie.groups.map((g) => g.severity)).toEqual(['critical', 'warning']);
   });
+
+  it('breaks ties on the gain as shown, so a critical +1.0 outranks a warning +1.0', () => {
+    // weights 34.6 and 33.4 of 100 give quality gains of 1.038 and 1.002 (30 split over 10 groups), both shown as +1.0
+    const groups = Array.from({ length: 10 }, (_, i) => ({ name: `g${i}`, label: `g${i}`, fields: [`g${i}`], issueType: 'missing_image' }));
+    const rules = [
+      { name: 'A', table: 'skills', weight: 34.6, minItems: 1, requiredFields: [], qualityGroups: [groups[0], ...groups.slice(1).map((g) => ({ ...g, fields: ['x'] }))] },
+      { name: 'B', table: 'projects', weight: 33.4, minItems: 1, requiredFields: [], qualityGroups: [{ ...groups[0], issueType: 'missing_required_field' }, ...groups.slice(1).map((g) => ({ ...g, fields: ['x'] }))] },
+      { name: 'C', table: 'education', weight: 32, minItems: 1, requiredFields: [] },
+    ];
+    const q = buildFixQueue({ rules, rowsByTable: { skills: [{ id: 1, x: 'y' }], projects: [{ id: 2, x: 'y' }], education: [{ id: 3 }] } });
+    expect(q.groups.map((g) => [g.table, gainText(g.gain), g.severity])).toEqual([['projects', '+1.0', 'critical'], ['skills', '+1.0', 'warning']]);
+  });
+
+  it('walks only the row a singleton chapter shows', () => {
+    const rules = [{ name: 'Hero', table: 'hero_content', weight: 100, minItems: 1, requiredFields: ['title'], qualityGroups: [] }];
+    const rows = [{ id: 'old', title: '', is_active: true, updated_at: '2026-01-01' }, { id: 'new', title: '', is_active: true, updated_at: '2026-11-01' }];
+    const q = buildFixQueue({ rules, rowsByTable: { hero_content: rows } });
+    expect(q.groups[0].items.map((i) => i.recordId)).toEqual(['new']);
+  });
+});
+
+describe('the real score', () => {
+  it('reports the score after every open fix without counting dismissed items as passing', () => {
+    const rowsByTable = rowsSmall();
+    const plain = buildFixQueue({ rowsByTable, rules: RULES });
+    expect(plain.afterOpenFixes).toBeCloseTo(plain.afterEveryFix, 9);
+    const group = plain.groups.find((g) => g.ruleKey === 'skills:category');
+    const q = buildFixQueue({ rowsByTable, rules: RULES, dismissals: [{ id: 'd', ruleKey: 'skills:category', recordId: null }] });
+    expect(q.preciseScore).toBeCloseTo(plain.preciseScore, 9);
+    expect(q.scoreWithDismissals).toBeCloseTo(plain.preciseScore + group.gain, 9);
+    expect(q.afterOpenFixes).toBeCloseTo(plain.afterOpenFixes - group.gain, 9);
+  });
 });
 
 describe('severity and copy', () => {
@@ -231,7 +263,7 @@ describe('checkItem', () => {
     expect(checkItem('projects:images', { id: 1, image_urls: [] })).toEqual({ passes: false, state: 'missing' });
     expect(checkItem('projects:short_description', { id: 1, short_description: 'short' })).toEqual({ passes: false, state: 'weak' });
     expect(checkItem('projects:short_description', { id: 1, short_description: LONG })).toEqual({ passes: true, state: null });
-    expect(checkItem('projects:images', { id: 1, status: 'inactive' })).toMatchObject({ passes: true, inactive: true });
+    expect(checkItem('projects:images', { id: 1, status: 'inactive' })).toMatchObject({ passes: false, state: 'hidden', inactive: true });   // hiding is not fixing
     expect(checkItem('nope:x', { id: 1 }).passes).toBe(false);
   });
 });
