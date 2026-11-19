@@ -25,7 +25,11 @@ jest.mock('../services/supabaseClient', () => ({
   }
 }));
 
+// The sign-in entry is the activity service's job; here only the call is checked.
+jest.mock('../services/activityService', () => ({ noteSecondFactorSignIn: jest.fn() }));
+
 const authService = require('../services/authService');
+const activityService = require('../services/activityService');
 
 const flush = () => act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
 
@@ -44,6 +48,7 @@ describe('useAuth', () => {
   beforeEach(() => {
     authService.getAssuranceState.mockResolvedValue(level2);
     authService.signOutAdmin.mockResolvedValue({ success: true });
+    activityService.noteSecondFactorSignIn.mockReset().mockResolvedValue(true);
   });
 
   it('reads a stored session as signed in', async () => {
@@ -83,5 +88,37 @@ describe('useAuth', () => {
     expect(authService.signOutAdmin).toHaveBeenCalledTimes(1);
     expect(latest.current.isAuthenticated).toBe(false);
     view.unmount();
+  });
+
+  describe('sign-in activity entry', () => {
+    it('asks for the sign-in entry when a check finds level 2', async () => {
+      authService.verifyAdminSession.mockResolvedValue(signedIn);
+      const { view } = harness();
+      await flush();
+      expect(activityService.noteSecondFactorSignIn).toHaveBeenCalled();
+      view.unmount();
+    });
+
+    it('asks again after refreshAssurance reaches level 2 (code step, enrolment)', async () => {
+      authService.verifyAdminSession.mockResolvedValue(signedIn);
+      authService.getAssuranceState.mockResolvedValue({ ...level2, currentLevel: 'aal1', needsSecondFactor: true });
+      const { latest, view } = harness();
+      await flush();
+      expect(activityService.noteSecondFactorSignIn).not.toHaveBeenCalled();
+      authService.getAssuranceState.mockResolvedValue(level2);
+      await act(async () => { await latest.current.refreshAssurance(); });
+      expect(activityService.noteSecondFactorSignIn).toHaveBeenCalledTimes(1);
+      view.unmount();
+    });
+
+    it('a failing log never changes the auth state', async () => {
+      authService.verifyAdminSession.mockResolvedValue(signedIn);
+      activityService.noteSecondFactorSignIn.mockReturnValue(new Promise(() => {}));
+      const { latest, view } = harness();
+      await flush();
+      expect(latest.current.isAuthenticated).toBe(true);
+      expect(latest.current.assurance.currentLevel).toBe('aal2');
+      view.unmount();
+    });
   });
 });

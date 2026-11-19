@@ -8,6 +8,16 @@ import {
   verifyAdminSession
 } from '../services/authService';
 import { supabase } from '../services/supabaseClient';
+import { noteSecondFactorSignIn } from '../services/activityService';
+
+/**
+ * Logs the sign-in once per session when a check finds level 2 (the
+ * activity service keeps the per-session flag). Fire and forget: the call
+ * never rejects, and a logging failure never touches the auth state.
+ */
+const noteSignInAt = (assurance) => {
+  if (assurance?.currentLevel === 'aal2') void noteSecondFactorSignIn();
+};
 
 /**
  * Where the session stands in the two-step login. `checked` is false until
@@ -62,6 +72,7 @@ export const useAuth = () => {
   const refreshAssurance = useCallback(async () => {
     const assurance = await getAssuranceState();
     setAuthState(prev => ({ ...prev, assurance }));
+    noteSignInAt(assurance);
     return assurance;
   }, []);
 
@@ -84,6 +95,7 @@ export const useAuth = () => {
 
       const assurance = await getAssuranceState();
       if (isStale()) return;
+      noteSignInAt(assurance);
       setAuthState({
         user: admin.data.user,
         isAuthenticated: true,
