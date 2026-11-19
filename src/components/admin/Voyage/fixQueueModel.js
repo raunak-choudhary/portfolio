@@ -40,6 +40,10 @@ import {
   summarizePortfolioHealth,
 } from '../../../services/analyticsService';
 import { CHAPTERS } from './chapters';
+import { pickSingleton } from './managers/schemaModel';
+
+/** Tables the voyage edits as one row (SingletonChapter): only the row it shows can be walked. */
+export const SINGLETON_TABLES = Object.freeze(['hero_content', 'about_content']);
 
 /** A section not edited for longer than this is listed under "Not touched for a while". */
 export const STALE_DAYS = 90;
@@ -141,12 +145,14 @@ const sameId = (a, b) => a != null && b != null && String(a) === String(b);
 /**
  * Does one row pass one rule check? Used by the fix walk after a save to say
  * honestly whether the item is fixed.
- * @returns {{passes: boolean, state: 'missing'|'weak'|null, inactive?: boolean}}
+ * A row switched off is not a fix: it leaves the score, but the gap is still
+ * there, so it reports passes: false with state 'hidden'.
+ * @returns {{passes: boolean, state: 'missing'|'weak'|'hidden'|null, inactive?: boolean}}
  */
 export function checkItem(ruleKey, row, rules = SECTION_HEALTH_RULES) {
   const target = findRuleTarget(ruleKey, rules);
   if (!target || !row) return { passes: false, state: 'missing' };
-  if (!isActiveContentRow(row)) return { passes: true, state: null, inactive: true };
+  if (!isActiveContentRow(row)) return { passes: false, state: 'hidden', inactive: true };
   const { rule, group, field } = target;
   if (group) return hasAnyFieldValue(row, group.fields) ? { passes: true, state: null } : { passes: false, state: 'missing' };
   if (fieldIsComplete(row, field, rule)) return { passes: true, state: null };
@@ -251,8 +257,11 @@ export function buildFixQueue({ rowsByTable = {}, dismissals = [], rules = SECTI
       return;
     }
     sections.push(evaluateContentSectionHealth(rule, rows));
-    const { precise: part, gaps } = evaluateSection(rule, rows, totalWeight);
+    const { precise: part, gaps: allGaps } = evaluateSection(rule, rows, totalWeight);
     precise += part;
+    // a singleton chapter edits one row; gaps on any extra row cannot be walked there
+    const shown = SINGLETON_TABLES.includes(rule.table) ? pickSingleton(rows.filter(isActiveContentRow)) : null;
+    const gaps = shown ? allGaps.filter((g) => sameId(g.recordId, shown.id)) : allGaps;
     const defs = [
       ...(rule.requiredFields || []).map((field) => ({ field, group: null, issueType: 'missing_required_field' })),
       ...(rule.qualityGroups || []).map((group) => ({ field: null, group, issueType: group.issueType || 'quality_gap' })),
@@ -278,7 +287,8 @@ export function buildFixQueue({ rowsByTable = {}, dismissals = [], rules = SECTI
     });
   });
 
-  groups.sort((a, b) => (b.gain - a.gain) || (SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity]) || a.title.localeCompare(b.title));
+  // ties are judged on the gain as shown (one decimal), so the severity tie-break can work
+  groups.sort((a, b) => (round1(b.gain) - round1(a.gain)) || (SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity]) || a.title.localeCompare(b.title));
   const totalGain = groups.reduce((s, g) => s + g.gain, 0);
   const withDismissals = precise + dismissedGain;
   return {
@@ -286,6 +296,8 @@ export function buildFixQueue({ rowsByTable = {}, dismissals = [], rules = SECTI
     preciseScore: precise,
     scoreWithDismissals: withDismissals,
     afterEveryFix: Math.min(100, withDismissals + totalGain),
+    // the real score once every open item is fixed, dismissed items still counted as gaps
+    afterOpenFixes: Math.min(100, precise + totalGain),
     totalGain,
     groups,
     dismissed: describeDismissals(list, rowsByTable, rules, coveredBy),
