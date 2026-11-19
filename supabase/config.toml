@@ -434,3 +434,10 @@ verify_jwt = false
 # check is off as for the other functions.
 [functions.admin-passkey]
 verify_jwt = false
+
+# The quarterly report checks its own callers: the cron secret
+# (x-report-secret, compared in constant time) or the admin's token, which it
+# verifies with Auth (GET /auth/v1/user) before requiring aal2 and the admin
+# list. The cron call carries no JWT at all, so the gateway check is off.
+[functions.quarterly-report]
+verify_jwt = false
