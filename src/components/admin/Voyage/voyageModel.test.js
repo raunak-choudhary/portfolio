@@ -103,6 +103,9 @@ describe('quality', () => {
     expect(qualityFor({ width: 390, devicePixelRatio: 3 })).toEqual({ mode: 'webgl', stars: 3500, pixelRatio: 1.5, fly: true });
     expect(qualityFor({ width: 1440, devicePixelRatio: 1, reducedMotion: true }).fly).toBe(false);
     expect(qualityFor({ width: 1440, webgl: false })).toMatchObject({ mode: 'fallback', fly: false, stars: 0 });
+    // the working sky (panels on) caps the resolution at 1 and the frame rate at 30; the star count stays
+    expect(qualityFor({ width: 1440, devicePixelRatio: 2, sky: 'working' })).toEqual({ mode: 'webgl', stars: 9000, pixelRatio: 1, fly: true, frameInterval: 1000 / 30 });
+    expect(qualityFor({ width: 1440, devicePixelRatio: 2, sky: 'showcase' }).pixelRatio).toBe(2);
     expect(scrollFractionFor(0)).toBe(0); expect(scrollFractionFor(16)).toBe(1);
   });
 });
