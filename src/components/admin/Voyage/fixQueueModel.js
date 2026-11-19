@@ -38,7 +38,7 @@ import {
   hasUsableValue,
   isActiveContentRow,
   summarizePortfolioHealth,
-} from '../../../services/analyticsService';
+} from '../../../services/healthRules';
 import { CHAPTERS } from './chapters';
 import { pickSingleton } from './managers/schemaModel';
 
