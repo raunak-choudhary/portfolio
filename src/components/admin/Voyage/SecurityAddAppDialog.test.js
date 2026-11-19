@@ -107,7 +107,7 @@ describe('SecurityAddAppDialog', () => {
     await toScan();
     setInputValue(dialog().querySelector('#sec-first'), '123456');
     await flush();
-    expect(auth.verifyTotpEnrollment).toHaveBeenCalledWith('f3', '123456');
+    expect(auth.verifyTotpEnrollment).toHaveBeenCalledWith('f3', '123456', 'iPad, Authy');
     const err = dialog().querySelector('#sec-first-err');
     expect(err.getAttribute('role')).toBe('alert');
     expect(err.textContent).toBe(CODE_MISMATCH);

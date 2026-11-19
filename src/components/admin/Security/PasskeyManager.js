@@ -78,7 +78,7 @@ const PasskeyManager = ({ onChange = () => {} }) => {
     setNotice('');
     setBusy(true);
     try {
-      const result = await removePasskey(passkey.id);
+      const result = await removePasskey(passkey.id, passkey.device_name);
       if (!result.success) {
         setError(result.error.message);
         return;

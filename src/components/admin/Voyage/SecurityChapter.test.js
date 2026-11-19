@@ -170,7 +170,7 @@ describe('SecurityChapter', () => {
     expect(document.activeElement.textContent).toBe('Cancel');   // the safe choice has focus
     await act(async () => { buttonNamed(dialog, 'Remove app').click(); });
     await flush();
-    expect(auth.unenrollFactor).toHaveBeenCalledWith('f2');
+    expect(auth.unenrollFactor).toHaveBeenCalledWith('f2', 'Backup: 1Password');
     expect(mockAuth.refreshAssurance).toHaveBeenCalled();
     expect(notify).toHaveBeenCalledWith('Removed "Backup: 1Password".');
     expect(root.querySelector('[role="alertdialog"]')).toBeNull();
@@ -208,7 +208,7 @@ describe('SecurityChapter', () => {
     expect(dialog.querySelector('h4').textContent).toBe('Remove your last passkey?');
     await act(async () => { buttonNamed(dialog, 'Remove passkey').click(); });
     await flush();
-    expect(keys.removePasskey).toHaveBeenCalledWith('p1');
+    expect(keys.removePasskey).toHaveBeenCalledWith('p1', 'MacBook Air (Touch ID)');
     expect(mockAuth.refreshAssurance).toHaveBeenCalled();
   });
 

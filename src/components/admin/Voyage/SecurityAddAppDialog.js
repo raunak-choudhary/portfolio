@@ -109,7 +109,7 @@ export default function SecurityAddAppDialog({ open, appCount, onClose, onActiva
     checking.current = true;
     setError(''); setBusy(true);
     try {
-      const result = await verifyTotpEnrollment(pending.factorId, value);
+      const result = await verifyTotpEnrollment(pending.factorId, value, pending.friendlyName);
       if (!result.success) { setError(codeErrorText(result.error)); setCode(''); codeRef.current?.focus(); return; }
       setStep('done');
       await onActivated({ factorId: pending.factorId, friendlyName: pending.friendlyName });

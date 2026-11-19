@@ -87,7 +87,7 @@ describe('PasskeyManager', () => {
     confirmSpy.mockReturnValue(true);
     click(buttonNamed(view.container, 'Remove'));
     await flush();
-    expect(passkeys.removePasskey).toHaveBeenCalledWith('p1');
+    expect(passkeys.removePasskey).toHaveBeenCalledWith('p1', 'Galaxy S25 Ultra');
     expect(confirmSpy.mock.calls[1][0]).toMatch(/That device will need an authenticator code/);
     expect(mockAuth.refreshAssurance).not.toHaveBeenCalled();
     view.unmount();

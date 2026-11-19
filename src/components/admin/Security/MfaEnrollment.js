@@ -114,7 +114,7 @@ const MfaEnrollment = ({ enrollmentRequired = false }) => {
     }
     setBusy(true);
     try {
-      const result = await verifyTotpEnrollment(pending.factorId, code);
+      const result = await verifyTotpEnrollment(pending.factorId, code, pending.friendlyName);
       if (!result.success) {
         setError(result.error.message);
         setCode('');
@@ -146,7 +146,7 @@ const MfaEnrollment = ({ enrollmentRequired = false }) => {
     setError('');
     setNotice('');
     try {
-      const result = await unenrollFactor(factor.id);
+      const result = await unenrollFactor(factor.id, factor.friendly_name);
       if (!result.success) {
         setError(result.error.message);
         return;
