@@ -58,15 +58,16 @@ button.act-row:hover .act-row__text b { text-decoration: underline; text-underli
 .act-foot__error { flex-basis: 100%; color: var(--voyage-bad); }
 
 /* ---------- the Recent activity tile ---------- */
-.tile__act { font-size: 12px; display: grid; gap: 5px; align-content: start; min-height: 0; max-height: var(--tile-list, 150px); overflow-y: auto; padding-right: 4px; }
-.tile__act div { min-width: 0; overflow-wrap: anywhere; }
+/* No scroll box: a capped list cut its last row in half at phone width. Each
+   row stops at two lines instead (the whole sentence is in its title), and a
+   phone shows four rows, so the tile always ends on a whole row. */
+.tile__act { font-size: 12px; display: grid; gap: 5px; align-content: start; min-height: 0; }
+.tile__act > div { min-width: 0; overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
+.tile__act > .v5-skel { display: block; }
+@media (max-width: 599px) { .tile__act > div:nth-child(n + 5) { display: none; } }
 .tile__act time { font-family: var(--voyage-cond); color: var(--voyage-muted); margin-right: 8px; letter-spacing: .06em; }
 .tile__act b { font-weight: 600; }
 .tile__act .v5-skel { margin-top: 4px; }
-@supports not selector(::-webkit-scrollbar) { .tile__act { scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, .34) transparent; } }
-.tile__act::-webkit-scrollbar { width: 10px; }
-.tile__act::-webkit-scrollbar-track { background: transparent; }
-.tile__act::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, .28); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
 
 /* ---------- a record's history, in the dialog's read view ---------- */
 .hist { display: grid; gap: 8px; padding: 0 0 14px; }

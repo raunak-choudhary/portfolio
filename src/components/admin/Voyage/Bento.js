@@ -11,7 +11,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { Activity, Inbox, ListChecks, Moon, ShieldCheck, Sparkles, TrendingUp, Wrench } from 'lucide-react';
 import { moonPhase } from '../SkyBackground/skyModel';
 import { relativeTime } from '../../../services/voyageData';
-import { describe as describeActivity, tileWhen } from './activityModel';
+import { describe as describeActivity, sentenceText, tileWhen } from './activityModel';
 import { BENTO_ORDER_KEY, percentChange, sanitizeOrder, sectionTallies, topIssues, weakestSections } from './bentoModel';
 
 const readOrder = () => { try { return sanitizeOrder(JSON.parse(localStorage.getItem(BENTO_ORDER_KEY))); } catch { return sanitizeOrder(null); } };
@@ -89,7 +89,7 @@ function RecentActivity({ data, onSeeActivity, now }) {
     if (!activity.rows.length) return <>{head}<p className="tile__empty">Nothing recorded yet.</p></>;
     return (
       <>{head}
-        <div className="tile__act">{activity.rows.map((row) => { const { lead, title } = describeActivity(row); return <div key={row.id}><time dateTime={row.at}>{tileWhen(row.at, now)}</time>{lead}{title ? <> <b>{title}</b></> : null}</div>; })}</div>
+        <div className="tile__act">{activity.rows.map((row) => { const { lead, title } = describeActivity(row); return <div key={row.id} title={sentenceText(row)}><time dateTime={row.at}>{tileWhen(row.at, now)}</time>{lead}{title ? <> <b>{title}</b></> : null}</div>; })}</div>
         {link}
       </>
     );
