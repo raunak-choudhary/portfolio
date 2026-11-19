@@ -1,0 +1,212 @@
+/* eslint-disable testing-library/no-container, testing-library/no-node-access */
+// The fix walk end to end, below the page: the queue starts a walk through a
+// group, the deck chapter opens each record in fix mode (banner, Missing tag,
+// focus on the target field, "Save and next"), a save reports the new score,
+// Next moves to the following record and Back to the queue ends the walk.
+// Saves are mocked; nothing reaches a database.
+
+import DeckChapter from './DeckChapter';
+import SingletonChapter from './SingletonChapter';
+import { fixBannerCopy } from './RecordDialog';
+import { buildFixQueue } from './fixQueueModel';
+import { startWalk } from './FixQueuePane';
+import { clearIntent, fixesChanged, openRecord, queueRequests, recordIntent } from './recordIntent';
+import { projectsSchema } from './managers/projects.schema';
+import { heroSchema } from './managers/hero.schema';
+import { React, act, click, mount, setInputValue } from '../SkyBackground/testUtils';
+
+jest.mock('../../../services/supabaseClient', () => ({ supabase: { from: jest.fn(), rpc: jest.fn() } }));
+jest.mock('../../../services/fixDismissalsService', () => ({ listDismissals: jest.fn(), dismiss: jest.fn(), restore: jest.fn() }));
+jest.mock('../../../services/fixQueueData', () => ({ loadFixQueueData: jest.fn(() => new Promise(() => {})) }));
+jest.mock('../../../services/voyageRecords', () => ({
+  listRecords: jest.fn(), saveRecord: jest.fn(), deleteRecord: jest.fn(), reorderRecords: jest.fn(), uploadImages: jest.fn(), removeImage: jest.fn(), imageProblems: jest.fn(), failureKind: jest.fn(), fetchUpdatedAt: jest.fn(), getRecord: jest.fn(),
+  fileProblems: jest.fn(), uploadFieldFiles: jest.fn(), removeStoredFiles: jest.fn(),
+}));
+const records = jest.requireMock('../../../services/voyageRecords');
+const flush = () => act(async () => { await Promise.resolve(); await new Promise((r) => setTimeout(r, 0)); });
+const LONG = 'A short description that is comfortably over forty characters.';
+const rows = [
+  { id: 'a', title: 'Alpha', short_description: LONG, image_urls: ['https://example.com/a.png'], github_urls: [], status: 'active', order_index: 1, technologies: [] },
+  { id: 'b', title: 'Bravo', short_description: LONG, image_urls: ['https://example.com/b.png'], github_urls: [], status: 'active', order_index: 2, technologies: [] },
+  { id: 'c', title: 'Gamma', short_description: LONG, image_urls: ['https://example.com/c.png'], github_urls: ['https://github.com/x/y'], status: 'active', order_index: 3, technologies: [] },
+];
+const dialogButton = (text) => [...document.querySelectorAll('.record-dialog button')].find((b) => b.textContent.trim() === text);
+const banner = () => document.querySelector('[data-testid="fix-banner"]');
+const dialog = () => document.querySelector('[data-testid="record-dialog"]');
+const liveInput = () => document.querySelector('.record-form [data-field="live_url"] input');
+// every mounted view is unmounted after its test, even a failed one, so no chapter keeps listening to the intent store
+let views = [];
+const show = (element) => { const view = mount(element); views.push(view); return view; };
+
+describe('the fix walk', () => {
+  let notify;
+  beforeEach(() => {
+    notify = jest.fn();
+    records.listRecords.mockResolvedValue(rows.map((r) => ({ ...r })));
+    records.saveRecord.mockImplementation(async (_s, payload, id) => ({ ...rows.find((r) => r.id === id), ...payload, id }));
+    records.fetchUpdatedAt.mockResolvedValue(null);
+  });
+  afterEach(() => { views.forEach((v) => v.unmount()); views = []; act(() => clearIntent()); document.body.innerHTML = ''; });
+
+  it('walks two records with mocked saves: banner, Missing tag, focus, Save and next, Fixed, Next, Back to the queue', async () => {
+    const model = buildFixQueue({ rowsByTable: { projects: rows } });
+    const group = model.groups.find((g) => g.ruleKey === 'projects:proof');
+    expect(group.items.map((i) => i.recordId).sort()).toEqual(['a', 'b']);
+    const [first, second] = group.items;
+
+    const view = show(<DeckChapter schema={projectsSchema} notify={notify} />);
+    await flush();
+    act(() => startWalk(group, model));
+    await flush();
+
+    // step 1: the dialog opens in the form with the banner and the target field ringed
+    expect(dialog().dataset.mode).toBe('edit');
+    expect(document.querySelector('#record-title').textContent).toBe(first.label);
+    expect(banner().textContent).toContain(`Fixing: ${first.task}`);
+    expect(banner().textContent).toContain('1 of 2');
+    expect(banner().textContent).toContain(`Save, then move on to ${second.label}.`);
+    const target = document.querySelector('.record-form__cell.is-target');
+    expect(target.querySelector('[data-field]').dataset.field).toBe('github_urls');
+    expect(target.querySelector('.fix-missing').textContent).toBe('Missing');
+    expect(target.contains(document.activeElement)).toBe(true);
+    expect(dialogButton('Save and next')).toBeTruthy();
+
+    // fill the live link (part of the same group) and save
+    setInputValue(liveInput(), 'https://example.com/live');
+    click(dialogButton('Save and next'));
+    await flush();
+    expect(records.saveRecord).toHaveBeenCalledWith(projectsSchema, expect.objectContaining({ live_url: 'https://example.com/live' }), first.recordId);
+    const before = model.scoreWithDismissals, after = before + first.gain;
+    expect(banner().textContent).toContain(`Fixed. Health ${(Math.round(before * 10) / 10).toFixed(1)} → ${(Math.round(after * 10) / 10).toFixed(1)}`);
+    expect(banner().textContent).toContain(`1 left in this group. Next: ${second.label}.`);
+    const next = [...banner().querySelectorAll('button')].find((b) => b.textContent === `Next: ${second.label}`);
+    expect(document.activeElement).toBe(next);
+
+    // step 2: Next opens the following record, still in the walk
+    click(next);
+    await flush();
+    expect(document.querySelector('#record-title').textContent).toBe(second.label);
+    expect(dialog().dataset.mode).toBe('edit');
+    expect(banner().textContent).toContain('2 of 2');
+    expect(banner().textContent).toContain('This is the last one in this group.');
+    expect(recordIntent.get().walk.score).toBeCloseTo(after, 6);
+
+    setInputValue(liveInput(), 'https://example.com/live-2');
+    click(dialogButton('Save and next'));
+    await flush();
+    expect(banner().textContent).toContain('That was the last one in this group.');
+    const back = [...banner().querySelectorAll('button')].find((b) => b.textContent === 'Back to the queue');
+    expect(document.activeElement).toBe(back);
+    expect([...banner().querySelectorAll('button')].some((b) => b.textContent.startsWith('Next:'))).toBe(false);
+
+    // Back to the queue: the dialog closes, the walk ends, the page is asked for the queue and a reload
+    const [q, f] = [queueRequests.get(), fixesChanged.get()];
+    click(back);
+    await flush();
+    expect(dialog()).toBeNull();
+    expect(recordIntent.get()).toBeNull();
+    expect([queueRequests.get(), fixesChanged.get()]).toEqual([q + 1, f + 1]);
+    expect(records.saveRecord).toHaveBeenCalledTimes(2);
+  });
+
+  it('says so when a save leaves the gap, offers Edit again, and Skip moves on without saving', async () => {
+    const model = buildFixQueue({ rowsByTable: { projects: rows } });
+    const group = model.groups.find((g) => g.ruleKey === 'projects:proof');
+    const view = show(<DeckChapter schema={projectsSchema} notify={notify} />);
+    await flush();
+    act(() => startWalk(group, model));
+    await flush();
+    setInputValue(document.querySelector('.record-form [data-field="awards"] input'), 'Best in show');   // a change, but not the fix
+    click(dialogButton('Save and next'));
+    await flush();
+    expect(banner().textContent).toContain('Saved, but this one still needs work.');
+    click([...banner().querySelectorAll('button')].find((b) => b.textContent === 'Edit again'));
+    expect(dialog().dataset.mode).toBe('edit');
+    expect(banner().textContent).toContain('1 of 2');
+    click([...banner().querySelectorAll('button')].find((b) => b.textContent === 'Skip this one'));
+    await flush();
+    expect(banner().textContent).toContain('2 of 2');
+    expect(recordIntent.get().walk.fixed).toEqual([]);
+    expect(records.saveRecord).toHaveBeenCalledTimes(1);
+  });
+
+  it('asks before Stop fixing throws away typed changes, then ends the walk', async () => {
+    const model = buildFixQueue({ rowsByTable: { projects: rows } });
+    const group = model.groups.find((g) => g.ruleKey === 'projects:proof');
+    const view = show(<DeckChapter schema={projectsSchema} notify={notify} />);
+    await flush();
+    act(() => startWalk(group, model, group.items[1].recordId));
+    await flush();
+    expect(document.querySelector('#record-title').textContent).toBe(group.items[1].label);
+    expect(banner().textContent).toContain('2 of 2');
+    setInputValue(liveInput(), 'https://example.com/half');
+    click([...banner().querySelectorAll('button')].find((b) => b.textContent === 'Stop fixing'));
+    const confirm = document.querySelector('.dialog');
+    expect(confirm).not.toBeNull();
+    const f = fixesChanged.get();
+    click([...confirm.querySelectorAll('button')].find((b) => /stop|discard|leave/i.test(b.textContent)));
+    await flush();
+    expect(dialog()).toBeNull();
+    expect(recordIntent.get()).toBeNull();
+    expect(fixesChanged.get()).toBe(f + 1);
+    expect(records.saveRecord).not.toHaveBeenCalled();
+  });
+
+  it('tells the owner when the record of an intent is gone and asks for a reload', async () => {
+    const view = show(<DeckChapter schema={projectsSchema} notify={notify} />);
+    await flush();
+    const f = fixesChanged.get();
+    act(() => openRecord('projects', 'zzz', { mode: 'edit' }));
+    await flush();
+    expect(dialog()).toBeNull();
+    expect(notify).toHaveBeenCalledWith(expect.stringContaining('no longer here'), 'bad');
+    expect(recordIntent.get()).toBeNull();
+    expect(fixesChanged.get()).toBe(f + 1);
+  });
+
+  it('ignores intents for other tables and opens a plain read intent once', async () => {
+    const view = show(<DeckChapter schema={projectsSchema} notify={notify} />);
+    await flush();
+    act(() => openRecord('skills', 'a'));
+    await flush();
+    expect(dialog()).toBeNull();
+    act(() => { clearIntent(); openRecord('projects', 'c'); });
+    await flush();
+    expect(dialog().dataset.mode).toBe('read');
+    expect(banner()).toBeNull();
+    expect(recordIntent.get()).toBeNull();   // a plain open is consumed
+  });
+
+  it('opens the singleton row in its editor from an intent', async () => {
+    const hero = { id: 'h1', title: 'Hi', subtitle: 'Engineer', description: 'Builds things.', highlights: ['One'], cta_text: 'Explore', cta_link: '#navigation', is_active: true, updated_at: '2026-11-01' };
+    records.listRecords.mockResolvedValue([hero]);
+    records.fetchUpdatedAt.mockResolvedValue(hero.updated_at);
+    const view = show(<SingletonChapter schema={heroSchema} notify={notify} />);
+    await flush();
+    expect(dialog()).toBeNull();
+    act(() => openRecord('hero_content', 'h1', { mode: 'edit' }));
+    await flush();
+    expect(dialog()).not.toBeNull();
+    expect(dialog().dataset.mode).toBe('edit');
+  });
+});
+
+describe('fixBannerCopy', () => {
+  const fix = { task: 'Add a GitHub or live link', step: 1, total: 3, gain: 0.333, next: { label: 'Beta' }, fieldLabel: 'Repository links' };
+
+  it('states the task, the step and the gain before a save', () => {
+    expect(fixBannerCopy(fix, null)).toEqual({ tone: 'fix', title: 'Fixing: Add a GitHub or live link', step: '1 of 3', body: 'Worth +0.3 to the health score. Save, then move on to Beta.' });
+    expect(fixBannerCopy({ ...fix, step: 3, next: null }, null).body).toBe('Worth +0.3 to the health score. This is the last one in this group.');
+  });
+
+  it('reports the score change after a passing save', () => {
+    expect(fixBannerCopy(fix, { passes: true, before: 96.84, after: 97.17 })).toEqual({ tone: 'good', title: 'Fixed. Health 96.8 → 97.2', step: null, body: '2 left in this group. Next: Beta.' });
+    expect(fixBannerCopy({ ...fix, step: 3, next: null }, { passes: true, before: 90, after: 90.5 }).body).toBe('That was the last one in this group.');
+  });
+
+  it('says what is still wrong after a save that does not pass', () => {
+    expect(fixBannerCopy(fix, { passes: false, state: 'missing' }).body).toBe('The repository links is still empty. Next: Beta.');
+    expect(fixBannerCopy({ ...fix, fieldLabel: 'Summary' }, { passes: false, state: 'weak' }).body).toBe('The summary is still under 40 characters. Next: Beta.');
+    expect(fixBannerCopy(fix, { passes: false, state: 'missing' }).tone).toBe('warn');
+  });
+});
