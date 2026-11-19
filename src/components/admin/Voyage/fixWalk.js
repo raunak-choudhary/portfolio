@@ -21,7 +21,7 @@ const sameId = (a, b) => a != null && b != null && String(a) === String(b);
  * @param {(state: {open: boolean, record: object|null}) => void} args.open opens or closes the chapter's dialog.
  * @param {(text: string, tone?: string) => void} args.notify
  * @param {{open: boolean, record: object|null}} args.current the dialog's state.
- * @returns {{fix: object|null, startInEdit: boolean, onCloseDialog: () => void}}
+ * @returns {{fix: object|null, startInEdit: boolean, onCloseDialog: () => void, onDeleted: () => void}}
  */
 export function useFixWalk({ table, records, ready, open, notify, current }) {
   const intent = useRecordIntent();
@@ -35,8 +35,12 @@ export function useFixWalk({ table, records, ready, open, notify, current }) {
     handled.current = mine;
     const record = records.find((r) => sameId(r.id, mine.recordId));
     if (!record) {
+      // a record that vanished mid-walk (deleted elsewhere) is skipped, not the end of the walk
+      const next = mine.walk ? stepIntent(mine, { fixedGain: 0 }) : null;
+      const label = mine.walk?.items?.[mine.walk.index]?.label;
+      if (next) { notify(`${label || 'That record'} is no longer here, so the walk moved on.`); setIntent(next); return; }
       notify('That record is no longer here. It may have been deleted; the queue reloads.', 'bad');
-      clearIntent(); noteFixesChanged();
+      if (mine.walk) { open({ open: false, record: null }); setStartInEdit(false); backToQueue(); } else { clearIntent(); noteFixesChanged(); }
       return;
     }
     setStartInEdit(mine.mode === 'edit');
@@ -70,5 +74,11 @@ export function useFixWalk({ table, records, ready, open, notify, current }) {
     if (mine?.walk) { clearIntent(); noteFixesChanged(); }
   }, [mine]);
 
-  return { fix, startInEdit, onCloseDialog };
+  // a record deleted from the dialog (even after Cancel back to its read view) ends any walk or plain intent
+  const onDeleted = useCallback(() => {
+    setStartInEdit(false);
+    if (mine) clearIntent();
+  }, [mine]);
+
+  return { fix, startInEdit, onCloseDialog, onDeleted };
 }
