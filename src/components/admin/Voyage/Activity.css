@@ -1,0 +1,106 @@
+/* src/components/admin/Voyage/Activity.css
+   The activity log on Mission Control (act-), the Recent activity tile
+   (tile__act) and a record's history line in the read view (hist-), ported
+   from the approved V5 mockup (design/mockups/voyage-v5/v5.css). The v5-
+   pieces (pane, head, segmented filter, note, empty state, skeleton and the
+   split below the bento) are shared with the fix queue, which lands in the
+   same split. Colours come only from the voyage tokens, which Voyage.css
+   sets on .voyage and on .record-backdrop (the dialog is portalled outside
+   the page). Mobile first; no live backdrop-filter. */
+
+/* ---------- shared V5 pieces ---------- */
+/* The split arrives with the chapter, as the bento does. */
+.v5-split { display: grid; gap: 12px; margin-top: 12px; min-width: 0; opacity: 0; transform: translateY(30px); transition: opacity .6s .15s, transform .7s .15s; }
+.voyage-chapter.is-live .v5-split { opacity: 1; transform: none; }
+.v5-pane { padding: 16px; display: grid; gap: 14px; align-content: start; min-width: 0; }
+.v5-pane .voyage-bar__button { backdrop-filter: none; -webkit-backdrop-filter: none; }
+.v5-pane .voyage-bar__button span { display: inline; }
+.v5-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 14px; min-width: 0; }
+.v5-head h3 { margin: 0; display: flex; align-items: center; gap: 8px; font-family: var(--voyage-cond); font-weight: 600; font-size: 16px; letter-spacing: .12em; text-transform: uppercase; color: var(--voyage-fg); }
+.v5-head__sum { font-size: 13px; color: var(--voyage-muted); font-variant-numeric: tabular-nums; }
+.v5-note { margin: 0; font-size: 13px; line-height: 1.55; color: var(--voyage-muted); max-width: 78ch; }
+
+/* segmented filter, the same look as the analytics range bar */
+.v5-seg { display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 3px; border-radius: 999px; border: 1px solid var(--voyage-line); background: var(--voyage-glass-solid); justify-self: start; }
+.v5-seg button { padding: 5px 12px; border: 0; border-radius: 999px; background: none; color: var(--voyage-muted); cursor: pointer; font-family: var(--voyage-cond); font-size: 13px !important; letter-spacing: .08em; font-variant-numeric: tabular-nums; }
+.v5-seg button[aria-pressed="true"] { background: var(--voyage-soft-strong); color: var(--voyage-fg); box-shadow: inset 0 0 0 1px var(--voyage-accent); }
+.v5-seg button:focus-visible { outline: 2px solid var(--voyage-accent); outline-offset: 2px; }
+
+.v5-empty { display: grid; justify-items: start; gap: 6px; padding: 8px 0; }
+.v5-empty b { font-family: var(--voyage-cond); font-size: 28px; font-weight: 600; letter-spacing: .02em; }
+
+.v5-skel { height: 14px; border-radius: 6px; background: linear-gradient(90deg, var(--voyage-soft) 0%, var(--voyage-soft-strong) 50%, var(--voyage-soft) 100%); background-size: 200% 100%; animation: card-shimmer 1.4s linear infinite; }
+.v5-skel--row { height: 30px; }
+.v5-skel-list { display: grid; gap: 10px; }
+
+/* ---------- the activity pane ---------- */
+/* "See all activity" scrolls here; the margin keeps the head clear of the fixed top bar. */
+.act-pane { scroll-margin-top: 72px; }
+.act-day { display: grid; gap: 2px; }
+.act-day h4 { margin: 0; padding: 6px 0; font-family: var(--voyage-cond); font-weight: 500; font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--voyage-accent); }
+.act-list { list-style: none; margin: 0; padding: 0; display: grid; }
+.act-row { display: grid; grid-template-columns: 42px 28px minmax(0, 1fr); align-items: center; gap: 4px 10px; padding: 8px 0; border-top: 1px solid color-mix(in srgb, var(--voyage-line) 45%, transparent); min-width: 0; color: inherit; }
+.act-list li:first-child .act-row { border-top: 0; }
+.act-row time { font-family: var(--voyage-cond); font-size: 14px; color: var(--voyage-muted); letter-spacing: .04em; font-variant-numeric: tabular-nums; }
+.act-row__icon { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 9px; border: 1px solid var(--voyage-line); color: var(--voyage-fg); box-sizing: border-box; }
+.act-row__icon.is-bad { color: var(--voyage-bad); border-color: color-mix(in srgb, var(--voyage-bad) 50%, transparent); }
+.act-row__icon.is-sec { color: var(--voyage-accent); border-color: color-mix(in srgb, var(--voyage-accent) 50%, transparent); }
+.act-row__text { min-width: 0; display: grid; gap: 1px; font-size: 14px; line-height: 1.4; }
+.act-row__text b { font-weight: 600; overflow-wrap: anywhere; }
+.act-row__text > span { font-size: 12px; color: var(--voyage-muted); overflow-wrap: anywhere; }
+.act-row__text s { color: var(--voyage-muted); text-decoration-thickness: 1px; }
+/* on phones the tag drops under the sentence */
+.act-tag { grid-column: 3; justify-self: start; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--voyage-warn); color: var(--voyage-warn); font-size: 11px; font-weight: 600; white-space: nowrap; }
+button.act-row { background: none; border-left: 0; border-right: 0; border-bottom: 0; width: 100%; text-align: left; font: inherit; color: inherit; cursor: pointer; border-radius: 0; }
+button.act-row:hover .act-row__text b { text-decoration: underline; text-underline-offset: 3px; }
+.act-row:focus-visible { outline: 2px solid var(--voyage-accent); outline-offset: 2px; border-radius: 6px; }
+.act-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; padding-top: 10px; border-top: 1px solid var(--voyage-line); }
+.act-foot__error { flex-basis: 100%; color: var(--voyage-bad); }
+
+/* ---------- the Recent activity tile ---------- */
+.tile__act { font-size: 12px; display: grid; gap: 5px; align-content: start; min-height: 0; max-height: var(--tile-list, 150px); overflow-y: auto; padding-right: 4px; }
+.tile__act div { min-width: 0; overflow-wrap: anywhere; }
+.tile__act time { font-family: var(--voyage-cond); color: var(--voyage-muted); margin-right: 8px; letter-spacing: .06em; }
+.tile__act b { font-weight: 600; }
+.tile__act .v5-skel { margin-top: 4px; }
+@supports not selector(::-webkit-scrollbar) { .tile__act { scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, .34) transparent; } }
+.tile__act::-webkit-scrollbar { width: 10px; }
+.tile__act::-webkit-scrollbar-track { background: transparent; }
+.tile__act::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, .28); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
+
+/* ---------- a record's history, in the dialog's read view ---------- */
+.hist { display: grid; gap: 8px; padding: 0 0 14px; }
+.hist__line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: 13px; color: var(--voyage-muted); }
+.hist__line svg { color: var(--voyage-accent); flex: none; }
+.hist__line b { color: var(--voyage-fg); font-weight: 600; }
+.hist__toggle { display: inline-flex; align-items: center; gap: 4px; background: none; border: 0; padding: 4px 0; color: var(--voyage-accent); font: 600 13px system-ui, -apple-system, 'Segoe UI', sans-serif; cursor: pointer; }
+.hist__toggle svg { transition: transform .2s; }
+.hist__toggle[aria-expanded="true"] svg { transform: rotate(180deg); }
+.hist__toggle:focus-visible { outline: 2px solid var(--voyage-accent); outline-offset: 2px; border-radius: 4px; }
+.hist__list { list-style: none; margin: 0; padding: 0 0 0 12px; border-left: 2px solid var(--voyage-line); display: grid; gap: 8px; }
+.hist__list li { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1px; font-size: 13px; line-height: 1.45; color: var(--voyage-fg); overflow-wrap: anywhere; }
+.hist__list time { font-family: var(--voyage-cond); font-size: 13px; letter-spacing: .04em; color: var(--voyage-muted); }
+.hist__list .is-outside { color: var(--voyage-warn); }
+.hist__skel { width: min(320px, 70%); }
+
+@media (min-width: 600px) {
+  .act-row { grid-template-columns: 46px 30px minmax(0, 1fr) auto; }
+  .act-row__icon { width: 30px; height: 30px; }
+  .act-tag { grid-column: auto; justify-self: end; }
+}
+@media (min-width: 768px) {
+  .v5-pane { padding: 20px 22px; }
+  .act-row { grid-template-columns: 56px 32px minmax(0, 1fr) auto; }
+}
+@media (max-width: 599px) {
+  .v5-seg button { padding: 5px 9px; letter-spacing: .04em; }
+}
+/* Queue left, activity right, from 1280 px; until the fix queue arrives the activity pane takes the row. */
+@media (min-width: 1280px) {
+  .v5-split { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); align-items: start; }
+  .v5-split--single { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .v5-split, .hist__toggle svg { transition: none; }
+  .v5-skel { animation: none; }
+}
