@@ -12,7 +12,7 @@
 
 import React, { useEffect, useId, useState } from 'react';
 import { ChevronDown, History } from 'lucide-react';
-import { isActivityAvailable, recordHistory } from '../../../services/activityService';
+import { ACTIVITY_NOT_SET_UP, recordHistory } from '../../../services/activityService';
 import { historyEntries, historySummary } from './activityModel';
 import './Activity.css';
 
@@ -35,11 +35,10 @@ export default function HistoryLine({ table, recordId, now }) {
     setState({ status: 'loading', rows: [] }); setOpen(false);
     (async () => {
       try {
-        if (!(await isActivityAvailable())) { if (!cancelled) setState({ status: 'missing', rows: [] }); return; }
         const rows = await recordHistory(table, String(recordId), HISTORY_LIMIT);
         if (!cancelled) setState({ status: 'ready', rows: Array.isArray(rows) ? rows : [] });
-      } catch {
-        if (!cancelled) setState({ status: 'error', rows: [] });
+      } catch (err) {
+        if (!cancelled) setState({ status: err?.code === ACTIVITY_NOT_SET_UP ? 'missing' : 'error', rows: [] });
       }
     })();
     return () => { cancelled = true; };

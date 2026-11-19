@@ -4,7 +4,7 @@ import MissionControl, { chapterForTable } from './MissionControl';
 import { ACTIVITY_PANE_ID } from './ActivityPane';
 import { React, act, click, mount } from '../SkyBackground/testUtils';
 
-jest.mock('../../../services/activityService', () => ({ listActivity: jest.fn(), recordHistory: jest.fn(), isActivityAvailable: jest.fn(), logSecurityEvent: jest.fn() }));
+jest.mock('../../../services/activityService', () => ({ ACTIVITY_NOT_SET_UP: 'ACTIVITY_NOT_SET_UP', listActivity: jest.fn(), recordHistory: jest.fn(), isActivityAvailable: jest.fn(), logSecurityEvent: jest.fn() }));
 // Bento reads relativeTime from voyageData, which opens the Supabase client
 jest.mock('../../../services/voyageData', () => ({ relativeTime: () => '2 h ago' }));
 const service = jest.requireMock('../../../services/activityService');
@@ -22,7 +22,6 @@ describe('MissionControl', () => {
   beforeEach(() => {
     onGo = jest.fn();
     Element.prototype.scrollIntoView = jest.fn();
-    service.isActivityAvailable.mockResolvedValue(true);
     service.listActivity.mockResolvedValue({ rows: ROWS, hasMore: false });
   });
   afterEach(() => { view?.unmount(); view = null; window.localStorage.clear(); });
@@ -71,7 +70,7 @@ describe('MissionControl', () => {
   });
 
   it('falls back to the latest saves per section while the table is missing', async () => {
-    service.isActivityAvailable.mockResolvedValue(false);
+    service.listActivity.mockRejectedValue(Object.assign(new Error('This is not set up yet.'), { code: 'ACTIVITY_NOT_SET_UP' }));
     render();
     await flush();
     expect(tile().querySelector('.tile__feed').textContent).toBe('2 h agoProjects · Tallyproof');
