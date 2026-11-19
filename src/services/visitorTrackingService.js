@@ -304,25 +304,232 @@ export const useTimeTracking = (sectionType, sectionId = 'main') => {
   return { startTracking, stopTracking };
 };
 
-// Initialize visitor tracking
+// =====================================================
+// ENGAGEMENT EVENTS (V4b contract, section 1)
+// =====================================================
+//
+// Project opens, project links, reach-outs and the engaged signal are all
+// stored as `event_type 'click'`, `event_category 'interaction'` rows, told
+// apart by `event_action`. That shape is already allowed by the anon insert
+// policy on `analytics_events`, so no policy change is needed. Every row
+// carries the same coarse `visitor_info` as a page view, so whichever event
+// opens a session still records its source and kind of device.
+
+/** How long the tab must be visible before a visit counts as engaged. */
+export const ENGAGED_AFTER_MS = 10000;
+
+const PROJECT_LINK_KINDS = new Set(['repo', 'demo']);
+const REACH_OUT_CHANNELS = new Set(['linkedin', 'email', 'resume', 'contact_form']);
+
+// Session-scoped de-duplication. sessionStorage survives a reload in the same
+// tab, matching the lifetime of `portfolio_session_id`, so a reload does not
+// count a project twice. The in-memory sets back it up when storage throws
+// (private windows, blocked site data).
+const OPENED_PROJECTS_KEY = 'portfolio_opened_projects';
+const ENGAGED_KEY = 'portfolio_engaged';
+const memoryOnce = new Set();
+
+const readOnceList = () => {
+  try {
+    const parsed = JSON.parse(sessionStorage.getItem(OPENED_PROJECTS_KEY) || '[]');
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
+/**
+ * Records `key` as done for this session and reports whether it was new.
+ * The engaged flag and the opened project ids share this helper.
+ */
+const markOncePerSession = (key) => {
+  if (memoryOnce.has(key)) return false;
+  memoryOnce.add(key);
+  try {
+    if (key === ENGAGED_KEY) {
+      if (sessionStorage.getItem(ENGAGED_KEY) === 'true') return false;
+      sessionStorage.setItem(ENGAGED_KEY, 'true');
+      return true;
+    }
+    const opened = readOnceList();
+    if (opened.includes(key)) return false;
+    sessionStorage.setItem(OPENED_PROJECTS_KEY, JSON.stringify([...opened, key]));
+  } catch {
+    // Storage unavailable: the in-memory set above already guards this page load.
+  }
+  return true;
+};
+
+/** Inserts one engagement row. Failures are logged and never thrown. */
+const insertEngagementEvent = async (action, label, details) => {
+  try {
+    const { error } = await supabase
+      .from('analytics_events')
+      .insert([
+        {
+          event_type: 'click',
+          event_category: 'interaction',
+          event_action: action,
+          event_label: label,
+          event_value: 1,
+          user_type: 'visitor',
+          session_id: generateVisitorSessionId(),
+          metadata: {
+            ...details,
+            timestamp: new Date().toISOString(),
+            visitor_info: getVisitorInfo()
+          }
+        }
+      ]);
+    if (error) {
+      console.error(`Error tracking ${action}:`, error);
+    }
+  } catch (error) {
+    console.error(`Error tracking ${action}:`, error);
+  }
+};
+
+/**
+ * A project's details were opened: its card flipped to the back
+ * (`surface 'card'`) or a project detail view shown (`surface 'page'`).
+ * Recorded once per project per session; flipping back and forth adds nothing.
+ *
+ * @param {{ id: string, title?: string }} project row from `projects`
+ * @param {'card'|'page'} [surface]
+ */
+export const trackProjectOpen = async (project, surface = 'card') => {
+  if (!isAnalyticsEnabled() || !project?.id) return;
+  if (!markOncePerSession(`project:${project.id}`)) return;
+  await insertEngagementEvent('project_open', project.id, {
+    title: project.title || '',
+    surface: surface === 'page' ? 'page' : 'card'
+  });
+};
+
+/**
+ * A project's repository or live-demo link was followed. Every click counts.
+ *
+ * @param {{ id: string, title?: string }} project row from `projects`
+ * @param {'repo'|'demo'} kind
+ * @param {string} url the address the link opens
+ */
+export const trackProjectLink = async (project, kind, url) => {
+  if (!isAnalyticsEnabled() || !project?.id || !PROJECT_LINK_KINDS.has(kind)) return;
+  await insertEngagementEvent('project_link', project.id, {
+    title: project.title || '',
+    kind,
+    url: url || ''
+  });
+};
+
+/**
+ * A visitor reached out: followed the LinkedIn profile or a mailto link,
+ * opened the resume, or sent the contact form successfully.
+ *
+ * @param {'linkedin'|'email'|'resume'|'contact_form'} channel
+ * @param {string} from the surface it happened on, e.g. 'footer' or 'contact'
+ */
+export const trackReachOut = async (channel, from) => {
+  if (!isAnalyticsEnabled() || !REACH_OUT_CHANNELS.has(channel)) return;
+  await insertEngagementEvent('reach_out', channel, { from: from || 'unknown' });
+};
+
+/**
+ * Maps a path to the page names page_view uses, so the engaged event's label
+ * lines up with the page-view labels it is compared against.
+ */
+export const pageNameForPath = (pathname = '') => {
+  const pages = [
+    'projects', 'skills', 'education', 'work-experience', 'internships',
+    'certifications', 'recommendations', 'achievements', 'leadership'
+  ];
+  return pages.find((page) => pathname.includes(`/${page}`)) || 'home';
+};
+
+let engagementTimer = null;
+
+/**
+ * Starts the engaged clock: after ENGAGED_AFTER_MS of the tab being visible
+ * one `engaged` row is written, labelled with the page the visitor is on at
+ * that moment. Hidden time does not count; the clock pauses on
+ * `visibilitychange` and resumes where it stopped. Runs at most once per
+ * session, and a second call while the clock runs reuses it.
+ *
+ * @returns {() => void} stops the clock (for effect cleanup); a no-op when
+ *   analytics is off or the session is already engaged.
+ */
+export const startEngagementTimer = () => {
+  if (!isAnalyticsEnabled()) return () => {};
+  if (engagementTimer) return engagementTimer.stop;
+  try {
+    if (sessionStorage.getItem(ENGAGED_KEY) === 'true') return () => {};
+  } catch {
+    // Storage unavailable: fall through and rely on the in-memory guard.
+  }
+  if (memoryOnce.has(ENGAGED_KEY)) return () => {};
+
+  let remaining = ENGAGED_AFTER_MS;
+  let visibleSince = null;
+  let timeoutId = null;
+
+  const fire = () => {
+    stop();
+    if (!markOncePerSession(ENGAGED_KEY)) return;
+    insertEngagementEvent('engaged', pageNameForPath(window.location.pathname), {
+      seconds: ENGAGED_AFTER_MS / 1000
+    });
+  };
+
+  const resume = () => {
+    if (timeoutId !== null) return;
+    visibleSince = Date.now();
+    timeoutId = setTimeout(fire, remaining);
+  };
+
+  const pause = () => {
+    if (timeoutId === null) return;
+    clearTimeout(timeoutId);
+    timeoutId = null;
+    remaining = Math.max(0, remaining - (Date.now() - visibleSince));
+  };
+
+  const onVisibilityChange = () => {
+    if (document.hidden) pause();
+    else resume();
+  };
+
+  function stop() {
+    if (timeoutId !== null) clearTimeout(timeoutId);
+    timeoutId = null;
+    document.removeEventListener('visibilitychange', onVisibilityChange);
+    if (engagementTimer && engagementTimer.stop === stop) engagementTimer = null;
+  }
+
+  engagementTimer = { stop };
+  document.addEventListener('visibilitychange', onVisibilityChange);
+  if (!document.hidden) resume();
+  return stop;
+};
+
+/**
+ * Test hook: forgets the in-memory session guards and stops a running
+ * engaged clock, so each test starts from a fresh page load.
+ */
+export const resetEngagementTrackingForTests = () => {
+  if (engagementTimer) engagementTimer.stop();
+  memoryOnce.clear();
+};
+
+/**
+ * Starts tracking for this page load: records the landing page view and
+ * starts the engaged clock. Nothing happens unless analytics is enabled.
+ *
+ * @returns {() => void} cleanup that stops the engaged clock.
+ */
 export const initializeVisitorTracking = () => {
-  if (!isAnalyticsEnabled()) return;
-  // Track initial page load
-  const currentPath = window.location.pathname;
-  let pageName = 'home';
-  
-  if (currentPath.includes('/projects')) pageName = 'projects';
-  else if (currentPath.includes('/skills')) pageName = 'skills';
-  else if (currentPath.includes('/education')) pageName = 'education';
-  else if (currentPath.includes('/work-experience')) pageName = 'work-experience';
-  else if (currentPath.includes('/internships')) pageName = 'internships';
-  else if (currentPath.includes('/certifications')) pageName = 'certifications';
-  else if (currentPath.includes('/recommendations')) pageName = 'recommendations';
-  else if (currentPath.includes('/achievements')) pageName = 'achievements';
-  else if (currentPath.includes('/leadership')) pageName = 'leadership';
-  
-  trackPageView(pageName, document.title);
-  
+  if (!isAnalyticsEnabled()) return () => {};
+  trackPageView(pageNameForPath(window.location.pathname), document.title);
+  return startEngagementTimer();
 };
 
 // Create the service object
@@ -332,6 +539,10 @@ const visitorTrackingService = {
   trackSectionView,
   trackContactSubmission,
   trackClick,
+  trackProjectOpen,
+  trackProjectLink,
+  trackReachOut,
+  startEngagementTimer,
   useTimeTracking,
   initializeVisitorTracking
 };
