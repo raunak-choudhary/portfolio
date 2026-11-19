@@ -21,6 +21,7 @@ import { NOTE_MAX, SEVERITY_LABEL, availableFilters, buildFixQueue, filterGroups
 import { fixesChanged, setIntent } from './recordIntent';
 import { useSignal } from './signal';
 import { schemaForTable } from './managers';
+import './Activity.css';   // the shared V5 pieces: pane, head, note, filter, empty, skeleton
 import './FixQueue.css';
 
 /** Items listed under an open group before "Show N more". */
@@ -170,14 +171,14 @@ export default function FixQueuePane({ fixes, onReview, notify = () => {} }) {
   const after = model ? round1(model.afterEveryFix) : 0;
 
   return (
-    <section className="voyage-pane fx-pane" id={FIX_QUEUE_ID} aria-labelledby="fx-title" aria-busy={loading || undefined} data-testid="fix-queue">
-      <div className="fx-head">
+    <section className="voyage-pane v5-pane fx-pane" id={FIX_QUEUE_ID} aria-labelledby="fx-title" aria-busy={loading || undefined} data-testid="fix-queue">
+      <div className="v5-head">
         <h3 id="fx-title" ref={headRef} tabIndex={-1}><Wrench size={16} aria-hidden="true" />Fix queue</h3>
-        {model && model.groups.length > 0 && <span className="fx-head__sum"><b>{model.groups.length}</b> {model.groups.length === 1 ? 'thing' : 'things'}, worth <b>{gainText(model.totalGain)}</b> points</span>}
+        {model && model.groups.length > 0 && <span className="v5-head__sum"><b>{model.groups.length}</b> {model.groups.length === 1 ? 'thing' : 'things'}, worth <b>{gainText(model.totalGain)}</b> points</span>}
       </div>
 
-      {loading && <div className="fx-skeletons" aria-hidden="true">{[0, 1, 2].map((i) => <div key={i} className="fx-skel fx-skel--tall" />)}</div>}
-      {failed && <p className="fx-note" role="alert">The queue could not be loaded. It tries again after the next save.</p>}
+      {loading && <div className="fx-skeletons" aria-hidden="true">{[0, 1, 2].map((i) => <div key={i} className="v5-skel fx-skel--tall" />)}</div>}
+      {failed && <p className="v5-note" role="alert">The queue could not be loaded. It tries again after the next save.</p>}
 
       {model && (model.groups.length ? (
         <>
@@ -187,10 +188,10 @@ export default function FixQueuePane({ fixes, onReview, notify = () => {} }) {
               <span className="fx-score__gain" style={{ left: `${now}%`, width: `${Math.max(0, Math.min(after - now, 100 - now))}%` }} />
             </div>
             <div className="fx-score__labels"><span>Now <b>{now.toFixed(1)}</b></span><span>After every fix <b>{after.toFixed(1)}</b></span></div>
-            {counted > 0 && <p className="fx-note">Counts {counted} {counted === 1 ? 'item' : 'items'} marked not needed as passing. Without them the score is {round1(model.preciseScore).toFixed(1)}.</p>}
+            {counted > 0 && <p className="v5-note">Counts {counted} {counted === 1 ? 'item' : 'items'} marked not needed as passing. Without them the score is {round1(model.preciseScore).toFixed(1)}.</p>}
           </div>
           {filters.length > 1 && (
-            <div className="fx-seg" role="group" aria-label="Filter the queue">
+            <div className="v5-seg" role="group" aria-label="Filter the queue">
               {filters.map((f) => <button key={f.id} type="button" aria-pressed={filter === f.id} onClick={() => setFilter(f.id)}>{f.label}</button>)}
             </div>
           )}
@@ -202,14 +203,14 @@ export default function FixQueuePane({ fixes, onReview, notify = () => {} }) {
           </ol>
         </>
       ) : (
-        <div className="fx-empty"><b>Nothing to fix.</b><p className="fx-note">Every section passes its checks. New issues appear here as soon as a save creates one.</p></div>
+        <div className="v5-empty"><b>Nothing to fix.</b><p className="v5-note">Every section passes its checks. New issues appear here as soon as a save creates one.</p></div>
       ))}
-      {model?.unavailable.length > 0 && <p className="fx-note fx-note--warn"><AlertCircle size={14} aria-hidden="true" /> Could not check {model.unavailable.join(', ')}. They count as zero until they load.</p>}
+      {model?.unavailable.length > 0 && <p className="v5-note fx-note--warn"><AlertCircle size={14} aria-hidden="true" /> Could not check {model.unavailable.join(', ')}. They count as zero until they load.</p>}
 
       {!loading && stale.length > 0 && (
         <div className="fx-sub">
           <h4><CalendarX size={14} aria-hidden="true" />Not touched for a while</h4>
-          <p className="fx-note">Old is not wrong, so these do not change the score. A recruiter does notice a section that stops in last year.</p>
+          <p className="v5-note">Old is not wrong, so these do not change the score. A recruiter does notice a section that stops in last year.</p>
           <ul className="fx-plain">
             {stale.map((s) => (
               <li key={s.table}><span>{s.section}<small>Last edit <span className="fx-days">{s.days} days</span> ago</small></span>
@@ -222,8 +223,8 @@ export default function FixQueuePane({ fixes, onReview, notify = () => {} }) {
       {model && (
         <div className="fx-sub" data-testid="fx-hidden">
           <h4><CircleSlash size={14} aria-hidden="true" />Marked not needed</h4>
-          {!dismissalsAvailable ? <p className="fx-note">{dismissalsProblem === 'failed' ? 'The items marked not needed could not be loaded, so Not needed is off for now. It comes back with the next reload.' : 'Not needed starts working once the activity migration has been run. Every fix still counts until then.'}</p>
-            : !hiddenCount ? <p className="fx-note">Nothing yet. Use Not needed on a fix that does not apply.</p>
+          {!dismissalsAvailable ? <p className="v5-note">{dismissalsProblem === 'failed' ? 'The items marked not needed could not be loaded, so Not needed is off for now. It comes back with the next reload.' : 'Not needed starts working once the activity migration has been run. Every fix still counts until then.'}</p>
+            : !hiddenCount ? <p className="v5-note">Nothing yet. Use Not needed on a fix that does not apply.</p>
               : showHidden ? (
                 <>
                   <ul className="fx-plain">
@@ -237,14 +238,14 @@ export default function FixQueuePane({ fixes, onReview, notify = () => {} }) {
                   {restoreError && <p className="fx-dismiss__error" role="alert"><AlertCircle size={14} aria-hidden="true" /><span>{restoreError}</span></p>}
                   <button type="button" className="fx-toggle fx-toggle--start" onClick={() => setShowHidden(false)}>Hide them</button>
                 </>
-              ) : <p className="fx-note">{hiddenCount} {hiddenCount === 1 ? 'item' : 'items'} · <button type="button" className="fx-toggle" onClick={() => setShowHidden(true)}>Show them</button></p>}
+              ) : <p className="v5-note">{hiddenCount} {hiddenCount === 1 ? 'item' : 'items'} · <button type="button" className="fx-toggle" onClick={() => setShowHidden(true)}>Show them</button></p>}
         </div>
       )}
 
       {model && (
         <details className="fx-sub fx-how">
           <summary className="fx-toggle"><Info size={14} aria-hidden="true" />How the score works</summary>
-          <p className="fx-note">{scoreExplainer()} The Health tile rounds each section before averaging, so it can differ from the figure here by a point.</p>
+          <p className="v5-note">{scoreExplainer()} The Health tile rounds each section before averaging, so it can differ from the figure here by a point.</p>
         </details>
       )}
     </section>

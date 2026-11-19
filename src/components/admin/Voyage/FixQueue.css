@@ -8,21 +8,15 @@
 
 /* ---------- the pane ---------- */
 .fx-pane { padding: 16px; display: grid; gap: 14px; align-content: start; min-width: 0; margin-top: 12px; scroll-margin-top: 72px; }
-.fx-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 14px; min-width: 0; }
-.fx-head h3 { margin: 0; display: flex; align-items: center; gap: 8px; font-family: var(--voyage-cond); font-weight: 600; font-size: 16px; letter-spacing: .12em; text-transform: uppercase; color: var(--voyage-fg); }
-.fx-head h3:focus { outline: none; }
-.fx-head h3:focus-visible { outline: 2px solid var(--voyage-accent); outline-offset: 4px; border-radius: 4px; }
-.fx-head__sum { font-size: 13px; color: var(--voyage-muted); font-variant-numeric: tabular-nums; }
-.fx-head__sum b { color: var(--voyage-fg); font-weight: 600; }
-.fx-pane p.fx-note, .fx-pane .fx-note { margin: 0; font-size: 13px; line-height: 1.55; color: var(--voyage-muted); max-width: 78ch; }
+.fx-pane .v5-head h3:focus { outline: none; }
+.fx-pane .v5-head h3:focus-visible { outline: 2px solid var(--voyage-accent); outline-offset: 4px; border-radius: 4px; }
+.fx-pane .v5-head__sum b { color: var(--voyage-fg); font-weight: 600; }
 .fx-note--warn { display: flex; align-items: center; gap: 6px; }
 .fx-note--warn svg { color: var(--voyage-warn); flex: none; }
 
 /* the filter, same look as the analytics range bar */
-.fx-seg { display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 3px; border-radius: 999px; border: 1px solid var(--voyage-line); background: var(--voyage-glass-solid); justify-self: start; max-width: 100%; }
-.fx-seg button { padding: 5px 9px; border: 0; border-radius: 999px; background: none; color: var(--voyage-muted); cursor: pointer; font-family: var(--voyage-cond); font-size: 13px; letter-spacing: .04em; min-height: 32px; }
-.fx-seg button[aria-pressed="true"] { background: var(--voyage-soft-strong); color: var(--voyage-fg); box-shadow: inset 0 0 0 1px var(--voyage-accent); }
-.fx-seg button:focus-visible { outline: 2px solid var(--voyage-accent); outline-offset: 2px; }
+.fx-pane .v5-seg { max-width: 100%; }
+.fx-pane .v5-seg button { min-height: 32px; }
 
 /* ---------- the score line ---------- */
 .fx-score { display: grid; gap: 6px; }
@@ -95,12 +89,10 @@
 .fx-how summary::-webkit-details-marker { display: none; }
 .fx-how[open] summary { margin-bottom: 4px; }
 
-.fx-empty { display: grid; justify-items: start; gap: 6px; padding: 8px 0; }
-.fx-empty b { font-family: var(--voyage-cond); font-size: 28px; font-weight: 600; letter-spacing: .02em; color: var(--voyage-fg); }
+.fx-pane .v5-empty b { color: var(--voyage-fg); }
 
 .fx-skeletons { display: grid; gap: 12px; }
-.fx-skel { height: 14px; border-radius: 6px; background: linear-gradient(90deg, var(--voyage-soft) 0%, var(--voyage-soft-strong) 50%, var(--voyage-soft) 100%); background-size: 200% 100%; animation: card-shimmer 1.4s linear infinite; }
-.fx-skel--tall { height: 52px; }
+.v5-skel.fx-skel--tall { height: 52px; }
 
 /* ---------- the Fix next tile ---------- */
 .tile__fix { display: grid; gap: 6px; font-size: 12px; align-content: start; min-height: 0; }
@@ -124,11 +116,9 @@
   .fx-row { grid-template-columns: auto minmax(0, 1fr) auto; }
   .fx-row > .fx-row__actions { grid-column: 3; grid-row: 1 / span 3; margin-top: 0; align-self: start; justify-content: flex-end; }
   .fx-row > .fx-items, .fx-row > .fx-dismiss { grid-column: 2 / -1; }
-  .fx-seg button { padding: 5px 12px; letter-spacing: .08em; }
   .fx-items li { flex-wrap: nowrap; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .fx-toggle svg { transition: none; }
-  .fx-skel { animation: none; }
 }
