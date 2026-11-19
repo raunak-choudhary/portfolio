@@ -17,7 +17,7 @@ import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 
 import { AlertCircle, ArrowRight, CalendarX, Check, ChevronDown, CircleSlash, Info, Pencil, Undo2, Wrench } from 'lucide-react';
 import { dismiss, restore } from '../../../services/fixDismissalsService';
 import { loadFixQueueData } from '../../../services/fixQueueData';
-import { NOTE_MAX, SEVERITY_LABEL, availableFilters, buildFixQueue, filterGroups, gainText, resolveTargetField, round1, scoreExplainer, staleSections, walkIntent } from './fixQueueModel';
+import { NOTE_MAX, SEVERITY_LABEL, scoreSummary, availableFilters, buildFixQueue, filterGroups, gainText, resolveTargetField, round1, scoreExplainer, staleSections, walkIntent } from './fixQueueModel';
 import { fixesChanged, setIntent } from './recordIntent';
 import { useSignal } from './signal';
 import { schemaForTable } from './managers';
@@ -37,19 +37,29 @@ export function useFixQueue() {
   const [input, setInput] = useState(null);
   const [failed, setFailed] = useState(false);
   const changed = useSignal(fixesChanged);
+  // A reload that set off before a local dismissal or restore would put the
+  // old list back; it keeps its rows but not its dismissals.
+  const edits = useRef(0);
   useEffect(() => {
     let alive = true;
-    loadFixQueueData().then((data) => { if (alive) { setInput(data); setFailed(false); } }, () => { if (alive) setFailed(true); });
+    const startedAt = edits.current;
+    loadFixQueueData().then((data) => {
+      if (!alive) return;
+      setInput((prev) => (prev && edits.current !== startedAt ? { ...data, dismissals: prev.dismissals } : data));
+      setFailed(false);
+    }, () => { if (alive) setFailed(true); });
     return () => { alive = false; };
   }, [changed]);
   const model = useMemo(() => (input ? buildFixQueue({ rowsByTable: input.rowsByTable, dismissals: input.dismissals }) : null), [input]);
   const stale = useMemo(() => (input ? staleSections(input.freshness, new Date()) : []), [input]);
   const dismissItem = useCallback(async (ruleKey, recordId, note) => {
     const row = await dismiss(ruleKey, recordId, note);
+    edits.current += 1;
     setInput((prev) => ({ ...prev, dismissals: [row, ...prev.dismissals] }));
   }, []);
   const restoreItem = useCallback(async (id) => {
     await restore(id);
+    edits.current += 1;
     setInput((prev) => ({ ...prev, dismissals: prev.dismissals.filter((d) => d.id !== id) }));
   }, []);
   return { model, stale, loading: !input && !failed, failed, dismissalsAvailable: Boolean(input?.dismissalsAvailable), dismissalsProblem: input?.dismissalsProblem || null, dismissItem, restoreItem };
@@ -57,7 +67,7 @@ export function useFixQueue() {
 
 /** Starts the walk through a group, at its first record or at the chosen one. */
 export function startWalk(group, model, startId = null) {
-  setIntent(walkIntent(group, { startId, field: resolveTargetField(schemaForTable(group.table), group.fields), score: model.scoreWithDismissals }));
+  setIntent(walkIntent(group, { startId, field: resolveTargetField(schemaForTable(group.table), group.fields), score: model.preciseScore }));   // the real score: dismissed items still count as gaps
 }
 
 const Gain = ({ value }) => <span className={`fx-gain${round1(value) ? '' : ' is-zero'}`}>{gainText(value)}<small>points</small></span>;
@@ -114,7 +124,7 @@ function GroupRow({ group, model, open, onToggle, canDismiss, dismissing, setDis
       </div>
       <div className="fx-row__actions">
         <Btn kind="primary" icon={ArrowRight} onClick={() => startWalk(group, model)}>{many ? `Fix ${group.items.length}, one by one` : 'Fix it'}</Btn>
-        {canDismiss && <Btn kind="quiet" icon={CircleSlash} onClick={() => setDismissing({ ruleKey: group.ruleKey, recordId: null })} aria-label={`Not needed: ${group.title}`}>Not needed</Btn>}
+        {canDismiss && <Btn kind="quiet" icon={CircleSlash} onClick={(e) => setDismissing({ ruleKey: group.ruleKey, recordId: null }, e.currentTarget)} aria-label={`Not needed: ${group.title}`}>Not needed</Btn>}
       </div>
       <ul className="fx-items" id={listId} hidden={!open}>
         {open && items.map((item) => (
@@ -122,7 +132,7 @@ function GroupRow({ group, model, open, onToggle, canDismiss, dismissing, setDis
             <span>{item.label}<small>{item.task} · {gainText(item.gain)}</small></span>
             <div className="fx-items__acts">
               <Btn icon={Pencil} onClick={() => startWalk(group, model, item.recordId)} aria-label={`Fix ${item.label}`}>Fix</Btn>
-              {canDismiss && <Btn kind="quiet" onClick={() => setDismissing({ ruleKey: group.ruleKey, recordId: item.recordId, label: item.label })} aria-label={`Not needed: ${item.label}`}>Not needed</Btn>}
+              {canDismiss && <Btn kind="quiet" onClick={(e) => setDismissing({ ruleKey: group.ruleKey, recordId: item.recordId, label: item.label }, e.currentTarget)} aria-label={`Not needed: ${item.label}`}>Not needed</Btn>}
             </div>
           </li>
         ))}
@@ -145,7 +155,25 @@ export default function FixQueuePane({ fixes, onReview, notify = () => {} }) {
   const { model, stale, loading, failed, dismissalsAvailable, dismissalsProblem, dismissItem, restoreItem } = fixes;
   const [filter, setFilter] = useState('all');
   const [openKey, setOpenKey] = useState(null);
-  const [dismissing, setDismissing] = useState(null);
+  const [dismissing, setDismissingState] = useState(null);
+  // Focus never drops to the page: closing the reason form returns it to the
+  // button that opened it, and the hidden list's controls hand it on (focusNext).
+  const returnFocus = useRef(null);
+  const hiddenRef = useRef(null);
+  const [focusNext, setFocusNext] = useState(null);
+  const setDismissing = useCallback((target, opener = null) => { if (target) returnFocus.current = opener; setDismissingState(target); }, []);
+  useEffect(() => {
+    if (dismissing || !returnFocus.current) return;
+    const el = returnFocus.current; returnFocus.current = null;
+    (el.isConnected ? el : headRef.current)?.focus();
+  }, [dismissing]);
+  useEffect(() => {
+    if (!focusNext || !hiddenRef.current) return;
+    setFocusNext(null);
+    const root = hiddenRef.current;
+    const pick = focusNext === 'list' ? root.querySelector('.fx-plain button:not(:disabled)') : focusNext === 'show' ? root.querySelector('[data-show-hidden]') : null;
+    (pick || root.querySelector('h4'))?.focus();
+  }, [focusNext]);
   const [showHidden, setShowHidden] = useState(false);
   const [restoring, setRestoring] = useState(null);
   const [restoreError, setRestoreError] = useState(null);
@@ -156,19 +184,17 @@ export default function FixQueuePane({ fixes, onReview, notify = () => {} }) {
 
   const onDismiss = async (target, note) => {
     await dismissItem(target.ruleKey, target.recordId, note);
+    returnFocus.current = headRef.current;   // the row it came from may have left the queue
     setDismissing(null);
     notify('Marked not needed.');
-    headRef.current?.focus();
   };
   const onRestore = async (d) => {
     setRestoring(d.id); setRestoreError(null);
-    try { await restoreItem(d.id); notify('Back in the queue.'); } catch (err) { setRestoreError(err?.message || 'It could not be brought back.'); } finally { setRestoring(null); }
+    try { await restoreItem(d.id); notify('Back in the queue.'); setFocusNext('list'); } catch (err) { setRestoreError(err?.message || 'It could not be brought back.'); } finally { setRestoring(null); }
   };
 
   const hiddenCount = model ? model.dismissed.length : 0;
-  const counted = model ? model.dismissed.reduce((s, d) => s + d.covers, 0) : 0;
-  const now = model ? round1(model.scoreWithDismissals) : 0;
-  const after = model ? round1(model.afterEveryFix) : 0;
+  const { now, after, counted, withDismissals } = model ? scoreSummary(model) : { now: 0, after: 0, counted: 0, withDismissals: 0 };
 
   return (
     <section className="voyage-pane v5-pane fx-pane" id={FIX_QUEUE_ID} aria-labelledby="fx-title" aria-busy={loading || undefined} data-testid="fix-queue">
@@ -188,7 +214,7 @@ export default function FixQueuePane({ fixes, onReview, notify = () => {} }) {
               <span className="fx-score__gain" style={{ left: `${now}%`, width: `${Math.max(0, Math.min(after - now, 100 - now))}%` }} />
             </div>
             <div className="fx-score__labels"><span>Now <b>{now.toFixed(1)}</b></span><span>After every fix <b>{after.toFixed(1)}</b></span></div>
-            {counted > 0 && <p className="v5-note">Counts {counted} {counted === 1 ? 'item' : 'items'} marked not needed as passing. Without them the score is {round1(model.preciseScore).toFixed(1)}.</p>}
+            {counted > 0 && <p className="v5-note">These are the real numbers: the {counted} {counted === 1 ? 'item marked not needed still counts' : 'items marked not needed still count'} as gaps. Counting them as passing would give {withDismissals.toFixed(1)}.</p>}
           </div>
           {filters.length > 1 && (
             <div className="v5-seg" role="group" aria-label="Filter the queue">
@@ -221,8 +247,8 @@ export default function FixQueuePane({ fixes, onReview, notify = () => {} }) {
       )}
 
       {model && (
-        <div className="fx-sub" data-testid="fx-hidden">
-          <h4><CircleSlash size={14} aria-hidden="true" />Marked not needed</h4>
+        <div className="fx-sub" data-testid="fx-hidden" ref={hiddenRef}>
+          <h4 tabIndex={-1}><CircleSlash size={14} aria-hidden="true" />Marked not needed</h4>
           {!dismissalsAvailable ? <p className="v5-note">{dismissalsProblem === 'failed' ? 'The items marked not needed could not be loaded, so Not needed is off for now. It comes back with the next reload.' : 'Not needed starts working once the activity migration has been run. Every fix still counts until then.'}</p>
             : !hiddenCount ? <p className="v5-note">Nothing yet. Use Not needed on a fix that does not apply.</p>
               : showHidden ? (
@@ -236,9 +262,9 @@ export default function FixQueuePane({ fixes, onReview, notify = () => {} }) {
                     ))}
                   </ul>
                   {restoreError && <p className="fx-dismiss__error" role="alert"><AlertCircle size={14} aria-hidden="true" /><span>{restoreError}</span></p>}
-                  <button type="button" className="fx-toggle fx-toggle--start" onClick={() => setShowHidden(false)}>Hide them</button>
+                  <button type="button" className="fx-toggle fx-toggle--start" onClick={() => { setShowHidden(false); setFocusNext('show'); }}>Hide them</button>
                 </>
-              ) : <p className="v5-note">{hiddenCount} {hiddenCount === 1 ? 'item' : 'items'} · <button type="button" className="fx-toggle" onClick={() => setShowHidden(true)}>Show them</button></p>}
+              ) : <p className="v5-note">{hiddenCount} {hiddenCount === 1 ? 'item' : 'items'} · <button type="button" className="fx-toggle" data-show-hidden onClick={() => { setShowHidden(true); setFocusNext('list'); }}>Show them</button></p>}
         </div>
       )}
 

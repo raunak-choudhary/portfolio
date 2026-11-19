@@ -80,7 +80,7 @@ describe('FixQueuePane', () => {
     const off = queueRequests.subscribe?.(() => { queued += 1; });
     click(button(row, `Fix ${group.items.length}, one by one`));
     expect(recordIntent.get()).toMatchObject({ table: 'projects', mode: 'edit', field: 'image_urls', recordId: group.items[0].recordId });
-    expect(recordIntent.get().walk).toMatchObject({ ruleKey: 'projects:images', index: 0, score: fixes.model.scoreWithDismissals });
+    expect(recordIntent.get().walk).toMatchObject({ ruleKey: 'projects:images', index: 0, score: fixes.model.preciseScore });
     const third = group.items[2];
     click(button(row, `Fix ${third.label}`));
     expect(recordIntent.get()).toMatchObject({ recordId: third.recordId });
@@ -102,6 +102,7 @@ describe('FixQueuePane', () => {
     expect(input.maxLength).toBe(140);
     act(() => { form.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); });
     expect(row.querySelector('[data-testid="fx-dismiss"]')).toBeNull();
+    expect(document.activeElement).toBe(button(row, `Not needed: ${fixes.model.groups.find((g) => g.ruleKey === 'skills:category').title}`));
 
     click(button(row, `Not needed: ${fixes.model.groups.find((g) => g.ruleKey === 'skills:category').title}`));
     form = row.querySelector('[data-testid="fx-dismiss"]');
@@ -113,6 +114,20 @@ describe('FixQueuePane', () => {
     expect(fixes.dismissItem).toHaveBeenLastCalledWith('skills:category', null, 'Categories are not shown');
     expect(notify).toHaveBeenCalledWith('Marked not needed.');
     expect(row.querySelector('[data-testid="fx-dismiss"]')).toBeNull();
+    expect(document.activeElement).not.toBe(document.body);
+    view.unmount();
+  });
+
+  it('returns focus to the opener when the reason form is cancelled', () => {
+    const fixes = fixesFor();
+    const view = mount(<FixQueuePane fixes={fixes} onReview={jest.fn()} />);
+    const row = view.container.querySelector('[data-rule="projects:short_description"]');
+    click(row.querySelector('.fx-toggle'));
+    const opener = button(row, 'Not needed: Project p3');
+    click(opener);
+    click(button(row.querySelector('[data-testid="fx-dismiss"]'), 'Cancel'));
+    expect(row.querySelector('[data-testid="fx-dismiss"]')).toBeNull();
+    expect(document.activeElement).toBe(opener);
     view.unmount();
   });
 
@@ -134,15 +149,24 @@ describe('FixQueuePane', () => {
     const notify = jest.fn();
     const view = mount(<FixQueuePane fixes={fixes} onReview={jest.fn()} notify={notify} />);
     expect(view.container.querySelector('[data-rule="skills:category"]')).toBeNull();
-    expect(view.container.querySelector('.fx-score').textContent).toContain('Counts 1 item marked not needed as passing');
+    const score = view.container.querySelector('.fx-score').textContent;
+    expect(score).toContain(`Now ${fixes.model.preciseScore.toFixed(1)}`);
+    expect(score).toContain('the 1 item marked not needed still counts as gaps');
+    expect(score).toContain(`Counting them as passing would give ${fixes.model.scoreWithDismissals.toFixed(1)}`);
     const hidden = view.container.querySelector('[data-testid="fx-hidden"]');
     expect(hidden.textContent).toContain('1 item');
+    click(button(hidden, 'Show them'));
+    expect(document.activeElement).toBe(button(hidden, `Bring back: ${fixes.model.dismissed[0].title}`));
+    click(button(hidden, 'Hide them'));
+    expect(document.activeElement).toBe(button(hidden, 'Show them'));
     click(button(hidden, 'Show them'));
     expect(hidden.textContent).toContain('“Not shown on the site”');
     expect(hidden.textContent).toContain('12 Nov');
     await act(async () => { click(button(hidden, `Bring back: ${fixes.model.dismissed[0].title}`)); });
     expect(fixes.restoreItem).toHaveBeenCalledWith('d1');
     expect(notify).toHaveBeenCalledWith('Back in the queue.');
+    expect(document.activeElement).not.toBe(document.body);
+    expect(hidden.contains(document.activeElement)).toBe(true);
     fixes.restoreItem.mockRejectedValueOnce(new Error('The item could not be brought back.'));
     await act(async () => { click(button(hidden, `Bring back: ${fixes.model.dismissed[0].title}`)); });
     expect(hidden.querySelector('[role="alert"]').textContent).toContain('could not be brought back');
@@ -217,6 +241,22 @@ describe('useFixQueue', () => {
     view.unmount();
   });
 
+  it('keeps a dismissal made while a reload was already on its way', async () => {
+    let finish;
+    loadFixQueueData.mockResolvedValueOnce({ rowsByTable: rowsByTable(), dismissals: [], dismissalsAvailable: true, dismissalsProblem: null, freshness: [] });
+    const out = { current: null };
+    const view = mount(<Probe out={out} />);
+    await flush();
+    loadFixQueueData.mockImplementationOnce(() => new Promise((r) => { finish = r; }));
+    act(() => noteFixesChanged());
+    service.dismiss.mockResolvedValue({ id: 'd7', ruleKey: 'skills:category', recordId: null, note: null, createdAt: '2026-11-19T00:00:00Z' });
+    await act(async () => { await out.current.dismissItem('skills:category', null, ''); });
+    await act(async () => { finish({ rowsByTable: rowsByTable(), dismissals: [], dismissalsAvailable: true, dismissalsProblem: null, freshness: [] }); });
+    await flush();
+    expect(out.current.model.groups.some((g) => g.ruleKey === 'skills:category')).toBe(false);
+    view.unmount();
+  });
+
   it('reports a failed load', async () => {
     loadFixQueueData.mockRejectedValue(new Error('offline'));
     const out = { current: null };
@@ -237,8 +277,18 @@ describe('the bento fix tile', () => {
     const tile = view.container.querySelector('.tile__fix');
     const lines = [...tile.children].map((d) => d.querySelector('span').textContent);
     expect(lines).toEqual(fixes.model.groups.slice(0, 3).map((g) => g.title));
+    expect(tile.parentNode.querySelector('.tile__gain').textContent).toMatch(/^Health \d+\.\d now, \d+\.\d after every fix$/);
     click(button(view.container, 'Open the fix queue'));
     expect(queueRequests.get()).toBe(before + 1);
+    view.unmount();
+  });
+
+  it('shows the plain score and discloses what the dismissals would add', () => {
+    const dismissals = [{ id: 'd1', ruleKey: 'skills:category', recordId: null, note: null, createdAt: '2026-11-12T15:00:00Z' }];
+    const fixes = fixesFor({ dismissals });
+    const view = mount(<Bento data={{ fixes }} onGo={jest.fn()} />);
+    const line = view.container.querySelector('.tile__gain').textContent;
+    expect(line).toContain(`Health ${fixes.model.preciseScore.toFixed(1)} now, ${fixes.model.scoreWithDismissals.toFixed(1)} counting 1 marked not needed`);
     view.unmount();
   });
 });
