@@ -15,7 +15,7 @@
 // 24-hour steps, so the days either side of a daylight saving change are
 // still "Today" and "Yesterday".
 
-import { EDITED_TABLES } from '../../../services/voyageData';
+import { EDITED_TABLES } from '../../../services/editedTables';
 
 export const NEW_YORK = 'America/New_York';
 
@@ -46,9 +46,9 @@ const NOUNS = {
   skills: ['skill', 'skills'], certifications: ['certification', 'certifications'], recommendations: ['recommendation', 'recommendations'],
   achievements: ['achievement', 'achievements'], leadership: ['leadership role', 'leadership roles'], contact_messages: ['message', 'messages'],
 };
-const LABELS = { ...Object.fromEntries((EDITED_TABLES || []).map(([table, label]) => [table, label])), contact_messages: 'Inbox', security: 'Security' };
+const LABELS = { ...Object.fromEntries(EDITED_TABLES.map(([table, label]) => [table, label])), contact_messages: 'Inbox', security: 'Security' };
 /** Tables whose records open in a chapter of their own. */
-const CONTENT_TABLES = new Set((EDITED_TABLES || []).map(([table]) => table));
+const CONTENT_TABLES = new Set(EDITED_TABLES.map(([table]) => table));
 
 /**
  * A column name in words: "about_me_content" reads "about me content". A
@@ -323,4 +323,19 @@ export function historySummary(rows, limit = 20, now = new Date()) {
     countText: n >= limit ? `${limit}+ changes recorded` : plural(n, 'change recorded', 'changes recorded'),
     created: list.some((r) => r.action === 'create'),
   };
+}
+
+// ---------------------------------------------------------------------------
+// Failures
+
+/**
+ * One fixed sentence for a failed activity read, from the typed failures the
+ * services share (voyageRecords' failureKind codes). Server text is never shown.
+ */
+export function activityFailure(err) {
+  if (err?.code === 'SESSION_EXPIRED') return 'The session has expired. Sign in again, then try again.';
+  if (err?.code === 'SECOND_FACTOR_REQUIRED') return 'The authenticator code has not been entered in this session yet. Enter it, then try again.';
+  const text = `${err?.message ?? ''}`;
+  if ((typeof navigator !== 'undefined' && navigator.onLine === false) || /failed to fetch|network|load failed/i.test(text)) return 'The request did not reach the server. Check the connection, then try again.';
+  return 'The activity log could not be read just now. Try again in a moment.';
 }

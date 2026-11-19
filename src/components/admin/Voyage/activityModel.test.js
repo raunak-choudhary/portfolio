@@ -1,10 +1,8 @@
-// voyageData imports the Supabase client, which needs env; the model only reads its table list.
 import {
   FILTERS, canOpen, dayLabel, daysBetween, describe as describeRow, detailText, goneRecords, groupByDay, historyEntries, historySummary,
   humanizeField, isGone, isOutside, matchesFilter, mergeRows, nyDayKey, nyTime, paneSummary, sectionLabel, sentenceText, subLine, tileWhen, toneFor, whenLabel,
 } from './activityModel';
 
-jest.mock('../../../services/supabaseClient', () => ({ supabase: {} }));
 
 const row = (over = {}) => ({ id: 1, at: '2026-11-19T18:42:00.000Z', action: 'edit', section: 'projects', recordId: 'p1', recordTitle: 'Tallyproof', fields: ['description', 'technologies'], detail: {}, source: 'admin', ...over });
 // Thursday 19 Nov 2026, 14:00 in New York (EST, UTC-5)
@@ -208,5 +206,17 @@ describe('a record\'s history', () => {
     expect(historySummary([row({ action: 'create' })], 20, NOW)).toMatchObject({ countText: '1 change recorded', created: true });
     expect(historySummary(rows, 4, NOW).countText).toBe('4+ changes recorded');
     expect(historySummary([], 20, NOW)).toMatchObject({ count: 0, last: '' });
+  });
+});
+
+describe('failures', () => {
+  it('gives one fixed sentence per kind and never repeats server text', () => {
+    const { activityFailure } = require('./activityModel');
+    expect(activityFailure({ code: 'SESSION_EXPIRED' })).toMatch(/session has expired/);
+    expect(activityFailure({ code: 'SECOND_FACTOR_REQUIRED' })).toMatch(/authenticator code/);
+    expect(activityFailure(new TypeError('Failed to fetch'))).toMatch(/did not reach the server/);
+    const unknown = activityFailure(new Error('relation "secret_table" does not exist'));
+    expect(unknown).not.toMatch(/secret_table/);
+    expect(activityFailure(undefined)).toBe(unknown);
   });
 });
