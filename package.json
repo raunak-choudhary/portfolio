@@ -37,6 +37,7 @@
     "scan:bundle": "node scripts/scan-bundle.mjs --root build",
     "check:csp": "node scripts/check-csp.mjs",
     "check:budget": "node scripts/check-bundle-budget.mjs --root build",
+    "check:frames": "node scripts/measure-frames.mjs --budget scripts/frame-budget.json",
     "admin:login": "node scripts/admin-login-capture.mjs",
     "admin:open": "node scripts/admin-open.mjs",
     "test:functions": "cd supabase/functions && deno test && deno lint"
