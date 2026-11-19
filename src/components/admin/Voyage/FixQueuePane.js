@@ -51,7 +51,7 @@ export function useFixQueue() {
     await restore(id);
     setInput((prev) => ({ ...prev, dismissals: prev.dismissals.filter((d) => d.id !== id) }));
   }, []);
-  return { model, stale, loading: !input && !failed, failed, dismissalsAvailable: Boolean(input?.dismissalsAvailable), dismissItem, restoreItem };
+  return { model, stale, loading: !input && !failed, failed, dismissalsAvailable: Boolean(input?.dismissalsAvailable), dismissalsProblem: input?.dismissalsProblem || null, dismissItem, restoreItem };
 }
 
 /** Starts the walk through a group, at its first record or at the chosen one. */
@@ -141,7 +141,7 @@ function GroupRow({ group, model, open, onToggle, canDismiss, dismissing, setDis
  * @param {(text: string, tone?: string) => void} [props.notify]
  */
 export default function FixQueuePane({ fixes, onReview, notify = () => {} }) {
-  const { model, stale, loading, failed, dismissalsAvailable, dismissItem, restoreItem } = fixes;
+  const { model, stale, loading, failed, dismissalsAvailable, dismissalsProblem, dismissItem, restoreItem } = fixes;
   const [filter, setFilter] = useState('all');
   const [openKey, setOpenKey] = useState(null);
   const [dismissing, setDismissing] = useState(null);
@@ -222,7 +222,7 @@ export default function FixQueuePane({ fixes, onReview, notify = () => {} }) {
       {model && (
         <div className="fx-sub" data-testid="fx-hidden">
           <h4><CircleSlash size={14} aria-hidden="true" />Marked not needed</h4>
-          {!dismissalsAvailable ? <p className="fx-note">Marking a fix as not needed starts working once the activity migration has been run.</p>
+          {!dismissalsAvailable ? <p className="fx-note">{dismissalsProblem === 'failed' ? 'The items marked not needed could not be loaded, so Not needed is off for now. It comes back with the next reload.' : 'Not needed starts working once the activity migration has been run. Every fix still counts until then.'}</p>
             : !hiddenCount ? <p className="fx-note">Nothing yet. Use Not needed on a fix that does not apply.</p>
               : showHidden ? (
                 <>
