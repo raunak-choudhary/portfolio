@@ -42,6 +42,7 @@ describe('MissionControl', () => {
     expect(lines).toHaveLength(5);
     expect(lines[0].textContent).toBe('12:42Edited Project 1');
     expect(lines[0].querySelector('b').textContent).toBe('Project 1');
+    expect(lines[0].getAttribute('title')).toBe('Edited Project 1');   // the whole sentence, for a row clamped at two lines
     expect(view.container.querySelectorAll(`#${ACTIVITY_PANE_ID} .act-row`)).toHaveLength(7);
   });
 
