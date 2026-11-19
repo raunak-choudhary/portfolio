@@ -29,6 +29,8 @@ jest.mock('../../../services/voyageData', () => ({
   getVisitorSeries: jest.fn(), getUnreadMessages: jest.fn(), getRecentEdits: jest.fn(), getTopPages: jest.fn(), relativeTime: () => 'just now',
 }));
 jest.mock('../../../services/adminSessionFacts', () => ({ startSession: jest.fn() }));
+jest.mock('../../../services/fixDismissalsService', () => ({ DISMISSALS_NOT_SET_UP: 'DISMISSALS_NOT_SET_UP', listDismissals: jest.fn(), dismiss: jest.fn(), restore: jest.fn() }));
+jest.mock('../../../services/fixQueueData', () => ({ loadFixQueueData: () => new Promise(() => {}) }));   // a plain function: the suite resets jest.fn mocks
 // the decks load through the records service, which also needs the Supabase client; the page test checks the wiring only
 // the history line and the activity pane read through the activity service, which opens the Supabase client
 jest.mock('../../../services/activityService', () => ({ ACTIVITY_NOT_SET_UP: 'ACTIVITY_NOT_SET_UP', listActivity: jest.fn(), listDeletedRecords: jest.fn(), recordHistory: jest.fn(), isActivityAvailable: jest.fn(), logSecurityEvent: jest.fn() }));
