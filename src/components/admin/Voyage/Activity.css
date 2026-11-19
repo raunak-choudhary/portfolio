@@ -55,6 +55,10 @@ button.act-row { background: none; border-left: 0; border-right: 0; border-botto
 button.act-row:hover .act-row__text b { text-decoration: underline; text-underline-offset: 3px; }
 .act-row:focus-visible { outline: 2px solid var(--voyage-accent); outline-offset: 2px; border-radius: 6px; }
 .act-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; padding-top: 10px; border-top: 1px solid var(--voyage-line); }
+.mission { min-width: 0; }
+/* focus moved here by script (See all activity, the end of Show earlier): a ring only for keyboard users */
+.act-pane h3:focus, .act-foot__note:focus { outline: none; }
+.act-pane h3:focus-visible, .act-foot__note:focus-visible { outline: 2px solid var(--voyage-accent); outline-offset: 3px; border-radius: 4px; }
 .act-foot__error { flex-basis: 100%; color: var(--voyage-bad); }
 
 /* ---------- the Recent activity tile ---------- */
