@@ -43,7 +43,7 @@ describe('FixQueuePane', () => {
     expect(first.querySelector('.fx-row__why').textContent).toBe(groups[0].why);
     expect(first.querySelector('.fx-chip').textContent).toBe(groups[0].section);
     expect(first.textContent).toContain(`Field: ${groups[0].fieldLabel}`);
-    expect(view.container.querySelector('.fx-head__sum').textContent).toContain(`${groups.length} things`);
+    expect(view.container.querySelector('.v5-head__sum').textContent).toContain(`${groups.length} things`);
     expect(view.container.querySelector('.fx-score__labels').textContent).toMatch(/Now \d+\.\dAfter every fix \d+\.\d/);
     expect(view.container.querySelector('.fx-how').textContent).toContain('Projects 20');
     view.unmount();
@@ -51,7 +51,7 @@ describe('FixQueuePane', () => {
 
   it('filters by kind and back to all', () => {
     const view = mount(<FixQueuePane fixes={fixesFor()} onReview={jest.fn()} />);
-    const seg = view.container.querySelector('.fx-seg');
+    const seg = view.container.querySelector('.v5-seg');
     const labels = [...seg.querySelectorAll('button')].map((b) => b.textContent);
     expect(labels[0]).toBe('All');
     click(button(seg, 'Images'));
@@ -170,7 +170,7 @@ describe('FixQueuePane', () => {
     view.unmount();
     const empty = buildFixQueue({ rowsByTable: { projects: [project('p1', { image_urls: ['x'] })] } });
     view = mount(<FixQueuePane fixes={fixesFor({ model: { ...empty, groups: [] } })} onReview={jest.fn()} />);
-    expect(view.container.querySelector('.fx-empty').textContent).toContain('Nothing to fix.');
+    expect(view.container.querySelector('.v5-empty').textContent).toContain('Nothing to fix.');
     expect(view.container.textContent).toContain('Could not check');
     view.unmount();
   });
