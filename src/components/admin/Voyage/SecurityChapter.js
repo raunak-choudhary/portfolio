@@ -83,7 +83,12 @@ export default function SecurityChapter({ notify, onLeave }) {
   const alive = useRef(true);
   const addAppRef = useRef(null), addDeviceRef = useRef(null), chapterRef = useRef(null);
 
-  useEffect(() => () => { alive.current = false; }, []);
+  // Set on every mount, not only at creation: React's development double mount
+  // runs this cleanup once, and a flag left false would hide every result.
+  useEffect(() => {
+    alive.current = true;
+    return () => { alive.current = false; };
+  }, []);
 
   // Clean up any half-made enrolment, then read the apps, the passkeys and the session.
   // `quiet` keeps the panes on screen while a change is re-read.
