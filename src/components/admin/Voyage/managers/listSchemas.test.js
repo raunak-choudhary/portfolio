@@ -28,7 +28,7 @@ const errorsFor = (schema, row, changes) => validateForm(schema, { ...buildForm(
 const STORAGE = 'https://x.supabase.co/storage/v1/object/public';
 const MiB = 1024 * 1024;
 
-/** Server limits of each bucket (supabase/inspection/storage_buckets.csv): no client rule may promise more. */
+/** Server limits of each storage bucket as configured in Supabase: no client rule may promise more. */
 const BUCKETS = {
   'organization-logos': { max: 2 * MiB, types: ['image/jpeg', 'image/png', 'image/jpg', 'image/svg+xml', 'image/webp'] },
   documents: { max: 15 * MiB, types: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'image/jpeg', 'image/jpg', 'image/png', 'image/gif'] },

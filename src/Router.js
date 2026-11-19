@@ -134,7 +134,7 @@ const AppShell = () => {
           <Route path="/adminlogin" element={<Suspense fallback={<AdminChunkFallback />}><AdminLogin /></Suspense>} />
           {/* The voyage (the admin as one sky) is the dashboard. The classic
               screens stay at /classic only until analytics and security move
-              into the voyage; see docs/plans/2026-11-12-002. */}
+              into the voyage. */}
           <Route path="/admindashboard" element={<ProtectedAdminRoute view="voyage" />} />
           <Route path="/admindashboard/voyage" element={<Navigate to="/admindashboard" replace />} />
           <Route path="/admindashboard/classic" element={<ProtectedAdminRoute view="classic" />} />

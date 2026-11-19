@@ -5,7 +5,7 @@
 // Exits 1 when any difference is not covered by the allowlist.
 //
 // Usage:
-//   node scripts/compare-captures.mjs <before-dir> <after-dir> [--allowlist e2e/allowlists/<file>.json]
+//   node scripts/compare-captures.mjs <before-dir> <after-dir> [--allowlist <file>.json]
 
 import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';

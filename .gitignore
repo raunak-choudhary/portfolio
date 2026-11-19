@@ -93,3 +93,9 @@ playwright-report/
 captures/
 .playwright/
 # Playwright storage state with the owner's live admin session (admin-login-capture.mjs)
+
+# Internal planning notes, design work and one-off audit material stay local
+docs/
+design/
+supabase/inspection/
+e2e/allowlists/
