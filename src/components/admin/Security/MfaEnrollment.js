@@ -34,6 +34,7 @@ import {
 import { getPasskeyStatus } from '../../../services/passkeyService';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import PasskeyManager from './PasskeyManager';
+import { defaultAppName, holdLastApp, passkeysInUse as passkeysAreInUse } from './securityModel';
 import './MfaEnrollment.css';
 
 const MfaEnrollment = ({ enrollmentRequired = false }) => {
@@ -78,7 +79,7 @@ const MfaEnrollment = ({ enrollmentRequired = false }) => {
     setBusy(true);
     try {
       await removeUnverifiedFactors();
-      const name = deviceName.trim() || (factors.length === 0 ? PRIMARY_FACTOR_NAME : `Backup authenticator ${factors.length}`);
+      const name = deviceName.trim() || defaultAppName(factors.length);
       const result = await enrollTotp(name);
       if (!result.success) {
         setError(result.error.message);
@@ -130,9 +131,9 @@ const MfaEnrollment = ({ enrollmentRequired = false }) => {
     }
   };
 
-  // With passkeys in use the last typed authenticator stays, so a code always works.
-  const passkeysInUse = hasBridge || passkeyCount > 0;
-  const keepLastFactor = passkeysInUse && factors.length === 1;
+  // With passkeys in use the last typed authenticator stays, so a code always works (securityModel).
+  const passkeysInUse = passkeysAreInUse({ hasBridge, passkeyCount });
+  const keepLastFactor = holdLastApp(factors.length, passkeysInUse);
 
   const removeFactor = async (factor) => {
     if (keepLastFactor) return;

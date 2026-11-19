@@ -24,10 +24,9 @@ import {
   removePasskey,
   suggestDeviceName
 } from '../../../services/passkeyService';
+import { isLocalhostPasskey } from './securityModel';
 
 const formatDay = (value) => (value ? new Date(value).toLocaleDateString('en-US', { dateStyle: 'medium' }) : '');
-
-const LOCALHOST_RP_ID = 'localhost';
 
 /** onChange runs after a passkey is added or removed, so the Security screen can re-read its rules. */
 const PasskeyManager = ({ onChange = () => {} }) => {
@@ -116,7 +115,7 @@ const PasskeyManager = ({ onChange = () => {} }) => {
               <div className="passkey-device-text">
                 <div className="mfa-device-name">
                   {passkey.device_name}
-                  {passkey.rp_id === LOCALHOST_RP_ID && <span className="passkey-site-tag">localhost</span>}
+                  {isLocalhostPasskey(passkey) && <span className="passkey-site-tag">localhost</span>}
                 </div>
                 <div className="mfa-muted">
                   Added {formatDay(passkey.created_at)}
