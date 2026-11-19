@@ -17,8 +17,8 @@ import { ACTIVITY_NOT_SET_UP, listActivity } from '../../../services/activitySer
 import { FILTERS, TILE_ROWS, activityFailure, canOpen, collapseBulk, describe, goneRecords, groupByDay, isGone, isOutside, mergeRows, nyTime, paneSummary, subLine, toneFor } from './activityModel';
 import './Activity.css';
 
-/** Rows per page; "Show earlier" asks for the next page before the oldest row shown. */
-export const PAGE_SIZE = 50;
+/** Rows per page, first load and each "Show earlier": enough for a few days without making the pane a wall. */
+export const PAGE_SIZE = 20;
 /** The pane's element id, which the tile's "See all activity" scrolls to. */
 export const ACTIVITY_PANE_ID = 'activity-pane';
 
