@@ -1,0 +1,134 @@
+/* src/components/admin/Voyage/FixQueue.css
+   The fix queue (fx-), the fix tile and the fix walk inside the record
+   dialog, ported from the approved V5 mockup (design/mockups/voyage-v5/
+   v5.css). Colours come only from the voyage tokens, which live on .voyage
+   and on the dialog's .record-backdrop. Mobile first: 390, then 768, 1280.
+   No backdrop-filter; motion only on the disclosure chevrons, and none under
+   reduced motion. */
+
+/* ---------- the pane ---------- */
+.fx-pane { padding: 16px; display: grid; gap: 14px; align-content: start; min-width: 0; margin-top: 12px; scroll-margin-top: 72px; }
+.fx-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 14px; min-width: 0; }
+.fx-head h3 { margin: 0; display: flex; align-items: center; gap: 8px; font-family: var(--voyage-cond); font-weight: 600; font-size: 16px; letter-spacing: .12em; text-transform: uppercase; color: var(--voyage-fg); }
+.fx-head h3:focus { outline: none; }
+.fx-head h3:focus-visible { outline: 2px solid var(--voyage-accent); outline-offset: 4px; border-radius: 4px; }
+.fx-head__sum { font-size: 13px; color: var(--voyage-muted); font-variant-numeric: tabular-nums; }
+.fx-head__sum b { color: var(--voyage-fg); font-weight: 600; }
+.fx-pane p.fx-note, .fx-pane .fx-note { margin: 0; font-size: 13px; line-height: 1.55; color: var(--voyage-muted); max-width: 78ch; }
+.fx-note--warn { display: flex; align-items: center; gap: 6px; }
+.fx-note--warn svg { color: var(--voyage-warn); flex: none; }
+
+/* the filter, same look as the analytics range bar */
+.fx-seg { display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 3px; border-radius: 999px; border: 1px solid var(--voyage-line); background: var(--voyage-glass-solid); justify-self: start; max-width: 100%; }
+.fx-seg button { padding: 5px 9px; border: 0; border-radius: 999px; background: none; color: var(--voyage-muted); cursor: pointer; font-family: var(--voyage-cond); font-size: 13px; letter-spacing: .04em; min-height: 32px; }
+.fx-seg button[aria-pressed="true"] { background: var(--voyage-soft-strong); color: var(--voyage-fg); box-shadow: inset 0 0 0 1px var(--voyage-accent); }
+.fx-seg button:focus-visible { outline: 2px solid var(--voyage-accent); outline-offset: 2px; }
+
+/* ---------- the score line ---------- */
+.fx-score { display: grid; gap: 6px; }
+.fx-score__track { position: relative; height: 8px; border-radius: 4px; background: color-mix(in srgb, var(--voyage-fg) 10%, transparent); overflow: hidden; }
+.fx-score__now { position: absolute; inset: 0 auto 0 0; background: var(--voyage-accent); border-radius: 4px; }
+.fx-score__gain { position: absolute; top: 0; bottom: 0; background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--voyage-accent) 55%, transparent) 0 4px, transparent 4px 8px); }
+.fx-score__labels { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--voyage-muted); font-variant-numeric: tabular-nums; }
+.fx-score__labels b { color: var(--voyage-fg); font-family: var(--voyage-cond); font-size: 14px; letter-spacing: .04em; }
+
+/* ---------- the queue ---------- */
+.fx-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; counter-reset: fx; }
+.fx-row { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 12px; padding: 14px 0; border-top: 1px solid color-mix(in srgb, var(--voyage-line) 70%, transparent); counter-increment: fx; min-width: 0; }
+.fx-row:first-child { border-top: 0; padding-top: 4px; }
+.fx-row > :not(.fx-row__rank) { grid-column: 2; }
+.fx-row__rank { grid-row: 1 / span 3; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; border: 1px solid var(--voyage-line); font-family: var(--voyage-cond); font-size: 15px; color: var(--voyage-muted); }
+.fx-row__rank::before { content: counter(fx); }
+.fx-row__top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; min-width: 0; }
+.fx-row__title { font-size: 15px; font-weight: 600; color: var(--voyage-fg); overflow-wrap: anywhere; }
+.fx-gain { font-family: var(--voyage-cond); font-size: 15px; letter-spacing: .04em; color: var(--voyage-good); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.fx-gain small { font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; font-size: 11px; color: var(--voyage-muted); letter-spacing: 0; margin-left: 3px; }
+.fx-gain.is-zero { color: var(--voyage-muted); }
+.fx-pane p.fx-row__why { margin: 0; font-size: 13px; line-height: 1.5; color: var(--voyage-muted); max-width: 72ch; }
+.fx-row__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: 12px; color: var(--voyage-muted); }
+.fx-sev { display: inline-flex; align-items: center; padding: 1px 7px; border-radius: 4px; font-family: var(--voyage-cond); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; }
+.fx-sev--critical { background: var(--voyage-bad); color: #2a0710; }   /* dark ink: white on coral fails AA at this size */
+.fx-sev--warning { background: var(--voyage-warn); color: #1a1304; }
+.fx-sev--info { background: color-mix(in srgb, var(--voyage-fg) 18%, transparent); color: var(--voyage-fg); }
+.fx-chip { padding: 1px 8px; border-radius: 999px; border: 1px solid var(--voyage-line); color: var(--voyage-fg); }
+.fx-row__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.fx-row__actions .voyage-bar__button { min-height: 36px; }
+.fx-toggle { display: inline-flex; align-items: center; gap: 4px; background: none; border: 0; padding: 2px 0; color: var(--voyage-accent); font: 600 13px system-ui, -apple-system, 'Segoe UI', sans-serif; cursor: pointer; }
+.fx-toggle:focus-visible { outline: 2px solid var(--voyage-accent); outline-offset: 2px; border-radius: 4px; }
+.fx-toggle svg { transition: transform .2s; }
+.fx-row.is-open .fx-row__meta .fx-toggle svg { transform: rotate(180deg); }
+.fx-toggle--start { justify-self: start; }
+
+/* the records inside an open group */
+.fx-items { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 0; border: 1px solid color-mix(in srgb, var(--voyage-line) 70%, transparent); border-radius: 12px; overflow: hidden; min-width: 0; }
+.fx-items[hidden] { display: none; }
+.fx-items li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; padding: 8px 12px; border-top: 1px solid color-mix(in srgb, var(--voyage-line) 50%, transparent); min-width: 0; }
+.fx-items li:first-child { border-top: 0; }
+.fx-items li > span { min-width: 0; overflow-wrap: anywhere; font-size: 14px; color: var(--voyage-fg); }
+.fx-items small { display: block; margin-top: 1px; font-size: 12px; color: var(--voyage-muted); }
+.fx-items__acts { display: flex; gap: 6px; flex: none; }
+.fx-items .voyage-bar__button { min-height: 32px; padding: 4px 10px; font-size: 13px; }
+.fx-items li.fx-items__more { justify-content: center; }
+
+/* "Not needed" asks for an optional reason in place */
+.fx-dismiss { margin-top: 8px; display: grid; gap: 8px; padding: 12px; border-radius: 12px; border: 1px dashed var(--voyage-line); background: var(--voyage-soft); min-width: 0; }
+.fx-dismiss label { font-size: 13px; font-weight: 600; color: var(--voyage-fg); }
+.fx-dismiss__optional { font-weight: 400; color: var(--voyage-muted); }
+.fx-dismiss input { width: 100%; box-sizing: border-box; padding: 9px 11px; border-radius: 8px; border: 1px solid var(--voyage-line); background: var(--voyage-soft); color: var(--voyage-fg); font: inherit; font-size: 16px; }
+.fx-dismiss input:focus { outline: 0; border-color: var(--voyage-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--voyage-accent) 25%, transparent); }
+.fx-pane .fx-dismiss p { margin: 0; font-size: 12px; color: var(--voyage-muted); }
+.fx-dismiss__acts { display: flex; flex-wrap: wrap; gap: 8px; }
+.fx-pane p.fx-dismiss__error { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 13px; color: var(--voyage-fg); }
+.fx-dismiss__error svg { color: var(--voyage-bad); flex: none; }
+
+/* stale sections, the hidden list and the explainer */
+.fx-sub { display: grid; gap: 8px; padding-top: 12px; border-top: 1px solid var(--voyage-line); min-width: 0; }
+.fx-sub h4 { margin: 0; display: flex; align-items: center; gap: 6px; font-family: var(--voyage-cond); font-weight: 500; font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--voyage-muted); }
+.fx-plain { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.fx-plain li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; padding: 9px 0; border-top: 1px solid color-mix(in srgb, var(--voyage-line) 50%, transparent); font-size: 14px; min-width: 0; color: var(--voyage-fg); }
+.fx-plain li:first-child { border-top: 0; }
+.fx-plain li > span { min-width: 0; overflow-wrap: anywhere; }
+.fx-plain small { display: block; color: var(--voyage-muted); font-size: 12px; margin-top: 2px; }
+.fx-plain .voyage-bar__button { min-height: 32px; padding: 4px 10px; font-size: 13px; }
+.fx-days { font-family: var(--voyage-cond); color: var(--voyage-warn); letter-spacing: .04em; }
+.fx-how summary { list-style: none; justify-self: start; }
+.fx-how summary::-webkit-details-marker { display: none; }
+.fx-how[open] summary { margin-bottom: 4px; }
+
+.fx-empty { display: grid; justify-items: start; gap: 6px; padding: 8px 0; }
+.fx-empty b { font-family: var(--voyage-cond); font-size: 28px; font-weight: 600; letter-spacing: .02em; color: var(--voyage-fg); }
+
+.fx-skeletons { display: grid; gap: 12px; }
+.fx-skel { height: 14px; border-radius: 6px; background: linear-gradient(90deg, var(--voyage-soft) 0%, var(--voyage-soft-strong) 50%, var(--voyage-soft) 100%); background-size: 200% 100%; animation: card-shimmer 1.4s linear infinite; }
+.fx-skel--tall { height: 52px; }
+
+/* ---------- the Fix next tile ---------- */
+.tile__fix { display: grid; gap: 6px; font-size: 12px; align-content: start; min-height: 0; }
+.tile__fix > div { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 8px; align-items: baseline; padding: 6px 8px; border-radius: 8px; background: rgba(127, 140, 170, .12); }
+.tile__fix b { font-family: var(--voyage-cond); font-size: 13px; color: var(--voyage-good); letter-spacing: .04em; font-variant-numeric: tabular-nums; }
+.tile__fix span { min-width: 0; overflow-wrap: anywhere; }
+.tile__gain { font-size: 12px; color: var(--voyage-good); }
+
+/* ---------- the fix walk inside the record dialog ---------- */
+.record-banner--fix { border-color: color-mix(in srgb, var(--voyage-accent) 60%, transparent); background: color-mix(in srgb, var(--voyage-accent) 12%, transparent); }
+.record-banner--fix .record-banner__icon { color: var(--voyage-accent); }
+.record-banner--good { border-color: color-mix(in srgb, var(--voyage-good) 60%, transparent); background: color-mix(in srgb, var(--voyage-good) 12%, transparent); }
+.record-banner--good .record-banner__icon { color: var(--voyage-good); }
+.record-banner__step { font-family: var(--voyage-cond); letter-spacing: .08em; color: var(--voyage-muted); font-size: 13px; font-weight: 500; }
+
+.record-form__cell.is-target { position: relative; padding: 12px; margin: 0 -2px; border-radius: 12px; box-shadow: 0 0 0 2px var(--voyage-accent); background: color-mix(in srgb, var(--voyage-accent) 7%, transparent); }
+.fix-missing { position: absolute; top: -10px; right: 12px; z-index: 1; display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border-radius: 999px; background: var(--voyage-accent); color: var(--voyage-accent-ink); font-size: 11px; font-weight: 700; letter-spacing: .04em; }
+
+@media (min-width: 768px) {
+  .fx-pane { padding: 20px 22px; }
+  .fx-row { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .fx-row > .fx-row__actions { grid-column: 3; grid-row: 1 / span 3; margin-top: 0; align-self: start; justify-content: flex-end; }
+  .fx-row > .fx-items, .fx-row > .fx-dismiss { grid-column: 2 / -1; }
+  .fx-seg button { padding: 5px 12px; letter-spacing: .08em; }
+  .fx-items li { flex-wrap: nowrap; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fx-toggle svg { transition: none; }
+  .fx-skel { animation: none; }
+}
