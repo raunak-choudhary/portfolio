@@ -5,6 +5,7 @@ import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import Header from './components/common/Header';
 import Footer from './components/common/Footer';
 import { AuthProvider, useAuthContext } from './contexts/AuthContext';
+import { isFilmHandoff } from './services/signOutHandoff';
 
 import LandingPage from './pages/LandingPage';
 import ProjectsPage from './pages/ProjectsPage';
@@ -39,8 +40,9 @@ const isAdminPath = (pathname) => /^\/admin(login|dashboard|signout)(\/|$)/.test
  * Gate for the dashboard. In order: wait for the session and factor state;
  * no session goes to the login page; a session that has not passed the
  * authenticator code sees only the code step; everything else enters through
- * the welcome animation. With no authenticator enrolled yet, the dashboard
- * opens on the Security screen alone until the first one is confirmed.
+ * the welcome animation. With no authenticator enrolled yet, the voyage
+ * opens with every chapter but Security replaced by a request to set one up
+ * (the classic dashboard, when asked for, shows its Security screen alone).
  */
 export const ProtectedAdminRoute = ({ view = 'voyage' }) => {
   const { assurance, isAuthenticated, isLoading, sessionChecked } = useAuthContext();
@@ -65,6 +67,13 @@ export const ProtectedAdminRoute = ({ view = 'voyage' }) => {
     return <AdminChunkFallback />;
   }
 
+  if (!isAuthenticated && isFilmHandoff()) {
+    // "Sign out everywhere" ended the session on its way to the sign-out
+    // film; hold the dark screen while that page loads instead of bouncing
+    // to the login (see signOutHandoff.js).
+    return <AdminChunkFallback />;
+  }
+
   if (!isAuthenticated) {
     // A failed Google return or email link lands here with its error in the
     // query or fragment. Hand the raw address to the login page, which turns
@@ -80,12 +89,11 @@ export const ProtectedAdminRoute = ({ view = 'voyage' }) => {
     );
   }
 
-  // Enrolling the first authenticator still happens on the classic Security
-  // screen, so a session without one is sent there whatever the address.
-  const shownView = assurance.needsEnrollment ? 'classic' : view;
+  // Without an authenticator both views lock themselves: the voyage shows only
+  // its Security chapter's request, the classic dashboard only its Security screen.
   return (
     <Suspense fallback={<AdminChunkFallback />}>
-      <AdminWelcome requireSecurityEnrollment={assurance.needsEnrollment} view={shownView} />
+      <AdminWelcome requireSecurityEnrollment={assurance.needsEnrollment} view={view} />
     </Suspense>
   );
 };

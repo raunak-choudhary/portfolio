@@ -4,6 +4,7 @@
 // step 03 has played, so the code step holds the route until it lets go.
 
 import { ProtectedAdminRoute } from './Router';
+import { beginFilmHandoff, cancelFilmHandoff } from './services/signOutHandoff';
 import { React, act, mount } from './components/admin/SkyBackground/testUtils';
 
 // react-router 7 ships package exports that this Jest cannot resolve; the gate only needs these.
@@ -41,7 +42,7 @@ jest.mock('./components/admin/AdminLogin/MfaCodeStep', () => (props) => {
   mockHold = props.onHoldChange;
   return <p data-testid="code-step" />;
 });
-jest.mock('./components/admin/AdminWelcome/AdminWelcome', () => (props) => <p data-testid="dashboard" data-view={props.view} />);
+jest.mock('./components/admin/AdminWelcome/AdminWelcome', () => (props) => <p data-testid="dashboard" data-view={props.view} data-locked={String(props.requireSecurityEnrollment)} />);
 
 const flush = () => act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
 const shown = (container) => container.querySelector('[data-testid]')?.dataset.testid || 'fallback';
@@ -111,11 +112,37 @@ describe('ProtectedAdminRoute', () => {
     view.unmount();
   });
 
-  it('sends a session with no authenticator to the classic Security screen', async () => {
-    mockAuth = { ...session(2), assurance: { checked: true, needsSecondFactor: false, needsEnrollment: true } };
+  const enrolling = () => ({ ...session(1), assurance: { checked: true, needsSecondFactor: false, needsEnrollment: true } });
+  const locked = (container) => container.querySelector('[data-testid="dashboard"]')?.dataset.locked;
+
+  it('opens a session with no authenticator on the locked voyage', async () => {
+    mockAuth = enrolling();
     const view = mount(<ProtectedAdminRoute />);
     await flush();
+    expect(shownView(view.container)).toBe('voyage');
+    expect(locked(view.container)).toBe('true');
+    view.unmount();
+  });
+
+  it('keeps the classic Security lock when the classic screens are asked for', async () => {
+    mockAuth = enrolling();
+    const view = mount(<ProtectedAdminRoute view="classic" />);
+    await flush();
     expect(shownView(view.container)).toBe('classic');
+    expect(locked(view.container)).toBe('true');
+    view.unmount();
+  });
+
+  it('holds a dark screen, not the login, while sign out everywhere hands over to the film', async () => {
+    mockAuth = { ...session(2), isAuthenticated: false };
+    beginFilmHandoff();
+    const view = mount(<ProtectedAdminRoute />);
+    await flush();
+    expect(shown(view.container)).toBe('fallback');
+    cancelFilmHandoff();
+    view.rerender(<ProtectedAdminRoute />);
+    await flush();
+    expect(shown(view.container)).toBe('navigate');
     view.unmount();
   });
 });
