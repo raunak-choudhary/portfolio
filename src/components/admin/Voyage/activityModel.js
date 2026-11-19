@@ -68,6 +68,8 @@ export const sectionLabel = (section) => LABELS[section] || (section ? humanizeF
 const nouns = (section) => NOUNS[section] || ['record', 'records'];
 const fieldList = (fields) => (Array.isArray(fields) ? fields.map(humanizeField).filter(Boolean).join(', ') : '');
 const count = (detail, key) => (detail && Number.isFinite(Number(detail[key])) ? Number(detail[key]) : null);
+/** An upload that swapped one file for another: {added: 1, removed: 1}. */
+const isReplace = (row) => row?.action === 'upload' && count(row.detail, 'added') === 1 && count(row.detail, 'removed') === 1;
 const looksLikeImages = (fields) => Array.isArray(fields) && fields.length > 0 && fields.every((f) => /image|icon|logo|photo|badge|avatar/i.test(String(f)));
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
@@ -176,12 +178,18 @@ export function matchesFilter(row, filter) {
 /** The colour of a row's icon: 'bad' for deletions, 'sec' for security events, '' otherwise. */
 export const toneFor = (row) => (row?.action === 'delete' ? 'bad' : isSecurity(row) ? 'sec' : '');
 
+// detail.status of an inbox row, as the database trigger writes it
 const INBOX = {
+  archived: ['Archived a message', 'Archived {n} messages'],
+  unarchived: ['Moved a message back to the inbox', 'Moved {n} messages back to the inbox'],
+  spam: ['Marked a message as spam', 'Marked {n} messages as spam'],
+  'not-spam': ['Marked a message as not spam', 'Marked {n} messages as not spam'],
   read: ['Marked a message read', 'Marked {n} messages read'],
   unread: ['Marked a message unread', 'Marked {n} messages unread'],
-  archived: ['Archived a message', 'Archived {n} messages'],
-  replied: ['Marked a message replied', 'Marked {n} messages replied'],
-  spam: ['Moved a message to spam', 'Moved {n} messages to spam'],
+  starred: ['Starred a message', 'Starred {n} messages'],
+  unstarred: ['Unstarred a message', 'Unstarred {n} messages'],
+  priority: ['Changed the priority of a message', 'Changed the priority of {n} messages'],
+  notes: ['Edited the notes on a message', 'Edited the notes on {n} messages'],
   deleted: ['Deleted a message', 'Deleted {n} messages'],
 };
 
@@ -199,7 +207,7 @@ export function describe(row) {
     case 'create': return withTitle('Added');
     case 'edit': return withTitle('Edited');
     case 'delete': return withTitle('Deleted');
-    case 'upload': return withTitle('Uploaded to');
+    case 'upload': return withTitle(isReplace(row) ? 'Replaced a file in' : 'Uploaded to');
     case 'remove-file': return withTitle('Removed a file from');
     case 'reorder': return { lead: `Reordered ${sectionLabel(row.section)}`, title: '' };
     case 'sign-in': return { lead: 'Signed in', title: '' };
@@ -228,7 +236,10 @@ export function detailText(row) {
     case 'upload': {
       const n = count(detail, 'added');
       if (n === null) return fieldList(row.fields);
-      return looksLikeImages(row.fields) ? plural(n, 'image', 'images') : plural(n, 'file', 'files');
+      const [one, many] = looksLikeImages(row.fields) ? ['image', 'images'] : ['file', 'files'];
+      if (isReplace(row)) return `${one} replaced`;
+      const gone = count(detail, 'removed');
+      return gone ? `${plural(n, one, many)} added, ${gone} removed` : plural(n, one, many);
     }
     case 'remove-file': return fieldList(row.fields) || (count(detail, 'removed') !== null ? plural(count(detail, 'removed'), 'file', 'files') : '');
     case 'reorder': {
@@ -278,6 +289,25 @@ export function canOpen(row, gone) {
   return Boolean(row?.recordId) && CONTENT_TABLES.has(row.section) && row.action !== 'delete' && row.action !== 'reorder' && !isGone(row, gone);
 }
 
+/**
+ * One bulk inbox change writes a row per message, all with the same `at`.
+ * Each such run (same instant, status and source) folds into one row whose
+ * detail.count is the number of messages, so it reads "Archived 3 messages".
+ * Rows are newest first and runs are adjacent; fold after merging pages so a
+ * run split by a page edge joins up again.
+ */
+export function collapseBulk(rows) {
+  const out = [];
+  for (const row of rows || []) {
+    const prev = out[out.length - 1];
+    const same = row?.action === 'inbox' && prev?.action === 'inbox' && Date.parse(prev.at) === Date.parse(row.at)
+      && prev.detail?.status === row.detail?.status && prev.source === row.source;
+    if (same) out[out.length - 1] = { ...prev, detail: { ...prev.detail, count: (count(prev.detail, 'count') || 1) + 1 } };
+    else out.push(row);
+  }
+  return out;
+}
+
 /** Pages of rows joined without duplicates (a row on the edge of two pages appears once). */
 export function mergeRows(current, next) {
   const ids = new Set((current || []).map((r) => r.id));
@@ -299,7 +329,7 @@ export function historyEntries(rows, now = new Date()) {
       case 'create': what = 'Created'; break;
       case 'edit': what = fields ? `Edited: ${fields}` : 'Edited'; break;
       case 'delete': what = 'Deleted'; break;
-      case 'upload': what = `Added ${detailText(row) || 'files'}`; break;
+      case 'upload': what = isReplace(row) ? `Replaced the ${detailText(row).replace(' replaced', '')}` : `Added ${detailText(row) || 'files'}`; break;
       case 'remove-file': what = `Removed ${fields || 'a file'}`; break;
       case 'reorder': what = 'Moved in the order'; break;
       default: what = sentenceText(row);

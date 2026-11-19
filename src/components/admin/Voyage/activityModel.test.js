@@ -1,5 +1,5 @@
 import {
-  FILTERS, canOpen, dayLabel, daysBetween, describe as describeRow, detailText, goneRecords, groupByDay, historyEntries, historySummary,
+  FILTERS, canOpen, collapseBulk, dayLabel, daysBetween, describe as describeRow, detailText, goneRecords, groupByDay, historyEntries, historySummary,
   humanizeField, isGone, isOutside, matchesFilter, mergeRows, nyDayKey, nyTime, paneSummary, sectionLabel, sentenceText, subLine, tileWhen, toneFor, whenLabel,
 } from './activityModel';
 
@@ -97,8 +97,12 @@ describe('sentences', () => {
     expect(inbox({ status: 'archived' })).toBe('Archived a message');
     expect(inbox({ status: 'archived', count: 2 })).toBe('Archived 2 messages');
     expect(inbox({ status: 'deleted' })).toBe('Deleted a message');
-    expect(inbox({ status: 'spam' })).toBe('Moved a message to spam');
     expect(inbox({ status: 'read' })).toBe('Marked a message read');
+    // every status the database trigger writes has its own words
+    expect(['archived', 'unarchived', 'spam', 'not-spam', 'read', 'unread', 'starred', 'unstarred', 'priority', 'notes', 'deleted'].map((status) => inbox({ status, count: 3 }))).toEqual([
+      'Archived 3 messages', 'Moved 3 messages back to the inbox', 'Marked 3 messages as spam', 'Marked 3 messages as not spam', 'Marked 3 messages read',
+      'Marked 3 messages unread', 'Starred 3 messages', 'Unstarred 3 messages', 'Changed the priority of 3 messages', 'Edited the notes on 3 messages', 'Deleted 3 messages',
+    ]);
     expect(inbox({ status: 'weird' })).toBe('Updated a message');
     expect(sentenceText({ action: 'new-thing', section: 'x' })).toBe('New thing');
   });
@@ -108,6 +112,12 @@ describe('sentences', () => {
     expect(subLine(row({ action: 'upload', fields: ['image_urls'], detail: { added: 2 } }))).toBe('Projects · 2 images');
     expect(subLine(row({ action: 'upload', section: 'internships', fields: ['certificate_urls'], detail: { added: 1 } }))).toBe('Internships · 1 file');
     expect(subLine(row({ action: 'upload', fields: ['image_urls'], detail: {} }))).toBe('Projects · images');
+    // an upload that swapped one file for another
+    const replaced = row({ action: 'upload', fields: ['image_url'], detail: { added: 1, removed: 1 } });
+    expect(sentenceText(replaced)).toBe('Replaced a file in Tallyproof');
+    expect(subLine(replaced)).toBe('Projects · image replaced');
+    expect(subLine(row({ action: 'upload', fields: ['image_urls'], detail: { added: 3, removed: 1 } }))).toBe('Projects · 3 images added, 1 removed');
+    expect(historyEntries([replaced], NOW)[0].what).toBe('Replaced the image');
     expect(subLine(row({ action: 'remove-file', section: 'skills', fields: ['icon_url'], detail: { removed: 1 } }))).toBe('Skills · icon');
     expect(subLine(row({ action: 'remove-file', fields: [], detail: { removed: 3 } }))).toBe('Projects · 3 files');
     expect(subLine(row({ action: 'reorder', section: 'internships', detail: { count: 3 } }))).toBe('Internships · Order of 3 internships');
@@ -172,6 +182,20 @@ describe('gone records and opening', () => {
     expect(canOpen(row({ action: 'reorder' }), gone)).toBe(false);
     expect(canOpen({ action: 'sign-in', section: 'security', recordId: null }, gone)).toBe(false);
     expect(canOpen({ action: 'inbox', section: 'contact_messages', recordId: 'm1' }, gone)).toBe(false);
+  });
+
+  it('folds a bulk inbox change into one row, keeping separate runs apart', () => {
+    const msg = (id, over) => ({ id, at: '2026-11-19T18:50:00.000Z', action: 'inbox', section: 'contact_messages', recordId: `m${id}`, recordTitle: null, fields: [], detail: { status: 'archived' }, source: 'admin', ...over });
+    const folded = collapseBulk([
+      msg(1), msg(2, { at: '2026-11-19T18:50:00Z' }), msg(3),   // one bulk archive, written with two spellings of the instant
+      msg(4, { detail: { status: 'spam' } }),                    // same instant, another status
+      msg(5, { source: 'outside', detail: { status: 'spam' } }), // same instant and status, from outside the admin
+      row({ id: 6 }),
+      msg(7, { at: '2026-11-19T18:10:00.000Z' }), msg(8, { at: '2026-11-19T18:09:00.000Z' }),   // same status, different instants
+    ]);
+    expect(folded.map((r) => [r.id, r.detail.count])).toEqual([[1, 3], [4, undefined], [5, undefined], [6, undefined], [7, undefined], [8, undefined]]);
+    expect(sentenceText(folded[0])).toBe('Archived 3 messages');
+    expect(collapseBulk(null)).toEqual([]);
   });
 
   it('joins pages without repeating a row', () => {
