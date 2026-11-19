@@ -154,11 +154,32 @@ export function groupByDay(rows, now = new Date()) {
 }
 
 /** "Last 3 days · 12 events" for the pane's head; empty when nothing is loaded. */
-export function paneSummary(rows, now = new Date()) {
+export function paneSummary(rows, now = new Date(), hasMore = false) {
   const list = (rows || []).filter((r) => nyDayKey(r.at));
   if (!list.length) return '';
-  const span = Math.max(1, daysBetween(nyDayKey(list[list.length - 1].at), nyDayKey(now)) + 1);
-  return `${span === 1 ? 'Today' : `Last ${span} days`} · ${plural(list.length, 'event', 'events')}`;
+  const oldest = nyDayKey(list[list.length - 1].at);
+  const count = plural(list.length, 'event', 'events');
+  // With more to load the span is only partly shown, so no total is claimed for it.
+  if (hasMore) {
+    const since = daysBetween(oldest, nyDayKey(now));
+    return `Showing ${count} ${since <= 0 ? 'from today' : since === 1 ? 'since yesterday' : `since ${dayLabel(oldest, now)}`}`;
+  }
+  const span = Math.max(1, daysBetween(oldest, nyDayKey(now)) + 1);
+  return `${span === 1 ? 'Today' : `Last ${span} days`} · ${count}`;
+}
+
+const HOUR_MS = 3600000;
+const clockParts = new Intl.DateTimeFormat('en-GB', { timeZone: NEW_YORK, hourCycle: 'h23', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+/**
+ * How long to wait before looking at the New York date again: until just
+ * after the next midnight, but never more than an hour, so the 23- and
+ * 25-hour days around a clock change are measured again after the change.
+ */
+export function msUntilNextNyDay(now = new Date()) {
+  const parts = Object.fromEntries(clockParts.formatToParts(now).map((p) => [p.type, Number(p.value)]));
+  const elapsed = ((parts.hour || 0) * 3600 + (parts.minute || 0) * 60 + (parts.second || 0)) * 1000 + now.getMilliseconds();
+  return Math.min(HOUR_MS, Math.max(1000, 86400000 - elapsed + 1000));
 }
 
 // ---------------------------------------------------------------------------
@@ -263,15 +284,40 @@ export const isOutside = (row) => row?.source === 'outside';
 // ---------------------------------------------------------------------------
 // Gone records and opening
 
-const recordKey = (row) => `${row.section}\u0000${row.recordId}`;
+/** One record across tables: section and id. */
+export const recordKey = (row) => `${row.section}\u0000${row.recordId}`;
+
+/** Most records asked about at once (the shown rows rarely name more). */
+export const DELETE_CHECK_LIMIT = 100;
 
 /**
- * Records whose latest loaded action is a delete. Rows are newest first, so
+ * The content records the shown rows name, once each and newest first: the
+ * ones worth asking the server whether they were deleted. A filtered list
+ * (Files, Security) or a delete on a later page cannot tell by itself.
+ * @returns {Array<{section: string, recordId: string}>}
+ */
+export function recordsToCheck(rows) {
+  const seen = new Set();
+  const out = [];
+  for (const row of rows || []) {
+    if (!row?.recordId || !CONTENT_TABLES.has(row.section)) continue;
+    const key = recordKey(row);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ section: row.section, recordId: String(row.recordId) });
+    if (out.length === DELETE_CHECK_LIMIT) break;
+  }
+  return out;
+}
+
+/**
+ * Records whose latest loaded action is a delete, plus `deleted` (keys the
+ * server reported as deleted, see recordsToCheck). Rows are newest first, so
  * the first row seen for a record decides.
  * @returns {Set<string>}
  */
-export function goneRecords(rows) {
-  const seen = new Set(), gone = new Set();
+export function goneRecords(rows, deleted = null) {
+  const seen = new Set(), gone = new Set(deleted || []);
   for (const row of rows || []) {
     if (!row?.recordId) continue;
     const key = recordKey(row);
@@ -307,6 +353,16 @@ export function collapseBulk(rows) {
   }
   return out;
 }
+
+/** What a screen reader hears after a filter loads ("Files: 3 events"). */
+export function filterAnnouncement(filter, count) {
+  const label = FILTERS.find((f) => f.id === filter)?.label || 'This filter';
+  if (filter === 'all') return count ? `All activity: ${plural(count, 'event', 'events')}` : 'Nothing yet.';
+  return count ? `${label}: ${plural(count, 'event', 'events')}` : `Nothing under ${label} yet.`;
+}
+
+/** What a screen reader hears after Show earlier ("12 more loaded"). */
+export const moreAnnouncement = (count, done) => `${count} more loaded${done ? '. That is everything recorded.' : '.'}`;
 
 /** Pages of rows joined without duplicates (a row on the edge of two pages appears once). */
 export function mergeRows(current, next) {

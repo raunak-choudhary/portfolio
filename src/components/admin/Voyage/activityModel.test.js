@@ -1,5 +1,5 @@
 import {
-  FILTERS, canOpen, collapseBulk, dayLabel, daysBetween, describe as describeRow, detailText, goneRecords, groupByDay, historyEntries, historySummary,
+  DELETE_CHECK_LIMIT, FILTERS, canOpen, filterAnnouncement, moreAnnouncement, msUntilNextNyDay, recordKey, recordsToCheck, collapseBulk, dayLabel, daysBetween, describe as describeRow, detailText, goneRecords, groupByDay, historyEntries, historySummary,
   humanizeField, isGone, isOutside, matchesFilter, mergeRows, nyDayKey, nyTime, paneSummary, sectionLabel, sentenceText, subLine, tileWhen, toneFor, whenLabel,
 } from './activityModel';
 
@@ -68,6 +68,19 @@ describe('New York days', () => {
     expect(paneSummary([], NOW)).toBe('');
     expect(paneSummary([row()], NOW)).toBe('Today · 1 event');
     expect(paneSummary([row(), row({ id: 2, at: '2026-11-17T16:20:00Z' })], NOW)).toBe('Last 3 days · 2 events');
+  });
+
+  it('claims no total while more rows are left to load', () => {
+    expect(paneSummary([row()], NOW, true)).toBe('Showing 1 event from today');
+    expect(paneSummary([row(), row({ id: 2, at: '2026-11-18T16:20:00Z' })], NOW, true)).toBe('Showing 2 events since yesterday');
+    expect(paneSummary([row(), row({ id: 2, at: '2026-11-17T16:20:00Z' })], NOW, true)).toBe('Showing 2 events since Tue 17 Nov');
+    expect(paneSummary([], NOW, true)).toBe('');
+  });
+
+  it('times the next New York midnight, checking at least hourly so a clock change cannot skip it', () => {
+    expect(msUntilNextNyDay(new Date('2026-11-20T04:59:30.000Z'))).toBe(31000);   // 23:59:30, one second past midnight
+    expect(msUntilNextNyDay(NOW)).toBe(3600000);                                    // 14:00, capped at an hour
+    expect(msUntilNextNyDay(new Date('2026-11-20T04:59:59.999Z'))).toBe(1001);
   });
 });
 
@@ -165,6 +178,28 @@ describe('gone records and opening', () => {
     row({ id: 1, action: 'edit', section: 'skills', recordId: 'p9', recordTitle: 'Python' }),
   ];
 
+  it('adds deletes the server reports, even when no loaded row shows them', () => {
+    const upload = row({ id: 9, action: 'upload', recordId: 'px', recordTitle: 'Orbit' });
+    expect(isGone(upload, goneRecords([upload]))).toBe(false);
+    const gone = goneRecords([upload], new Set([recordKey({ section: 'projects', recordId: 'px' })]));
+    expect(isGone(upload, gone)).toBe(true);
+    expect(canOpen(upload, gone)).toBe(false);
+    expect(isGone(row({ section: 'skills', recordId: 'px' }), gone)).toBe(false);
+  });
+
+  it('asks about each content record once, newest first, never inbox or security rows', () => {
+    expect(recordsToCheck([
+      row({ id: 6, recordId: 'p2' }),
+      row({ id: 5, section: 'contact_messages', recordId: 'm1', action: 'inbox' }),
+      row({ id: 4, section: 'security', recordId: null, action: 'sign-in' }),
+      row({ id: 3, recordId: 'p2' }),
+      row({ id: 2, section: 'skills', recordId: 7 }),
+    ])).toEqual([{ section: 'projects', recordId: 'p2' }, { section: 'skills', recordId: '7' }]);
+    const many = Array.from({ length: DELETE_CHECK_LIMIT + 5 }, (_, i) => row({ id: i, recordId: `r${i}` }));
+    expect(recordsToCheck(many)).toHaveLength(DELETE_CHECK_LIMIT);
+    expect(recordsToCheck(null)).toEqual([]);
+  });
+
   it('treats a record as gone only when its latest action is a delete, per table', () => {
     const gone = goneRecords(rows);
     expect(isGone(rows[1], gone)).toBe(true);
@@ -230,6 +265,17 @@ describe('a record\'s history', () => {
     expect(historySummary([row({ action: 'create' })], 20, NOW)).toMatchObject({ countText: '1 change recorded', created: true });
     expect(historySummary(rows, 4, NOW).countText).toBe('4+ changes recorded');
     expect(historySummary([], 20, NOW)).toMatchObject({ count: 0, last: '' });
+  });
+});
+
+describe('announcements', () => {
+  it('says what a filter found and what Show earlier added', () => {
+    expect(filterAnnouncement('all', 12)).toBe('All activity: 12 events');
+    expect(filterAnnouncement('all', 0)).toBe('Nothing yet.');
+    expect(filterAnnouncement('files', 1)).toBe('Files: 1 event');
+    expect(filterAnnouncement('files', 0)).toBe('Nothing under Files yet.');
+    expect(moreAnnouncement(20, false)).toBe('20 more loaded.');
+    expect(moreAnnouncement(3, true)).toBe('3 more loaded. That is everything recorded.');
   });
 });
 
