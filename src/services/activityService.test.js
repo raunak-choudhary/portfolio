@@ -92,18 +92,45 @@ describe('listActivity', () => {
     }
   });
 
-  it('pages by the last row\'s time', async () => {
+  it('pages by the last row\'s time, passed through as the server sent it', async () => {
     const q = query({ data: [], error: null });
     supabase.from.mockReturnValue(q);
     await listActivity({ before: '2026-11-19T10:00:00+00:00' });
-    expect(q.calls).toContainEqual(['lt', 'at', '2026-11-19T10:00:00.000Z']);
+    expect(q.calls).toContainEqual(['lt', 'at', '2026-11-19T10:00:00+00:00']);
   });
 
   it('pages by time and id when given the row, so rows of one instant are not skipped', async () => {
     const q = query({ data: [], error: null });
     supabase.from.mockReturnValue(q);
     await listActivity({ before: { at: '2026-11-19T10:00:00Z', id: 42 } });
-    expect(q.calls).toContainEqual(['or', 'at.lt.2026-11-19T10:00:00.000Z,and(at.eq.2026-11-19T10:00:00.000Z,id.lt.42)']);
+    expect(q.calls).toContainEqual(['or', 'at.lt."2026-11-19T10:00:00Z",and(at.eq."2026-11-19T10:00:00Z",id.lt.42)']);
+  });
+
+  it('keeps the microseconds of the cursor and quotes it inside or()', async () => {
+    // Postgres keeps microseconds; a cursor cut to milliseconds would make
+    // "earlier than" skip the rest of a bulk change written in one instant.
+    const q = query({ data: [], error: null });
+    supabase.from.mockReturnValue(q);
+    await listActivity({ before: { at: '2026-11-19T20:38:58.779068+00:00', id: 7 } });
+    expect(q.calls).toContainEqual(['or', 'at.lt."2026-11-19T20:38:58.779068+00:00",and(at.eq."2026-11-19T20:38:58.779068+00:00",id.lt.7)']);
+    const plain = query({ data: [], error: null });
+    supabase.from.mockReturnValue(plain);
+    await listActivity({ before: '2026-11-19 20:38:58.779068+00' });
+    expect(plain.calls).toContainEqual(['lt', 'at', '2026-11-19 20:38:58.779068+00']);
+  });
+
+  it.each([
+    ['text', 'yesterday'],
+    ['filter syntax', '2026-11-19T10:00:00Z,id.gt.0'],
+    ['a quote', '2026-11-19T10:00:00"Z'],
+    ['seven fractional digits', '2026-11-19T10:00:00.1234567Z'],
+    ['a number', 1763546400000],
+    ['a row without a time', { id: 4 }],
+  ])('rejects a cursor that is not a timestamp (%s) before asking the server', async (_, before) => {
+    supabase.from.mockReturnValue(query({ data: [], error: null }));
+    const thrown = await listActivity({ before }).catch((e) => e);
+    expect(thrown.code).toBe('LOAD_FAILED');
+    expect(failureKind(thrown, true)).toBe('unknown');
   });
 
   it('clamps the page size', async () => {
