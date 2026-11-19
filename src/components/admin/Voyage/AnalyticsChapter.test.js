@@ -2,7 +2,7 @@
 // and range keyboard model, the remembered range, and what each tab shows
 // from hand-made rows. The services are mocked; no request leaves the test.
 
-import AnalyticsChapter, { RANGE_KEY, TABS, readRange } from './AnalyticsChapter';
+import AnalyticsChapter, { PRELOAD_DELAY_MS, RANGE_KEY, TABS, readRange } from './AnalyticsChapter';
 import { loadInsights } from '../../../services/insightsService';
 import { failureKind } from '../../../services/voyageRecords';
 import { listReports } from '../../../services/reportsService';
@@ -194,6 +194,24 @@ describe('AnalyticsChapter', () => {
     await flush();
     expect(listReports).toHaveBeenCalledTimes(1);
     expect(document.querySelector('[role="radiogroup"]')).toBeNull();
+  });
+
+  it('preloads the data in an idle period while the chapter is still far away', async () => {
+    const original = window.IntersectionObserver;
+    window.IntersectionObserver = class { observe() {} disconnect() {} };   // never comes near
+    jest.useFakeTimers();
+    try {
+      view = mount(<AnalyticsChapter notify={jest.fn()} clock={clock} />);
+      act(() => { jest.advanceTimersByTime(PRELOAD_DELAY_MS - 1); });
+      expect(loadInsights).not.toHaveBeenCalled();
+      act(() => { jest.advanceTimersByTime(10); });   // jsdom has no requestIdleCallback: the timer fallback runs
+      expect(loadInsights).toHaveBeenCalledTimes(1);
+      jest.useRealTimers();
+      await flush();   // let the read settle inside act
+    } finally {
+      jest.useRealTimers();
+      window.IntersectionObserver = original;
+    }
   });
 
   it('marks reduced motion and a hidden tab for the CSS', async () => {
