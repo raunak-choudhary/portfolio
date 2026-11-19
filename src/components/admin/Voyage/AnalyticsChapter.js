@@ -23,7 +23,7 @@ import { whenIdle } from './idle';
 import { DEFAULT_RANGE, RANGES, RANGE_ORDER, chartDay, windowsFor } from './insightsTime';
 import {
   MARK, STEP_ACTIONS, bestRateSource, comparisonLabel, funnelCards, levelFor, mostVisitsSource, phonesLeaveMore,
-  projectLists, rankSources, staleSections, starredLeast, startedOn, summarizeWindow, trendPoints, trendSummary, whatChanged,
+  projectLists, rankSources, staleSections, starredLeast, startedOn, summarizeWindowSliced, trendPoints, trendSummary, whatChanged,
   DEVICE_MIN_VISITS, PHONE_WARN_RATIO,
 } from './insightsModel';
 import { loadInsights } from '../../../services/insightsService';
@@ -372,6 +372,8 @@ export default function AnalyticsChapter({ notify, motion = true, clock = Date.n
   const [state, setState] = useState({ status: 'idle', data: null, error: null, rangeId: null });
   const [hidden, setHidden] = useState(typeof document !== 'undefined' && document.hidden);
   const cache = useRef(new Map());
+  const built = useRef(new WeakMap());
+  const [model, setModel] = useState(null);
   const request = useRef(0);
 
   // Preload while the voyage is at rest: a few seconds after mount, in an idle
@@ -419,15 +421,34 @@ export default function AnalyticsChapter({ notify, motion = true, clock = Date.n
 
   const pickRange = (id) => { setRangeId(id); writeRange(id); };
 
+  // Build the model off the scroll path: the rows are folded in slices of about
+  // 8 ms that yield to the browser, so a large range never becomes one long
+  // task. The skeleton stays until both windows are summarised; a built model
+  // is kept per loaded data object, so a cached range shows at once.
+  useEffect(() => {
+    if (state.status !== 'ready' || !state.data) return undefined;
+    const data = state.data;
+    const hit = built.current.get(data);
+    if (hit) { setModel(hit); return undefined; }
+    let stopped = false;
+    const cancelled = () => stopped;
+    const optionsFor = (w) => ({ start: w.start, days: w.days, projects: data.projects, quickFrom: data.firstEngaged });
+    (async () => {
+      const now = await summarizeWindowSliced(data.current, optionsFor(data.windows.current), { cancelled });
+      const before = now && await summarizeWindowSliced(data.before, optionsFor(data.windows.before), { cancelled });
+      if (!before || stopped) return;
+      const next = { data, now, before };
+      built.current.set(data, next);
+      setModel(next);
+    })();
+    return () => { stopped = true; };
+  }, [state]);
+
   const c = useMemo(() => {
-    if (state.status !== 'ready' || !state.data) return null;
-    const { windows, current, before, projects, firstEngaged, firstProjectOpen, freshness, nowMs, truncated } = state.data;
-    const summaryOf = (rows, w) => summarizeWindow(rows, { start: w.start, days: w.days, projects, quickFrom: firstEngaged });
-    return {
-      windows, quarter: windows.quarter, now: summaryOf(current, windows.current), before: summaryOf(before, windows.before),
-      firstEngaged, firstProjectOpen, freshness, nowMs, truncated, motion,
-    };
-  }, [state, motion]);
+    if (state.status !== 'ready' || !model || model.data !== state.data) return null;
+    const { windows, firstEngaged, firstProjectOpen, freshness, nowMs, truncated } = state.data;
+    return { windows, quarter: windows.quarter, now: model.now, before: model.before, firstEngaged, firstProjectOpen, freshness, nowMs, truncated, motion };
+  }, [state, model, motion]);
 
   const tabIds = TABS.map((t) => t.id);
   const quarterOn = c?.quarter && tab !== 'reports';

@@ -8,7 +8,7 @@
 
 import fixture from '../../../../supabase/functions/quarterly-report/fixtures/events.json';
 import expected from '../../../../supabase/functions/quarterly-report/fixtures/expected-summary.json';
-import { summarizeWindow } from './insightsModel';
+import { summarizeWindow, summarizeWindowSliced } from './insightsModel';
 import { nyDate } from './insightsTime';
 
 const start = Date.parse(fixture.window.start);
@@ -58,5 +58,35 @@ describe('the Analytics model agrees with the report fixture', () => {
   it('counts project opens and links, ordered by opens then title', () => {
     expect(summary.projects.map(({ id, title, hasDemo, opens, repo, demo }) => ({ id, title, hasDemo, opens, repo, demo })))
       .toEqual(expected.projects);
+  });
+});
+
+describe('the sliced build used by the chapter', () => {
+  const options = { start: nyDate(start), days, projects, quickFrom: Date.parse(fixture.engagementStart) };
+
+  it('reaches the same summary as the synchronous build, however finely it is sliced', async () => {
+    let t = 0;
+    const pause = jest.fn(async () => {});
+    // every clock read advances 9 ms and the clock is read after each row: one row per slice, a yield after each
+    const sliced = await summarizeWindowSliced(fixture.events, options, { budgetMs: 8, stride: 1, pause, now: () => (t += 9) });
+    expect(sliced).toEqual(summary);
+    expect(pause).toHaveBeenCalledTimes(fixture.events.length - 1);
+  });
+
+  it('matches on a long row list repeated across many slices', async () => {
+    const rows = Array.from({ length: 12 }, (_, k) => fixture.events.map((e) => ({ ...e, id: `${e.id}-${k}`, session_id: e.session_id && `${e.session_id}-${k}` }))).flat();
+    let t = 0;
+    const pause = jest.fn(async () => {});
+    const sliced = await summarizeWindowSliced(rows, options, { budgetMs: 8, stride: 5, pause, now: () => (t += 3) });
+    expect(pause.mock.calls.length).toBeGreaterThan(10);
+    expect(sliced).toEqual(summarizeWindow(rows, options));
+  });
+
+  it('gives up without a result once cancelled', async () => {
+    let stop = false;
+    const result = await summarizeWindowSliced(fixture.events.concat(fixture.events, fixture.events), options, {
+      budgetMs: 8, stride: 1, now: (() => { let t = 0; return () => (t += 9); })(), pause: async () => { stop = true; }, cancelled: () => stop,
+    });
+    expect(result).toBeNull();
   });
 });
