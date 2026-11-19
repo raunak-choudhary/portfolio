@@ -40,7 +40,7 @@ const Check = () => (
   </svg>
 );
 
-/** One readout line in small mono caps; the parts are joined with a thin rule so no glyph separators are read aloud. */
+/** The readout in small mono caps: the New York time over the Moon, one fact per line, no separator glyphs to be read aloud. */
 export const Readout = ({ now }) => {
   const [date, setDate] = useState(() => now || new Date());
   useEffect(() => {
@@ -51,11 +51,8 @@ export const Readout = ({ now }) => {
   const parts = readoutParts(now || date);
   return (
     <p className="preflight-readout">
-      {parts.map((part, index) => (
-        <span key={part} className="preflight-readout__part">
-          {index > 0 && <span className="preflight-readout__rule" aria-hidden="true" />}
-          {part}
-        </span>
+      {parts.map((part) => (
+        <span key={part} className="preflight-readout__part">{part}</span>
       ))}
     </p>
   );
@@ -67,9 +64,10 @@ export const Readout = ({ now }) => {
  * @param {React.ReactNode} props.children the lit step's controls.
  * @param {Object<string,string>} [props.summaries] one short line under a done step, by step id.
  * @param {boolean} [props.launching] true while handing off to the entry.
+ * @param {React.ReactNode} [props.footerAction] a control beside the readout (step 02's Sign out).
  * @param {Date} [props.now] fixed time for tests and stills.
  */
-const PreflightShell = ({ current, children, summaries = {}, launching = false, now }) => {
+const PreflightShell = ({ current, children, summaries = {}, launching = false, now, footerAction = null }) => {
   const { theme } = useTheme();
   useEffect(() => { loadCondensedFont(); }, []);
 
@@ -120,8 +118,9 @@ const PreflightShell = ({ current, children, summaries = {}, launching = false, 
             })}
           </ol>
 
-          <footer className="preflight-panel__foot">
+          <footer className={`preflight-panel__foot${footerAction ? ' preflight-panel__foot--action' : ''}`}>
             <Readout now={now} />
+            {footerAction}
           </footer>
         </section>
       </div>
