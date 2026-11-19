@@ -171,6 +171,40 @@ describe('VoyagePage (2D fallback)', () => {
     }
   });
 
+  it('works with the panels on and shows off with them off, marking the page and <html> for the CSS', async () => {
+    const working = render();
+    await flush();
+    expect(working.container.querySelector('.voyage').dataset.mode).toBe('working');
+    expect(document.documentElement.dataset.voyageMode).toBe('working');
+    working.unmount();
+    expect(document.documentElement.dataset.voyageMode).toBeUndefined();
+    window.localStorage.setItem('rc-admin-sky', JSON.stringify({ panels: false }));
+    const showcase = render();
+    await flush();
+    expect(showcase.container.querySelector('.voyage').dataset.mode).toBe('showcase');
+    expect(document.documentElement.dataset.voyageMode).toBe('showcase');
+    showcase.unmount();
+  });
+
+  it('lights the rail from the loop without re-rendering the chapters', async () => {
+    const frames = [];
+    window.requestAnimationFrame.mockImplementation((cb) => { frames.push(cb); return frames.length; });
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 900 });
+    try {
+      const view = render();
+      await flush();
+      const title = view.container.querySelector('#chapter-projects .voyage-chapter__title');
+      act(() => { frames.splice(0).forEach((cb) => cb(16)); });
+      const active = view.container.querySelector('.voyage-rail__dot.is-active');
+      expect(active.getAttribute('aria-current')).toBe('true');
+      expect([...view.container.querySelectorAll('.voyage-rail__dot')].indexOf(active)).toBe(CHAPTERS.length - 1);
+      expect(view.container.querySelector('#chapter-projects .voyage-chapter__title')).toBe(title);   // same node: the chapters were not re-mounted
+      view.unmount();
+    } finally {
+      Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 });
+    }
+  });
+
   it('holds the managers back until an authenticator is confirmed', async () => {
     const view = mount(<ThemeProvider><VoyagePage requireSecurityEnrollment /></ThemeProvider>);
     await flush();

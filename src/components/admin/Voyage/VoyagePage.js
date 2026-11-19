@@ -7,6 +7,14 @@
 // the classic managers; mission control, the rail, the palette and the field
 // are real. Without WebGL, or with reduced motion, the 2D zodiac sky stands
 // behind the same page and the camera cuts instead of flying.
+//
+// Two sky modes follow the Sky menu's Panels switch (renderBudget.js): with
+// the panels on ("working") the field runs at a lower resolution and 30 fps
+// and the glass shows a still, pre-blurred snapshot of the sky (a fixed CSS
+// background) instead of a live backdrop blur; with the panels off
+// ("showcase") the chapter content steps aside and the field runs at full
+// resolution and frame rate. Per-frame values reach the rail, the progress
+// bar and the Earth readout through signals, never through page state.
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -31,6 +39,8 @@ import Bento from './Bento';
 import CommandPalette from './CommandPalette';
 import StarRail from './StarRail';
 import { createSkyField, webglAvailable } from './skyField';
+import { createSignal, useSignal } from './signal';
+import { MODES, SNAPSHOT_SCALE, adaptQuality, initialAdaptState, modeFor, pixelRatioFor, snapshotBlurPx, snapshotDue } from './renderBudget';
 import { isChapterLive, liveChapterIndex, qualityFor, routeFromTops, routePosition, greetingFor } from './voyageModel';
 import './Voyage.css';
 
@@ -43,13 +53,27 @@ const namesFrom =(figures) => Object.fromEntries((figures || []).map((f) => [f.i
 
 /** Set on <html> while the voyage is mounted, so its scrollbars can be styled apart from the public site's. */
 export const VOYAGE_ROOT_CLASS = 'voyage-root';
+/** CSS custom property on <html> holding the working mode's glass snapshot (a blob: URL, allowed by the CSP's img-src). */
+export const SNAPSHOT_PROPERTY = '--voyage-snapshot';
+const TOP_BAR = 56;   // height of the fixed top bar, which a stage's top sits under
+
+/** The rail, lit by the live-chapter signal, so only the rail re-renders when the chapter changes. */
+function LiveRail({ signal, ...props }) { return <StarRail active={useSignal(signal)} {...props} />; }
+/** The thin progress line under the bar. */
+function Progress({ signal }) { return <div className="voyage-progress" style={{ width: `${(useSignal(signal) / (CHAPTERS.length - 1)) * 100}%` }} aria-hidden="true" />; }
+/** The city passing under the camera in the prologue, refreshed once a second by the field. */
+function OverReadout({ signal }) { const over = useSignal(signal); return over ? <p className="voyage-chapter__over" aria-live="off">{over}</p> : null; }
 
 function VoyageView({ requireSecurityEnrollment }) {
   const navigate = useNavigate();
-  const { resolvedTheme, effectiveMotion } = useSkySettings();
+  const { settings, resolvedTheme, effectiveMotion } = useSkySettings();
+  const mode = modeFor(settings.panels);
+  const modeRef = useRef(mode); modeRef.current = mode;
+  const snapshotStale = useRef(true);   // retake the glass snapshot at the next rest (theme, blur, size or mode changed)
   const [figures, setFigures] = useState(null), [deep, setDeep] = useState([]);
   const [data, setData] = useState({ health: null, visitors: null, inbox: null, edits: null, pages: null, stats: null, assetBase: SKY_ASSET_BASE });
-  const [active, setActive] = useState(0), [paletteOpen, setPaletteOpen] = useState(false), [over, setOver] = useState('');
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [activeSignal] = useState(() => createSignal(0)), [overSignal] = useState(() => createSignal(''));
   const { toast, notify } = useToast();
   const [webgl] = useState(() => webglAvailable());
   const canvasRef = useRef(null), fieldRef = useRef(null), stageRefs = useRef([]);
@@ -110,43 +134,99 @@ function VoyageView({ requireSecurityEnrollment }) {
   // ---- the field ----
   useEffect(() => {
     if (!webgl || !figures || !canvasRef.current) return undefined;
-    const quality = qualityFor({ width: window.innerWidth, devicePixelRatio: window.devicePixelRatio || 1, reducedMotion: !effectiveMotion, webgl: true });
+    const quality = qualityFor({ width: window.innerWidth, devicePixelRatio: window.devicePixelRatio || 1, reducedMotion: !effectiveMotion, webgl: true, sky: modeRef.current });
     let field;
     try {
       field = createSkyField({ canvas: canvasRef.current, figures, deepManifest: deep, assetBase: SKY_ASSET_BASE, quality, theme: resolvedTheme, smallTextures: window.innerWidth < 768 });
     } catch { return undefined; }   // a GPU refusal falls through to the 2D sky on the next render
     fieldRef.current = field;
-    const resize = () => field.resize(window.innerWidth, window.innerHeight);
+    const resize = () => { field.resize(window.innerWidth, window.innerHeight); snapshotStale.current = true; };
     resize();
     window.addEventListener('resize', resize);
     return () => { window.removeEventListener('resize', resize); field.dispose(); fieldRef.current = null; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [webgl, figures, deep]);
-  useEffect(() => { fieldRef.current?.setTheme(resolvedTheme); }, [resolvedTheme, figures]);
+  useEffect(() => { fieldRef.current?.setTheme(resolvedTheme); snapshotStale.current = true; }, [resolvedTheme, figures]);
+  useEffect(() => { snapshotStale.current = true; }, [settings.blur, mode]);
+  // The mode on the page (for the panel fade) and on <html> (for the record dialog, portalled outside the page).
+  useEffect(() => {
+    document.documentElement.dataset.voyageMode = mode;
+    return () => { delete document.documentElement.dataset.voyageMode; };
+  }, [mode]);
   useEffect(() => { fieldRef.current?.setFly(effectiveMotion); }, [effectiveMotion, figures]);
 
   // ---- the loop: scroll fraction to camera, stages and rail ----
   useEffect(() => {
-    let frame = 0, stopped = false, lastIndex = -1, lastOver = '';
-    // the route follows the stage under the viewport (stages differ in height: a deck is several screens), expressed as the fraction the field expects
-    const stageTops = () => stageRefs.current.map((el) => (el ? el.offsetTop - 56 : 0));   // 56 = the fixed top bar
-    const scrollFraction = () => routeFromTops(window.scrollY, stageTops()) / Math.max(1, CHAPTERS.length - 1);
+    let frame = 0, stopped = false, lastFrameAt = null;
+    const liveState = [];
+    // The route follows the stage under the viewport (stages differ in height: a deck is several screens).
+    // Reading offsetTop every frame forced a layout per frame (107 ms in the 4x trace), so the tops are
+    // measured once and again only when a stage or the window changes size.
+    let tops = null;
+    const measure = () => { tops = stageRefs.current.map((el) => (el ? el.offsetTop - TOP_BAR : 0)); };
+    const invalidate = () => { tops = null; };
+    const resizeObserver = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(invalidate) : null;
+    stageRefs.current.forEach((el) => el && resizeObserver?.observe(el));
+    window.addEventListener('resize', invalidate);
+    const scrollFraction = () => { if (!tops) measure(); return routeFromTops(window.scrollY, tops) / Math.max(1, CHAPTERS.length - 1); };
+
+    // Adaptive resolution: a long run of slow frames lowers the pixel ratio a step, a longer run of fast ones raises it.
+    let adapt = initialAdaptState(), adaptMode = modeRef.current;
+    const ratioFor = (level) => pixelRatioFor({ mode: modeRef.current, devicePixelRatio: window.devicePixelRatio || 1, phone: window.innerWidth < 768, level });
+    // The working mode's glass: a small blurred still of the sky, taken when the camera rests.
+    let stillSince = null, snapshotF = null, snapshotUrl = null, taking = false;
+    const takeSnapshot = (field, f) => {
+      taking = true;
+      snapshotStale.current = false;
+      const blur = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sky-blur')) || 5;
+      field.snapshot({ scale: SNAPSHOT_SCALE, blurPx: snapshotBlurPx(blur) }).then((blob) => {
+        taking = false;
+        if (stopped || !blob) return;
+        const url = URL.createObjectURL(blob);
+        document.documentElement.style.setProperty(SNAPSHOT_PROPERTY, `url("${url}")`);
+        if (snapshotUrl) URL.revokeObjectURL(snapshotUrl);
+        snapshotUrl = url; snapshotF = f;
+      }, () => { taking = false; });
+    };
+
     const tick = (now) => {
       if (stopped) return;
+      const field = fieldRef.current;
       const sf = scrollFraction();
-      const route = fieldRef.current ? fieldRef.current.frame(sf, now) : routePosition(sf);
+      const route = field ? field.frame(sf, now) : routePosition(sf);
       routeRef.current = route.f;
-      const live = liveChapterIndex(route.f);
-      stageRefs.current.forEach((el, i) => el?.classList.toggle('is-live', isChapterLive(i, route.f)));
-      if (live !== lastIndex) { lastIndex = live; setActive(live); }
-      if (route.over !== undefined && route.over !== lastOver) { lastOver = route.over; setOver(route.over); }
+      for (let i = 0; i < CHAPTERS.length; i++) {
+        const isLive = isChapterLive(i, route.f);
+        if (liveState[i] !== isLive) { liveState[i] = isLive; stageRefs.current[i]?.classList.toggle('is-live', isLive); }
+      }
+      activeSignal.set(liveChapterIndex(route.f));
+      if (route.over !== undefined) overSignal.set(route.over);
+      if (field) {
+        if (adaptMode !== modeRef.current) {   // a mode switch starts again from the mode's own full quality
+          adaptMode = modeRef.current; adapt = initialAdaptState();
+          field.setQuality({ pixelRatio: ratioFor(0), frameInterval: MODES[adaptMode].frameInterval });
+        } else if (lastFrameAt !== null) {
+          adapt = adaptQuality(adapt, now - lastFrameAt);
+          if (adapt.changed) field.setQuality({ pixelRatio: ratioFor(adapt.level) });
+        }
+        stillSince = route.settled ? (stillSince ?? now) : null;
+        if (modeRef.current === 'working' && !taking && snapshotDue({ hasSnapshot: snapshotUrl !== null, stillForMs: stillSince === null ? 0 : now - stillSince, f: route.f, snapshotF, stale: snapshotStale.current })) takeSnapshot(field, route.f);
+      }
+      lastFrameAt = now;
       frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
-    const onVisibility = () => { if (document.hidden) { cancelAnimationFrame(frame); stopped = true; } else if (stopped) { stopped = false; frame = requestAnimationFrame(tick); } };
+    const onVisibility = () => { if (document.hidden) { cancelAnimationFrame(frame); stopped = true; } else if (stopped) { stopped = false; lastFrameAt = null; frame = requestAnimationFrame(tick); } };
     document.addEventListener('visibilitychange', onVisibility);
-    return () => { stopped = true; cancelAnimationFrame(frame); document.removeEventListener('visibilitychange', onVisibility); };
-  }, []);
+    return () => {
+      stopped = true; cancelAnimationFrame(frame);
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('resize', invalidate);
+      resizeObserver?.disconnect();
+      document.documentElement.style.removeProperty(SNAPSHOT_PROPERTY);
+      if (snapshotUrl) URL.revokeObjectURL(snapshotUrl);
+    };
+  }, [activeSignal, overSignal]);
 
   const jump = useCallback((i) => {
     const el = stageRefs.current[i];
@@ -168,7 +248,7 @@ function VoyageView({ requireSecurityEnrollment }) {
   const countFor = (chapter) => { const s = data.stats; if (!s || !chapter.table) return null; const key = { hero_content: null, about_content: null, projects: 'projects', internships: 'internships', education: 'education', work_experience: 'workExperience', skills: 'skills', certifications: 'certifications', recommendations: 'recommendations', achievements: 'achievements', leadership: 'leadership', contact_messages: 'messages' }[chapter.table]; return key ? s[key] ?? null : null; };
 
   return (
-    <div className={`voyage${webgl ? ' voyage--webgl' : ' voyage--flat'}`} data-testid="voyage">
+    <div className={`voyage${webgl ? ' voyage--webgl' : ' voyage--flat'}`} data-testid="voyage" data-mode={mode}>
       {webgl ? <canvas ref={canvasRef} className="voyage-field" aria-hidden="true" /> : <div className="voyage-flat-sky"><SkyBackground motion={false} /></div>}
       <header className="voyage-bar">
         <span className="voyage-bar__brand">RC · ADMIN</span>
@@ -179,7 +259,7 @@ function VoyageView({ requireSecurityEnrollment }) {
           <button type="button" className="voyage-bar__button voyage-bar__button--quiet" onClick={signOut} aria-label="Sign out"><LogOut size={16} /><span>Sign out</span></button>
         </div>
       </header>
-      <div className="voyage-progress" style={{ width: `${(active / (CHAPTERS.length - 1)) * 100}%` }} aria-hidden="true" />
+      <Progress signal={activeSignal} />
 
       <main className="voyage-page">
         {CHAPTERS.map((chapter, i) => (
@@ -189,7 +269,7 @@ function VoyageView({ requireSecurityEnrollment }) {
                 <div className="voyage-chapter__kicker">{String(i).padStart(2, '0')} · {chapterPlace(chapter, names)}</div>
                 <h2 className="voyage-chapter__title" id={`chapter-${chapter.id}-title`}>{chapter.kind === 'prologue' ? `${greeting}, Raunak` : chapter.name}</h2>
                 <p className="voyage-chapter__sub">{chapter.sub}</p>
-                {chapter.kind === 'prologue' && over && <p className="voyage-chapter__over" aria-live="off">{over}</p>}
+                {chapter.kind === 'prologue' && <OverReadout signal={overSignal} />}
               </div>
             </div>
             {chapter.kind === 'bento' && (requireSecurityEnrollment
@@ -217,7 +297,7 @@ function VoyageView({ requireSecurityEnrollment }) {
         ))}
       </main>
 
-      <StarRail active={active} onJump={jump} names={names} />
+      <LiveRail signal={activeSignal} onJump={jump} names={names} />
       <Toast toast={toast} />
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} onJump={jump} actions={actions} names={names} />
     </div>
