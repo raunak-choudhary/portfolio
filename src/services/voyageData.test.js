@@ -1,4 +1,4 @@
-import { getTopPages, getUnreadMessages, getVisitorSeries, normalizePage, rankPages, relativeTime, summarizeVisitorEvents } from './voyageData';
+import { EDITED_TABLES, getSectionFreshness, getTopPages, getUnreadMessages, getVisitorSeries, normalizePage, rankPages, relativeTime, summarizeVisitorEvents } from './voyageData';
 import { supabase } from './supabaseClient';
 
 jest.mock('./supabaseClient', () => ({ supabase: { from: jest.fn() } }));
@@ -45,6 +45,26 @@ describe('top pages', () => {
   it('returns [] when the query fails', async () => {
     supabase.from.mockReturnValueOnce(chain({ data: null, error: { message: 'no' } }));
     expect(await getTopPages()).toEqual([]);
+  });
+});
+
+describe('section freshness', () => {
+  it('reads the newest edit of each content table and leaves failed tables out', async () => {
+    supabase.from.mockImplementation((table) => {
+      if (table === 'skills') return chain({ data: null, error: { message: 'denied' } });
+      if (table === 'leadership') return chain({ data: [], error: null });
+      return chain({ data: [{ updated_at: '2026-10-01T00:00:00Z' }], error: null });
+    });
+    const out = await getSectionFreshness();
+    expect(out).toHaveLength(EDITED_TABLES.length - 1);
+    expect(out.find((s) => s.section === 'Skills')).toBeUndefined();
+    expect(out.find((s) => s.section === 'Leadership')).toEqual({ section: 'Leadership', at: null });
+    expect(out.find((s) => s.section === 'Hero')).toEqual({ section: 'Hero', at: '2026-10-01T00:00:00Z' });
+  });
+
+  it('returns [] when the client throws', async () => {
+    supabase.from.mockImplementation(() => { throw new Error('offline'); });
+    expect(await getSectionFreshness()).toEqual([]);
   });
 });
 

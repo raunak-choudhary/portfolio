@@ -129,6 +129,25 @@ export async function getRecentEdits(limit = 6) {
   }
 }
 
+/**
+ * The newest `updated_at` of each content table, for the Analytics chapter's
+ * stale-sections check (contract section 2). A table that fails to load is
+ * left out rather than reported as stale; an empty table reports `at: null`.
+ * @returns {Promise<Array<{section: string, at: string|null}>>}
+ */
+export async function getSectionFreshness() {
+  try {
+    const results = await Promise.all(EDITED_TABLES.map(async ([table, section]) => {
+      const { data, error } = await supabase.from(table).select('updated_at').order('updated_at', { ascending: false, nullsFirst: false }).limit(1);
+      if (error || !Array.isArray(data)) return null;
+      return { section, at: data[0]?.updated_at || null };
+    }));
+    return results.filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
 /** Short relative time for tiles: "2 h ago", "3 d ago". */
 export function relativeTime(iso, now = new Date()) {
   const ms = now.getTime() - new Date(iso).getTime();
