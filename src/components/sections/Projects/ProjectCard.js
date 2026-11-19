@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { teamLabel, toHttpsUrl } from './projectFormat';
+import visitorTracking from '../../../services/visitorTrackingService';
 
 const ProjectCard = ({ project }) => {
   console.log('🎨 Rendering Optimized ProjectCard:', project?.title);
@@ -109,6 +110,11 @@ const ProjectCard = ({ project }) => {
     }
     
     console.log('🔄 Card flip triggered for:', project?.title);
+    // Turning to the back opens the project's details: count it (once per
+    // project per session, the service de-duplicates). Turning back does not.
+    if (!isFlipped) {
+      visitorTracking.trackProjectOpen(project, 'card');
+    }
     setIsFlipped(!isFlipped);
     
     // Add haptic feedback for mobile devices
@@ -413,7 +419,10 @@ const ProjectCard = ({ project }) => {
                   target="_blank" 
                   rel="noopener noreferrer" 
                   className="action-btn demo-btn"
-                  onClick={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    visitorTracking.trackProjectLink(project, 'demo', liveUrl);
+                  }}
                 >
                   <span className="btn-icon">🚀</span> &nbsp;&nbsp;
                   <span className="btn-text">Live Demo</span>
@@ -429,7 +438,10 @@ const ProjectCard = ({ project }) => {
                   rel="noopener noreferrer" 
                   className="action-btn github-btn github-url-btn"
                   aria-label={`Open repository ${url} in a new tab`}
-                  onClick={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    visitorTracking.trackProjectLink(project, 'repo', url);
+                  }}
                 >
                   <span className="btn-icon">📂</span> &nbsp;&nbsp;
                   <span className="btn-text github-url-text">{url}</span>
