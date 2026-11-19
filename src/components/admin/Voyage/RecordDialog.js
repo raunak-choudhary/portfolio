@@ -180,14 +180,26 @@ export default function RecordDialog({ schema, record, open, onClose, onSaved, o
   // first focus per view: the first field when editing, the Edit button when reading
   // (in fix mode: the target field, then the banner's next step once saved)
   const fixField = fix?.field || null;
+  const ringedFocusable = 'input:not([type="hidden"]):not(:disabled), textarea:not(:disabled), select:not(:disabled), button:not(:disabled), [tabindex]:not([tabindex="-1"])';
+  const fixFocusPending = useRef(false);   // the ringed field could not take focus yet (the row was still arriving, or an upload was busy)
   useEffect(() => {
     if (!open || !panelRef.current) return;
     const ringed = mode === 'edit' && fixField ? panelRef.current.querySelector(`.record-form [data-field="${fixField}"]`) : null;
+    const ringedTarget = ringed && !fixResult ? ringed.querySelector(ringedFocusable) : null;
+    fixFocusPending.current = Boolean(ringed && !fixResult && !ringedTarget);
     const target = fixResult ? panelRef.current.querySelector('[data-fix-step]')
-      : ringed ? ringed.querySelector('input:not([type="hidden"]), textarea, select, button, [tabindex]:not([tabindex="-1"])')
-        : mode === 'edit' ? panelRef.current.querySelector('.record-form [data-field] input, .record-form [data-field] textarea, .record-form [data-field] select') : panelRef.current.querySelector('[data-action="edit"]');
+      : ringedTarget || (mode === 'edit' ? panelRef.current.querySelector('.record-form [data-field] input, .record-form [data-field] textarea, .record-form [data-field] select') : panelRef.current.querySelector('[data-action="edit"]'));
     (target || panelRef.current.querySelector(FOCUSABLE))?.focus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, mode, recordId, fixField, fixResult]);
+  // once the ringed field can take focus it does, for the step that just opened only
+  // (an upload field renders its picker only after the row has arrived)
+  useEffect(() => {
+    if (busyImages || !fixFocusPending.current || !panelRef.current || !fixField) return;
+    const input = panelRef.current.querySelector(`.record-form [data-field="${fixField}"]`)?.querySelector(ringedFocusable);
+    if (input) { fixFocusPending.current = false; input.focus(); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [busyImages, isNew, online]);
 
   // after a refused Save, the first invalid field in reading order takes focus
   useEffect(() => {
