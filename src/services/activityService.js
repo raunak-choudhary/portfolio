@@ -88,19 +88,42 @@ const applyFilter = (query, filter) => {
 };
 
 /**
+ * A timestamp exactly as Postgres and PostgREST print it: date, time,
+ * up to six fractional digits, optional zone. Nothing else is accepted
+ * as a cursor, so no other text reaches the filter.
+ */
+const CURSOR_TIME = /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(\.\d{1,6})?(Z|[+-]\d{2}(:?\d{2})?)?$/;
+
+/** The `at` of a cursor, unchanged; throws for anything that is not such a timestamp. */
+function cursorTime(at) {
+  const text = typeof at === 'string' ? at.trim() : '';
+  if (!CURSOR_TIME.test(text)) {
+    const bad = new Error('The activity could not be loaded.');
+    bad.code = 'LOAD_FAILED';
+    throw bad;
+  }
+  return text;
+}
+
+/**
  * Narrows a query to rows older than the last one shown. `before` is that
  * row's `at`, or the row itself ({ at, id }): with the id, rows that share
  * the same instant (one bulk change writes several in the same transaction)
  * are not skipped at the page boundary.
+ *
+ * The time is passed through as the server sent it. Postgres keeps
+ * microseconds; going through Date would cut them to milliseconds and make
+ * "earlier than" skip every other row of the same instant. Inside or() the
+ * value is double-quoted so its "+", ":" and "." cannot be read as syntax.
  */
 const applyCursor = (query, before) => {
   if (!before) return query;
   if (typeof before === 'object' && before.at && Number.isFinite(Number(before.id))) {
-    const at = new Date(before.at).toISOString();
-    return query.or(`at.lt.${at},and(at.eq.${at},id.lt.${Number(before.id)})`);
+    const at = cursorTime(before.at);
+    const id = Math.trunc(Number(before.id));
+    return query.or(`at.lt."${at}",and(at.eq."${at}",id.lt.${id})`);
   }
-  const at = typeof before === 'object' ? before.at : before;
-  return at ? query.lt('at', new Date(at).toISOString()) : query;
+  return query.lt('at', cursorTime(typeof before === 'object' ? before.at : before));
 };
 
 /**
