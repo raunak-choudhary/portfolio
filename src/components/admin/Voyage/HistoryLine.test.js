@@ -2,7 +2,7 @@
 import HistoryLine, { HISTORY_LIMIT } from './HistoryLine';
 import { React, act, click, mount } from '../SkyBackground/testUtils';
 
-jest.mock('../../../services/activityService', () => ({ ACTIVITY_NOT_SET_UP: 'ACTIVITY_NOT_SET_UP', listActivity: jest.fn(), recordHistory: jest.fn(), isActivityAvailable: jest.fn(), logSecurityEvent: jest.fn() }));
+jest.mock('../../../services/activityService', () => ({ ACTIVITY_NOT_SET_UP: 'ACTIVITY_NOT_SET_UP', listActivity: jest.fn(), listDeletedRecords: jest.fn(), recordHistory: jest.fn(), isActivityAvailable: jest.fn(), logSecurityEvent: jest.fn() }));
 const service = jest.requireMock('../../../services/activityService');
 
 const NOW = new Date('2026-11-19T19:00:00.000Z');
