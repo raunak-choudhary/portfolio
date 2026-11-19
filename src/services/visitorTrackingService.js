@@ -97,7 +97,6 @@ export const trackPageView = async (page, title = '') => {
     
     // Check if already tracked in this session
     if (sessionTracking.pageViews.has(sessionKey)) {
-      console.log('🚫 Page already tracked in session:', page);
       return;
     }
     
@@ -109,8 +108,6 @@ export const trackPageView = async (page, title = '') => {
     
     // Mark as visited for return visitor detection
     localStorage.setItem('portfolio_visited', 'true');
-    
-    console.log('📊 Tracking page view:', page, title);
 
     const { error } = await supabase
       .from('analytics_events')
@@ -132,13 +129,11 @@ export const trackPageView = async (page, title = '') => {
       ]);
 
     if (error) {
-      console.error('❌ Error tracking page view:', error);
-    } else {
-      console.log('✅ Page view tracked successfully');
+      console.error('Error tracking page view:', error);
     }
 
   } catch (error) {
-    console.error('❌ Error in trackPageView:', error);
+    console.error('Error in trackPageView:', error);
   }
 };
 
@@ -151,7 +146,6 @@ export const trackSectionView = async (sectionType, sectionId = 'main', timeSpen
     
     // Check if already tracked in this session
     if (sessionTracking.sectionViews.has(sessionKey)) {
-      console.log('🚫 Section already tracked in session:', sectionType, sectionId);
       return;
     }
     
@@ -159,8 +153,6 @@ export const trackSectionView = async (sectionType, sectionId = 'main', timeSpen
     sessionTracking.sectionViews.add(sessionKey);
     
     const sessionId = generateVisitorSessionId();
-    
-    console.log('📊 Tracking section view:', sectionType, sectionId);
 
     // Track the event
     const { error } = await supabase
@@ -183,17 +175,15 @@ export const trackSectionView = async (sectionType, sectionId = 'main', timeSpen
       ]);
 
     if (error) {
-      console.error('❌ Error tracking section view:', error);
+      console.error('Error tracking section view:', error);
       return;
     }
 
     // Update content performance
     await updateContentPerformance(sectionType, sectionId, timeSpent);
-    
-    console.log('✅ Section view tracked successfully');
 
   } catch (error) {
-    console.error('❌ Error in trackSectionView:', error);
+    console.error('Error in trackSectionView:', error);
   }
 };
 
@@ -202,8 +192,6 @@ export const trackContactSubmission = async (contactType, subject) => {
   if (!isAnalyticsEnabled()) return;
   try {
     const sessionId = generateVisitorSessionId();
-    
-    console.log('📊 Tracking contact submission:', contactType, subject);
 
     const { error } = await supabase
       .from('analytics_events')
@@ -225,13 +213,11 @@ export const trackContactSubmission = async (contactType, subject) => {
       ]);
 
     if (error) {
-      console.error('❌ Error tracking contact submission:', error);
-    } else {
-      console.log('✅ Contact submission tracked successfully');
+      console.error('Error tracking contact submission:', error);
     }
 
   } catch (error) {
-    console.error('❌ Error in trackContactSubmission:', error);
+    console.error('Error in trackContactSubmission:', error);
   }
 };
 
@@ -240,8 +226,6 @@ export const trackClick = async (elementType, elementId, targetUrl = '') => {
   if (!isAnalyticsEnabled()) return;
   try {
     const sessionId = generateVisitorSessionId();
-    
-    console.log('📊 Tracking click:', elementType, elementId);
 
     const { error } = await supabase
       .from('analytics_events')
@@ -264,13 +248,11 @@ export const trackClick = async (elementType, elementId, targetUrl = '') => {
       ]);
 
     if (error) {
-      console.error('❌ Error tracking click:', error);
-    } else {
-      console.log('✅ Click tracked successfully');
+      console.error('Error tracking click:', error);
     }
 
   } catch (error) {
-    console.error('❌ Error in trackClick:', error);
+    console.error('Error in trackClick:', error);
   }
 };
 
@@ -279,7 +261,7 @@ const updateContentPerformance = async (contentType, contentId, timeSpent) => {
   try {
     // Input validation
     if (!contentType || !contentId) {
-      console.warn('⚠️ Invalid parameters for content performance tracking');
+      console.warn('Invalid parameters for content performance tracking');
       return false;
     }
 
@@ -290,7 +272,7 @@ const updateContentPerformance = async (contentType, contentId, timeSpent) => {
 
   } catch (error) {
     // Catch-all error handling for production
-    console.error('❌ Unexpected error in updateContentPerformance:', {
+    console.error('Unexpected error in updateContentPerformance:', {
       error: error.message,
       stack: error.stack,
       contentType,
@@ -341,7 +323,6 @@ export const initializeVisitorTracking = () => {
   
   trackPageView(pageName, document.title);
   
-  console.log('🚀 Visitor tracking initialized for page:', pageName);
 };
 
 // Create the service object
