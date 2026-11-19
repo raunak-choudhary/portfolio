@@ -10,7 +10,7 @@
 // for anything else) so the pane can say so plainly.
 
 import { getAdminSupabaseClient } from './adminDataService';
-import { SECTION_HEALTH_RULES } from './analyticsService';
+import { SECTION_HEALTH_RULES } from './healthRules';
 import { DISMISSALS_NOT_SET_UP, listDismissals } from './fixDismissalsService';
 import { EDITED_TABLES, getSectionFreshness } from './voyageData';
 
