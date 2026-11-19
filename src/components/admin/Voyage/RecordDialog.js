@@ -397,7 +397,7 @@ export default function RecordDialog({ schema, record, open, onClose, onSaved, o
         </div>
 
         <footer className="record-dialog__foot">
-          {fixResult && mode === 'read'
+          {fix && fixResult && mode === 'read'
             ? (
               <>
                 <span className="record-dialog__status"><Check size={14} aria-hidden="true" />Saved just now</span>
