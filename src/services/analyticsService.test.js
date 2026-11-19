@@ -1,6 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 import {
+  DEFAULT_MIN_DESCRIPTION_LENGTH,
+  QUALITY_SHARE,
+  REQUIRED_SHARE,
   SECTION_HEALTH_RULES,
   evaluateContentSectionHealth,
   summarizePortfolioHealth
@@ -139,5 +142,29 @@ describe('portfolio health rules against the real columns', () => {
     (rule.qualityGroups || []).forEach((group) => {
       expect([name, group.name, group.fields.some((field) => columns.has(field))]).toEqual([name, group.name, true]);
     });
+  });
+});
+
+describe('health score regression on the recorded fixtures', () => {
+  // The fix queue exports the scoring helpers and constants from this module.
+  // These numbers were recorded from the fixtures before that export, so any
+  // change to what existing callers see fails here.
+  const rowsOf = (table) => JSON.parse(fs.readFileSync(path.join(__dirname, '../../e2e/fixtures', `${table}.json`), 'utf8'));
+
+  it('keeps every section completeness, the score and the issue counts unchanged', () => {
+    const sections = SECTION_HEALTH_RULES.map((rule) => evaluateContentSectionHealth(rule, rowsOf(rule.table)));
+    expect(sections.map((s) => [s.table, s.completeness, s.activeItems, s.issues.length])).toEqual([
+      ['hero_content', 100, 1, 0], ['about_content', 100, 1, 0], ['projects', 91, 30, 18], ['internships', 100, 5, 0],
+      ['education', 100, 4, 0], ['work_experience', 100, 1, 0], ['skills', 100, 110, 0], ['certifications', 90, 13, 9],
+      ['recommendations', 100, 13, 0], ['achievements', 100, 17, 0], ['leadership', 91, 5, 2],
+    ]);
+    const summary = summarizePortfolioHealth(sections);
+    expect(summary.score).toBe(97);
+    expect(summary.status).toBe('needs_attention');
+    expect(summary.issueCounts).toEqual({ critical: 2, warning: 27, info: 0 });
+  });
+
+  it('exports the item shares the scoring uses', () => {
+    expect([REQUIRED_SHARE, QUALITY_SHARE, DEFAULT_MIN_DESCRIPTION_LENGTH]).toEqual([70, 30, 40]);
   });
 });
