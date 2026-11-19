@@ -1,0 +1,134 @@
+/* src/components/admin/Voyage/Security.css
+ *
+ * Cassiopeia, the Security chapter: plain and serious, ruled lists, one
+ * accent. Ported from the approved mockup (design/mockups/voyage-v4b,
+ * sec-* rules). Chapter rules sit under .voyage; the add-authenticator
+ * dialog is portalled into <body> and sits under .record-backdrop.sec-dialog,
+ * which carries the voyage tokens itself. No live backdrop-filter anywhere:
+ * the voyage's glass is a pre-blurred snapshot (see renderBudget.js). Inputs
+ * are 16px so iOS never zooms. */
+
+/* ---- the chapter ---- */
+.voyage .sec { display: grid; gap: 12px; min-width: 0; opacity: 0; transform: translateY(30px); transition: opacity .6s .1s, transform .7s .1s; }
+.voyage .voyage-chapter.is-live .sec { opacity: 1; transform: none; }
+.voyage .sec .voyage-bar__button { backdrop-filter: none; -webkit-backdrop-filter: none; }
+.voyage .sec .voyage-bar__button span { display: inline; }
+.voyage .sec-pane { padding: 16px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.voyage .sec-pane__head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 12px; min-width: 0; }
+.voyage .sec-pane__head h3 { margin: 0; font-family: var(--voyage-cond); font-weight: 600; font-size: 16px; letter-spacing: .12em; text-transform: uppercase; color: var(--voyage-fg); }
+.voyage .sec-note, .sec-dialog .sec-note { margin: 0; font-size: 13px; line-height: 1.5; color: var(--voyage-muted); max-width: 70ch; }
+.voyage .sec-note b { color: var(--voyage-fg); font-weight: 600; }
+.voyage .sec-steps-list { padding-left: 18px; display: grid; gap: 6px; }
+.voyage .sec-grid { display: grid; gap: 12px; min-width: 0; }
+.voyage .sec-col { display: grid; gap: 12px; align-content: start; min-width: 0; }
+.voyage .sec-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.voyage .sec-skel { border-radius: 8px; background: linear-gradient(100deg, var(--voyage-soft) 30%, rgba(255, 255, 255, .1) 50%, var(--voyage-soft) 70%); background-size: 200% 100%; animation: card-shimmer 1.4s linear infinite; }
+
+/* this session */
+.voyage .sec-facts { margin: 0; display: grid; gap: 0; }
+.voyage .sec-facts > div { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; padding: 10px 0; border-bottom: 1px solid color-mix(in srgb, var(--voyage-line) 70%, transparent); min-width: 0; }
+.voyage .sec-facts > div:first-child { padding-top: 0; }
+.voyage .sec-facts > div:last-child { border-bottom: 0; padding-bottom: 0; }
+.voyage .sec-facts dt { font-size: 12px; color: var(--voyage-muted); }
+.voyage .sec-facts dd { margin: 0; font-size: 15px; line-height: 1.45; overflow-wrap: anywhere; color: var(--voyage-fg); }
+.voyage .sec-facts dd small { display: block; font-size: 13px; color: var(--voyage-muted); }
+.voyage .sec-ok, .voyage .sec-warn { display: flex; margin-bottom: 2px; align-items: center; gap: 6px; font-weight: 600; }
+.voyage .sec-ok { color: var(--voyage-good); }
+.voyage .sec-warn { color: var(--voyage-warn); }
+.voyage .sec-ok + span { display: block; color: var(--voyage-fg); }
+
+/* ruled lists of apps and passkeys */
+.voyage .sec-list { list-style: none; margin: 0; padding: 0; display: grid; border-top: 1px solid var(--voyage-line); }
+.voyage .sec-row { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "icon text" "act act"; gap: 8px 12px; padding: 12px 0; border-bottom: 1px solid var(--voyage-line); min-width: 0; align-items: start; }
+.voyage .sec-row__icon { grid-area: icon; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--voyage-line); color: var(--voyage-fg); }
+.voyage .sec-row__text { grid-area: text; min-width: 0; display: grid; gap: 2px; }
+.voyage .sec-row__name { font-size: 15px; font-weight: 600; color: var(--voyage-fg); overflow-wrap: anywhere; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+.voyage .sec-row__meta { font-size: 13px; color: var(--voyage-muted); overflow-wrap: anywhere; }
+.voyage .sec-row__act { grid-area: act; display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-start; }
+.voyage .sec-row__why { margin: 0; font-size: 13px; line-height: 1.5; color: var(--voyage-muted); grid-column: 1 / -1; max-width: 62ch; }
+.voyage .sec-row__why svg { vertical-align: -2px; }
+.voyage .sec-tag { display: inline-block; padding: 1px 7px; border-radius: 4px; border: 1px solid var(--voyage-warn); color: var(--voyage-warn); font-size: 11px; font-weight: 600; letter-spacing: .04em; }
+
+/* adding this device */
+.voyage .sec-add { display: grid; gap: 8px; min-width: 0; }
+.voyage .sec-add label { font-size: 13px; font-weight: 600; color: var(--voyage-fg); }
+.voyage .sec-add__row { display: flex; flex-wrap: wrap; gap: 8px; }
+.voyage .sec-add__row input { flex: 1 1 220px; min-width: 0; box-sizing: border-box; padding: 9px 11px; border-radius: 8px; border: 1px solid color-mix(in srgb, var(--voyage-fg) 40%, transparent); background: rgba(255, 255, 255, .06); color: var(--voyage-fg); font: inherit; font-size: 16px; outline: 0; }
+.voyage .sec-add__row input:focus { border-color: var(--voyage-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--voyage-accent) 25%, transparent); }
+.voyage .sec-add__row input[aria-invalid="true"] { border-color: var(--voyage-bad); }
+.voyage .sec-wait { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: center; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--voyage-accent); background: color-mix(in srgb, var(--voyage-accent) 8%, transparent); }
+.voyage .sec-wait__ring { width: 34px; height: 34px; box-sizing: border-box; border-radius: 50%; border: 2px solid color-mix(in srgb, var(--voyage-accent) 30%, transparent); border-top-color: var(--voyage-accent); display: grid; place-items: center; color: var(--voyage-accent); animation: sec-spin 1.1s linear infinite; }
+.voyage .sec-wait__ring svg { animation: sec-spin 1.1s linear infinite reverse; }
+@keyframes sec-spin { to { transform: rotate(360deg); } }
+.voyage .sec-wait p { margin: 0; font-size: 14px; color: var(--voyage-fg); }
+.voyage .sec-wait small { display: block; font-size: 13px; color: var(--voyage-muted); }
+
+/* banners (chapter and dialog) */
+.voyage .sec-banner, .sec-dialog .sec-banner { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; padding: 12px 14px; border-radius: 12px; border: 1px solid; font-size: 14px; line-height: 1.5; }
+.voyage .sec-banner p, .sec-dialog .sec-banner p { margin: 0; color: var(--voyage-fg); }
+.voyage .sec-banner p b { font-weight: 600; }
+.voyage .sec-banner svg, .sec-dialog .sec-banner svg { margin-top: 2px; }
+.voyage .sec-banner--ok { border-color: color-mix(in srgb, var(--voyage-good) 55%, transparent); background: color-mix(in srgb, var(--voyage-good) 10%, transparent); }
+.voyage .sec-banner--ok svg { color: var(--voyage-good); }
+.voyage .sec-banner--warn { border-color: color-mix(in srgb, var(--voyage-warn) 60%, transparent); background: color-mix(in srgb, var(--voyage-warn) 11%, transparent); }
+.voyage .sec-banner--warn svg { color: var(--voyage-warn); }
+.voyage .sec-banner--bad, .sec-dialog .sec-banner--bad { border-color: color-mix(in srgb, var(--voyage-bad) 60%, transparent); background: color-mix(in srgb, var(--voyage-bad) 12%, transparent); }
+.voyage .sec-banner--bad svg, .sec-dialog .sec-banner--bad svg { color: var(--voyage-bad); }
+
+/* the removal confirmations */
+.voyage .dialog.sec-confirm { width: min(100%, 440px); }
+.voyage .dialog.sec-confirm p { color: var(--voyage-fg); line-height: 1.5; }
+.voyage .dialog.sec-confirm .dialog__more { color: var(--voyage-muted); font-size: 13px; }
+.voyage .dialog.sec-confirm .voyage-bar__button { backdrop-filter: none; -webkit-backdrop-filter: none; }
+
+/* ---- the add-authenticator dialog ---- */
+.sec-dialog .record-dialog { backdrop-filter: none; -webkit-backdrop-filter: none; }
+.sec-dialog .voyage-bar__button { backdrop-filter: none; -webkit-backdrop-filter: none; }
+.sec-dialog .voyage-bar__button span { display: inline; }
+.sec-dialog .field input[type="text"] { font-size: 16px; }
+.sec-dialog .sec-steps { list-style: none; margin: 14px 0 6px; padding: 0; display: flex; gap: 6px; font-size: 13px; color: var(--voyage-muted); flex-wrap: wrap; }
+.sec-dialog .sec-steps li { display: inline-flex; align-items: center; gap: 6px; }
+.sec-dialog .sec-steps li + li::before { content: ''; width: 18px; height: 1px; background: var(--voyage-line); }
+.sec-dialog .sec-steps li[aria-current="step"] { color: var(--voyage-fg); font-weight: 600; }
+.sec-dialog .sec-steps li.is-done { color: var(--voyage-good); }
+.sec-dialog .sec-enrol { display: grid; gap: 22px; padding-top: 10px; min-width: 0; }
+.sec-dialog .sec-qr { width: 196px; height: 196px; padding: 12px; border-radius: 12px; background: #fff; box-sizing: content-box; justify-self: start; }
+.sec-dialog .sec-qr img { display: block; width: 100%; height: 100%; }
+.sec-dialog .sec-qr__missing { margin: 0; color: #0b0f18; font-size: 13px; line-height: 1.5; }
+.sec-dialog .sec-key { display: grid; gap: 8px; align-content: start; min-width: 0; }
+.sec-dialog .sec-key label, .sec-dialog .sec-code-field label { font-size: 13px; font-weight: 600; color: var(--voyage-fg); }
+.sec-dialog .sec-key code { display: block; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--voyage-line); background: var(--voyage-soft); font: 16px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .08em; overflow-wrap: anywhere; color: var(--voyage-fg); user-select: all; }
+.sec-dialog .sec-key .voyage-bar__button { justify-self: start; }
+.sec-dialog .sec-code-field { display: grid; gap: 8px; max-width: 320px; min-width: 0; }
+.sec-dialog .sec-code { width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 10px; border: 1px solid color-mix(in srgb, var(--voyage-fg) 40%, transparent); background: rgba(255, 255, 255, .06); color: var(--voyage-fg); font: 600 26px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .42em; outline: 0; }
+.sec-dialog .sec-code:focus { border-color: var(--voyage-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--voyage-accent) 25%, transparent); }
+.sec-dialog .sec-code[aria-invalid="true"] { border-color: var(--voyage-bad); }
+.sec-dialog .sec-done { display: grid; gap: 10px; justify-items: start; padding: 18px 0 6px; }
+.sec-dialog .sec-done h4 { margin: 0; display: inline-flex; align-items: center; gap: 8px; font-family: var(--voyage-cond); font-weight: 500; font-size: 22px; letter-spacing: .03em; color: var(--voyage-good); }
+.sec-dialog .sec-done p { margin: 0; font-size: 15px; line-height: 1.55; color: var(--voyage-fg); max-width: 60ch; }
+.sec-dialog .record-dialog__status { display: inline-flex; align-items: center; gap: 6px; }
+.sec-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* the dawn theme: inputs on the light panels need an ink tint, not a white one */
+[data-theme="light"] .voyage .sec-add__row input,
+[data-theme="light"] .sec-dialog .sec-code { background: rgba(0, 0, 0, .04); }
+
+@media (min-width: 768px) {
+  .voyage .sec-pane { padding: 20px 22px; }
+  .voyage .sec-row { grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "icon text act"; align-items: center; }
+  .voyage .sec-row__act { justify-content: flex-end; }
+  .voyage .sec-row__why { grid-column: 2 / -1; }
+  .voyage .sec-facts > div { grid-template-columns: minmax(150px, 200px) minmax(0, 1fr); gap: 16px; }
+  .sec-dialog .sec-enrol { grid-template-columns: auto minmax(0, 1fr); align-items: start; }
+  .sec-dialog .sec-enrol--single { grid-template-columns: minmax(0, 1fr); }
+  .sec-dialog .sec-enrol .sec-code-field { grid-column: 1 / -1; }
+}
+
+@media (min-width: 1024px) {
+  .voyage .sec-grid { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); align-items: start; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voyage .sec { transition: none; }
+  .voyage .sec-skel, .voyage .sec-wait__ring, .voyage .sec-wait__ring svg { animation: none; }
+}
