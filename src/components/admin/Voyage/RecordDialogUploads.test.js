@@ -8,6 +8,8 @@ import { skillsSchema } from './managers/skills.schema';
 import { heroSchema } from './managers/hero.schema';
 import { React, act, click, mount, setInputValue } from '../SkyBackground/testUtils';
 
+// the history line and the activity pane read through the activity service, which opens the Supabase client
+jest.mock('../../../services/activityService', () => ({ listActivity: jest.fn(), recordHistory: jest.fn(), isActivityAvailable: jest.fn(), logSecurityEvent: jest.fn() }));
 jest.mock('../../../services/voyageRecords', () => ({
   saveRecord: jest.fn(), deleteRecord: jest.fn(), uploadImages: jest.fn(), removeImage: jest.fn(), imageProblems: jest.fn(), failureKind: jest.fn(), fetchUpdatedAt: jest.fn(), getRecord: jest.fn(),
   fileProblems: jest.fn(), uploadFieldFiles: jest.fn(), removeStoredFiles: jest.fn(),

@@ -3,8 +3,11 @@ import RecordDialog, { attentionText, failureCopy, sameStamp } from './RecordDia
 import { projectsSchema } from './managers/projects.schema';
 import { React, act, click, mount, setInputValue } from '../SkyBackground/testUtils';
 
+// the history line and the activity pane read through the activity service, which opens the Supabase client
+jest.mock('../../../services/activityService', () => ({ listActivity: jest.fn(), recordHistory: jest.fn(), isActivityAvailable: jest.fn(), logSecurityEvent: jest.fn() }));
 jest.mock('../../../services/voyageRecords', () => ({ saveRecord: jest.fn(), deleteRecord: jest.fn(), uploadImages: jest.fn(), removeImage: jest.fn(), imageProblems: jest.fn(), failureKind: jest.fn(), fetchUpdatedAt: jest.fn(), getRecord: jest.fn() }));
 const records = jest.requireMock('../../../services/voyageRecords');
+const activity = jest.requireMock('../../../services/activityService');
 
 const flush = () => act(async () => { await Promise.resolve(); await new Promise((r) => setTimeout(r, 0)); });
 const dialog = () => document.querySelector('[data-testid="record-dialog"]');
@@ -32,6 +35,19 @@ describe('RecordDialog', () => {
     records.fetchUpdatedAt.mockResolvedValue(existing.updated_at);
   });
   afterEach(() => { document.body.innerHTML = ''; });
+
+  it('shows the history line in the read view of a saved record only', async () => {
+    activity.isActivityAvailable.mockResolvedValue(true);
+    activity.recordHistory.mockResolvedValue([{ id: 1, at: new Date().toISOString(), action: 'edit', section: 'projects', recordId: 'p1', recordTitle: 'Tallyproof', fields: ['title'], detail: {}, source: 'admin' }]);
+    render();
+    await flush();
+    expect(activity.recordHistory).toHaveBeenCalledWith('projects', 'p1', 20);
+    const line = dialog().querySelector('[data-testid="history-line"]');
+    expect(line.textContent).toContain('1 change recorded');
+    expect(line.nextElementSibling.className).toContain('record-view');
+    click(button('Edit'));
+    expect(dialog().querySelector('[data-testid="history-line"]')).toBeNull();
+  });
 
   it('renders nothing while closed, locks the page scroll while open, and opens a new record straight in the form', () => {
     const view = render({ record: null, open: false });
