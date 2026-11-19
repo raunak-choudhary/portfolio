@@ -38,6 +38,9 @@ import SingletonChapter from './SingletonChapter';
 import Toast, { useToast } from './Toast';
 import { schemaForTable } from './managers';
 import MissionControl from './MissionControl';
+import FixQueuePane, { FIX_QUEUE_ID, useFixQueue } from './FixQueuePane';
+import { chapterForTable } from './fixQueueModel';
+import { fixesChanged, queueRequests, recordIntent } from './recordIntent';
 import CommandPalette from './CommandPalette';
 import StarRail from './StarRail';
 import { createSkyField, webglAvailable } from './skyField';
@@ -96,6 +99,9 @@ function VoyageView({ requireSecurityEnrollment }) {
   const canvasRef = useRef(null), fieldRef = useRef(null), stageRefs = useRef([]);
   const routeRef = useRef(0);   // the camera's route coordinate, kept for the sign-out film's backdrop
   const names = useMemo(() => namesFrom(figures), [figures]);
+  const fixes = useFixQueue();
+  const bentoData = useMemo(() => ({ ...data, fixes }), [data, fixes]);
+  const queueAsked = useSignal(queueRequests), contentChanged = useSignal(fixesChanged), intent = useSignal(recordIntent);
 
   // ---- data: figures and photographs for the field, facts for the tiles ----
   useEffect(() => {
@@ -251,6 +257,28 @@ function VoyageView({ requireSecurityEnrollment }) {
     window.scrollTo({ top, behavior: effectiveMotion ? 'smooth' : 'auto' });
   }, [effectiveMotion]);
   const go = useCallback((id) => jump(Math.max(0, chapterIndex(id))), [jump]);
+
+  // ---- the fix queue and record intents ----
+  // A new intent travels to its table's chapter (the chapter then opens the record);
+  // the steps of one walk stay in that chapter, so only a change of table moves the page.
+  const intentTable = useRef(null);
+  useEffect(() => {
+    const table = intent?.table || null;
+    if (table && table !== intentTable.current) { const id = chapterForTable(table); if (id) go(id); }
+    intentTable.current = table;
+  }, [intent, go]);
+  useEffect(() => {
+    if (!queueAsked) return;
+    document.getElementById(FIX_QUEUE_ID)?.scrollIntoView({ behavior: effectiveMotion ? 'smooth' : 'auto', block: 'start' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queueAsked]);
+  // a walk ended: the health tile reloads with the queue
+  useEffect(() => {
+    if (!contentChanged) return undefined;
+    let alive = true;
+    analyticsService.getPortfolioHealth().then((health) => { if (alive) setData((prev) => ({ ...prev, health })); }).catch(() => {});
+    return () => { alive = false; };
+  }, [contentChanged]);
   // The film on /adminsignout plays over this same sky, frozen where the camera is now.
   const signOut = useCallback(() => {
     recordVoyagePosition({ f: routeRef.current, theme: resolvedTheme });
@@ -292,7 +320,7 @@ function VoyageView({ requireSecurityEnrollment }) {
               </div>
             </div>
             {locked(chapter) ? <EnrolmentLock onGo={() => go('security')} /> : <>
-              {chapter.kind === 'bento' && <MissionControl data={data} onGo={go} motion={effectiveMotion} />}
+              {chapter.kind === 'bento' && <MissionControl data={bentoData} onGo={go} motion={effectiveMotion} fixQueue={<FixQueuePane fixes={fixes} onReview={go} notify={notify} />} />}
               {chapter.kind === 'deck' && schemaForTable(chapter.table) && (schemaForTable(chapter.table).mode === 'singleton'
                 ? <SingletonChapter schema={schemaForTable(chapter.table)} notify={notify} />
                 : <DeckChapter schema={schemaForTable(chapter.table)} notify={notify} />)}
