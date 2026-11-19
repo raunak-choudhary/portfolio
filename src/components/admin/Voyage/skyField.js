@@ -10,12 +10,19 @@
 // fraction and the clock.
 //
 // Textures are same-origin files under public/admin/sky; nothing external.
+//
+// Cost (measured 2026-11-18, scripts/measure-frames.mjs): the field renders
+// only when something on it moves (renderBudget.renderDue), at the pixel
+// ratio and frame interval the page asks for (setQuality); textures decode
+// off the main thread and are uploaded before first use; shaders compile at
+// creation, not on the first frame that shows them.
 
 import * as THREE from 'three';
 import { CHAPTERS } from './chapters';
 import { PALETTES, buildFigureGeometry, buildStarField, drawRangeFor, drawingPlacement, paletteForTheme } from './skyFieldMath';
 import { ANCHORS, cameraTarget, deepSkyLayout, figureState, prologueFraming, routePosition } from './voyageModel';
 import { createEarthSystem } from './earthSystem';
+import { renderDue } from './renderBudget';
 
 const STAR_VERTEX = `
   attribute float aSize; varying vec3 vColor; uniform float uPixelRatio;
@@ -56,19 +63,20 @@ const DEEP_FRAGMENT = `
  * @param {Array} input.figures figures.json entries.
  * @param {Array} input.deepManifest public/admin/sky/deep/manifest.json entries.
  * @param {string} input.assetBase URL prefix, e.g. "/admin/sky/".
- * @param {{stars: number, pixelRatio: number, fly: boolean}} input.quality from qualityFor.
+ * @param {{stars: number, pixelRatio: number, fly: boolean, frameInterval?: number}} input.quality from qualityFor.
  * @param {'dark'|'light'} input.theme
  * @param {boolean} [input.smallTextures] use the 512 px photographs.
  * @param {Date} [input.date] the moment the Earth scene is set for.
  */
 export function createSkyField({ canvas, figures, deepManifest, assetBase, quality, theme, smallTextures = false, date = new Date() }) {
-  // preserveDrawingBuffer lets screenshots (the verification script, the owner's own captures) read the frame.
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance', preserveDrawingBuffer: true });
+  // No preserveDrawingBuffer: keeping the frame costs a copy on every swap. snapshot() reads
+  // the canvas in the same task as its render, which works without it, and so do screenshots.
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance' });
   renderer.setPixelRatio(quality.pixelRatio);
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(60, 1, 1, 9000);
-  const loader = new THREE.TextureLoader();
-  const loadTexture = (url, onLoad) => loader.load(url, (t) => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; onLoad(t); });
+  let dirty = true;   // set when something outside the frame loop changed the picture (a texture, the size, the theme)
+  const loadTexture = createTextureLoader(renderer, () => { dirty = true; });
   const byId = Object.fromEntries(figures.map((f) => [f.id, f]));
   let palette = paletteForTheme(theme), fly = quality.fly;
   const disposables = [];
@@ -80,10 +88,14 @@ export function createSkyField({ canvas, figures, deepManifest, assetBase, quali
   starGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
   starGeometry.setAttribute('aSize', new THREE.BufferAttribute(sizes, 1));
   const starMaterial = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, vertexColors: true, uniforms: { uAlpha: { value: 1 }, uPixelRatio: { value: quality.pixelRatio } }, vertexShader: STAR_VERTEX, fragmentShader: STAR_FRAGMENT });
+  const pixelRatioUniforms = [starMaterial.uniforms.uPixelRatio];   // every shader that sizes points in device pixels
   const stars = new THREE.Points(starGeometry, starMaterial);
   stars.renderOrder = 2;   // after the photographs, so stars lie over them
   scene.add(stars);
   disposables.push(starGeometry, starMaterial);
+
+  const placeholderTexture = new THREE.DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1); placeholderTexture.needsUpdate = true;
+  disposables.push(placeholderTexture);
 
   // ---- the Earth, the Moon and the satellites at the first chapter ----
   const earth = createEarthSystem({ scene, loadTexture, assetBase, pixelRatio: quality.pixelRatio, satellites: quality.stars < 5000 ? 6 : 9, date });
@@ -103,11 +115,13 @@ export function createSkyField({ canvas, figures, deepManifest, assetBase, quali
     const lines = new THREE.LineSegments(lineGeometry, lineMaterial); lines.renderOrder = 3; group.add(lines);
     const pointGeometry = new THREE.BufferGeometry(); pointGeometry.setAttribute('position', new THREE.Float32BufferAttribute(geo.points, 3)); pointGeometry.setAttribute('aSize', new THREE.Float32BufferAttribute(geo.sizes, 1));
     const pointMaterial = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, uniforms: { uAlpha: { value: 0 }, uColor: { value: new THREE.Color(palette.point) }, uPixelRatio: { value: quality.pixelRatio } }, vertexShader: POINT_VERTEX, fragmentShader: POINT_FRAGMENT });
+    pixelRatioUniforms.push(pointMaterial.uniforms.uPixelRatio);
     const points = new THREE.Points(pointGeometry, pointMaterial); points.renderOrder = 3; group.add(points);
     let art = null;
     const place = drawingPlacement(figure);
     if (place) {
-      const artMaterial = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, color: palette.art, depthWrite: false });
+      // A 1 x 1 stand-in map from the start, so the shader is compiled with its map once, at creation, and not again when the drawing arrives.
+      const artMaterial = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, color: palette.art, depthWrite: false, map: placeholderTexture });
       // hidden until its texture arrives: without a map the plane would paint as a flat grey card
       loadTexture(`${assetBase}art/${figure.art.file}`, (t) => { artMaterial.map = t; artMaterial.needsUpdate = true; if (art) art.visible = true; });
       art = new THREE.Mesh(new THREE.PlaneGeometry(place.width, place.height), artMaterial);
@@ -147,22 +161,63 @@ export function createSkyField({ canvas, figures, deepManifest, assetBase, quali
   const cameraPosition = new THREE.Vector3(0, 20, ANCHORS[0].z + 520), cameraLook = new THREE.Vector3(ANCHORS[0].x, ANCHORS[0].y, ANCHORS[0].z);
   const wantPosition = new THREE.Vector3(), wantLook = new THREE.Vector3();
   let startedAt = null, readoutAt = -Infinity, over = '', aspect = 16 / 9, disposed = false;
+  let frameInterval = quality.frameInterval || 0, lastRenderAt = -Infinity;
+
+  // Compile every shader now (the drawing planes are hidden until their textures land, and
+  // compile() skips hidden objects, so they are shown for the call). Otherwise each program
+  // compiles on the first frame that shows it, a 50 ms hitch measured mid-scroll.
+  const hiddenArt = groups.filter((g) => g.art && !g.art.visible);
+  hiddenArt.forEach((g) => { g.art.visible = true; });
+  try { renderer.compile(scene, camera); } catch { /* a lost context compiles on first use instead */ }
+  hiddenArt.forEach((g) => { g.art.visible = false; });
+
+  /** Draw now and note when. */
+  const render = (now) => { renderer.render(scene, camera); lastRenderAt = now; dirty = false; };
 
   return {
-    resize(width, height) { renderer.setSize(width, height, false); aspect = width / Math.max(1, height); camera.aspect = aspect; camera.updateProjectionMatrix(); },
-    setTheme(next) { palette = paletteForTheme(next); applyPalette(); },
-    setFly(next) { fly = !!next; },
+    resize(width, height) { renderer.setSize(width, height, false); aspect = width / Math.max(1, height); camera.aspect = aspect; camera.updateProjectionMatrix(); dirty = true; },
+    setTheme(next) { palette = paletteForTheme(next); applyPalette(); dirty = true; },
+    setFly(next) { fly = !!next; dirty = true; },
     /**
-     * Paint one frame. `scrollFraction` is 0..1 over the page; `now` is the animation clock in ms.
-     * With `snap` the camera lands on its pose at once instead of easing there (a frozen view, such as the sign-out backdrop).
-     * @returns {{index: number, f: number, over: string}} the route position for the page's stage and rail state, and the Earth readout (refreshed once a second).
+     * Change the resolution and the shortest gap between renders without rebuilding the scene.
+     * @param {{pixelRatio?: number, frameInterval?: number}} next
+     */
+    setQuality({ pixelRatio, frameInterval: interval } = {}) {
+      if (Number.isFinite(pixelRatio) && pixelRatio > 0 && pixelRatio !== renderer.getPixelRatio()) {
+        renderer.setPixelRatio(pixelRatio);
+        for (const u of pixelRatioUniforms) u.value = pixelRatio;
+        earth.setPixelRatio(pixelRatio);
+        dirty = true;
+      }
+      if (Number.isFinite(interval) && interval >= 0) frameInterval = interval;
+    },
+    /** The canvas resolution in use, for the measurement script and tests. */
+    get pixelRatio() { return renderer.getPixelRatio(); },
+    /**
+     * Advance one animation frame. `scrollFraction` is 0..1 over the page; `now` is the animation clock in ms.
+     * The scene is redrawn only when something on it moves or changed, and no more often than the
+     * frame interval; a resting sky is repainted every half second for the slow drift of the photographs.
+     * With `snap` the camera lands on its pose at once instead of easing there (a frozen view, such as
+     * the sign-out backdrop), and the frame is always drawn.
+     * @returns {{index: number, f: number, over: string, rendered: boolean, settled: boolean}} the route position
+     *   for the page's stage and rail state, the Earth readout (refreshed once a second), whether this
+     *   call drew, and whether the camera has come to rest.
      */
     frame(scrollFraction, now, { snap = false } = {}) {
       const route = routePosition(scrollFraction);
       const target = cameraTarget(route, fly);
       const framing = prologueFraming(aspect, route.f);   // zero on landscape screens and past the prologue
       wantPosition.set(target.position.x + framing.x, target.position.y + framing.y, target.position.z + framing.z); wantLook.set(target.look.x + framing.x, target.look.y + framing.y, target.look.z);
-      const ease = fly && !snap ? 0.08 : 1;
+      // 8% of the way per 60 Hz frame, scaled by the real gap so the glide takes the same time at 30 fps.
+      const steps = Number.isFinite(lastRenderAt) ? Math.min(6, Math.max(0, now - lastRenderAt) / (1000 / 60)) : 1;
+      const ease = fly && !snap ? 1 - Math.pow(1 - 0.08, steps) : 1;
+      // Moving while the eased camera is still more than a tenth of a unit from its pose (the route spans thousands).
+      const settled = cameraPosition.distanceToSquared(wantPosition) < 0.01 && cameraLook.distanceToSquared(wantLook) < 0.01;
+      const earthLive = fly && route.f < EARTH_VISIBLE_UNTIL;   // the Earth turns and the satellites move only while it is in view
+      if (!snap && !renderDue({ now, lastRenderAt, frameInterval, active: !settled || earthLive || dirty })) {
+        if (now - readoutAt > 1000 && route.f < EARTH_VISIBLE_UNTIL) { readoutAt = now; over = earth.readout(fly && startedAt !== null ? now - startedAt : 0, cameraPosition); }
+        return { index: route.index, f: route.f, over, rendered: false, settled };
+      }
       cameraPosition.lerp(wantPosition, ease); cameraLook.lerp(wantLook, ease);
       camera.position.copy(cameraPosition); camera.lookAt(cameraLook);
       groups.forEach((g, i) => {
@@ -182,18 +237,76 @@ export function createSkyField({ canvas, figures, deepManifest, assetBase, quali
       const elapsed = fly ? now - startedAt : 0;   // a still frame under reduced motion: today's terminator, tonight's Moon
       earth.update(elapsed);
       if (now - readoutAt > 1000) { readoutAt = now; over = earth.readout(elapsed, cameraPosition); }
+      render(now);
+      return { index: route.index, f: route.f, over, rendered: true, settled };
+    },
+    /**
+     * A small, blurred still of the current view for the working mode's glass (a CSS background
+     * instead of a live backdrop blur). Drawn in the same task as a fresh render, because without
+     * preserveDrawingBuffer the canvas is cleared once the frame is presented.
+     * @param {{scale?: number, blurPx?: number, type?: string, quality?: number}} [options]
+     * @returns {Promise<Blob|null>} null when the browser cannot encode it or the field is gone.
+     */
+    snapshot({ scale = 0.25, blurPx = 2, type = 'image/jpeg', quality: encodeQuality = 0.82 } = {}) {
+      if (disposed || typeof document === 'undefined') return Promise.resolve(null);
+      const width = Math.max(16, Math.round((canvas.clientWidth || canvas.width) * scale));
+      const height = Math.max(16, Math.round((canvas.clientHeight || canvas.height) * scale));
+      const out = document.createElement('canvas'); out.width = width; out.height = height;
+      const ctx = out.getContext('2d');
+      if (!ctx) return Promise.resolve(null);
       renderer.render(scene, camera);
-      return { index: route.index, f: route.f, over };
+      ctx.fillStyle = palette.background; ctx.fillRect(0, 0, width, height);
+      // Overscan by the blur radius so the blur does not pull the dark fill in at the edges.
+      if (blurPx > 0 && 'filter' in ctx) ctx.filter = `blur(${blurPx}px)`;
+      const pad = Math.ceil(blurPx * 2);
+      ctx.drawImage(canvas, -pad, -pad, width + pad * 2, height + pad * 2);
+      return new Promise((resolve) => { try { out.toBlob((blob) => resolve(blob || null), type, encodeQuality); } catch { resolve(null); } });
     },
     /** Frees geometry, materials and the renderer, then gives the WebGL context back to the browser (it holds only a handful). Safe to call twice. */
     dispose() {
       if (disposed) return;
       disposed = true;
       for (const d of disposables) d.dispose?.();
+      for (const t of loadTexture.loaded) { t.dispose(); t.image?.close?.(); }   // ImageBitmaps hold decoded pixels until closed
       renderer.dispose();
       renderer.forceContextLoss();
     },
   };
+}
+
+/** Past this route coordinate the Earth is behind the camera, so it no longer needs animating. */
+export const EARTH_VISIBLE_UNTIL = 1.2;
+
+/**
+ * A loader that decodes images off the main thread (createImageBitmap, flipped at decode
+ * time because WebGL ignores UNPACK_FLIP_Y for bitmaps) and uploads each texture to the GPU
+ * as it lands, so neither the decode nor the upload happens inside a frame. Falls back to
+ * the plain TextureLoader where ImageBitmap is missing or refuses the options.
+ * @returns {((url: string, onLoad: (t: THREE.Texture) => void) => void) & {loaded: THREE.Texture[]}}
+ */
+export function createTextureLoader(renderer, onAnyLoad = () => {}) {
+  const loaded = [];
+  const bitmaps = typeof createImageBitmap === 'function' ? new THREE.ImageBitmapLoader().setOptions({ imageOrientation: 'flipY', premultiplyAlpha: 'none' }) : null;
+  const plain = new THREE.TextureLoader();
+  const finish = (t, onLoad) => {
+    t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
+    loaded.push(t);
+    onLoad(t);
+    try { renderer.initTexture(t); } catch { /* uploaded on first use instead */ }
+    onAnyLoad(t);
+  };
+  const viaPlain = (url, onLoad) => plain.load(url, (t) => finish(t, onLoad));
+  const load = (url, onLoad) => {
+    if (!bitmaps) { viaPlain(url, onLoad); return; }
+    bitmaps.load(url, (bitmap) => {
+      const t = new THREE.Texture(bitmap);
+      t.flipY = false;   // already flipped by createImageBitmap
+      t.needsUpdate = true;
+      finish(t, onLoad);
+    }, undefined, () => viaPlain(url, onLoad));
+  };
+  load.loaded = loaded;
+  return load;
 }
 
 export { webglAvailable } from './webgl';

@@ -94,7 +94,7 @@ const SATELLITE_FRAGMENT = `
  * @param {number} input.pixelRatio
  * @param {number} [input.satellites] how many satellites to draw.
  * @param {Date} [input.date] the moment the scene is set for (real Sun, tilt and Moon phase).
- * @returns {{group: THREE.Group, scene: object, update(elapsed: number): void, readout(elapsed: number, viewer: THREE.Vector3): string, dispose(): void}}
+ * @returns {{group: THREE.Group, scene: object, update(elapsed: number): void, readout(elapsed: number, viewer: THREE.Vector3): string, setPixelRatio(ratio: number): void, dispose(): void}}
  */
 export function createEarthSystem({ scene, loadTexture, assetBase, pixelRatio, satellites = 9, date = new Date() }) {
   const model = earthScene(date);
@@ -129,7 +129,9 @@ export function createEarthSystem({ scene, loadTexture, assetBase, pixelRatio, s
   group.add(halo);
 
   // ---- Moon, lit by the same Sun ----
-  const moonMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, metalness: 0 });
+  const grey = new THREE.DataTexture(new Uint8Array([128, 128, 128, 255]), 1, 1); grey.needsUpdate = true;
+  // A stand-in map from the start so the program is compiled with a map once and not again when the photograph lands.
+  const moonMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, metalness: 0, map: grey });
   loadTexture(`${assetBase}earth/moon-color.webp`, (t) => { moonMaterial.map = t; moonMaterial.needsUpdate = true; });
   const moon = new THREE.Mesh(new THREE.SphereGeometry(MOON_RADIUS, 48, 32), moonMaterial);
   scene.add(moon);
@@ -150,7 +152,7 @@ export function createEarthSystem({ scene, loadTexture, assetBase, pixelRatio, s
   sats.renderOrder = 3; sats.frustumCulled = false;
   scene.add(sats);
 
-  disposables.push(earth.geometry, earthMaterial, halo.geometry, haloMaterial, moon.geometry, moonMaterial, satGeometry, satMaterial, black, clear);
+  disposables.push(earth.geometry, earthMaterial, halo.geometry, haloMaterial, moon.geometry, moonMaterial, satGeometry, satMaterial, black, clear, grey);
   const centre = group.position.clone();
 
   return {
@@ -169,6 +171,8 @@ export function createEarthSystem({ scene, loadTexture, assetBase, pixelRatio, s
     },
     /** The city passing under the viewer and its time on the scene's clock. */
     readout(elapsed, viewer) { return overReadout(model, elapsed, [viewer.x, viewer.y, viewer.z], date); },
+    /** Satellite points are sized in device pixels; keep them the same size on screen when the canvas resolution changes. */
+    setPixelRatio(ratio) { satMaterial.uniforms.uPixelRatio.value = ratio; },
     dispose() { for (const d of disposables) d.dispose?.(); },
   };
 }
