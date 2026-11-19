@@ -232,6 +232,21 @@ export function levelOneNote(firstStep) {
   return how ? `Assurance level 1: signed in with ${how} only.` : 'Assurance level 1: one step only.';
 }
 
+/** What the next sign-in on this device asks for, by passkeyWording's device family. */
+const NEXT_ASK = {
+  mac: 'Next sign-in on this Mac asks for Touch ID.',
+  ios: 'Next sign-in on this device asks for Face ID.',
+  android: 'Next sign-in on this phone asks for your fingerprint or screen lock.',
+};
+
+/** The banner after a passkey is saved: `Passkey saved for "Name". Next sign-in on this Mac asks for Touch ID.` */
+export function passkeyAddedText(name, device) {
+  return `Passkey saved for ${quoted(name)}. ${NEXT_ASK[device] || 'Next sign-in on this device asks for your passkey.'}`;
+}
+
+/** A device name as the passkey function stores it: trimmed, single spaces. */
+export const tidyDeviceName = (name) => String(name ?? '').trim().replace(/\s+/g, ' ');
+
 /**
  * "Desktop browser", "Phone browser" or "Tablet browser", from the user
  * agent; ", passkey available" or ", no passkey on this device" only when
