@@ -11,11 +11,15 @@
 // loaded and `pickSingleton` prefers the active one, then the latest, so a
 // save always updates the existing row. Only an empty table offers to create
 // one.
+//
+// A record intent for this table (the fix walk, or a plain open) opens the
+// form with the fix banner through the same useFixWalk the decks use.
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AlertCircle, EyeOff, Pencil, Plus, RefreshCw } from 'lucide-react';
 import RecordDialog from './RecordDialog';
 import RecordView from './RecordView';
+import { useFixWalk } from './fixWalk';
 import { isPublic, pickSingleton } from './managers/schemaModel';
 import { listRecords } from '../../../services/voyageRecords';
 
@@ -46,6 +50,10 @@ export default function SingletonChapter({ schema, notify }) {
   }, [load]);
 
   const saved = useCallback((next) => setRow((r) => ({ ...(r || {}), ...next })), []);
+  const openDialog = useCallback((state) => setEditing(state.open), []);
+  const records = useMemo(() => (row ? [row] : []), [row]);
+  const { fix, onCloseDialog } = useFixWalk({ table: schema.table, records, ready: !loading && !error, open: openDialog, notify, current: { open: editing, record: row } });
+  const close = useCallback(() => { setEditing(false); onCloseDialog(); }, [onCloseDialog]);
   const card = row ? schema.card(row) : null;
   const hidden = row && !isPublic(schema, row);
 
@@ -79,7 +87,7 @@ export default function SingletonChapter({ schema, notify }) {
           {extra > 0 && <p className="singleton__note">The table holds {extra + 1} rows; this one is shown and saved. The others are left untouched.</p>}
         </>
       )}
-      <RecordDialog schema={schema} record={row} open={editing} editOnly onClose={() => setEditing(false)} onSaved={saved} onDeleted={() => {}} notify={notify} />
+      <RecordDialog schema={schema} record={row} open={editing} editOnly fix={fix} onClose={close} onSaved={saved} onDeleted={() => {}} notify={notify} />
     </section>
   );
 }

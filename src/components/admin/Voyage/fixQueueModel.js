@@ -370,11 +370,11 @@ export function resolveTargetField(schema, fields) {
  * so the dialog can show the banner without reloading the queue.
  */
 export function walkIntent(group, { startId = null, field = null, score = 0 } = {}) {
-  const items = group.items.map((i) => ({ id: i.recordId, label: i.label, gain: i.gain, task: i.task }));
+  const items = group.items.map((i) => ({ id: i.recordId, label: i.label, gain: i.gain, task: i.task, state: i.state }));
   const index = startId == null ? 0 : Math.max(0, items.findIndex((i) => sameId(i.id, startId)));
   return {
     table: group.table, recordId: items[index]?.id ?? null, mode: 'edit', field,
-    walk: { ruleKey: group.ruleKey, ids: items.map((i) => i.id), index, items, title: group.title, why: group.why, score, fixed: [] },
+    walk: { ruleKey: group.ruleKey, ids: items.map((i) => i.id), index, items, title: group.title, why: group.why, fieldLabel: group.fieldLabel, score, fixed: [] },
   };
 }
 

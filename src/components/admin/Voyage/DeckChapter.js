@@ -7,10 +7,16 @@
 // (optimistically, rolled back if the write fails). For a grouped schema a
 // saved record takes its group's priority, so a new skill joins its group
 // where the group already sits instead of at the default position.
+//
+// A record intent for this chapter's table (recordIntent.js) opens that
+// record once the list has loaded: in the form when the intent asks for
+// edit, and with the fix banner when it carries a fix walk. The walk moves
+// on by replacing the intent; closing the dialog ends it.
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Deck from './Deck';
 import RecordDialog from './RecordDialog';
+import { useFixWalk } from './fixWalk';
 import { groupMoveWrites, nextOrderValue, orderWritesFor, priorityForGroup, sortRows } from './managers/schemaModel';
 import { listRecords, reorderGroups, reorderRecords } from '../../../services/voyageRecords';
 
@@ -43,7 +49,8 @@ export default function DeckChapter({ schema, notify }) {
 
   const open = useCallback((record) => setDialog({ open: true, record }), []);
   const create = useCallback(() => setDialog({ open: true, record: null }), []);
-  const close = useCallback(() => setDialog((s) => ({ ...s, open: false })), []);
+  const { fix, startInEdit, onCloseDialog } = useFixWalk({ table: schema.table, records, ready: !loading && !error, open: setDialog, notify, current: dialog });
+  const close = useCallback(() => { setDialog((s) => ({ ...s, open: false })); onCloseDialog(); }, [onCloseDialog]);
 
   const saved = useCallback((row, isNew) => {
     setRecords((rows) => sortRows(schema, isNew ? [row, ...rows] : rows.map((r) => (r.id === row.id ? { ...r, ...row } : r))));
@@ -89,7 +96,7 @@ export default function DeckChapter({ schema, notify }) {
   return (
     <>
       <Deck schema={schema} records={records} loading={loading} error={error} onRetry={load} onOpen={open} onCreate={create} onReorder={reorder} onMoveGroup={schema.group ? moveGroup : undefined} leaving={leaving} freshId={freshId} />
-      <RecordDialog schema={schema} record={dialog.record} open={dialog.open} onClose={close} onSaved={saved} onDeleted={deleted} notify={notify} nextOrder={nextOrder} prepare={prepare} />
+      <RecordDialog schema={schema} record={dialog.record} open={dialog.open} onClose={close} onSaved={saved} onDeleted={deleted} notify={notify} nextOrder={nextOrder} prepare={prepare} fix={fix} startInEdit={startInEdit} />
     </>
   );
 }
