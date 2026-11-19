@@ -6,6 +6,7 @@
 import {
   PASSKEY_FUNCTION,
   PASSKEY_MESSAGES,
+  PROMPT_BLOCKED_MS,
   getPasskeyStatus,
   hasPasskey,
   isSupported,
@@ -29,6 +30,8 @@ const httpError = (status, body) => ({
   context: { status, clone: () => ({ json: () => (body === undefined ? Promise.reject(new Error('not json')) : Promise.resolve(body)) }) }
 });
 const ok = (data) => ({ data: { success: true, data }, error: null });
+/** A stand-in clock that returns the given times in order, then the last one. */
+const clock = (times) => { let i = 0; return () => times[Math.min(i++, times.length - 1)]; };
 const domError = (name) => Object.assign(new Error('browser text that must not be shown'), { name });
 
 /** Answers invoke calls by action name. */
@@ -106,10 +109,63 @@ describe('signInWithPasskey', () => {
   it('turns a closed prompt into the cancelled sentence and never verifies', async () => {
     answer({ 'auth-options': ok({ challengeId: 'c1', options: {} }) });
     browser.startAuthentication.mockRejectedValue(Object.assign(new Error('x'), { name: 'NotAllowedError', cause: domError('NotAllowedError') }));
-    const result = await signInWithPasskey();
+    // a person takes seconds to read the sheet and press Cancel
+    const result = await signInWithPasskey({ now: clock([0, 2500]) });
     expect(result.error).toEqual({ code: 'cancelled', message: PASSKEY_MESSAGES.cancelled });
     expect(actions()).toEqual(['auth-options']);
     expect(supabase.auth.setSession).not.toHaveBeenCalled();
+  });
+
+  it('reports a prompt the browser refused at once as blocked, not as a person cancelling', async () => {
+    answer({ 'auth-options': ok({ challengeId: 'c1', options: {} }) });
+    browser.startAuthentication.mockRejectedValue(Object.assign(new Error('x'), { name: 'NotAllowedError', cause: domError('NotAllowedError') }));
+    const result = await signInWithPasskey({ now: clock([0, PROMPT_BLOCKED_MS - 1]) });
+    expect(result.error).toEqual({ code: 'prompt_blocked', message: PASSKEY_MESSAGES.cancelled });
+    expect(actions()).toEqual(['auth-options']);
+  });
+
+  it('keeps a fast AbortError as cancelled: only NotAllowedError means a blocked prompt', async () => {
+    answer({ 'auth-options': ok({ challengeId: 'c1', options: {} }) });
+    browser.startAuthentication.mockRejectedValue(domError('AbortError'));
+    const result = await signInWithPasskey({ now: clock([0, 10]) });
+    expect(result.error.code).toBe('cancelled');
+  });
+
+  it('stops before the prompt when aborted while the options load', async () => {
+    const controller = new AbortController();
+    supabase.functions.invoke.mockImplementation(() => {
+      controller.abort();
+      return Promise.resolve(ok({ challengeId: 'c1', options: {} }));
+    });
+    const result = await signInWithPasskey({ signal: controller.signal });
+    expect(result.error).toEqual({ code: 'aborted', message: PASSKEY_MESSAGES.cancelled });
+    expect(browser.startAuthentication).not.toHaveBeenCalled();
+    expect(supabase.functions.invoke.mock.calls[0][1].signal).toBe(controller.signal);
+  });
+
+  it('closes the open prompt on abort and never verifies', async () => {
+    answer({ 'auth-options': ok({ challengeId: 'c1', options: {} }) });
+    const controller = new AbortController();
+    let rejectPrompt;
+    browser.startAuthentication.mockImplementation(() => new Promise((_resolve, reject) => { rejectPrompt = reject; }));
+    browser.WebAuthnAbortService = { cancelCeremony: jest.fn(() => rejectPrompt(domError('AbortError'))) };
+    const pending = signInWithPasskey({ signal: controller.signal });
+    await new Promise((done) => setTimeout(done, 0));
+    controller.abort();
+    const result = await pending;
+    expect(browser.WebAuthnAbortService.cancelCeremony).toHaveBeenCalledTimes(1);
+    expect(result.error.code).toBe('aborted');
+    expect(actions()).toEqual(['auth-options']);
+    expect(supabase.auth.setSession).not.toHaveBeenCalled();
+    delete browser.WebAuthnAbortService;
+  });
+
+  it('returns aborted at once for a signal that is already aborted', async () => {
+    const controller = new AbortController();
+    controller.abort();
+    const result = await signInWithPasskey({ signal: controller.signal });
+    expect(result.error.code).toBe('aborted');
+    expect(supabase.functions.invoke).not.toHaveBeenCalled();
   });
 
   it.each([

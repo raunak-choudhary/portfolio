@@ -54,6 +54,18 @@ const SERVER_CODES = {
   not_found: 'notFound'
 };
 
+/**
+ * A NotAllowedError faster than this did not come from a person: the browser
+ * refused to open the prompt at all, which Safari does at once when the call
+ * has no tap behind it. Nobody can read a system sheet and press Cancel in
+ * well under half a second, so the split by time is safe in practice.
+ */
+export const PROMPT_BLOCKED_MS = 400;
+
+/** Error codes a caller can tell apart from a person closing the prompt. */
+export const PASSKEY_ABORTED = 'aborted';
+export const PASSKEY_PROMPT_BLOCKED = 'prompt_blocked';
+
 const failure = (key, code = key) => ({ success: false, error: { code, message: PASSKEY_MESSAGES[key] || PASSKEY_MESSAGES.unknown } });
 
 /** Turns a functions.invoke error into a failure result. */
@@ -77,9 +89,11 @@ const describeInvokeError = async (error) => {
 };
 
 /** Calls one action of the function; supabase-js attaches the session's access token. */
-const callFunction = async (action, payload = {}) => {
+const callFunction = async (action, payload = {}, signal = undefined) => {
   try {
-    const { data, error } = await supabase.functions.invoke(PASSKEY_FUNCTION, { body: { action, ...payload } });
+    const request = { body: { action, ...payload } };
+    if (signal) request.signal = signal;
+    const { data, error } = await supabase.functions.invoke(PASSKEY_FUNCTION, request);
     if (error) return describeInvokeError(error);
     if (!data?.success) return failure('unknown', 'bad_response');
     return { success: true, data: data.data };
@@ -162,19 +176,47 @@ const adoptSession = async (session) => {
  * Login step 02 with a passkey: request options, run the platform prompt,
  * let the function verify it and complete the second factor, then adopt the
  * level-2 session. Resolves to { success } or { success: false, error }.
+ *
+ * Optional `signal` (an AbortSignal) stops the attempt: the open prompt is
+ * closed and nothing after it runs, resolving to the code 'aborted'. A
+ * NotAllowedError within PROMPT_BLOCKED_MS resolves to 'prompt_blocked'
+ * (the browser would not open the prompt), so a caller can tell it from a
+ * person closing the sheet, which stays 'cancelled'. Both carry the
+ * cancelled sentence.
+ * @param {{signal?: AbortSignal, now?: () => number}} [options]
  */
-export const signInWithPasskey = async () => {
+export const signInWithPasskey = async ({ signal, now = () => Date.now() } = {}) => {
+  const aborted = () => failure('cancelled', PASSKEY_ABORTED);
   if (!isSupported()) return failure('unsupported');
-  const options = await callFunction('auth-options');
+  if (signal?.aborted) return aborted();
+  const options = await callFunction('auth-options', {}, signal);
+  if (signal?.aborted) return aborted();
   if (!options.success) return options;
   let response;
+  let startedAt = 0;
+  const library = await loadBrowserLibrary().catch(() => null);
+  if (signal?.aborted) return aborted();
+  if (!library) return failure('unknown', 'ceremony_failed');
+  // The library keeps one ceremony at a time and can close it on request.
+  const closePrompt = () => library.WebAuthnAbortService?.cancelCeremony();
+  signal?.addEventListener('abort', closePrompt, { once: true });
   try {
-    const { startAuthentication } = await loadBrowserLibrary();
-    response = await startAuthentication({ optionsJSON: options.data.options });
+    startedAt = now();
+    response = await library.startAuthentication({ optionsJSON: options.data.options });
   } catch (error) {
-    return describeCeremonyError(error);
+    if (signal?.aborted) return aborted();
+    const result = describeCeremonyError(error);
+    const name = error?.cause?.name || error?.name;
+    if (result.error.code === 'cancelled' && name === 'NotAllowedError' && now() - startedAt < PROMPT_BLOCKED_MS) {
+      result.error.code = PASSKEY_PROMPT_BLOCKED;
+    }
+    return result;
+  } finally {
+    signal?.removeEventListener('abort', closePrompt);
   }
-  const verified = await callFunction('auth-verify', { challengeId: options.data.challengeId, response });
+  if (signal?.aborted) return aborted();
+  const verified = await callFunction('auth-verify', { challengeId: options.data.challengeId, response }, signal);
+  if (signal?.aborted) return aborted();
   if (!verified.success) return verified;
   if (!verified.data?.access_token || !verified.data?.refresh_token) return failure('unknown', 'bad_response');
   return adoptSession(verified.data);
