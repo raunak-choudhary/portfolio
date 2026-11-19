@@ -12,6 +12,8 @@ import { Activity, Inbox, ListChecks, Moon, ShieldCheck, Sparkles, TrendingUp, W
 import { moonPhase } from '../SkyBackground/skyModel';
 import { relativeTime } from '../../../services/voyageData';
 import { describe as describeActivity, sentenceText, tileWhen } from './activityModel';
+import { gainText, round1 } from './fixQueueModel';
+import { showQueue } from './recordIntent';
 import { BENTO_ORDER_KEY, percentChange, sanitizeOrder, sectionTallies, topIssues, weakestSections } from './bentoModel';
 
 const readOrder = () => { try { return sanitizeOrder(JSON.parse(localStorage.getItem(BENTO_ORDER_KEY))); } catch { return sanitizeOrder(null); } };
@@ -55,6 +57,16 @@ function TileBody({ id, data, onGo, onSeeActivity, now }) {
     case 'inbox':
       return <><h5><Inbox size={14} /> Inbox</h5><div className="tile__big">{data.inbox ? data.inbox.count : '…'}<small>unread</small></div><div className="tile__muted">{data.inbox?.latest?.[0] ? `${data.inbox.latest[0].name} · ${relativeTime(data.inbox.latest[0].createdAt)}` : 'Nothing waiting.'}</div><button type="button" className="tile__link" onClick={() => onGo('inbox')}>Open the inbox</button></>;
     case 'fixes': {
+      // the fix queue's top three groups with their gains; the health issues are the fallback if the queue failed to load
+      const queue = data.fixes?.model;
+      if (queue) {
+        const top = queue.groups.slice(0, 3);
+        return <><h5><Wrench size={14} /> Fix next</h5>{top.length
+          ? <><div className="tile__fix">{top.map((g) => <div key={g.ruleKey}><b>{gainText(g.gain)}</b><span>{g.title}</span></div>)}</div>
+            <div className="tile__gain">Health {round1(queue.scoreWithDismissals).toFixed(1)} now, {round1(queue.afterEveryFix).toFixed(1)} after every fix</div>
+            <button type="button" className="tile__link" onClick={showQueue}>Open the fix queue</button></>
+          : <p className="tile__empty">Every section passes its checks.</p>}</>;
+      }
       const issues = topIssues(sections, 4);
       return <><h5><Wrench size={14} /> Fix next</h5>{issues.length ? <div className="tile__queue">{issues.map((i, k) => <div key={k}><b className={i.severity}>{i.severity}</b><span>{i.section} · {i.message}</span></div>)}</div> : <p className="tile__empty">{health ? 'Nothing to fix. Well played.' : 'Checking…'}</p>}</>;
     }
