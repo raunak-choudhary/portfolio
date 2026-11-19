@@ -226,6 +226,12 @@ export function describeSession(session, { passkeys = [], now = new Date() } = {
   };
 }
 
+/** The note under a level 1 session: what it was signed in with, when that is known. */
+export function levelOneNote(firstStep) {
+  const how = { 'Google sign-in': 'Google', 'Email code': 'an email code' }[firstStep];
+  return how ? `Assurance level 1: signed in with ${how} only.` : 'Assurance level 1: one step only.';
+}
+
 /**
  * "Desktop browser", "Phone browser" or "Tablet browser", from the user
  * agent; ", passkey available" or ", no passkey on this device" only when
