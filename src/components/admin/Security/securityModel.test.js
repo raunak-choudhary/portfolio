@@ -3,7 +3,7 @@
 
 import {
   HELD_REASON, PASSKEY_MATCH_SECONDS, PRIMARY_APP_NAME, agoText, appsNote, chapterState, defaultAppName, describeSession, deviceText,
-  formatDay, groupSecret, holdLastApp, isLocalhostPasskey, passkeysInUse, removeAppConfirm, removePasskeyConfirm,
+  formatDay, groupSecret, levelOneNote, holdLastApp, isLocalhostPasskey, passkeysInUse, removeAppConfirm, removePasskeyConfirm,
   renewalText, signedInText,
 } from './securityModel';
 
@@ -111,6 +111,12 @@ describe('formatting', () => {
     expect(agoText(new Date('2026-11-18T19:00:00Z'), now)).toBe('2 h ago');
     expect(agoText(new Date('2026-11-16T19:00:00Z'), now)).toBe('2 days ago');
     expect(agoText(new Date('2026-11-17T19:00:00Z'), now)).toBe('1 day ago');
+  });
+
+  it('says what a level 1 session was signed in with', () => {
+    expect(levelOneNote('Google sign-in')).toBe('Assurance level 1: signed in with Google only.');
+    expect(levelOneNote('Email code')).toBe('Assurance level 1: signed in with an email code only.');
+    expect(levelOneNote(null)).toBe('Assurance level 1: one step only.');
   });
 
   it('words the renewal only when the lifetime is known', () => {
