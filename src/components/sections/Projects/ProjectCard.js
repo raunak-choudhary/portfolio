@@ -3,8 +3,6 @@ import { teamLabel, toHttpsUrl } from './projectFormat';
 import visitorTracking from '../../../services/visitorTrackingService';
 
 const ProjectCard = ({ project }) => {
-  console.log('🎨 Rendering Optimized ProjectCard:', project?.title);
-
   const [isFlipped, setIsFlipped] = useState(false);
   const [showImageGallery, setShowImageGallery] = useState(false);
   const [currentFeatureIndex, setCurrentFeatureIndex] = useState(0);
@@ -48,8 +46,6 @@ const ProjectCard = ({ project }) => {
   // Enhanced Background Isolation for Image Gallery Modal
   useEffect(() => {
     if (showImageGallery) {
-      console.log('🔒 Enabling enhanced modal isolation for Projects gallery');
-      
       // Store original body styles
       const originalOverflow = document.body.style.overflow;
       const originalPosition = document.body.style.position;
@@ -80,8 +76,6 @@ const ProjectCard = ({ project }) => {
       document.addEventListener('keydown', preventBackgroundInteraction, true);
 
       return () => {
-        console.log('🔓 Restoring original page state for Projects');
-        
         // Restore everything on cleanup
         document.body.style.overflow = originalOverflow;
         document.body.style.position = originalPosition;
@@ -109,7 +103,6 @@ const ProjectCard = ({ project }) => {
       return;
     }
     
-    console.log('🔄 Card flip triggered for:', project?.title);
     // Turning to the back opens the project's details: count it (once per
     // project per session, the service de-duplicates). Turning back does not.
     if (!isFlipped) {
@@ -161,19 +154,16 @@ const ProjectCard = ({ project }) => {
   // Handle image gallery - Enhanced for isolation
   const openImageGallery = (e) => {
     e.stopPropagation();
-    console.log('🖼️ Opening enhanced image gallery for:', project?.title);
     setShowImageGallery(true);
   };
 
   const closeImageGallery = () => {
-    console.log('❌ Closing Projects image gallery');
     setShowImageGallery(false);
   };
 
   const handleImageClick = (imageUrl, e) => {
     e.stopPropagation(); // Prevent any parent click handlers
-    console.log('🖼️ Opening image in new window:', imageUrl);
-    
+
     // Open image in new window/tab
     window.open(imageUrl, '_blank', 'noopener,noreferrer');
   };
