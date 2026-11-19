@@ -6,6 +6,7 @@
 // a safe empty shape on failure; the tiles say "no data" rather than crash.
 
 import { supabase } from './supabaseClient';
+import { EDITED_TABLES } from './editedTables';
 
 const isoDaysAgo = (days) => new Date(Date.now() - days * 86400000).toISOString();
 const dayKey = (iso) => String(iso).slice(0, 10);
@@ -105,12 +106,8 @@ export async function getUnreadMessages() {
   }
 }
 
-/** Tables with an updated_at column that the "recent edits" tile reads. */
-export const EDITED_TABLES = Object.freeze([
-  ['hero_content', 'Hero', 'title'], ['about_content', 'About', 'about_me_title'], ['projects', 'Projects', 'title'], ['internships', 'Internships', 'company'],
-  ['education', 'Education', 'institution'], ['work_experience', 'Work', 'company'], ['skills', 'Skills', 'skill_name'], ['certifications', 'Certifications', 'title'],
-  ['recommendations', 'Recommendations', 'recommender_name'], ['achievements', 'Achievements', 'title'], ['leadership', 'Leadership', 'title'],
-]);
+/** Tables with an updated_at column that the "recent edits" tile reads (kept in editedTables.js so pure modules can import it). */
+export { EDITED_TABLES };
 
 /**
  * The most recently edited rows across the content tables.
