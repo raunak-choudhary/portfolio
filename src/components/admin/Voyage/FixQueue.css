@@ -7,7 +7,7 @@
    reduced motion. */
 
 /* ---------- the pane ---------- */
-.fx-pane { padding: 16px; display: grid; gap: 14px; align-content: start; min-width: 0; margin-top: 12px; scroll-margin-top: 72px; }
+.fx-pane { padding: 16px; display: grid; gap: 14px; align-content: start; min-width: 0; scroll-margin-top: 72px; }
 .fx-pane .v5-head h3:focus { outline: none; }
 .fx-pane .v5-head h3:focus-visible { outline: 2px solid var(--voyage-accent); outline-offset: 4px; border-radius: 4px; }
 .fx-pane .v5-head__sum b { color: var(--voyage-fg); font-weight: 600; }
