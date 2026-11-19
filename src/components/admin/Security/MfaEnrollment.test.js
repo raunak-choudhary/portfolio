@@ -92,7 +92,7 @@ describe('MfaEnrollment with passkeys', () => {
     expect(view.container.querySelector('#mfa-keep-last')).toBeNull();
     click(removes[0]);
     await flush();
-    expect(auth.unenrollFactor).toHaveBeenCalledWith('f1');
+    expect(auth.unenrollFactor).toHaveBeenCalledWith('f1', 'Primary authenticator');
     view.unmount();
   });
 

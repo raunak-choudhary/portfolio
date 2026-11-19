@@ -1,6 +1,13 @@
 // src/services/authService.js - Supabase Auth based admin security
 
 import { supabase } from './supabaseClient';
+import { logSecurityEvent } from './activityService';
+
+/**
+ * Records a security event without ever affecting the action: a logger that
+ * throws or rejects resolves to false here.
+ */
+const logQuietly = (kind, label = null) => Promise.resolve().then(() => logSecurityEvent(kind, label)).catch(() => false);
 
 const ADMIN_DASHBOARD_PATH = '/admindashboard';
 
@@ -463,9 +470,11 @@ export const enrollTotp = async (friendlyName = PRIMARY_FACTOR_NAME) => {
 
 /**
  * Confirms a new authenticator with its first code. On success Supabase marks
- * the factor verified and upgrades the current session to level 2.
+ * the factor verified and upgrades the current session to level 2, and the
+ * activity log records 'factor-add' with the app's name (best effort; a
+ * logging failure never changes the result).
  */
-export const verifyTotpEnrollment = async (factorId, code) => {
+export const verifyTotpEnrollment = async (factorId, code, friendlyName = null) => {
   if (!factorId || !isValidOneTimeCode(code)) {
     return { success: false, error: authError('INVALID_CODE', 'Enter the six-digit code from your authenticator app.') };
   }
@@ -474,6 +483,7 @@ export const verifyTotpEnrollment = async (factorId, code) => {
     if (challenge.error) return { success: false, error: describeMfaError(challenge.error, 'Could not start the check.') };
     const verified = await supabase.auth.mfa.verify({ factorId, challengeId: challenge.data.id, code: String(code) });
     if (verified.error) return { success: false, error: describeMfaError(verified.error, 'Could not verify the code.') };
+    void logQuietly('factor-add', friendlyName);
     return { success: true, data: { factorId } };
   } catch (error) {
     return { success: false, error: authError('MFA_VERIFY_ERROR', 'Could not verify the code.', error.message) };
@@ -498,12 +508,17 @@ export const verifyTotpChallenge = async (factorId, code) => {
   }
 };
 
-/** Removes an authenticator. The screen confirms first and warns when it is the last one. */
-export const unenrollFactor = async (factorId) => {
+/**
+ * Removes an authenticator. The screen confirms first and warns when it is
+ * the last one. The activity log records 'factor-remove' with the app's name
+ * (best effort).
+ */
+export const unenrollFactor = async (factorId, friendlyName = null) => {
   if (!factorId) return { success: false, error: authError('INVALID_FACTOR', 'No authenticator selected.') };
   try {
     const { error } = await supabase.auth.mfa.unenroll({ factorId });
     if (error) return { success: false, error: describeMfaError(error, 'Could not remove the authenticator.') };
+    void logQuietly('factor-remove', friendlyName);
     return { success: true, data: { factorId } };
   } catch (error) {
     return { success: false, error: authError('MFA_UNENROLL_ERROR', 'Could not remove the authenticator.', error.message) };
@@ -618,6 +633,10 @@ export const SIGN_OUT_EVERYWHERE_FAILED_MESSAGE =
  * changed and the caller can stay where it is.
  */
 export const signOutEverywhere = async () => {
+  // Logged first: once the call succeeds the session is gone and the log
+  // would refuse the entry. Best effort and bounded by LOG_TIMEOUT_MS; if the
+  // sign-out then fails, the entry stands for an attempt.
+  await logQuietly('sign-out-all');
   try {
     const { error } = await supabase.auth.signOut({ scope: 'global' });
     if (error) {

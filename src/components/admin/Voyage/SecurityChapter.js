@@ -141,7 +141,7 @@ export default function SecurityChapter({ notify, onLeave }) {
     const { what, target } = confirm;
     setRemoving(true);
     try {
-      const result = what === 'app' ? await unenrollFactor(target.id) : await removePasskey(target.id);
+      const result = what === 'app' ? await unenrollFactor(target.id, target.friendly_name) : await removePasskey(target.id, target.device_name);
       if (!result.success) { notify(result.error.message, 'bad'); return; }
       const name = what === 'app' ? target.friendly_name : target.device_name;
       setAppDone(''); setPasskey((p) => (p.phase === 'added' ? { phase: 'idle', name: '', error: '' } : p));

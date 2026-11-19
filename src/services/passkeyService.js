@@ -11,6 +11,13 @@
 // fixed sentences below; text from the server or the browser is never shown.
 
 import { supabase } from './supabaseClient';
+import { logSecurityEvent } from './activityService';
+
+/**
+ * Records a security event without ever affecting the action: a logger that
+ * throws or rejects resolves to false here.
+ */
+const logQuietly = (kind, label = null) => Promise.resolve().then(() => logSecurityEvent(kind, label)).catch(() => false);
 
 export const PASSKEY_FUNCTION = 'admin-passkey';
 
@@ -225,7 +232,9 @@ export const signInWithPasskey = async ({ signal, now = () => Date.now() } = {})
 /**
  * Registers this device's passkey (Security screen, level 2 only). The first
  * passkey also creates the bridge factor, which upgrades the session in Auth;
- * that session is adopted so the screen stays at level 2.
+ * that session is adopted so the screen stays at level 2. The activity log
+ * records 'passkey-add' with the device name here and nowhere else (the
+ * admin-passkey function does not log), best effort.
  */
 export const registerPasskey = async (deviceName) => {
   const name = String(deviceName ?? '').trim().replace(/\s+/g, ' ');
@@ -246,6 +255,7 @@ export const registerPasskey = async (deviceName) => {
     const adopted = await adoptSession(saved.data.session);
     if (!adopted.success) return adopted;
   }
+  void logQuietly('passkey-add', name);
   return { success: true, data: { id: saved.data?.id } };
 };
 
@@ -265,12 +275,15 @@ export const listPasskeys = async () => {
 
 /**
  * Removes a passkey through the function, which also retires the bridge
- * factor when the last passkey goes (`bridgeRemoved`).
+ * factor when the last passkey goes (`bridgeRemoved`). The activity log
+ * records 'passkey-remove' with the device name, best effort; this is the
+ * only place passkey removals are logged.
  */
-export const removePasskey = async (id) => {
+export const removePasskey = async (id, deviceName = null) => {
   if (!id) return failure('notFound');
   const result = await callFunction('remove', { id });
   if (!result.success) return result;
+  void logQuietly('passkey-remove', deviceName);
   return { success: true, data: { bridgeRemoved: Boolean(result.data?.bridgeRemoved) } };
 };
 
