@@ -30,6 +30,8 @@ jest.mock('../../../services/voyageData', () => ({
 }));
 jest.mock('../../../services/adminSessionFacts', () => ({ startSession: jest.fn() }));
 // the decks load through the records service, which also needs the Supabase client; the page test checks the wiring only
+// the history line and the activity pane read through the activity service, which opens the Supabase client
+jest.mock('../../../services/activityService', () => ({ listActivity: jest.fn(), recordHistory: jest.fn(), isActivityAvailable: jest.fn(), logSecurityEvent: jest.fn() }));
 jest.mock('../../../services/voyageRecords', () => ({ listRecords: jest.fn(), saveRecord: jest.fn(), deleteRecord: jest.fn(), reorderRecords: jest.fn(), uploadImages: jest.fn(), removeImage: jest.fn(), imageProblems: jest.fn(), failureKind: jest.fn(), fetchUpdatedAt: jest.fn(), getRecord: jest.fn() }));
 // the inbox reads through its own service, which also needs the Supabase client
 jest.mock('../../../services/inboxService', () => ({ listMessages: jest.fn(), updateMessages: jest.fn(), deleteMessages: jest.fn(), signedAttachmentUrl: jest.fn(), SIGNED_URL_SECONDS: 300 }));
@@ -122,7 +124,11 @@ describe('VoyagePage (2D fallback)', () => {
     expect(bento.textContent).toContain('Systems Engineer is missing position.');
     expect(bento.textContent).toContain('NYU Career Services');
     expect(bento.textContent).toContain('/home');
-    expect(bento.textContent).toContain('Tallyproof');
+    expect(bento.textContent).toContain('Tallyproof');   // the activity table is missing: the tile falls back to the latest saves
+    expect(bento.textContent).toContain('Recent activity');
+    // V5: Mission Control adds the split with the activity pane under the bento
+    const split = view.container.querySelector('#chapter-overview [data-testid="mission-split"]');
+    expect(split.querySelector('[data-testid="activity-pane"]').textContent).toContain('Not set up yet.');
     const projects = view.container.querySelector('#chapter-projects');
     expect(projects.querySelector('[data-testid="deck"]')).not.toBeNull();   // Projects has a schema: it gets the deck
     expect(projects.textContent).toContain('Tallyproof'); expect(projects.textContent).toContain('New project');

@@ -37,7 +37,7 @@ import SecurityChapter from './SecurityChapter';
 import SingletonChapter from './SingletonChapter';
 import Toast, { useToast } from './Toast';
 import { schemaForTable } from './managers';
-import Bento from './Bento';
+import MissionControl from './MissionControl';
 import CommandPalette from './CommandPalette';
 import StarRail from './StarRail';
 import { createSkyField, webglAvailable } from './skyField';
@@ -292,7 +292,7 @@ function VoyageView({ requireSecurityEnrollment }) {
               </div>
             </div>
             {locked(chapter) ? <EnrolmentLock onGo={() => go('security')} /> : <>
-              {chapter.kind === 'bento' && <Bento data={data} onGo={go} />}
+              {chapter.kind === 'bento' && <MissionControl data={data} onGo={go} motion={effectiveMotion} />}
               {chapter.kind === 'deck' && schemaForTable(chapter.table) && (schemaForTable(chapter.table).mode === 'singleton'
                 ? <SingletonChapter schema={schemaForTable(chapter.table)} notify={notify} />
                 : <DeckChapter schema={schemaForTable(chapter.table)} notify={notify} />)}
