@@ -41,6 +41,12 @@ jest.mock('./SecurityChapter', () => {
   const React = require('react');
   return function MockSecurity({ onLeave }) { return React.createElement('button', { 'data-testid': 'security-chapter', onClick: onLeave }, 'Sign out everywhere'); };
 });
+// the analytics chapter reads through its own services; the page test checks that it mounts in place of the placeholder
+jest.mock('../../../services/insightsService', () => ({ loadInsights: jest.fn() }));
+jest.mock('../../../services/reportsService', () => ({ REPORT_MESSAGES: { UNKNOWN: 'x' }, listReports: jest.fn(), generateReport: jest.fn() }));
+jest.mock('../../../services/reportsTableProbe', () => ({ reportsTableMissing: jest.fn() }));
+jest.mock('./TrendChart', () => () => null);
+const insightsService = jest.requireMock('../../../services/insightsService');
 const { getPortfolioStats } = jest.requireMock('../../../services/dataService');
 const analyticsService = jest.requireMock('../../../services/analyticsService').default;
 const voyageData = jest.requireMock('../../../services/voyageData');
@@ -78,6 +84,7 @@ describe('VoyagePage (2D fallback)', () => {
     voyageRecords.listRecords.mockResolvedValue([{ id: 'p1', title: 'Tallyproof', order_index: 30, technologies: ['React'] }]);
     mediaLibrary.getMediaLibrarySnapshot.mockResolvedValue({ buckets: [], items: [{ id: 'project-images:a.png', bucketId: 'project-images', bucketLabel: 'Project Images', path: 'a.png', name: 'a.png', kind: 'image', status: 'referenced', previewUrl: null }], summary: {}, generatedAt: '' });
     inboxService.listMessages.mockResolvedValue([{ id: 'm1', name: 'Test Sender', email: 'sender@example.com', subject: 'Hello', message: 'Hi', status: 'unread', created_at: new Date().toISOString() }]);
+    insightsService.loadInsights.mockResolvedValue({ current: [{ id: 'e1', session_id: 's1', created_at: new Date().toISOString(), event_type: 'page_view', event_action: 'view_page', event_label: 'home' }], before: [], projects: [], firstEngaged: null, firstProjectOpen: null, freshness: [], truncated: false });
     mockNavigate.mockClear();
   });
 
@@ -128,7 +135,9 @@ describe('VoyagePage (2D fallback)', () => {
     });
     expect(view.container.querySelector('#chapter-media [data-testid="media"]').textContent).toContain('a.png');   // V4a: storage is its source
     expect(view.container.querySelector('#chapter-media .voyage-placeholder')).toBeNull();
-    expect(view.container.querySelector('#chapter-analytics .voyage-placeholder')).not.toBeNull();   // still to come
+    expect(view.container.querySelector('#chapter-analytics .voyage-placeholder')).toBeNull();   // V4b: the four questions
+    expect(view.container.querySelector('#chapter-analytics [data-testid="analytics-chapter"]').textContent).toContain('Is it working?');
+    expect(view.container.querySelector('#chapter-analytics .voyage-chapter__sub').textContent).toBe('Who visits, what they look at, and whether they reach out.');
     expect(view.container.querySelector('#chapter-inbox [data-testid="inbox"]').textContent).toContain('Hello');   // V4a: the telegraph office
     expect(view.container.querySelector('#chapter-inbox .voyage-placeholder')).toBeNull();
     view.unmount();

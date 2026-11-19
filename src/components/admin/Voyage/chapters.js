@@ -30,7 +30,7 @@ export const CHAPTERS = Object.freeze([
   { id: 'achievements', name: 'Achievements', constellation: 'Cap', kind: 'deck', table: 'achievements', sub: 'Awards and recognitions.' },
   { id: 'leadership', name: 'Leadership', constellation: 'Aqr', kind: 'deck', table: 'leadership', sub: 'Teams you led and roles you held.' },
   { id: 'media', name: 'Media library', constellation: 'Psc', kind: 'deck', table: null, sub: 'Images and files behind the sections.' },
-  { id: 'analytics', name: 'Analytics', constellation: 'Ori', kind: 'charts', sub: 'Visitors, pages and sources, last 30 days.' },
+  { id: 'analytics', name: 'Analytics', constellation: 'Ori', kind: 'charts', sub: 'Who visits, what they look at, and whether they reach out.' },
   { id: 'inbox', name: 'Inbox', constellation: 'Cyg', kind: 'inbox', table: 'contact_messages', sub: 'Messages from the contact form.' },
   { id: 'security', name: 'Security', constellation: 'Cas', kind: 'security', sub: 'Authenticator apps, passkeys and this session.' },
 ]);

@@ -31,6 +31,7 @@ import { SkySettingsProvider, useSkySettings } from '../SkyBackground/SkySetting
 import { CHAPTERS, chapterIndex, chapterPlace } from './chapters';
 import DeckChapter from './DeckChapter';
 import InboxChapter from './InboxChapter';
+import AnalyticsChapter from './AnalyticsChapter';
 import MediaChapter from './MediaChapter';
 import SecurityChapter from './SecurityChapter';
 import SingletonChapter from './SingletonChapter';
@@ -47,7 +48,7 @@ import './Voyage.css';
 
 /** Names of the constellations, from figures.json, for the rail and the palette. */
 // chapter kinds with their own component; the rest show the placeholder until their unit
-const BUILT_KINDS = new Set(['prologue', 'bento', 'inbox', 'security']);
+const BUILT_KINDS = new Set(['prologue', 'bento', 'inbox', 'charts', 'security']);
 // the media library is a deck with no table of its own: storage is its source
 const MEDIA_CHAPTER = 'media';
 const namesFrom =(figures) => Object.fromEntries((figures || []).map((f) => [f.id, f.name]));
@@ -296,6 +297,7 @@ function VoyageView({ requireSecurityEnrollment }) {
                 ? <SingletonChapter schema={schemaForTable(chapter.table)} notify={notify} />
                 : <DeckChapter schema={schemaForTable(chapter.table)} notify={notify} />)}
               {chapter.kind === 'inbox' && <InboxChapter notify={notify} />}
+              {chapter.kind === 'charts' && <AnalyticsChapter notify={notify} motion={effectiveMotion} />}
               {chapter.id === MEDIA_CHAPTER && <MediaChapter notify={notify} />}
               {chapter.kind === 'security' && <SecurityChapter notify={notify} onLeave={signOut} />}
               {!BUILT_KINDS.has(chapter.kind) && chapter.id !== MEDIA_CHAPTER && !(chapter.kind === 'deck' && schemaForTable(chapter.table)) && (
