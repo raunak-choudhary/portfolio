@@ -54,7 +54,7 @@ describe('the fix walk', () => {
     expect(group.items.map((i) => i.recordId).sort()).toEqual(['a', 'b']);
     const [first, second] = group.items;
 
-    const view = show(<DeckChapter schema={projectsSchema} notify={notify} />);
+    show(<DeckChapter schema={projectsSchema} notify={notify} />);
     await flush();
     act(() => startWalk(group, model));
     await flush();
@@ -112,7 +112,7 @@ describe('the fix walk', () => {
   it('says so when a save leaves the gap, offers Edit again, and Skip moves on without saving', async () => {
     const model = buildFixQueue({ rowsByTable: { projects: rows } });
     const group = model.groups.find((g) => g.ruleKey === 'projects:proof');
-    const view = show(<DeckChapter schema={projectsSchema} notify={notify} />);
+    show(<DeckChapter schema={projectsSchema} notify={notify} />);
     await flush();
     act(() => startWalk(group, model));
     await flush();
@@ -133,7 +133,7 @@ describe('the fix walk', () => {
   it('asks before Stop fixing throws away typed changes, then ends the walk', async () => {
     const model = buildFixQueue({ rowsByTable: { projects: rows } });
     const group = model.groups.find((g) => g.ruleKey === 'projects:proof');
-    const view = show(<DeckChapter schema={projectsSchema} notify={notify} />);
+    show(<DeckChapter schema={projectsSchema} notify={notify} />);
     await flush();
     act(() => startWalk(group, model, group.items[1].recordId));
     await flush();
@@ -153,7 +153,7 @@ describe('the fix walk', () => {
   });
 
   it('tells the owner when the record of an intent is gone and asks for a reload', async () => {
-    const view = show(<DeckChapter schema={projectsSchema} notify={notify} />);
+    show(<DeckChapter schema={projectsSchema} notify={notify} />);
     await flush();
     const f = fixesChanged.get();
     act(() => openRecord('projects', 'zzz', { mode: 'edit' }));
@@ -165,7 +165,7 @@ describe('the fix walk', () => {
   });
 
   it('ignores intents for other tables and opens a plain read intent once', async () => {
-    const view = show(<DeckChapter schema={projectsSchema} notify={notify} />);
+    show(<DeckChapter schema={projectsSchema} notify={notify} />);
     await flush();
     act(() => openRecord('skills', 'a'));
     await flush();
@@ -181,7 +181,7 @@ describe('the fix walk', () => {
     const hero = { id: 'h1', title: 'Hi', subtitle: 'Engineer', description: 'Builds things.', highlights: ['One'], cta_text: 'Explore', cta_link: '#navigation', is_active: true, updated_at: '2026-11-01' };
     records.listRecords.mockResolvedValue([hero]);
     records.fetchUpdatedAt.mockResolvedValue(hero.updated_at);
-    const view = show(<SingletonChapter schema={heroSchema} notify={notify} />);
+    show(<SingletonChapter schema={heroSchema} notify={notify} />);
     await flush();
     expect(dialog()).toBeNull();
     act(() => openRecord('hero_content', 'h1', { mode: 'edit' }));
