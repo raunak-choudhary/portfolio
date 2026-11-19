@@ -323,6 +323,22 @@ function describeDismissals(list, rowsByTable, rules, coveredBy) {
   });
 }
 
+/**
+ * The numbers the queue and the Fix next tile show. The plain score comes
+ * first: items marked not needed still count as gaps there. When any are
+ * marked, the flattering figure that counts them as passing is offered
+ * alongside, never instead.
+ * @returns {{now: number, after: number, counted: number, withDismissals: number, line: string}}
+ */
+export function scoreSummary(model) {
+  const now = round1(model.preciseScore);
+  const after = round1(model.afterOpenFixes);
+  const counted = model.dismissed.reduce((sum, d) => sum + (d.covers || 0), 0);
+  const withDismissals = round1(model.scoreWithDismissals);
+  const marked = counted ? `, ${withDismissals.toFixed(1)} counting ${counted} marked not needed` : '';
+  return { now, after, counted, withDismissals, line: `${now.toFixed(1)} now${marked}, ${after.toFixed(1)} after every fix` };
+}
+
 /** Groups under one filter chip. */
 export const FILTERS = Object.freeze([
   { id: 'all', label: 'All' }, { id: 'critical', label: 'Critical' }, { id: 'images', label: 'Images' }, { id: 'proof', label: 'Proof links' }, { id: 'writing', label: 'Writing' },

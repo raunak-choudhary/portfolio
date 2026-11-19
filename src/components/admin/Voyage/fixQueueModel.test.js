@@ -3,7 +3,7 @@ import path from 'path';
 import { SECTION_HEALTH_RULES } from '../../../services/analyticsService';
 import {
   NOTE_MAX, STALE_DAYS, availableFilters, buildFixQueue, chapterForTable, checkItem, filterGroups, findRuleTarget, gainText,
-  resolveTargetField, round1, ruleKeyFor, scoreExplainer, staleSections, stepIntent, walkIntent,
+  resolveTargetField, round1, ruleKeyFor, scoreExplainer, scoreSummary, staleSections, stepIntent, walkIntent,
 } from './fixQueueModel';
 import { projectsSchema } from './managers/projects.schema';
 
@@ -109,6 +109,17 @@ describe('the real score', () => {
     expect(q.preciseScore).toBeCloseTo(plain.preciseScore, 9);
     expect(q.scoreWithDismissals).toBeCloseTo(plain.preciseScore + group.gain, 9);
     expect(q.afterOpenFixes).toBeCloseTo(plain.afterOpenFixes - group.gain, 9);
+  });
+
+  it('words the score plainly and discloses the dismissals only when there are some', () => {
+    const rowsByTable = rowsSmall();
+    const plain = scoreSummary(buildFixQueue({ rowsByTable, rules: RULES }));
+    expect(plain.line).toBe(`${plain.now.toFixed(1)} now, ${plain.after.toFixed(1)} after every fix`);
+    const q = buildFixQueue({ rowsByTable, rules: RULES, dismissals: [{ id: 'd', ruleKey: 'skills:category', recordId: null }] });
+    const s = scoreSummary(q);
+    expect(s.now).toBe(plain.now);
+    expect(s.counted).toBe(q.dismissed[0].covers);
+    expect(s.line).toBe(`${s.now.toFixed(1)} now, ${s.withDismissals.toFixed(1)} counting ${s.counted} marked not needed, ${s.after.toFixed(1)} after every fix`);
   });
 });
 
