@@ -12,15 +12,19 @@ import { viewportUtils } from './utils/viewportUtils';
 import visitorTrackingService from './services/visitorTrackingService';
 
 function App() {
-  // 📊 NEW: Initialize visitor tracking
+  // Visitor tracking: records the landing page view and starts the engaged
+  // clock (once per session). The returned cleanup stops the clock, which
+  // keeps React strict mode's mount, unmount, mount from starting two.
   useEffect(() => {
-    // Initialize visitor tracking for real analytics
+    let stopTracking;
     try {
-      visitorTrackingService.initializeVisitorTracking();
-      console.log('📊 Visitor tracking initialized successfully');
+      stopTracking = visitorTrackingService.initializeVisitorTracking();
     } catch (error) {
-      console.error('❌ Error initializing visitor tracking:', error);
+      console.error('Error initializing visitor tracking:', error);
     }
+    return () => {
+      if (typeof stopTracking === 'function') stopTracking();
+    };
   }, []);
 
   // Add viewport fixes
