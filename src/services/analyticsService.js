@@ -173,6 +173,14 @@ export const trackContentUpdate = async (contentType, contentId, updateType, cha
 
 // ===== METRICS CALCULATION FUNCTIONS =====
 
+// How one active item is scored inside its section: up to REQUIRED_SHARE points
+// for its required fields and QUALITY_SHARE points for its quality groups.
+// Exported, with the helpers below, so the fix queue (Voyage/fixQueueModel.js)
+// runs the same arithmetic forward; the numbers themselves never change here.
+export const REQUIRED_SHARE = 70;
+export const QUALITY_SHARE = 30;
+export const DEFAULT_MIN_DESCRIPTION_LENGTH = 40;
+
 export const SECTION_HEALTH_RULES = [
   {
     name: 'Hero',
@@ -303,7 +311,7 @@ export const SECTION_HEALTH_RULES = [
   }
 ];
 
-const hasUsableValue = (value) => {
+export const hasUsableValue = (value) => {
   if (Array.isArray(value)) {
     return value.some(hasUsableValue);
   }
@@ -323,7 +331,7 @@ const hasUsableValue = (value) => {
   return value !== null && value !== undefined;
 };
 
-const getRowLabel = (row = {}) => (
+export const getRowLabel = (row = {}) => (
   row.title ||
   row.name ||
   row.degree ||
@@ -335,7 +343,7 @@ const getRowLabel = (row = {}) => (
   'Untitled item'
 );
 
-const isActiveContentRow = (row = {}) => {
+export const isActiveContentRow = (row = {}) => {
   if (row.is_active === false) {
     return false;
   }
@@ -348,7 +356,7 @@ const isActiveContentRow = (row = {}) => {
   return true;
 };
 
-const fieldIsComplete = (row, field, rule) => {
+export const fieldIsComplete = (row, field, rule) => {
   const value = row?.[field];
 
   if (!hasUsableValue(value)) {
@@ -356,17 +364,17 @@ const fieldIsComplete = (row, field, rule) => {
   }
 
   if ((rule.descriptionFields || []).includes(field) && typeof value === 'string') {
-    return value.trim().length >= (rule.minDescriptionLength || 40);
+    return value.trim().length >= (rule.minDescriptionLength || DEFAULT_MIN_DESCRIPTION_LENGTH);
   }
 
   return true;
 };
 
-const hasAnyFieldValue = (row, fields = []) => (
+export const hasAnyFieldValue = (row, fields = []) => (
   fields.some(field => fieldIsComplete(row, field, { descriptionFields: [] }))
 );
 
-const createHealthIssue = ({ section, item, type, severity, message }) => ({
+export const createHealthIssue = ({ section, item, type, severity, message }) => ({
   section,
   item,
   type,
@@ -453,7 +461,7 @@ export const evaluateContentSectionHealth = (rule, rows = []) => {
       }
     });
 
-    return (requiredRatio * 70) + (qualityRatio * 30);
+    return (requiredRatio * REQUIRED_SHARE) + (qualityRatio * QUALITY_SHARE);
   });
 
   const averageItemScore = itemScores.reduce((sum, score) => sum + score, 0) / itemScores.length;
