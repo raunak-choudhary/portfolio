@@ -1,5 +1,6 @@
 import { React, act, mount } from '../SkyBackground/testUtils';
-import { backToQueue, clearIntent, fixesChanged, noteFixesChanged, openRecord, queueRequests, recordIntent, setIntent, showQueue, useRecordIntent } from './recordIntent';
+import { contentVersion, noteContentChanged } from './contentChanged';
+import { backToQueue, clearIntent, resetRecordIntent, fixesChanged, noteFixesChanged, openRecord, queueRequests, recordIntent, setIntent, showQueue, useRecordIntent } from './recordIntent';
 
 function Probe() { const intent = useRecordIntent(); return <p>{intent ? `${intent.table}:${intent.recordId}:${intent.mode}` : 'none'}</p>; }
 
@@ -33,5 +34,21 @@ describe('recordIntent store', () => {
     showQueue();
     noteFixesChanged();
     expect([queueRequests.get(), fixesChanged.get()]).toEqual([q + 2, f + 2]);
+  });
+
+  it('shares one content-changed counter with every reader', () => {
+    const before = contentVersion.get();
+    noteContentChanged();
+    expect(fixesChanged.get()).toBe(before + 1);
+    noteFixesChanged();
+    expect(contentVersion.get()).toBe(before + 2);
+  });
+
+  it('forgets the intent and the queue requests on reset', () => {
+    showQueue();
+    setIntent({ table: 'projects', recordId: 1, mode: 'edit', walk: {} });
+    resetRecordIntent();
+    expect(recordIntent.get()).toBeNull();
+    expect(queueRequests.get()).toBe(0);
   });
 });
