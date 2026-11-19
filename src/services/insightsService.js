@@ -12,6 +12,7 @@
 
 import { getAdminSupabaseClient, describeAdminWriteError } from './adminDataService';
 import { getSectionFreshness } from './voyageData';
+import { parseDbInstant } from '../components/admin/Voyage/insightsTime';
 
 /** The columns the model reads; metadata paths are aliased to flat names. */
 export const EVENT_COLUMNS = 'id, created_at, session_id, user_type, event_type, event_action, event_label, visitor:metadata->visitor_info, kind:metadata->>kind, section:metadata->>section_type';
@@ -77,8 +78,8 @@ export async function firstEventAt(eventAction) {
     .order('created_at', { ascending: true })
     .limit(1);
   if (error) throw insightsError(error);
-  const at = Array.isArray(data) && data[0] ? Date.parse(data[0].created_at) : NaN;
-  return Number.isFinite(at) ? at : null;
+  // created_at may come back without a zone; it is UTC (parseDbInstant)
+  return Array.isArray(data) && data[0] ? parseDbInstant(data[0].created_at) : null;
 }
 
 /** Active projects, for titles, stars and which ones have a demo. */
@@ -107,8 +108,8 @@ export async function loadInsights(windows) {
   const boundary = windows.current.from;
   const current = [], before = [];
   for (const row of events.rows) {
-    const at = Date.parse(row.created_at);
-    if (!Number.isFinite(at)) continue;
+    const at = parseDbInstant(row.created_at);
+    if (at === null) continue;
     (at >= boundary ? current : before).push(row);
   }
   return { current, before, projects, firstEngaged, firstProjectOpen, freshness, truncated: events.truncated };
