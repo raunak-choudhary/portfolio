@@ -16,6 +16,7 @@
 // to `visitor`, `kind` and `section`; both shapes are read.
 
 import { addDays, chartDay, dayIndex, shortDate, nyDate, parseDbInstant } from './insightsTime';
+import { sliceWork } from './idle';
 
 export { parseDbInstant };
 
@@ -155,41 +156,49 @@ const timeOf = (row) => parseDbInstant(row.created_at);
  */
 export function visitsOf(rows) {
   const visits = new Map();
-  for (const row of rows) {
-    if (!isCounted(row) || !row.session_id) continue;
-    const at = timeOf(row);
-    if (at === null) continue;
-    let v = visits.get(row.session_id);
-    if (!v) { v = { first: at, info: null, infoAt: Infinity, reached: false, work: false, deeper: false, engaged: false, pages: new Set(), sections: new Set(), opened: new Set(), fresh: [], legacy: [], links: [] }; visits.set(row.session_id, v); }
-    if (at < v.first) v.first = at;
-    // source and device come from the earliest event that carries them (the earliest event, once tracking A ships)
-    const info = visitorOf(row);
-    if (info && typeof info === 'object' && at < v.infoAt) { v.info = info; v.infoAt = at; }
+  for (const row of rows) addRow(visits, row);
+  return finishVisits(visits);
+}
 
-    const reach = reachOf(row);
-    if (reach) (reach.legacy ? v.legacy : v.fresh).push(reach.channel);
-    const action = row.event_action;
-    if (action === 'engaged') v.engaged = true;
-    if (action === 'project_open' && row.event_label) { v.work = true; v.opened.add(String(row.event_label)); }
-    if (action === 'project_link' && row.event_label) {
-      v.work = true;
-      const kind = kindOf(row);
-      if (kind === 'repo' || kind === 'demo') v.links.push({ project: String(row.event_label), kind });
-    }
-    if (action === 'click_social_media' && labelOf(row) === 'github') v.work = true;
-    if (row.event_type === 'page_view') {
-      const page = foldPage(row.event_label);
-      if (page) { v.pages.add(page); if (WORK_PLACES.has(page)) v.work = true; }
-    }
-    if (row.event_type === 'section_view') {
-      const section = sectionOf(row);
-      if (section) {
-        v.sections.add(section);
-        if (WORK_PLACES.has(section)) v.work = true;
-        if (!SHALLOW_SECTIONS.has(section)) v.deeper = true;
-      }
+/** Folds one event into the visit map (the per-row half of visitsOf, so the walk can be sliced). */
+export function addRow(visits, row) {
+  if (!isCounted(row) || !row.session_id) return;
+  const at = timeOf(row);
+  if (at === null) return;
+  let v = visits.get(row.session_id);
+  if (!v) { v = { first: at, info: null, infoAt: Infinity, reached: false, work: false, deeper: false, engaged: false, pages: new Set(), sections: new Set(), opened: new Set(), fresh: [], legacy: [], links: [] }; visits.set(row.session_id, v); }
+  if (at < v.first) v.first = at;
+  // source and device come from the earliest event that carries them (the earliest event, once tracking A ships)
+  const info = visitorOf(row);
+  if (info && typeof info === 'object' && at < v.infoAt) { v.info = info; v.infoAt = at; }
+
+  const reach = reachOf(row);
+  if (reach) (reach.legacy ? v.legacy : v.fresh).push(reach.channel);
+  const action = row.event_action;
+  if (action === 'engaged') v.engaged = true;
+  if (action === 'project_open' && row.event_label) { v.work = true; v.opened.add(String(row.event_label)); }
+  if (action === 'project_link' && row.event_label) {
+    v.work = true;
+    const kind = kindOf(row);
+    if (kind === 'repo' || kind === 'demo') v.links.push({ project: String(row.event_label), kind });
+  }
+  if (action === 'click_social_media' && labelOf(row) === 'github') v.work = true;
+  if (row.event_type === 'page_view') {
+    const page = foldPage(row.event_label);
+    if (page) { v.pages.add(page); if (WORK_PLACES.has(page)) v.work = true; }
+  }
+  if (row.event_type === 'section_view') {
+    const section = sectionOf(row);
+    if (section) {
+      v.sections.add(section);
+      if (WORK_PLACES.has(section)) v.work = true;
+      if (!SHALLOW_SECTIONS.has(section)) v.deeper = true;
     }
   }
+}
+
+/** Settles every visit once all rows are in: legacy dedupe and the nesting funnel. */
+export function finishVisits(visits) {
   for (const v of visits.values()) {
     // a legacy reach-out row is dropped when the same visit sent the new row of that channel
     const seen = new Set(v.fresh);
@@ -214,8 +223,24 @@ export function visitsOf(rows) {
  * @param {number|null} [options.quickFrom] ms of the first `engaged` row ever stored; quick leaves are counted only
  *   over visits that began on or after it, and not at all when it is null.
  */
-export function summarizeWindow(rows, { start, days, projects = [], quickFrom = null }) {
-  const visits = visitsOf(rows);
+export function summarizeWindow(rows, options) {
+  return summarizeVisits(visitsOf(rows), options);
+}
+
+/**
+ * summarizeWindow without one long task: the rows are folded in slices of
+ * about `budgetMs` that yield between them (see idle.js sliceWork), then the
+ * per-visit pass runs once. Same result as summarizeWindow; resolves null when
+ * `cancelled()` turns true first.
+ */
+export async function summarizeWindowSliced(rows, options, { budgetMs = 8, stride, now, pause, cancelled } = {}) {
+  const visits = new Map();
+  const finished = await sliceWork(rows, (row) => addRow(visits, row), { budgetMs, stride, now, pause, cancelled });
+  return finished ? summarizeVisits(finishVisits(visits), options) : null;
+}
+
+/** Every number one window needs, from a settled visit map (see summarizeWindow). */
+export function summarizeVisits(visits, { start, days, projects = [], quickFrom = null }) {
   const all = [...visits.values()];
   const count = (pick) => all.filter(pick).length;
 

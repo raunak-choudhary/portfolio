@@ -52,19 +52,20 @@ const clock = () => (typeof performance !== 'undefined' ? performance.now() : Da
  * @param {(item: T) => void} step
  * @param {object} [options]
  * @param {number} [options.budgetMs]
+ * @param {number} [options.stride] items between clock reads.
  * @param {() => number} [options.now]
  * @param {() => Promise<void>} [options.pause]
  * @param {() => boolean} [options.cancelled]
  * @returns {Promise<boolean>}
  */
-export async function sliceWork(items, step, { budgetMs = 8, now = clock, pause = yieldToMain, cancelled = () => false } = {}) {
+export async function sliceWork(items, step, { budgetMs = 8, stride = 64, now = clock, pause = yieldToMain, cancelled = () => false } = {}) {
   let i = 0;
   while (i < items.length) {
     if (cancelled()) return false;
     const until = now() + budgetMs;
-    // check the clock every 64 items: reading it per item would cost more than the work
+    // check the clock every `stride` items: reading it per item would cost more than the work
     do {
-      const end = Math.min(items.length, i + 64);
+      const end = Math.min(items.length, i + stride);
       for (; i < end; i++) step(items[i]);
     } while (i < items.length && now() < until);
     if (i < items.length) await pause();
