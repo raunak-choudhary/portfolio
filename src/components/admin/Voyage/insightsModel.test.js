@@ -1,7 +1,7 @@
 import {
-  CHANNELS, DEVICES, MIN_LEVEL, bestRateSource, biggestFall, bucketSeries, channelOf, comparisonLabel, foldPage, funnelCards, isCounted, levelFor,
+  CHANNELS, DEVICES, MIN_LEVEL, bestRateSource, deviceOf, parseDbInstant, referrerHost, biggestFall, bucketSeries, channelOf, comparisonLabel, foldPage, funnelCards, isCounted, levelFor,
   mostVisitsSource, paceOf, phonesLeaveMore, projectLists, rankSources, sectionOf, sourceGroup, staleSections, starredLeast, startedOn,
-  summarizeWindow, visitsOf, whatChanged,
+  summarizeWindow, trendPoints, trendSummary, visitsOf, whatChanged,
 } from './insightsModel';
 import { windowsFor } from './insightsTime';
 
@@ -59,6 +59,59 @@ describe('reading events', () => {
     expect(sourceGroup('')).toBe('Direct or unknown');
     expect(sourceGroup(undefined)).toBe('Direct or unknown');
     expect(sourceGroup('news.ycombinator.com')).toBe('Other sites');
+  });
+
+  it('reads full referrer addresses and counts the site itself as unknown', () => {
+    expect(referrerHost('https://www.google.com/search?q=x')).toBe('www.google.com');
+    expect(referrerHost('www.linkedin.com/feed')).toBe('www.linkedin.com');
+    expect(referrerHost('http://[bad')).toBe('');
+    expect(sourceGroup('https://www.google.com/')).toBe('Google');
+    expect(sourceGroup('gist.github.com')).toBe('GitHub');
+    expect(sourceGroup('notgoogle.com')).toBe('Other sites');
+    for (const own of ['raunakchoudhary.com', 'https://www.raunakchoudhary.com/projects', 'localhost', '127.0.0.1']) {
+      expect(sourceGroup(own)).toBe('Direct or unknown');
+    }
+  });
+
+  it('falls back to the screen width when the device class is missing', () => {
+    expect(deviceOf({ deviceClass: 'tablet', screenWidth: 400 })).toBe('tablet');
+    expect(deviceOf({ screenWidth: 390 })).toBe('phone');
+    expect(deviceOf({ screenWidth: 768 })).toBe('tablet');
+    expect(deviceOf({ screenWidth: 1280 })).toBe('desktop');
+    expect(deviceOf({ screenWidth: 0 })).toBe('unknown');
+    expect(deviceOf({})).toBe('unknown');
+    expect(deviceOf(null)).toBe('unknown');
+  });
+
+  it('reads database instants without a zone as UTC', () => {
+    expect(parseDbInstant('2026-11-10T15:00:00')).toBe(Date.UTC(2026, 10, 10, 15));
+    expect(parseDbInstant('2026-11-10 15:00:00.5')).toBe(Date.UTC(2026, 10, 10, 15, 0, 0, 500));
+    expect(parseDbInstant('2026-11-10T15:00:00+00:00')).toBe(Date.UTC(2026, 10, 10, 15));
+    expect(parseDbInstant('2026-11-10T10:00:00-05:00')).toBe(Date.UTC(2026, 10, 10, 15));
+    expect(parseDbInstant('')).toBeNull();
+    expect(parseDbInstant('nonsense')).toBeNull();
+  });
+
+  it('drops a legacy reach-out when the same visit sent the new row of that channel', () => {
+    const r = [
+      view('a', T(10), 'home', info('direct')),
+      click('a', T(10, '15:01:00'), 'reach_out', 'email'),
+      click('a', T(10, '15:01:01'), 'click_contact_email', 'footer_email'),
+      click('a', T(10, '15:02:00'), 'click_social_media', 'linkedin'),
+      view('b', T(10), 'home', info('direct')),
+      click('b', T(10, '15:01:00'), 'click_contact_email', 'footer_email'),
+    ];
+    const s = summarizeWindow(r, { start: START, days: 4, projects: [], quickFrom: null });
+    const by = Object.fromEntries(s.channels.map((c) => [c.id, c.count]));
+    expect(by).toEqual({ linkedin: 1, email: 2, contact_form: 0, resume: 0 });
+    expect(s.reached).toBe(2);
+  });
+
+  it('breaks source ties by the fixed group order', () => {
+    const ranked = rankSources([
+      { name: 'Other sites', visits: 1, reached: 0 }, { name: 'GitHub', visits: 1, reached: 0 }, { name: 'Google', visits: 1, reached: 0 },
+    ]);
+    expect(ranked.map((x) => x.name)).toEqual(['Google', 'GitHub', 'Other sites']);
   });
 });
 
@@ -170,7 +223,15 @@ describe('summarizeWindow', () => {
     expect(by.phone).toMatchObject({ visits: 1, quick: 0 });
     expect(by.tablet).toMatchObject({ visits: 1, measured: 0, quick: null });
     expect(by.tablet.share).toBeCloseTo(0.2);
-    expect(w.devices.map((d) => d.name)).toEqual(DEVICES.map((d) => d.name));
+    // every visit here carries a device, so "Unknown device" is not listed
+    expect(w.devices.map((d) => d.id)).toEqual(['desktop', 'phone', 'tablet']);
+  });
+
+  it('lists "Unknown device" only when a visit has neither class nor width', () => {
+    const extra = [...rows, view('u1', T(11), 'home')];
+    const u = summarizeWindow(extra, { start: START, days: 4, projects, quickFrom: null });
+    expect(u.devices.map((d) => d.name)).toEqual(DEVICES.map((d) => d.name));
+    expect(u.devices.find((d) => d.id === 'unknown')).toMatchObject({ visits: 1, note: 'No screen size recorded' });
   });
 
   it('says nothing about quick leaves before engagement tracking exists', () => {
@@ -329,5 +390,36 @@ describe('dates and stale sections', () => {
     const out = staleSections([{ section: 'Hero', at: day(3) }, { section: 'Leadership', at: day(118) }, { section: 'Certifications', at: day(142) }, { section: 'Skills', at: day(90) }, { section: 'Bad', at: 'nope' }], now);
     expect(out).toEqual({ stale: [{ section: 'Certifications', days: 142 }, { section: 'Leadership', days: 118 }], fresh: 2 });
     expect(staleSections(null, now)).toEqual({ stale: [], fresh: 0 });
+  });
+});
+
+describe('the visits chart', () => {
+  const now = Date.parse('2026-11-18T21:00:00Z');
+
+  it('spans the whole quarter, stops the current line at today and marks the months', () => {
+    const w = windowsFor('quarter', now);
+    const t = trendPoints(new Array(49).fill(2), new Array(92).fill(1), w);
+    expect(t.points).toHaveLength(92);
+    expect(t.points[48]).toEqual({ label: '18 Nov', prevLabel: '18 Aug', cur: 2, prev: 1 });
+    expect(t.points[49].cur).toBeNull();
+    expect(t.ticks).toEqual(['1 Oct', '1 Nov', '1 Dec', '31 Dec']);
+    expect(t.unit).toBe('day');
+  });
+
+  it('shows weeks for twelve months with the first, middle and last labels', () => {
+    const w = windowsFor('12m', now);
+    const t = trendPoints(new Array(365).fill(1), new Array(365).fill(0), w);
+    expect(t.points).toHaveLength(53);
+    expect(t.points[0]).toMatchObject({ label: 'Week of 19 Nov', cur: 7, prev: 0 });
+    expect(t.points[52].cur).toBe(1);
+    expect(t.ticks).toHaveLength(3);
+    expect(t.unit).toBe('week');
+  });
+
+  it('sums both lines and names the busiest point in one sentence', () => {
+    const w = windowsFor('7d', now);
+    const t = trendPoints([0, 3, 9, 1, 0, 0, 2], [1, 1, 1, 1, 1, 1, 1], w);
+    expect(trendSummary(t, 'Last 7 days', 'The 7 days before')).toBe('Visits per day. Last 7 days: 15 visits, most on 14 Nov (9). The 7 days before: 7 visits.');
+    expect(trendSummary(trendPoints(new Array(7).fill(0), [], w), 'Now', 'Before')).toBe('Visits per day. Now: 0 visits. Before: 0 visits.');
   });
 });
