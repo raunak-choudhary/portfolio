@@ -7,6 +7,7 @@
 // the numbers.
 
 import { CHAPTERS, DEEP_SKY_PLACEMENTS, chapterIndex } from './chapters';
+import { MODES, pixelRatioFor } from './renderBudget';
 
 /** World units between chapter anchors along the route, and units per degree of sky inside a figure. */
 export const SPACING = 520;
@@ -136,10 +137,13 @@ export const deepSkyLayout = (manifest, anchors = ANCHORS) =>
  * Star count and pixel ratio for a device, so phones keep their frame rate.
  * @param {{width: number, devicePixelRatio: number, reducedMotion: boolean, webgl: boolean}} env
  */
-export function qualityFor({ width, devicePixelRatio = 1, reducedMotion = false, webgl = true }) {
+export function qualityFor({ width, devicePixelRatio = 1, reducedMotion = false, webgl = true, sky = 'showcase' }) {
   if (!webgl) return { mode: 'fallback', stars: 0, pixelRatio: 1, fly: false };
   const phone = width < 768;
-  return { mode: 'webgl', stars: phone ? 3500 : 9000, pixelRatio: Math.min(devicePixelRatio, phone ? 1.5 : 2), fly: !reducedMotion };
+  const quality = { mode: 'webgl', stars: phone ? 3500 : 9000, pixelRatio: Math.min(devicePixelRatio, phone ? 1.5 : 2), fly: !reducedMotion };
+  // The working sky (panels on, renderBudget.js) trades resolution and frame rate for a quiet GPU; showcase keeps the full field.
+  if (sky !== 'working') return quality;
+  return { ...quality, pixelRatio: pixelRatioFor({ mode: 'working', devicePixelRatio, phone }), frameInterval: MODES.working.frameInterval };
 }
 
 /** The greeting for the prologue, by the hour in New York. */
