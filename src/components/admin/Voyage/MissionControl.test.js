@@ -1,10 +1,10 @@
 /* eslint-disable testing-library/no-container, testing-library/no-node-access */
 // Integration: the bento and the activity pane share one feed, and every row click goes through openRecord.
 import MissionControl, { chapterForTable } from './MissionControl';
-import { ACTIVITY_PANE_ID } from './ActivityPane';
+import { ACTIVITY_PANE_ID, ACTIVITY_TITLE_ID } from './ActivityPane';
 import { React, act, click, mount } from '../SkyBackground/testUtils';
 
-jest.mock('../../../services/activityService', () => ({ ACTIVITY_NOT_SET_UP: 'ACTIVITY_NOT_SET_UP', listActivity: jest.fn(), recordHistory: jest.fn(), isActivityAvailable: jest.fn(), logSecurityEvent: jest.fn() }));
+jest.mock('../../../services/activityService', () => ({ ACTIVITY_NOT_SET_UP: 'ACTIVITY_NOT_SET_UP', listActivity: jest.fn(), listDeletedRecords: jest.fn(), recordHistory: jest.fn(), isActivityAvailable: jest.fn(), logSecurityEvent: jest.fn() }));
 // Bento reads relativeTime from voyageData, which opens the Supabase client
 jest.mock('../../../services/voyageData', () => ({ relativeTime: () => '2 h ago' }));
 const service = jest.requireMock('../../../services/activityService');
@@ -102,5 +102,41 @@ describe('MissionControl', () => {
     expect(filled.className).toBe('v5-split');
     expect(filled.firstElementChild.dataset.testid).toBe('fix-queue');
     expect(filled.lastElementChild.id).toBe(ACTIVITY_PANE_ID);
+  });
+
+  it('moves focus to the pane heading from "See all activity"', async () => {
+    render();
+    await flush();
+    click([...tile().querySelectorAll('button')].find((b) => b.textContent === 'See all activity'));
+    expect(document.activeElement.id).toBe(ACTIVITY_TITLE_ID);
+    expect(document.activeElement.textContent).toBe('Activity');
+  });
+
+  describe('coming back into view', () => {
+    let observe;
+    const RealObserver = global.IntersectionObserver;
+    beforeEach(() => {
+      observe = null;
+      global.IntersectionObserver = jest.fn(function Observer(callback) {
+        this.observe = () => { observe = (isIntersecting) => act(() => { callback([{ isIntersecting }]); }); };
+        this.disconnect = jest.fn();
+      });
+    });
+    afterEach(() => { global.IntersectionObserver = RealObserver; });
+
+    it('reloads the feed quietly after the overview was away (a record saved or deleted elsewhere)', async () => {
+      render();
+      await flush();
+      observe(true);                                  // the first report is the overview already on screen
+      expect(service.listActivity).toHaveBeenCalledTimes(1);
+      observe(false);                                 // off to a chapter, where a record is saved
+      service.listActivity.mockResolvedValue({ rows: [row(9, { at: '2026-11-19T18:59:00.000Z', recordTitle: 'Saved just now' }), ...ROWS], hasMore: false });
+      observe(true);
+      expect(view.container.querySelector('[data-testid="tile-activity-loading"]')).toBeNull();
+      expect(tile().querySelectorAll('.tile__act > div')).toHaveLength(5);
+      await flush();
+      expect(service.listActivity).toHaveBeenCalledTimes(2);
+      expect(tile().querySelector('.tile__act > div').textContent).toBe('13:59Edited Saved just now');
+    });
   });
 });
