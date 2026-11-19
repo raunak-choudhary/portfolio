@@ -20,10 +20,12 @@
 // health and the queue reload.
 
 import { createSignal, useSignal } from './signal';
+import { contentVersion, noteContentChanged } from './contentChanged';
 
 export const recordIntent = createSignal(null);
 export const queueRequests = createSignal(0);
-export const fixesChanged = createSignal(0);
+/** The shared content signal (contentChanged.js) under the name the queue code uses. */
+export const fixesChanged = contentVersion;
 
 /** Start a walk or any other intent. */
 export const setIntent = (intent) => recordIntent.set(intent || null);
@@ -35,7 +37,7 @@ export const openRecord = (table, recordId, { mode = 'read', field = null } = {}
 export const clearIntent = () => recordIntent.set(null);
 
 /** The content changed: reload the health and the queue. */
-export const noteFixesChanged = () => fixesChanged.set(fixesChanged.get() + 1);
+export const noteFixesChanged = noteContentChanged;
 
 /** End any walk, reload, and bring the queue into view. */
 export function backToQueue() {
@@ -49,3 +51,13 @@ export const showQueue = () => queueRequests.set(queueRequests.get() + 1);
 
 /** Read the current intent in a component. */
 export const useRecordIntent = () => useSignal(recordIntent);
+
+/**
+ * Back to a clean slate when the voyage unmounts: no intent and no pending
+ * queue request survive into the next visit (the content version is left
+ * alone; readers only compare it with what they last loaded).
+ */
+export function resetRecordIntent() {
+  recordIntent.set(null);
+  queueRequests.set(0);
+}
