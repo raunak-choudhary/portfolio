@@ -49,8 +49,13 @@ const Footer = () => {
     }
   ];
 
+  // The legacy click rows stay so older reports keep counting; the LinkedIn
+  // profile and the email link also record a reach_out row (V4b contract).
   const handleSocialClick = (platform, url) => {
     visitorTracking.trackClick('social_media', platform, url);
+    if (platform === 'linkedin') {
+      visitorTracking.trackReachOut('linkedin', 'footer');
+    }
   };
 
   const handleFooterLinkClick = (linkName, linkPath) => {
@@ -59,6 +64,7 @@ const Footer = () => {
 
   const handleEmailClick = () => {
     visitorTracking.trackClick('contact_email', 'footer_email', 'mailto:raunakchoudhary17@gmail.com');
+    visitorTracking.trackReachOut('email', 'footer');
   };
 
   const handleQuickLinkClick = (link) => {
