@@ -71,6 +71,31 @@ describe('ProjectCard tracking', () => {
     expect(card().className).not.toContain('flipped');
   });
 
+  it('Enter on a focused repository link leaves the card alone so the link opens, and the click is tracked', () => {
+    const repo = view.container.querySelector('a.github-url-btn');
+    const keydown = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true });
+    act(() => {
+      repo.dispatchEvent(keydown);
+    });
+
+    expect(keydown.defaultPrevented).toBe(false);
+    expect(card().className).not.toContain('flipped');
+    expect(visitorTracking.trackProjectOpen).not.toHaveBeenCalled();
+
+    // The browser turns Enter on a link into a click; the click is what is tracked.
+    click(repo);
+    expect(visitorTracking.trackProjectLink).toHaveBeenCalledWith(PROJECT, 'repo', 'https://github.com/raunak-choudhary/one');
+    expect(card().className).not.toContain('flipped');
+  });
+
+  it('Space on the focused card itself still flips it', () => {
+    card().focus();
+    act(() => {
+      card().dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true }));
+    });
+    expect(card().className).toContain('flipped');
+  });
+
   it('records each repository link with the full https address it opens', () => {
     const repos = view.container.querySelectorAll('a.github-url-btn');
     expect(repos).toHaveLength(2);
