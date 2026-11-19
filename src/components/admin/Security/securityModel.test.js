@@ -3,8 +3,8 @@
 
 import {
   HELD_REASON, PASSKEY_MATCH_SECONDS, PRIMARY_APP_NAME, agoText, appsNote, chapterState, defaultAppName, describeSession, deviceText,
-  formatDay, groupSecret, levelOneNote, holdLastApp, isLocalhostPasskey, passkeysInUse, removeAppConfirm, removePasskeyConfirm,
-  renewalText, signedInText,
+  formatDay, groupSecret, levelOneNote, holdLastApp, isLocalhostPasskey, passkeysInUse, passkeyAddedText, removeAppConfirm, removePasskeyConfirm,
+  renewalText, signedInText, tidyDeviceName,
 } from './securityModel';
 
 // authService loads the Supabase client; a stand-in client lets the real constant be read
@@ -117,6 +117,15 @@ describe('formatting', () => {
     expect(levelOneNote('Google sign-in')).toBe('Assurance level 1: signed in with Google only.');
     expect(levelOneNote('Email code')).toBe('Assurance level 1: signed in with an email code only.');
     expect(levelOneNote(null)).toBe('Assurance level 1: one step only.');
+  });
+
+  it('says what the next sign-in asks for after a passkey is saved', () => {
+    expect(passkeyAddedText('Studio iMac (Touch ID)', 'mac')).toBe('Passkey saved for "Studio iMac (Touch ID)". Next sign-in on this Mac asks for Touch ID.');
+    expect(passkeyAddedText('iPhone', 'ios')).toMatch(/asks for Face ID\.$/);
+    expect(passkeyAddedText('Pixel', 'android')).toMatch(/fingerprint or screen lock\.$/);
+    expect(passkeyAddedText('PC', 'other')).toMatch(/asks for your passkey\.$/);
+    expect(tidyDeviceName('  Studio   iMac ')).toBe('Studio iMac');
+    expect(tidyDeviceName(null)).toBe('');
   });
 
   it('words the renewal only when the lifetime is known', () => {
