@@ -463,6 +463,15 @@
 .record-view__link { display: inline-flex; align-items: center; gap: 4px; color: var(--voyage-accent); text-decoration: underline; text-underline-offset: 3px; overflow-wrap: anywhere; }
 .record-view__link svg { flex: none; }
 
+/* Links in the record and inbox dialogs. The site's global rules (neon
+   cyan, purple in the light theme, a glow on hover) outrank a single class,
+   so every state is restated here with the dialog in the selector. Plain
+   links take the accent; a link styled as a button takes its button's ink. */
+.record-backdrop .record-dialog a:is(:link, :visited, :hover, :focus-visible, :active) { color: var(--voyage-accent); text-shadow: none; }
+.record-backdrop .record-dialog a.voyage-bar__button:is(:link, :visited, :hover, :focus-visible, :active) { color: var(--voyage-fg); text-decoration: none; }
+.record-backdrop .record-dialog a.voyage-bar__button--primary:is(:link, :visited, :hover, :focus-visible, :active) { color: var(--voyage-accent-ink); }
+.record-backdrop .record-dialog a.voyage-bar__button--danger:is(:link, :visited, :hover, :focus-visible, :active) { color: #2a0710; }
+
 @media (min-width: 768px) {
   .record-backdrop { padding: 24px; }
   .record-dialog { width: min(96vw, 960px); height: auto; max-height: 88vh; max-height: 88dvh; border-radius: 20px; border: 1px solid var(--voyage-glass-edge); box-shadow: inset 0 1px 0 var(--voyage-glass-sheen), 0 30px 90px rgba(0, 0, 0, .5); }
