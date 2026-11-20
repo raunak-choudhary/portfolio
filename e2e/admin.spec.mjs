@@ -66,6 +66,9 @@ test.describe('signed in at level 2', () => {
       const queue = page.getByTestId('fix-queue');
       await expect(queue.getByText('1 project has no picture')).toBeVisible();
       await expect(queue.getByRole('button', { name: 'Not needed: 1 project has no picture' })).toBeVisible();
+      // Tonight's Moon from New York, worked out in the browser from the real clock.
+      await expect(page.getByTestId('tonight-new-york')).toHaveText(/^from New York · (lit side (tilted \d+° (left|right) of up|straight up|straight down)|below the horizon( until \d\d:\d\d)?)$/);
+      await expect(page.getByRole('img', { name: /^The Moon from New York: \d+% lit, / })).toBeVisible();
 
       // Travel to the end so every chapter mounts and loads.
       await goToChapter(page, 'security');
