@@ -87,8 +87,8 @@ describe('createSunSystem', () => {
 
   it('builds a lighter tier for phones', () => {
     const count = (detail) => build(detail).scene.children[0].children.find((o) => o.isPoints).geometry.getAttribute('aLoop').count;
-    expect(count('low')).toBe(count('high') / 2);
-    expect(shaderMaterials(build('low').scene).find((m) => m.uniforms.uSpin).fragmentShader).not.toMatch('#define HIGH');
+    expect(count('low')).toBeLessThan(count('high') / 2);
+    expect(shaderMaterials(build('low').scene).find((m) => m.uniforms.uSpin).fragmentShader).not.toMatch('#define WORLEY');
   });
 
   it('takes everything out of the scene and frees what it made', () => {
