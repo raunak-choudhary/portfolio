@@ -22,6 +22,7 @@ import {
 } from './inboxModel';
 import { failureKind } from '../../../services/voyageRecords';
 import { deleteMessages, listMessages, updateMessages } from '../../../services/inboxService';
+import { noteContentChanged } from './contentChanged';
 import './Inbox.css';
 
 const ACTION_ICON = { read: MailOpen, unread: Mail, star: Star, unstar: StarOff, archive: Archive, unarchive: ArchiveRestore, spam: ShieldAlert, notSpam: ShieldCheck };
@@ -133,6 +134,8 @@ export default function InboxChapter({ notify }) {
     if (origin === 'dialog') setDialogFailure(null);
     try {
       const rows = await updateMessages(ids, patch);
+      // one raise per write, however many messages it covered, so the activity pane picks the change up
+      noteContentChanged();
       if (alive.current) setMessages((list) => list.map((m) => { const r = rows.find((x) => x.id === m.id); return r ? { ...m, ...r } : m; }));
       if (done) notify(done);
       return null;
@@ -170,6 +173,7 @@ export default function InboxChapter({ notify }) {
     if (origin === 'dialog') setDialogFailure(null);
     try {
       const { deletedIds, filesRemoved, filesExpected } = await deleteMessages(rows);
+      noteContentChanged();
       if (!alive.current) return null;
       const gone = new Set(deletedIds);
       setMessages((list) => list.filter((m) => !gone.has(m.id)));
