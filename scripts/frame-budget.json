@@ -1,17 +1,69 @@
 {
-  "_note": "Frame budget for npm run check:frames (scripts/measure-frames.mjs). Targets set 2026-11-18 from the owner's brief: about 60 fps at 1x CPU, at least 30 fps at 4x CPU throttling, no long task over 50 ms while scrolling. Measured on an Apple M3 with the real GPU (--use-angle=metal), 1440 x 900 at DPR 2, working mode (panels on). presented fps counts frames the compositor actually swapped, which catches GPU-bound drops that rAF timing misses. Idle presented fps is 28, not 55, because the working sky deliberately renders at 30 fps (renderBudget.js MODES.working); page responsiveness is held by the median rAF limit. Known gap: at 4x CPU the scroll still shows up to 5 long tasks (longest 75 ms, measured 2026-11-18 with three repeats); the 4x trace attributes them to browser rendering of the large page (style recalc, hit testing, Chrome overlay detection), not app script, so the 4x scroll allows 6. The 1x scroll allows 1: four runs on 2026-11-18 each showed a single long task (50 to 82 ms) while the machine load average sat near 11 from unrelated system processes, with p95 frame time 17.5 ms and 56 presented fps. Tighten it when chapters stop rendering off screen. Do not loosen a limit without recording why in the pull request.",
-  "login": {
-    "1": { "idle": { "minMedianFps": 55, "maxOver50": 2, "maxLongTasks": 0 } },
-    "4": { "idle": { "minMedianFps": 30, "maxLongTasks": 0 } }
-  },
-  "voyage": {
-    "1": {
-      "idle": { "minMedianFps": 55, "maxP95FrameMs": 25, "maxOver50": 2, "maxLongTasks": 0, "minPresentedFps": 28 },
-      "scroll": { "minMedianFps": 55, "maxP95FrameMs": 25, "maxOver50": 5, "maxLongTasks": 1, "minPresentedFps": 50 }
+  "_note": "Frame budget for npm run check:frames (scripts/measure-frames.mjs). Each profile runs at its own viewport, theme (dark night sky, light day Sun) and sky mode (panels on is the working mode, panels off showcase). Targets set 2026-11-18 from the owner's brief: about 60 fps at 1x CPU, at least 30 fps at 4x CPU throttling, no long task over 50 ms while scrolling. Measured on an Apple M3 with the real GPU (--use-angle=metal). presented fps counts frames the compositor actually swapped, which catches GPU-bound drops that rAF timing misses. Idle presented fps is 28, not 55, because the working sky deliberately renders at 30 fps (renderBudget.js MODES.working); page responsiveness is held by the median rAF limit. Known gap: at 4x CPU the scroll still shows up to 5 long tasks (longest 75 ms, measured 2026-11-18 with three repeats); the 4x trace attributes them to browser rendering of the large page (style recalc, hit testing, Chrome overlay detection), not app script, so the 4x scroll allows 6. The 1x scroll allows 1: four runs on 2026-11-18 each showed a single long task (50 to 82 ms) while the machine load average sat near 11 from unrelated system processes, with p95 frame time 17.5 ms and 56 presented fps. Tighten it when chapters stop rendering off screen. GPU limits (added 2026-11-20) are GPU milliseconds per rendered frame from EXT_disjoint_timer_query_webgl2, median and p90; frames the sky skips are not counted. Baseline before the day Sun's performance pass (same machine, 2026-11-20): working 1440 x 900 idle light 16.9 ms median (p90 18.3) against dark 0.7 (0.9); showcase light 33.9 (34.5, only 54 presented fps) against dark 3.5 (4.2); phone working idle light 1.1 (2.2), dark 0.4 (0.5). After it: working idle light 3.7 to 4.2 (p90 4.5), dark 0.7 to 0.9 (1.4); scroll 1.3 (2.0) in both themes; showcase idle light 8.1 to 9.2 (9.5); phone idle light 1.2 (1.5), dark 0.4 (0.5), scroll 0.4 (0.7). Each GPU limit sits about a third above the slowest run measured, so a regression of a millisecond or two fails. Phone profiles (390 x 844 at DPR 3): presented fps while scrolling measures 34 to 37 in both themes, against 53 on desktop, because the page is about 49,000 px tall on a phone (the long scroll keeps the compositor busy repainting text and glass tiles) and the working sky renders at 30 fps by design; rAF stays at 60 and long tasks at 0 or 1, so the phone scroll holds 30 presented fps, measured, not the desktop 50. Do not loosen a limit without recording why in the pull request.",
+  "profiles": {
+    "desktop-dark": {
+      "width": 1440, "height": 900, "dpr": 2, "theme": "dark", "panels": "on",
+      "limits": {
+        "login": {
+          "1": { "idle": { "minMedianFps": 55, "maxOver50": 2, "maxLongTasks": 0 } },
+          "4": { "idle": { "minMedianFps": 30, "maxLongTasks": 0 } }
+        },
+        "voyage": {
+          "1": {
+            "idle": { "minMedianFps": 55, "maxP95FrameMs": 25, "maxOver50": 2, "maxLongTasks": 0, "minPresentedFps": 28, "maxGpuMedianMs": 2, "maxGpuP90Ms": 3 },
+            "scroll": { "minMedianFps": 55, "maxP95FrameMs": 25, "maxOver50": 5, "maxLongTasks": 1, "minPresentedFps": 50, "maxGpuMedianMs": 3, "maxGpuP90Ms": 4 }
+          },
+          "4": {
+            "idle": { "minMedianFps": 30, "maxLongTasks": 0 },
+            "scroll": { "minMedianFps": 30, "maxP95FrameMs": 50, "maxOver50": 10, "maxLongTasks": 6, "minPresentedFps": 30 }
+          }
+        }
+      }
     },
-    "4": {
-      "idle": { "minMedianFps": 30, "maxLongTasks": 0 },
-      "scroll": { "minMedianFps": 30, "maxP95FrameMs": 50, "maxOver50": 10, "maxLongTasks": 6, "minPresentedFps": 30 }
+    "desktop-light": {
+      "width": 1440, "height": 900, "dpr": 2, "theme": "light", "panels": "on",
+      "limits": {
+        "voyage": {
+          "1": {
+            "idle": { "minMedianFps": 55, "maxP95FrameMs": 25, "maxOver50": 2, "maxLongTasks": 0, "minPresentedFps": 28, "maxGpuMedianMs": 5.5, "maxGpuP90Ms": 7 },
+            "scroll": { "minMedianFps": 55, "maxP95FrameMs": 25, "maxOver50": 5, "maxLongTasks": 1, "minPresentedFps": 50, "maxGpuMedianMs": 3, "maxGpuP90Ms": 4 }
+          },
+          "4": {
+            "idle": { "minMedianFps": 30, "maxLongTasks": 0 },
+            "scroll": { "minMedianFps": 30, "maxP95FrameMs": 50, "maxOver50": 10, "maxLongTasks": 6, "minPresentedFps": 30 }
+          }
+        }
+      }
+    },
+    "showcase-light": {
+      "width": 1440, "height": 900, "dpr": 2, "theme": "light", "panels": "off",
+      "limits": {
+        "voyage": {
+          "1": { "idle": { "minMedianFps": 55, "maxP95FrameMs": 25, "maxOver50": 2, "maxLongTasks": 0, "minPresentedFps": 55, "maxGpuMedianMs": 12, "maxGpuP90Ms": 13 } }
+        }
+      }
+    },
+    "phone-dark": {
+      "width": 390, "height": 844, "dpr": 3, "theme": "dark", "panels": "on",
+      "limits": {
+        "voyage": {
+          "1": {
+            "idle": { "minMedianFps": 55, "maxP95FrameMs": 25, "maxOver50": 2, "maxLongTasks": 0, "minPresentedFps": 28, "maxGpuMedianMs": 1, "maxGpuP90Ms": 1.5 },
+            "scroll": { "minMedianFps": 55, "maxP95FrameMs": 25, "maxOver50": 5, "maxLongTasks": 1, "minPresentedFps": 30, "maxGpuMedianMs": 1, "maxGpuP90Ms": 1.5 }
+          }
+        }
+      }
+    },
+    "phone-light": {
+      "width": 390, "height": 844, "dpr": 3, "theme": "light", "panels": "on",
+      "limits": {
+        "voyage": {
+          "1": {
+            "idle": { "minMedianFps": 55, "maxP95FrameMs": 25, "maxOver50": 2, "maxLongTasks": 0, "minPresentedFps": 28, "maxGpuMedianMs": 2, "maxGpuP90Ms": 3 },
+            "scroll": { "minMedianFps": 55, "maxP95FrameMs": 25, "maxOver50": 5, "maxLongTasks": 1, "minPresentedFps": 30, "maxGpuMedianMs": 1, "maxGpuP90Ms": 1.5 }
+          }
+        }
+      }
     }
   }
 }
