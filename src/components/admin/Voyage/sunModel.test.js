@@ -1,8 +1,9 @@
 import * as THREE from 'three';
-import { DEG, EARTH_AXIS_ECLIPTIC, OBLIQUITY, dot, eclipticDirection, length, normalize, subsolarLongitude, sunCoordinates } from './earthModel';
+import { DEG, EARTH_AXIS_ECLIPTIC, OBLIQUITY, dot, rotateAbout, eclipticDirection, length, normalize, subsolarLongitude, sunCoordinates } from './earthModel';
 import {
   ACTIVE_REGION_COUNT, AU_KM, DAY_EARTH_RADIUS, DAY_NARROW_FRAMING, EARTH_ORBIT_RADIUS, EARTH_SCENE_DIRECTION, EARTH_YEAR_MS, LOOP_SLOTS,
   PROMINENCE_COUNT, SOLAR_INCLINATION, SUN_RADIUS, activeRegions, bodyToWorld, bodyVector, differentialRate, distanceReadout, earthDirection,
+  bodyToWorldInto, createLoopTracker, earthDirectionInto, eclipticBasis, rotateAboutInto,
   earthLongitude, earthPosition, eclipticVector, hash01, loopEvent, loopFootpoints, prominences, prominencesAtLimb, seedFor, SIZEABLE_PROMINENCE, standingHeight, solarOrientation, solarPoleEcliptic,
   sunDistanceAU, sunDistanceKm, sunScene, viewAngles,
 } from './sunModel';
@@ -303,5 +304,42 @@ describe('the day prologue on narrow screens', () => {
     const box = view(768, 1024);
     expect(box.x0).toBeGreaterThan(4); expect(box.x1).toBeLessThan(92);   // clear of the chapter rail
     expect(box.y0).toBeGreaterThan(8); expect(box.y1).toBeLessThan(78);
+  });
+});
+
+describe('the frame loop helpers that allocate nothing', () => {
+  const scene = sunScene(new Date('2026-11-19T15:00:00Z'));
+  const near = (a, b) => a.forEach((v, i) => close(v, b[i], 1e-12));
+
+  it('turn a body vector, a vector about an axis and the Earth exactly as the allocating versions', () => {
+    const out = [0, 0, 0];
+    for (const t of [0, 12345, 180000, 359999]) {
+      const v = normalize([0.3, 0.6, -0.7]);
+      expect(bodyToWorldInto(out, scene, v, t)).toBe(out);
+      near(out, bodyToWorld(scene, v, t));
+      near(rotateAboutInto(out, v, scene.sunPole, t / 1e4), rotateAbout(v, scene.sunPole, t / 1e4));
+      near(earthDirectionInto(out, scene, eclipticBasis(scene), t * 400), earthDirection(scene, t * 400));
+    }
+  });
+
+  it('track every loop slot with the same events and footpoints as loopEvent and loopFootpoints', () => {
+    const tracker = createLoopTracker(scene);
+    for (let t = 0; t < 120000; t += 731) {
+      for (let s = 0; s < LOOP_SLOTS; s++) {
+        const want = loopEvent(scene.seed, s, t);
+        const got = tracker.at(s, t);
+        expect(got.event).toEqual(want);
+        const feet = loopFootpoints(want, scene, t);
+        near(got.feet[0], feet[0]); near(got.feet[1], feet[1]);
+      }
+    }
+  });
+
+  it('reuse the same objects from frame to frame within a cycle', () => {
+    const tracker = createLoopTracker(scene);
+    const a = tracker.at(0, 1000), event = a.event, feet = a.feet[0];
+    const b = tracker.at(0, 1016);
+    expect(b.event).toBe(event);
+    expect(b.feet[0]).toBe(feet);
   });
 });

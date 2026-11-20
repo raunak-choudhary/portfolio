@@ -208,6 +208,17 @@ export const earthLongitude = (scene, elapsed, period = EARTH_YEAR_MS) => norm36
 /** Unit direction from the Sun to the Earth in world space. */
 export const earthDirection = (scene, elapsed) => normalize(scene.toWorld(eclipticDirection(earthLongitude(scene, elapsed))));
 
+/** The ecliptic's x and z axes in world space, for earthDirectionInto. */
+export const eclipticBasis = (scene) => ({ x: scene.toWorld([1, 0, 0]), z: scene.toWorld([0, 0, 1]) });
+
+/** earthDirection without allocating, given the scene's eclipticBasis: written into `out`. */
+export function earthDirectionInto(out, scene, basis, elapsed) {
+  const lon = earthLongitude(scene, elapsed) * DEG;
+  const c = Math.cos(lon), s = -Math.sin(lon);   // eclipticDirection is (cos, 0, -sin)
+  out[0] = basis.x[0] * c + basis.z[0] * s; out[1] = basis.x[1] * c + basis.z[1] * s; out[2] = basis.x[2] * c + basis.z[2] * s;
+  return out;
+}
+
 /** World position of the Earth's centre. */
 export const earthPosition = (scene, elapsed) => add(scene.centre, scale(earthDirection(scene, elapsed), EARTH_ORBIT_RADIUS));
 
@@ -230,6 +241,25 @@ export const bodyVector = (lat, lon) => [Math.cos(lat * DEG) * Math.sin(lon * DE
 export function bodyToWorld(scene, v, elapsed) {
   const turned = rotateY(v, sunSpin(elapsed) * differentialRate(v[1]));
   return add(add(scale(scene.bodyX, turned[0]), scale(scene.sunPole, turned[1])), scale(scene.bodyZ, turned[2]));
+}
+
+/** bodyToWorld without allocating: writes the world vector into `out` (any array of three) and returns it. */
+export function bodyToWorldInto(out, scene, v, elapsed) {
+  const a = sunSpin(elapsed) * differentialRate(v[1]);
+  const c = Math.cos(a), s = Math.sin(a);
+  // a turn about the body frame's y axis (the pole), as rotateY
+  const x = v[0] * c + v[2] * s, y = v[1], z = v[2] * c - v[0] * s;
+  const X = scene.bodyX, P = scene.sunPole, Z = scene.bodyZ;
+  out[0] = X[0] * x + P[0] * y + Z[0] * z; out[1] = X[1] * x + P[1] * y + Z[1] * z; out[2] = X[2] * x + P[2] * y + Z[2] * z;
+  return out;
+}
+
+/** rotateAbout without allocating: `v` turned by `angle` about the unit axis `k`, written into `out`. */
+export function rotateAboutInto(out, v, k, angle) {
+  const c = Math.cos(angle), s = Math.sin(angle), kd = k[0] * v[0] + k[1] * v[1] + k[2] * v[2];
+  const x = k[1] * v[2] - k[2] * v[1], y = k[2] * v[0] - k[0] * v[2], z = k[0] * v[1] - k[1] * v[0];
+  out[0] = v[0] * c + x * s + k[0] * kd * (1 - c); out[1] = v[1] * c + y * s + k[1] * kd * (1 - c); out[2] = v[2] * c + z * s + k[2] * kd * (1 - c);
+  return out;
 }
 
 /** Two footpoints either side of `centre` along a surface direction `orient` (radians from north toward east), `spread` radians apart. */
@@ -367,28 +397,35 @@ export const ERUPTION_BREAK = 0.42;
  *   progress runs 0..1 through the event; lift is 0..1 for the height envelope; brightness 0..1; fling 0..1 after an eruption breaks.
  */
 export function loopEvent(seed, slot, elapsed) {
+  const timing = loopTiming(seed, slot);
+  const x = (elapsed + timing.offset) / timing.period;
+  const cycle = Math.floor(x);
+  const { share, ...event } = loopCycle(seed, slot, cycle, timing);
+  return loopPhaseInto(event, share, x - cycle);
+}
+
+/** A loop slot's repeat period and phase offset in ms (fixed for a seed and slot). */
+export function loopTiming(seed, slot) {
   const period = 11000 + 8000 * hash01(seed, slot, -1);
-  const offset = hash01(seed, slot, -2) * period;
-  const cycle = Math.floor((elapsed + offset) / period);
-  const u = (elapsed + offset) / period - cycle;
+  return { period, offset: hash01(seed, slot, -2) * period };
+}
+
+/**
+ * The parts of one loop cycle that stay fixed while it plays: its kind,
+ * anchor, place and shape. `share` is the part of the cycle the event lives in.
+ */
+export function loopCycle(seed, slot, cycle, timing = loopTiming(seed, slot)) {
   const r = (k) => hash01(seed, slot, cycle, k);
   const roll = r(0);
   const kind = roll < 0.14 ? 'eruption' : roll < 0.34 ? 'hedge' : 'loop';
   const anchor = kind === 'loop' && r(6) < 0.35 ? 'region' : 'limb';
-  const share = kind === 'eruption' ? 0.92 : 0.7 + 0.25 * r(1);   // the part of the cycle the event lives in
-  const progress = Math.min(1, u / share);
-  const active = u < share;
-  const born = (cycle * period - offset);
-  // rise over the first 30%, hang, drain back over the last 25%; an eruption keeps rising
-  const smooth = (x) => { const c = Math.min(1, Math.max(0, x)); return c * c * (3 - 2 * c); };
-  const lift = kind === 'eruption' ? smooth(progress / ERUPTION_BREAK) : smooth(progress / 0.3) * (1 - smooth((progress - 0.75) / 0.25));
-  const brightness = active ? smooth(progress / 0.12) * (kind === 'eruption' ? 1 : 1 - smooth((progress - 0.85) / 0.15)) : 0;
-  const fling = kind === 'eruption' && active ? smooth((progress - ERUPTION_BREAK) / (1 - ERUPTION_BREAK)) : 0;
   const size = r(5) ** 2.2;   // most small, a few large
   const height = anchor === 'region' ? 0.04 + 0.08 * r(5)
     : kind === 'hedge' ? 0.08 + 0.22 * size : kind === 'eruption' ? 0.12 + 0.12 * r(5) : 0.05 + 0.35 * size;
   return {
-    slot, cycle, active, kind, anchor, progress, born, lift, brightness, fling,
+    slot, cycle, kind, anchor,
+    share: kind === 'eruption' ? 0.92 : 0.7 + 0.25 * r(1),
+    born: cycle * timing.period - timing.offset,
     region: Math.floor(r(7) * ACTIVE_REGION_COUNT),
     limbAngle: r(2) * 2 * Math.PI,
     depth: (r(3) - 0.5) * 0.5,   // radians in front of (+) or behind (-) the limb plane
@@ -398,6 +435,26 @@ export function loopEvent(seed, slot, elapsed) {
     flow: r(9) < 0.5 ? -1 : 1,
     orient: r(10) * Math.PI,
   };
+}
+
+const smooth01 = (x) => { const c = Math.min(1, Math.max(0, x)); return c * c * (3 - 2 * c); };
+
+/**
+ * Write the moving part of a loop cycle (progress, active, lift, brightness,
+ * fling) into `out` for `u`, 0..1 through the cycle. `out` must carry the
+ * cycle's kind. Allocates nothing, so the frame loop can call it.
+ */
+export function loopPhaseInto(out, share, u) {
+  const eruption = out.kind === 'eruption';
+  const progress = Math.min(1, u / share);
+  const active = u < share;
+  // rise over the first 30%, hang, drain back over the last 25%; an eruption keeps rising
+  out.progress = progress;
+  out.active = active;
+  out.lift = eruption ? smooth01(progress / ERUPTION_BREAK) : smooth01(progress / 0.3) * (1 - smooth01((progress - 0.75) / 0.25));
+  out.brightness = active ? smooth01(progress / 0.12) * (eruption ? 1 : 1 - smooth01((progress - 0.85) / 0.15)) : 0;
+  out.fling = eruption && active ? smooth01((progress - ERUPTION_BREAK) / (1 - ERUPTION_BREAK)) : 0;
+  return out;
 }
 
 /**
@@ -412,6 +469,13 @@ export function loopFootpoints(event, scene, elapsed) {
     const region = activeRegions(scene.seed)[event.region];
     return feetAround(region.centre, event.orient, event.spread).map((v) => bodyToWorld(scene, v, elapsed));
   }
+  const { feet, rate } = limbFeetAtBirth(event, scene);
+  const turned = sunSpin(Math.max(0, elapsed - Math.max(0, event.born))) * rate;
+  return feet.map((v) => rotateAbout(v, scene.sunPole, turned));
+}
+
+/** A limb loop's feet as set at birth on the limb the camera sees, and the rate they then turn at. */
+function limbFeetAtBirth(event, scene) {
   const v = scene.viewer;
   const u1 = normalize(cross(scene.sunPole, v)), u2 = cross(v, u1);
   const limb = add(scale(u1, Math.cos(event.limbAngle)), scale(u2, Math.sin(event.limbAngle)));
@@ -420,6 +484,39 @@ export function loopFootpoints(event, scene, elapsed) {
   const half = event.spread / 2;
   const a = normalize(add(scale(centre, Math.cos(half)), scale(along, Math.sin(half))));
   const b = normalize(add(scale(centre, Math.cos(half)), scale(along, -Math.sin(half))));
-  const turned = sunSpin(Math.max(0, elapsed - Math.max(0, event.born))) * differentialRate(dot(centre, scene.sunPole));
-  return [rotateAbout(a, scene.sunPole, turned), rotateAbout(b, scene.sunPole, turned)];
+  return { feet: [a, b], rate: differentialRate(dot(centre, scene.sunPole)) };
+}
+
+/**
+ * The frame loop's view of the loop slots: the same events and footpoints as
+ * loopEvent and loopFootpoints, but each cycle's fixed part is worked out once
+ * when the cycle starts (every 11 to 19 s per slot) and every frame after that
+ * only writes numbers into objects the tracker owns, so it allocates nothing.
+ * The returned slot state is reused: read it before the next call.
+ * @returns {{at(slot: number, elapsed: number): {event: object, feet: number[][]}}}
+ */
+export function createLoopTracker(scene, slots = LOOP_SLOTS) {
+  const regions = activeRegions(scene.seed);
+  const state = Array.from({ length: slots }, (_, slot) => ({ timing: loopTiming(scene.seed, slot), cycle: NaN, share: 1, event: null, base: null, rate: 1, feet: [[0, 0, 0], [0, 0, 0]] }));
+  return {
+    at(slot, elapsed) {
+      const s = state[slot];
+      const x = (elapsed + s.timing.offset) / s.timing.period;
+      const cycle = Math.floor(x);
+      if (cycle !== s.cycle) {
+        const { share, ...event } = loopCycle(scene.seed, slot, cycle, s.timing);
+        s.cycle = cycle; s.share = share; s.event = event;
+        if (event.anchor === 'region') { s.base = feetAround(regions[event.region].centre, event.orient, event.spread); s.rate = 0; }
+        else { const birth = limbFeetAtBirth(event, scene); s.base = birth.feet; s.rate = birth.rate; }
+      }
+      loopPhaseInto(s.event, s.share, x - cycle);
+      if (s.event.anchor === 'region') {
+        bodyToWorldInto(s.feet[0], scene, s.base[0], elapsed); bodyToWorldInto(s.feet[1], scene, s.base[1], elapsed);
+      } else {
+        const turned = sunSpin(Math.max(0, elapsed - Math.max(0, s.event.born))) * s.rate;
+        rotateAboutInto(s.feet[0], s.base[0], scene.sunPole, turned); rotateAboutInto(s.feet[1], s.base[1], scene.sunPole, turned);
+      }
+      return s;
+    },
+  };
 }
