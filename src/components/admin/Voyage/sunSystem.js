@@ -47,7 +47,7 @@ import {
 const UP = new THREE.Vector3(0, 1, 0);
 
 /** How far the corona quad reaches, in Sun radii. */
-export const CORONA_EXTENT = 3.4;
+export const CORONA_EXTENT = 4.2;
 
 /**
  * Quality tiers, in one place so a performance pass can add or retune one.
@@ -226,11 +226,14 @@ const CORONA_FRAGMENT = `
     // spicules: a ragged rim of flame whose height flickers along the limb (noise on the circle, so no seam)
     float flameH = 0.010 + 0.050 * pow(n2(dir * 34.0 + vec2(t * 0.35, uSeedA - t * 0.25)), 2.5) + 0.012 * n2(dir * 90.0 + vec2(t * 1.1, 0.0));
     float fringe = exp(-x / flameH) * (0.55 + 0.45 * n2(dir * 60.0 + vec2(t * 0.9, uSeedA)));
-    float streamer = 0.5 + 0.5 * n2(dir * 3.2 + vec2(uSeedA, t * 0.02)) * n2(dir * 7.0 - vec2(t * 0.015, uSeedA));
-    float glow = 0.50 * exp(-x * 10.0) + 0.15 * exp(-x * 2.8) * streamer + 0.035 * exp(-x * 0.9);
-    float edge = 1.0 - smoothstep(${(CORONA_EXTENT - 1.0).toFixed(1)}, ${CORONA_EXTENT.toFixed(1)}, r);
+    // streamers: a few long soft petals whose reach varies round the limb and breathes slowly
+    float petal = n2(dir * 2.4 + vec2(uSeedA, t * 0.015)) * 0.65 + n2(dir * 5.2 - vec2(t * 0.012, uSeedA)) * 0.35;
+    float reach = 0.9 + 2.2 * pow(petal, 1.6);
+    float streamer = exp(-x * 2.2 / reach) * (0.35 + 0.65 * petal);
+    float glow = 0.34 * exp(-x * 7.0) + 0.16 * exp(-x * 2.6) + 0.17 * streamer + 0.045 * exp(-x * 0.75);
+    float edge = 1.0 - smoothstep(${(CORONA_EXTENT - 1.4).toFixed(1)}, ${CORONA_EXTENT.toFixed(1)}, r);
     // written in display values, not linear: additive layers are tuned by eye on the screen
-    vec3 col = vec3(1.0, 0.46, 0.12) * glow + vec3(1.0, 0.66, 0.30) * fringe * 0.55;
+    vec3 col = vec3(1.0, 0.46, 0.12) * glow + vec3(1.0, 0.62, 0.26) * fringe * 0.36;
     gl_FragColor = vec4(col * edge * uFade, 1.0);
   }`;
 
