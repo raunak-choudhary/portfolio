@@ -372,6 +372,21 @@ export function reportPasses(report) {
 
 const cell = (text) => String(text ?? '').replace(/\|/g, '\\|').replace(/\s+/g, ' ').trim();
 
+/** The only origins the admin-passkey function answers (see supabase/functions/admin-passkey). */
+const PASSKEY_ORIGINS = ['http://localhost:3000', 'https://www.raunakchoudhary.com', 'https://raunakchoudhary.com'];
+
+/**
+ * True for the console errors a refused passkey status check leaves when the app is
+ * served from an origin that function does not accept: the CORS message naming
+ * admin-passkey, and the "Failed to load resource" line whose source is that function.
+ */
+export function passkeyCorsNoise(text, sourceUrl, baseOrigin) {
+  if (PASSKEY_ORIGINS.includes(baseOrigin)) return false;
+  const msg = String(text ?? '');
+  if (/functions\/v1\/admin-passkey' from origin/.test(msg) && /CORS policy/.test(msg)) return true;
+  return /^Failed to load resource: net::ERR_FAILED/.test(msg) && /\/functions\/v1\/admin-passkey(\?|$)/.test(String(sourceUrl ?? ''));
+}
+
 /** The Markdown form of the report. */
 export function renderReport(report) {
   const lines = [
@@ -404,6 +419,7 @@ export function renderReport(report) {
     `- CSP violations: ${report.csp.length ? '' : 'none'}`,
     ...report.csp.map((c) => `  - ${c.directive} blocked ${c.blocked}`),
     `- Page and console errors: ${report.pageErrors.length ? '' : 'none'}`,
+    ...(report.expectedErrors ? [`- Expected, not counted: ${report.expectedErrors} passkey status error(s); that function accepts only localhost:3000 and the live site`] : []),
     ...report.pageErrors.map((e) => `  - ${e}`),
     `- Failed responses (4xx, 5xx): ${report.failedResponses.length ? '' : 'none'}`,
     ...report.failedResponses.map((r) => `  - ${r.status} ${r.method} ${r.url}`),

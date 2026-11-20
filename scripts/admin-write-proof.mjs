@@ -49,7 +49,7 @@ import {
   CLEANUP_TABLES, SECTIONS, SINGLETONS, TEST_PREFIX, TINY_PNG,
   classifyRequest, compareOrderSnapshots, decodeJwtPayload, editedTitle, fieldValues, isTestTitle,
   makeRunId, mergeSessionBack, orderRewriteImpact, recordTitle, remapStorageState, renderReport,
-  reportPasses, rowDiff, sessionLevel, storagePath, storagePaths,
+  passkeyCorsNoise, reportPasses, rowDiff, sessionLevel, storagePath, storagePaths,
 } from './lib/write-proof.mjs';
 
 const STATE_FILE = path.join('.playwright', 'admin-state.json');
@@ -328,7 +328,15 @@ async function main(argv) {
 
     const page = await context.newPage();
     page.on('pageerror', (e) => report.pageErrors.push(`pageerror: ${e.message}`));
-    page.on('console', (m) => { if (m.type() === 'error') report.pageErrors.push(`console: ${m.text().slice(0, 240)}`); });
+    page.on('console', (m) => {
+      if (m.type() !== 'error') return;
+      const text = m.text();
+      // The passkey function accepts only http://localhost:3000 and the live site, so its
+      // read-only status check is refused by CORS when the build is served on another port.
+      // Expected here and listed apart; it never touches a write.
+      if (passkeyCorsNoise(text, m.location()?.url, baseOrigin)) { report.expectedErrors = (report.expectedErrors ?? 0) + 1; return; }
+      report.pageErrors.push(`console: ${text.slice(0, 240)}`);
+    });
     page.on('dialog', (d) => d.dismiss().catch(() => {}));
     page.on('framenavigated', (frame) => {
       if (frame !== page.mainFrame()) return;
@@ -643,7 +651,9 @@ async function main(argv) {
             const stage = await chapter(single.chapter);
             await stage.locator('[data-action="edit"]').first().click();
             const dialog = recordDialog();
-            await dialog.getByRole('textbox', { name: single.fieldLabel, exact: true }).fill(value);
+            const box = dialog.getByRole('textbox', { name: single.fieldLabel, exact: true });
+            await box.fill(value);
+            await expect(box, 'the typed value is still in the field when Save is pressed').toHaveValue(value);
             await dialog.getByRole('button', { name: 'Save', exact: true }).click();
             await waitFor(async () => (await port.getRow(single.table, row.id))?.updated_at !== stamp, 'the save to land');
             if (await page.getByTestId('record-dialog').count()) await closeDialog(recordDialog());

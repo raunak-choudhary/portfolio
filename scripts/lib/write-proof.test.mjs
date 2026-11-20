@@ -9,6 +9,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  passkeyCorsNoise,
   CLEANUP_TABLES, SECTIONS, TEST_PREFIX, TINY_PNG,
   classifyRequest, compareOrderSnapshots, decodeJwtPayload, editedTitle, fieldValues, idTarget, idTargets, isTestTitle,
   makeRunId, mergeSessionBack, orderRewrite, orderRewriteImpact, recordTitle, remapStorageState, renderReport as reportMarkdown,
@@ -339,4 +340,13 @@ test('renderReport lists the steps, the guard and the order diffs, and escapes t
   assert.match(markdown, /analytics_events: analytics event/);
   assert.match(markdown, /Order rewrites allowed: 4/);
   assert.match(markdown, /CSP violations: none/);
+});
+
+test('passkeyCorsNoise: only the passkey function, only on an origin it does not accept', () => {
+  const cors = "Access to fetch at 'https://x.supabase.co/functions/v1/admin-passkey' from origin 'http://localhost:4174' has been blocked by CORS policy: No header";
+  assert.equal(passkeyCorsNoise(cors, null, 'http://localhost:4174'), true);
+  assert.equal(passkeyCorsNoise('Failed to load resource: net::ERR_FAILED', 'https://x.supabase.co/functions/v1/admin-passkey', 'http://localhost:4174'), true);
+  assert.equal(passkeyCorsNoise(cors, null, 'http://localhost:3000'), false, 'on an accepted origin it is a real error');
+  assert.equal(passkeyCorsNoise('Failed to load resource: net::ERR_FAILED', 'https://x.supabase.co/rest/v1/projects', 'http://localhost:4174'), false);
+  assert.equal(passkeyCorsNoise("Access to fetch at 'https://x.supabase.co/functions/v1/other' from origin 'http://localhost:4174' has been blocked by CORS policy", null, 'http://localhost:4174'), false);
 });
