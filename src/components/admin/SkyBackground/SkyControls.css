@@ -1,35 +1,42 @@
 /* src/components/admin/SkyBackground/SkyControls.css
-   The Sky button and its panel use the dashboard's glass variables so they
-   match the header in both themes. Mobile first; the panel is a sheet under
-   the header on phones and a dropdown from 768px up. */
+   The Sky button and its panel. Mobile first; the panel is a sheet under
+   the header on phones and a dropdown from 768px up.
+
+   The button and switch rules once read --admin-* variables from the 2025 dashboard.
+   No stylesheet defines them now (and the voyage never rendered the class
+   that scoped them), so each such declaration was invalid at computed-value
+   time and fell back to the property's initial value, or to inherit for
+   color. The values below spell out that result, so the look is unchanged:
+   no border, no fill, no blur, no transitions (transition: none reads the
+   same as the initial all 0s); Voyage.css sets the padding on the voyage bar. */
 
 .sky-controls {
   position: relative;
   flex-shrink: 0;
-  margin-right: var(--admin-spacing-lg); /* the same breathing room the other header buttons keep */
+  margin-right: 0;
 }
 
 .sky-controls__button {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  background: var(--admin-glass-bg);
-  border: 1px solid var(--admin-glass-border);
-  border-radius: var(--admin-radius-md);
-  padding: var(--admin-spacing-sm) var(--admin-spacing-md);
-  color: var(--admin-text-primary);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  color: inherit;
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
-  backdrop-filter: var(--admin-glass-backdrop);
-  -webkit-backdrop-filter: var(--admin-glass-backdrop);
-  transition: border-color var(--admin-transition-normal), box-shadow var(--admin-transition-normal);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  transition: none;
   white-space: nowrap;
 }
 
 .sky-controls__button:hover,
 .sky-controls__button.is-open {
-  border-color: var(--admin-neon-orange);
+  border-color: currentcolor;
   box-shadow: 0 0 18px rgba(255, 140, 60, 0.25);
 }
 
@@ -163,7 +170,7 @@
   height: 20px;
   border-radius: 10px;
   background: rgba(127, 140, 170, 0.35);
-  transition: background var(--admin-transition-fast);
+  transition: none;
   flex-shrink: 0;
 }
 
@@ -176,7 +183,7 @@
   height: 16px;
   border-radius: 50%;
   background: #fff;
-  transition: transform var(--admin-transition-fast);
+  transition: none;
 }
 
 .sky-controls__toggle input:checked + .sky-controls__switch {
