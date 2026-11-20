@@ -3,17 +3,29 @@
 // verified code lifts the session to level 2 through an auth event before
 // step 03 has played, so the code step holds the route until it lets go.
 
-import { ProtectedAdminRoute } from './Router';
+import AppRouter, { ProtectedAdminRoute } from './Router';
 import { beginFilmHandoff, cancelFilmHandoff } from './services/signOutHandoff';
 import { React, act, mount } from './components/admin/SkyBackground/testUtils';
 
 // react-router 7 ships package exports that this Jest cannot resolve; the gate only needs these.
-jest.mock('react-router-dom', () => ({
-  Navigate: () => <p data-testid="navigate" />,
-  Route: () => null,
-  Routes: () => null,
-  useLocation: () => ({ pathname: '/admindashboard' })
-}));
+// Routes lists each route's path and, for a redirect, its target, so the
+// route table can be read without a real router.
+jest.mock('react-router-dom', () => {
+  const mockReact = require('react');
+  const Navigate = () => <p data-testid="navigate" />;
+  return {
+    Navigate,
+    Route: () => null,
+    Routes: ({ children }) => (
+      <ul data-testid="routes">
+        {mockReact.Children.map(children, (route) => (
+          <li data-path={route.props.path} data-redirect={route.props.element.type === Navigate ? route.props.element.props.to : ''} />
+        ))}
+      </ul>
+    ),
+    useLocation: () => ({ pathname: '/admindashboard' })
+  };
+});
 
 let mockAuth;
 jest.mock('./contexts/AuthContext', () => ({
@@ -42,7 +54,7 @@ jest.mock('./components/admin/AdminLogin/MfaCodeStep', () => (props) => {
   mockHold = props.onHoldChange;
   return <p data-testid="code-step" />;
 });
-jest.mock('./components/admin/AdminWelcome/AdminWelcome', () => (props) => <p data-testid="dashboard" data-view={props.view} data-locked={String(props.requireSecurityEnrollment)} />);
+jest.mock('./components/admin/AdminWelcome/AdminWelcome', () => (props) => <p data-testid="dashboard" data-locked={String(props.requireSecurityEnrollment)} />);
 
 const flush = () => act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
 const shown = (container) => container.querySelector('[data-testid]')?.dataset.testid || 'fallback';
@@ -94,41 +106,23 @@ describe('ProtectedAdminRoute', () => {
     view.unmount();
   });
 
-  const shownView = (container) => container.querySelector('[data-testid="dashboard"]')?.dataset.view;
+  const enrolling = () => ({ ...session(1), assurance: { checked: true, needsSecondFactor: false, needsEnrollment: true } });
+  const locked = (container) => container.querySelector('[data-testid="dashboard"]')?.dataset.locked;
 
-  it('opens the voyage by default after the second step', async () => {
+  it('opens the unlocked dashboard after the second step', async () => {
     mockAuth = session(2);
     const view = mount(<ProtectedAdminRoute />);
     await flush();
-    expect(shownView(view.container)).toBe('voyage');
+    expect(shown(view.container)).toBe('dashboard');
+    expect(locked(view.container)).toBe('false');
     view.unmount();
   });
-
-  it('opens the classic screens only when asked for them', async () => {
-    mockAuth = session(2);
-    const view = mount(<ProtectedAdminRoute view="classic" />);
-    await flush();
-    expect(shownView(view.container)).toBe('classic');
-    view.unmount();
-  });
-
-  const enrolling = () => ({ ...session(1), assurance: { checked: true, needsSecondFactor: false, needsEnrollment: true } });
-  const locked = (container) => container.querySelector('[data-testid="dashboard"]')?.dataset.locked;
 
   it('opens a session with no authenticator on the locked voyage', async () => {
     mockAuth = enrolling();
     const view = mount(<ProtectedAdminRoute />);
     await flush();
-    expect(shownView(view.container)).toBe('voyage');
-    expect(locked(view.container)).toBe('true');
-    view.unmount();
-  });
-
-  it('keeps the classic Security lock when the classic screens are asked for', async () => {
-    mockAuth = enrolling();
-    const view = mount(<ProtectedAdminRoute view="classic" />);
-    await flush();
-    expect(shownView(view.container)).toBe('classic');
+    expect(shown(view.container)).toBe('dashboard');
     expect(locked(view.container)).toBe('true');
     view.unmount();
   });
@@ -144,5 +138,25 @@ describe('ProtectedAdminRoute', () => {
     await flush();
     expect(shown(view.container)).toBe('navigate');
     view.unmount();
+  });
+});
+
+describe('admin routes', () => {
+  const routes = () => {
+    mockAuth = session(2);
+    const view = mount(<AppRouter />);
+    const table = Object.fromEntries([...view.container.querySelectorAll('[data-path]')].map((li) => [li.dataset.path, li.dataset.redirect]));
+    view.unmount();
+    return table;
+  };
+
+  it('serves the dashboard at /admindashboard', () => {
+    expect(routes()['/admindashboard']).toBe('');
+  });
+
+  it('sends the retired /classic and /voyage addresses to the dashboard', () => {
+    const table = routes();
+    expect(table['/admindashboard/classic']).toBe('/admindashboard');
+    expect(table['/admindashboard/voyage']).toBe('/admindashboard');
   });
 });

@@ -41,10 +41,9 @@ const isAdminPath = (pathname) => /^\/admin(login|dashboard|signout)(\/|$)/.test
  * no session goes to the login page; a session that has not passed the
  * authenticator code sees only the code step; everything else enters through
  * the welcome animation. With no authenticator enrolled yet, the voyage
- * opens with every chapter but Security replaced by a request to set one up
- * (the classic dashboard, when asked for, shows its Security screen alone).
+ * opens with every chapter but Security replaced by a request to set one up.
  */
-export const ProtectedAdminRoute = ({ view = 'voyage' }) => {
+export const ProtectedAdminRoute = () => {
   const { assurance, isAuthenticated, isLoading, sessionChecked } = useAuthContext();
   // The address this route was first reached with, read once. <Navigate> runs
   // again whenever this component re-renders, and by the second run the
@@ -89,11 +88,11 @@ export const ProtectedAdminRoute = ({ view = 'voyage' }) => {
     );
   }
 
-  // Without an authenticator both views lock themselves: the voyage shows only
-  // its Security chapter's request, the classic dashboard only its Security screen.
+  // Without an authenticator the voyage locks itself and shows only its
+  // Security chapter's request.
   return (
     <Suspense fallback={<AdminChunkFallback />}>
-      <AdminWelcome requireSecurityEnrollment={assurance.needsEnrollment} view={view} />
+      <AdminWelcome requireSecurityEnrollment={assurance.needsEnrollment} />
     </Suspense>
   );
 };
@@ -140,12 +139,12 @@ const AppShell = () => {
           <Route path="/achievements" element={<AchievementsPage />} />
           <Route path="/leadership" element={<LeadershipPage />} />
           <Route path="/adminlogin" element={<Suspense fallback={<AdminChunkFallback />}><AdminLogin /></Suspense>} />
-          {/* The voyage (the admin as one sky) is the dashboard. The classic
-              screens stay at /classic only until analytics and security move
-              into the voyage. */}
-          <Route path="/admindashboard" element={<ProtectedAdminRoute view="voyage" />} />
+          {/* The voyage (the admin as one sky) is the dashboard. The 2025
+              dashboard was retired in V6; old /voyage and /classic bookmarks
+              land on the voyage. */}
+          <Route path="/admindashboard" element={<ProtectedAdminRoute />} />
           <Route path="/admindashboard/voyage" element={<Navigate to="/admindashboard" replace />} />
-          <Route path="/admindashboard/classic" element={<ProtectedAdminRoute view="classic" />} />
+          <Route path="/admindashboard/classic" element={<Navigate to="/admindashboard" replace />} />
           <Route path="/adminsignout" element={<Suspense fallback={<AdminChunkFallback />}><AdminSignOut /></Suspense>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
