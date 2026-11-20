@@ -3,9 +3,7 @@
 // The admin as one sky. The document scrolls natively; a fixed canvas behind
 // it shows the 3D field, and one animation loop turns the scroll fraction into
 // camera travel and constellation drawing. Sixteen chapter stages come from
-// the registry. In Unit V1 the deck chapters are placeholders that point at
-// the classic managers; mission control, the rail, the palette and the field
-// are real. Without WebGL, or with reduced motion, the 2D zodiac sky stands
+// the registry. Without WebGL, or with reduced motion, the 2D zodiac sky stands
 // behind the same page and the camera cuts instead of flying.
 //
 // Two sky modes follow the Sky menu's Panels switch (renderBudget.js): with
@@ -17,7 +15,6 @@
 // bar and the Earth readout through signals, never through page state.
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Command as CommandIcon, Lock, LogOut } from 'lucide-react';
 import { getPortfolioStats } from '../../../services/dataService';
 import analyticsService from '../../../services/analyticsService';
@@ -85,7 +82,6 @@ function EnrolmentLock({ onGo }) {
 }
 
 function VoyageView({ requireSecurityEnrollment }) {
-  const navigate = useNavigate();
   const { settings, resolvedTheme, effectiveMotion } = useSkySettings();
   const mode = modeFor(settings.panels);
   const modeRef = useRef(mode); modeRef.current = mode;
@@ -294,9 +290,8 @@ function VoyageView({ requireSecurityEnrollment }) {
     window.location.assign('/adminsignout');
   }, [resolvedTheme]);
   const actions = useMemo(() => [
-    { id: 'classic', label: 'Open the classic dashboard', hint: 'until the voyage replaces it', run: () => navigate('/admindashboard/classic') },
     { id: 'signout', label: 'Sign out', hint: 'the film plays', run: signOut },
-  ], [navigate, signOut]);
+  ], [signOut]);
 
   const greeting = useMemo(() => greetingFor(), []);
   // First-time enrolment: every chapter but the Earth and Security shows only the request.
@@ -340,8 +335,6 @@ function VoyageView({ requireSecurityEnrollment }) {
               {!BUILT_KINDS.has(chapter.kind) && chapter.id !== MEDIA_CHAPTER && !(chapter.kind === 'deck' && schemaForTable(chapter.table)) && (
                 <div className="voyage-pane voyage-placeholder">
                   <p>{countFor(chapter) !== null ? <><b>{countFor(chapter)}</b> {countFor(chapter) === 1 ? 'item' : 'items'} in this section.</> : 'This chapter is on its way.'}</p>
-                  <p className="voyage-placeholder__note">The deck and the record dialog arrive in the next unit. Until then this section is edited in the classic dashboard.</p>
-                  <button type="button" className="voyage-bar__button" onClick={() => navigate('/admindashboard/classic')}>Open in the classic dashboard</button>
                 </div>
               )}
             </>}

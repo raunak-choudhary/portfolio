@@ -7,8 +7,6 @@ import { React, act, click, mount, stubCanvas } from '../SkyBackground/testUtils
 import { isDashboardReady, resetDashboardReady } from '../AdminWelcome/adminReadiness';
 import { openRecord, queueRequests, recordIntent, showQueue } from './recordIntent';
 
-const mockNavigate = jest.fn();
-jest.mock('react-router-dom', () => ({ useNavigate: () => mockNavigate }));
 jest.mock('./skyField', () => ({ createSkyField: jest.fn(), webglAvailable: () => false }));
 // cmdk ships package "exports" this Jest cannot resolve; the palette is verified in the real browser.
 // The stand-in honours the same props so the page's wiring (open on Cmd+K, jump, actions) is still exercised.
@@ -94,7 +92,6 @@ describe('VoyagePage (2D fallback)', () => {
     mediaLibrary.getMediaLibrarySnapshot.mockResolvedValue({ buckets: [], items: [{ id: 'project-images:a.png', bucketId: 'project-images', bucketLabel: 'Project Images', path: 'a.png', name: 'a.png', kind: 'image', status: 'referenced', previewUrl: null }], summary: {}, generatedAt: '' });
     inboxService.listMessages.mockResolvedValue([{ id: 'm1', name: 'Test Sender', email: 'sender@example.com', subject: 'Hello', message: 'Hi', status: 'unread', created_at: new Date().toISOString() }]);
     insightsService.loadInsights.mockResolvedValue({ current: [{ id: 'e1', session_id: 's1', created_at: new Date().toISOString(), event_type: 'page_view', event_action: 'view_page', event_label: 'home' }], before: [], projects: [], firstEngaged: null, firstProjectOpen: null, freshness: [], truncated: false });
-    mockNavigate.mockClear();
   });
 
   afterEach(() => { canvas.restore(); jest.restoreAllMocks(); delete global.fetch; window.matchMedia = matchMediaOriginal; window.sessionStorage.clear(); window.localStorage.clear(); });
@@ -157,7 +154,7 @@ describe('VoyagePage (2D fallback)', () => {
     view.unmount();
   });
 
-  it('jumps from the rail and the palette, and opens the classic dashboard from an action', async () => {
+  it('jumps from the rail and the palette, and offers no way back to the retired dashboard', async () => {
     const view = render();
     await flush();
     const dots = view.container.querySelectorAll('.voyage-rail__dot');
@@ -170,9 +167,11 @@ describe('VoyagePage (2D fallback)', () => {
     expect(palette).not.toBeNull();
     const items = [...palette.querySelectorAll('[data-cmdk-item]')];
     expect(items.length).toBeGreaterThanOrEqual(16);
-    const classic = items.find((i) => i.textContent.includes('classic dashboard'));
-    click(classic);
-    expect(mockNavigate).toHaveBeenCalledWith('/admindashboard/classic');
+    expect(items.some((i) => /classic/i.test(i.textContent))).toBe(false);
+    expect(items.some((i) => i.textContent.includes('Sign out'))).toBe(true);
+    window.scrollTo.mockClear();
+    click(items.find((i) => i.textContent.startsWith('Projects')));
+    expect(window.scrollTo).toHaveBeenCalled();
     expect(document.querySelector('.voyage-palette')).toBeNull();
     view.unmount();
   });
