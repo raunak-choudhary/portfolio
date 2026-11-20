@@ -1,0 +1,25 @@
+[
+  {
+    "id": "TEST-work-1",
+    "title": "TEST- Engineer",
+    "company": "TEST- Example Corp",
+    "company_logo_url": "{{storage}}/fixtures/corp.png",
+    "department": "TEST- Platform",
+    "description": "TEST- A synthetic role description long enough for the rules.",
+    "employment_type": "Full-time",
+    "location": "TEST- Example City",
+    "start_date": "2022-01-01",
+    "end_date": "2024-06-30",
+    "is_current": false,
+    "job_number": 1,
+    "team_size": 5,
+    "key_responsibilities": ["TEST- Responsibility"],
+    "achievements": ["TEST- Achievement"],
+    "clients_served": [],
+    "technologies": ["Java"],
+    "order_index": null,
+    "status": "active",
+    "created_at": "2026-11-01T10:00:00.000Z",
+    "updated_at": "2026-11-12T10:00:00.000Z"
+  }
+]

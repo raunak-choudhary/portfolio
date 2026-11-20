@@ -1,0 +1,35 @@
+[
+  {
+    "id": 3,
+    "at": "2026-11-18T15:00:00.000000+00:00",
+    "action": "edit",
+    "section": "projects",
+    "record_id": "TEST-project-alpha",
+    "record_title": "TEST- Alpha Tracker",
+    "fields": ["short_description"],
+    "detail": {},
+    "source": "admin"
+  },
+  {
+    "id": 2,
+    "at": "2026-11-17T15:00:00.000000+00:00",
+    "action": "delete",
+    "section": "projects",
+    "record_id": "TEST-project-removed",
+    "record_title": "TEST- Removed Project",
+    "fields": [],
+    "detail": {},
+    "source": "admin"
+  },
+  {
+    "id": 1,
+    "at": "2026-11-16T15:00:00.000000+00:00",
+    "action": "create",
+    "section": "projects",
+    "record_id": "TEST-project-removed",
+    "record_title": "TEST- Removed Project",
+    "fields": [],
+    "detail": {},
+    "source": "admin"
+  }
+]
