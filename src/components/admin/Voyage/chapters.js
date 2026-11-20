@@ -10,13 +10,14 @@
 /** @typedef {'prologue'|'bento'|'deck'|'charts'|'inbox'|'security'} ChapterKind */
 
 /**
- * @type {ReadonlyArray<{id: string, name: string, constellation: string|null, place?: string, rail?: string, kind: ChapterKind, table?: string, sub: string}>}
+ * @type {ReadonlyArray<{id: string, name: string, constellation: string|null, place?: string, dayPlace?: string, rail?: string, kind: ChapterKind, table?: string, sub: string}>}
  * `table` names the Supabase table a deck chapter manages (the health rules and the
  * stats use the same names), `sub` is the one-line description under the title.
- * The prologue has no constellation; `place` names where it is and `rail` is its mark on the rail.
+ * The prologue has no constellation; `place` names where it is (`dayPlace` in the light theme, where
+ * it opens on the Sun instead of low Earth orbit) and `rail` is its mark on the rail.
  */
 export const CHAPTERS = Object.freeze([
-  { id: 'earth', name: 'Earth', constellation: null, place: 'Low Earth orbit', rail: '⊕', kind: 'prologue', sub: 'Scroll to travel through your portfolio, one constellation per section.' },
+  { id: 'earth', name: 'Earth', constellation: null, place: 'Low Earth orbit', dayPlace: 'Inner solar system', rail: '⊕', kind: 'prologue', sub: 'Scroll to travel through your portfolio, one constellation per section.' },
   { id: 'overview', name: 'Mission control', constellation: 'UMa', kind: 'bento', sub: 'Health, fixes and what happened lately.' },
   { id: 'hero', name: 'Hero', constellation: 'Ari', kind: 'deck', table: 'hero_content', sub: 'The first screen visitors see.' },
   { id: 'about', name: 'About', constellation: 'Tau', kind: 'deck', table: 'about_content', sub: 'Who you are, in your words.' },
@@ -43,8 +44,14 @@ export const chapterById = (id) => CHAPTERS.find((c) => c.id === id);
 /** Index of a chapter id, or -1. */
 export const chapterIndex = (id) => CHAPTER_IDS.indexOf(id);
 
-/** The place name shown for a chapter: its constellation's full name when known, else the abbreviation, else the prologue's place. */
-export const chapterPlace = (chapter, names = {}) => (chapter.constellation ? names[chapter.constellation] || chapter.constellation : chapter.place || '');
+/**
+ * The place name shown for a chapter: its constellation's full name when known, else the abbreviation,
+ * else the prologue's place (by day the prologue is the Sun's neighbourhood, by night low Earth orbit).
+ */
+export const chapterPlace = (chapter, names = {}, theme = 'dark') => {
+  if (chapter.constellation) return names[chapter.constellation] || chapter.constellation;
+  return (theme === 'light' && chapter.dayPlace) || chapter.place || '';
+};
 
 /**
  * Deep-sky photographs placed far behind the route: which one appears near

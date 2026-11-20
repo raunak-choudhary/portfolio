@@ -317,7 +317,7 @@ function VoyageView({ requireSecurityEnrollment }) {
           <section key={chapter.id} id={`chapter-${chapter.id}`} ref={(el) => { stageRefs.current[i] = el; }} className="voyage-chapter" aria-labelledby={`chapter-${chapter.id}-title`}>
             <div className="voyage-chapter__head">
               <div>
-                <div className="voyage-chapter__kicker">{String(i).padStart(2, '0')} · {chapterPlace(chapter, names)}</div>
+                <div className="voyage-chapter__kicker">{String(i).padStart(2, '0')} · {chapterPlace(chapter, names, resolvedTheme)}</div>
                 <h2 className="voyage-chapter__title" id={`chapter-${chapter.id}-title`}>{chapter.kind === 'prologue' ? `${greeting}, Raunak` : chapter.name}</h2>
                 <p className="voyage-chapter__sub">{chapter.sub}</p>
                 {chapter.kind === 'prologue' && <OverReadout signal={overSignal} />}
