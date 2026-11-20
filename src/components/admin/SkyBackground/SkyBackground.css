@@ -1,7 +1,7 @@
 /* src/components/admin/SkyBackground/SkyBackground.css
-   The zodiac sky sits as the first child of .admin-dashboard, under the
-   header and the body. The glass variables it reads (--sky-glass, --sky-blur)
-   are set on <html> by SkySettingsProvider. */
+   The 2D zodiac sky behind the voyage (without WebGL) and the sign-out film.
+   The glass variables it reads (--sky-glass, --sky-blur) are set on <html>
+   by SkySettingsProvider. */
 
 .sky-background {
   position: absolute;
@@ -32,23 +32,4 @@
 
 [data-theme="light"] .sky-background--plain {
   background: linear-gradient(180deg, #5aa7e8, #cfe6f8);
-}
-
-/* The dashboard chrome must stack above the sky. */
-.admin-dashboard > .dashboard-body {
-  position: relative;
-  z-index: 1;
-  transition: opacity 400ms ease;
-}
-
-/* "Show panels" off: the body fades so the whole sky can be seen; the header stays for the controls. */
-.admin-dashboard.sky-only > .dashboard-body {
-  opacity: 0;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .admin-dashboard > .dashboard-body {
-    transition: none;
-  }
 }
