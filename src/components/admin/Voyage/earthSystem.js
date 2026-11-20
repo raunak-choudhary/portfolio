@@ -2,15 +2,19 @@
 //
 // The opening scene in Three.js: Earth with NASA's day map, city lights on
 // the night side, drifting clouds, a twilight band along the terminator and a
-// blue atmosphere; the Moon on a stylised orbit lit by the same Sun; a few
+// blue atmosphere; the Moon, starting from tonight's true place and phase on
+// a stylised orbit, lit only by the same Sun and a little earthshine; a few
 // satellites in low orbit. All directions, tilts and tempos come from
 // earthModel.js; this file only builds meshes and applies the numbers each
 // frame.
 
 import * as THREE from 'three';
 import {
-  EARTH_RADIUS, MOON_RADIUS, earthScene, earthSpin, moonPosition, overReadout, satelliteOrbits, satellitePosition,
+  EARTH_RADIUS, MOON_ORBIT_RADIUS, MOON_RADIUS, earthScene, earthSpin, earthshineFactor, moonBasis, moonDirection, overReadout, satelliteOrbits, satellitePosition,
 } from './earthModel';
+import { EARTHLIGHT, EARTHSHINE, RELIEF_EXAGGERATION, RELIEF_GAIN, SUNLIGHT } from './moonShading';
+
+export { EARTHSHINE };
 
 const UP = new THREE.Vector3(0, 1, 0);
 
@@ -78,6 +82,43 @@ export const HALO_FRAGMENT = `
     gl_FragColor = vec4(vec3(0.32, 0.56, 1.0) * a, a);
     #include <colorspace_fragment>
   }`;
+/** The Moon's map tiers: 2048 px wide where the screen is wide, 1024 px on phones (the disc is under 200 device pixels either way). */
+export const MOON_TIERS = Object.freeze([1024, 2048]);
+/**
+ * The Moon's surface: the LROC colour map lit by one Sun with the Lunar-Lambert
+ * law (McEwen 1991), a mix of Lommel-Seeliger, which keeps the full Moon flat
+ * to the limb with no darkening, and Lambert, which takes over at large phase
+ * angles; the weight L(α) is McEwen's cubic. No specular term, since the
+ * regolith has none. The normal is tilted by the LOLA relief map in the local
+ * east and north frame, so craters and ridges catch the light along the
+ * terminator. The night side gets only earthshine from the Earth's direction.
+ */
+export const MOON_FRAGMENT = `
+  #define RELIEF_SCALE ${(RELIEF_EXAGGERATION / RELIEF_GAIN).toFixed(4)}
+  #define SUNLIGHT vec3(${SUNLIGHT.map((v) => v.toFixed(3)).join(', ')})
+  #define EARTHLIGHT vec3(${EARTHLIGHT.map((v) => v.toFixed(3)).join(', ')})
+  uniform sampler2D uAlbedo; uniform sampler2D uRelief; uniform vec3 uSun; uniform vec3 uPole; uniform vec3 uEarth; uniform float uEarthshine;
+  varying vec2 vUv; varying vec3 vNormal; varying vec3 vView;
+  void main() {
+    vec3 n = normalize(vNormal); vec3 v = normalize(vView);
+    // local frame on the sphere: east along the parallels, north along the meridians
+    vec3 east = cross(uPole, n); float el = length(east);
+    east = el > 1e-4 ? east / el : normalize(cross(vec3(0.0, 0.0, 1.0), n));
+    vec3 north = cross(n, east);
+    vec2 tilt = (texture2D(uRelief, vUv).rg * 2.0 - 1.0) * RELIEF_SCALE;
+    vec3 bumped = normalize(n * sqrt(max(0.0, 1.0 - dot(tilt, tilt))) + east * tilt.x + north * tilt.y);
+    float mu0 = max(dot(bumped, uSun), 0.0), mu = max(dot(n, v), 0.0);
+    // the terminator follows the sphere, not the bumps, so it stays sharp and round
+    mu0 *= smoothstep(-0.02, 0.03, dot(n, uSun));
+    float alpha = degrees(acos(clamp(dot(uSun, v), -1.0, 1.0)));
+    float L = clamp(1.0 - 0.019 * alpha + 2.42e-4 * alpha * alpha - 1.46e-6 * alpha * alpha * alpha, 0.0, 1.0);
+    float sunlit = L * 2.0 * mu0 / (mu0 + mu + 1e-4) + (1.0 - L) * mu0;
+    float earthlit = uEarthshine * max(dot(n, uEarth), 0.0);
+    vec3 albedo = texture2D(uAlbedo, vUv).rgb;
+    vec3 color = albedo * (SUNLIGHT * sunlit + EARTHLIGHT * earthlit);
+    gl_FragColor = vec4(color, 1.0);
+    #include <colorspace_fragment>
+  }`;
 const SATELLITE_VERTEX = `
   attribute float aPhase; uniform float uTime; uniform float uPixelRatio; varying float vTwinkle;
   void main() { vTwinkle = 0.7 + 0.3 * sin(uTime * 0.004 + aPhase); vec4 mv = modelViewMatrix * vec4(position, 1.0); gl_PointSize = clamp(2600.0 / max(1.0, -mv.z), 1.5, 4.0) * uPixelRatio; gl_Position = projectionMatrix * mv; }`;
@@ -94,9 +135,10 @@ const SATELLITE_FRAGMENT = `
  * @param {number} input.pixelRatio
  * @param {number} [input.satellites] how many satellites to draw.
  * @param {Date} [input.date] the moment the scene is set for (real Sun, tilt and Moon phase).
+ * @param {number} [input.moonTier] width of the Moon maps, one of MOON_TIERS.
  * @returns {{group: THREE.Group, scene: object, update(elapsed: number): void, readout(elapsed: number, viewer: THREE.Vector3): string, setPixelRatio(ratio: number): void, dispose(): void}}
  */
-export function createEarthSystem({ scene, loadTexture, assetBase, pixelRatio, satellites = 9, date = new Date() }) {
+export function createEarthSystem({ scene, loadTexture, assetBase, pixelRatio, satellites = 9, date = new Date(), moonTier = 2048 }) {
   const model = earthScene(date);
   const group = new THREE.Group();
   group.position.set(model.centre[0], model.centre[1], model.centre[2]);
@@ -128,18 +170,21 @@ export function createEarthSystem({ scene, loadTexture, assetBase, pixelRatio, s
   halo.renderOrder = 4;
   group.add(halo);
 
-  // ---- Moon, lit by the same Sun ----
-  const grey = new THREE.DataTexture(new Uint8Array([128, 128, 128, 255]), 1, 1); grey.needsUpdate = true;
-  // A stand-in map from the start so the program is compiled with a map once and not again when the photograph lands.
-  const moonMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, metalness: 0, map: grey });
-  loadTexture(`${assetBase}earth/moon-color.webp`, (t) => { moonMaterial.map = t; moonMaterial.needsUpdate = true; });
-  const moon = new THREE.Mesh(new THREE.SphereGeometry(MOON_RADIUS, 48, 32), moonMaterial);
+  // ---- Moon, lit by the same Sun and nothing else ----
+  // Stand-ins until the maps land, so the program is compiled once: mid grey, and a flat relief.
+  const grey = new THREE.DataTexture(new Uint8Array([128, 128, 128, 255]), 1, 1); grey.colorSpace = THREE.SRGBColorSpace; grey.needsUpdate = true;
+  const flat = new THREE.DataTexture(new Uint8Array([128, 128, 128, 255]), 1, 1); flat.needsUpdate = true;
+  const moonMaterial = new THREE.ShaderMaterial({
+    uniforms: { uAlbedo: { value: grey }, uRelief: { value: flat }, uSun: { value: sun }, uPole: { value: new THREE.Vector3(...model.moonPole) }, uEarth: { value: new THREE.Vector3() }, uEarthshine: { value: 0 } },
+    vertexShader: EARTH_VERTEX, fragmentShader: MOON_FRAGMENT,
+  });
+  const tier = MOON_TIERS.includes(moonTier) ? moonTier : 2048;
+  loadTexture(`${assetBase}moon/moon-color-${tier}.webp`, (t) => { moonMaterial.uniforms.uAlbedo.value = t; });
+  // the relief holds directions, not colours: read as stored, before the upload
+  loadTexture(`${assetBase}moon/moon-relief-${tier}.webp`, (t) => { t.colorSpace = THREE.NoColorSpace; moonMaterial.uniforms.uRelief.value = t; });
+  const moon = new THREE.Mesh(new THREE.SphereGeometry(MOON_RADIUS, 64, 48), moonMaterial);
   scene.add(moon);
-  const sunlight = new THREE.DirectionalLight(0xfff4e6, 2.6);
-  sunlight.position.copy(sun).multiplyScalar(4000).add(group.position); sunlight.target = earth;
-  scene.add(sunlight);
-  const fill = new THREE.AmbientLight(0x9fb4d8, 0.55);   // so the Moon's night side still reads as a disc
-  scene.add(fill);
+  const basis = new THREE.Matrix4(), axisX = new THREE.Vector3(), axisY = new THREE.Vector3(), axisZ = new THREE.Vector3();
 
   // ---- satellites ----
   const orbits = satelliteOrbits(satellites);
@@ -152,7 +197,7 @@ export function createEarthSystem({ scene, loadTexture, assetBase, pixelRatio, s
   sats.renderOrder = 3; sats.frustumCulled = false;
   scene.add(sats);
 
-  disposables.push(earth.geometry, earthMaterial, halo.geometry, haloMaterial, moon.geometry, moonMaterial, satGeometry, satMaterial, black, clear, grey);
+  disposables.push(earth.geometry, earthMaterial, halo.geometry, haloMaterial, moon.geometry, moonMaterial, satGeometry, satMaterial, black, clear, grey, flat);
   const centre = group.position.clone();
 
   return {
@@ -162,9 +207,11 @@ export function createEarthSystem({ scene, loadTexture, assetBase, pixelRatio, s
       spinQuaternion.setFromAxisAngle(UP, earthSpin(model.spinAtLoad, elapsed));
       earth.quaternion.copy(align).multiply(spinQuaternion);
       earthMaterial.uniforms.uCloudShift.value = (elapsed / 900000) % 1;   // clouds drift west to east over the ground
-      const m = moonPosition(model, elapsed);
-      moon.position.set(m[0], m[1], m[2]);
-      moon.lookAt(centre); moon.rotateY(-Math.PI / 2);   // the near side (longitude 0 of the map) faces Earth
+      const d = moonDirection(model, elapsed), b = moonBasis(model, d);
+      moon.position.set(centre.x + d[0] * MOON_ORBIT_RADIUS, centre.y + d[1] * MOON_ORBIT_RADIUS, centre.z + d[2] * MOON_ORBIT_RADIUS);
+      moon.quaternion.setFromRotationMatrix(basis.makeBasis(axisX.set(...b.x), axisY.set(...b.y), axisZ.set(...b.z)));   // the near side faces Earth
+      moonMaterial.uniforms.uEarth.value.set(-d[0], -d[1], -d[2]);
+      moonMaterial.uniforms.uEarthshine.value = EARTHSHINE * earthshineFactor(model.sunDir, d);
       for (let i = 0; i < orbits.length; i++) { const p = satellitePosition(orbits[i], elapsed, model); satPositions[i * 3] = p[0]; satPositions[i * 3 + 1] = p[1]; satPositions[i * 3 + 2] = p[2]; }
       satGeometry.attributes.position.needsUpdate = true;
       satMaterial.uniforms.uTime.value = elapsed;
@@ -175,7 +222,7 @@ export function createEarthSystem({ scene, loadTexture, assetBase, pixelRatio, s
     setPixelRatio(ratio) { satMaterial.uniforms.uPixelRatio.value = ratio; },
     /** Takes everything out of the scene and frees it, so the day scene can replace it when the theme changes. */
     dispose() {
-      scene.remove(group, moon, sunlight, fill, sats);
+      scene.remove(group, moon, sats);
       for (const d of disposables) d.dispose?.();
     },
   };
