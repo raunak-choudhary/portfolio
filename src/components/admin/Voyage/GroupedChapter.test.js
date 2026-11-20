@@ -4,6 +4,7 @@
 // of the group it joins.
 
 import DeckChapter from './DeckChapter';
+import { contentVersion } from './contentChanged';
 import { skillsSchema } from './managers/skills.schema';
 import { React, act, click, mount, setInputValue } from '../SkyBackground/testUtils';
 
@@ -32,8 +33,10 @@ describe('a grouped chapter', () => {
     const view = mount(<DeckChapter schema={skillsSchema} notify={notify} />);
     await flush();
     expect(heads(view.container)).toEqual(['Programming Languages', 'Cloud Platforms']);
+    const version = contentVersion.get();
     click(view.container.querySelector('[aria-label="Move Cloud Platforms up"]'));
     await flush();
+    expect(contentVersion.get()).toBe(version + 1);   // the saved order is a content change
     expect(records.reorderGroups).toHaveBeenCalledWith(skillsSchema, [{ value: 'Cloud Platforms', priority: 1 }, { value: 'Programming Languages', priority: 2 }]);
     expect(heads(view.container)).toEqual(['Cloud Platforms', 'Programming Languages']);
     expect(notify).toHaveBeenCalledWith('Group order saved.');
@@ -41,6 +44,7 @@ describe('a grouped chapter', () => {
     await flush();
     expect(heads(view.container)).toEqual(['Cloud Platforms', 'Programming Languages']);
     expect(notify).toHaveBeenLastCalledWith('The new group order could not be saved.', 'bad');
+    expect(contentVersion.get()).toBe(version + 1);   // the rolled-back one is not
     view.unmount();
   });
 

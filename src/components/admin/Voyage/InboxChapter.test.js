@@ -1,5 +1,6 @@
 /* eslint-disable testing-library/no-container, testing-library/no-node-access */
 import InboxChapter, { toastFor } from './InboxChapter';
+import { contentVersion } from './contentChanged';
 import { React, act, click, mount, setInputValue } from '../SkyBackground/testUtils';
 
 // the record dialog's history line reads the activity log, which opens the Supabase client
@@ -91,9 +92,11 @@ describe('InboxChapter', () => {
     await flush();
     expect(inbox.updateMessages).not.toHaveBeenCalled();
     const dialog = document.querySelector('[data-testid="inbox-dialog"]');
+    const version = contentVersion.get();
     click(button(dialog, 'Star'));
     await flush();
     expect(button(dialog, 'Star')).toBeDefined();   // back to unstarred
+    expect(contentVersion.get()).toBe(version);      // a refused write is not a content change
     expect(dialog.querySelector('.record-banner--bad').textContent).toContain('Server went away');
     view.unmount();
   });
@@ -108,9 +111,11 @@ describe('InboxChapter', () => {
     expect(bar.querySelector('.inbox__selection-count').textContent).toBe('2 selected');
     // m3 is unread and m2 read: both read and unread are offered; both are unarchived
     expect([...bar.querySelectorAll('button')].map((b) => b.textContent)).toEqual(['Mark read', 'Mark unread', 'Star', 'Unstar', 'Archive', 'Mark spam', 'Delete', 'Clear']);
+    const version = contentVersion.get();
     click(button(bar, 'Archive'));
     await flush();
     expect(inbox.updateMessages).toHaveBeenCalledWith(['m3', 'm2'], { is_archived: true, archived_at: expect.any(String) });
+    expect(contentVersion.get()).toBe(version + 1);  // one raise for the bulk write, not one per message
     expect(notify).toHaveBeenCalledWith('2 messages archived.');
     // All keeps archived messages (only spam is quarantined); they carry the stamp now
     expect(view.container.querySelectorAll('.stamp--muted')).toHaveLength(2);
@@ -146,8 +151,10 @@ describe('InboxChapter', () => {
     await flush();
     click(button(document.querySelector('.inbox-dialog__foot'), 'Delete'));
     expect(document.querySelector('.dialog #dialog-body').textContent).toContain('2 enclosures');
+    const version = contentVersion.get();
     click(button(document.querySelector('.dialog'), 'Delete'));
     await flush();
+    expect(contentVersion.get()).toBe(version + 1);
     expect(inbox.deleteMessages).toHaveBeenCalledWith([expect.objectContaining({ id: 'm3' })]);
     expect(document.querySelector('[data-testid="inbox-dialog"]')).toBeNull();
     expect(subjects(view.container)).toEqual(['Subject m2', 'Subject m1']);
@@ -161,9 +168,11 @@ describe('InboxChapter', () => {
     await flush();
     click(view.container.querySelectorAll('.telegram__pick input')[0]);
     click(button(view.container.querySelector('.inbox__selection'), 'Delete'));
+    const version = contentVersion.get();
     click(button(view.container.querySelector('.dialog'), 'Delete'));
     await flush();
     expect(subjects(view.container)).toHaveLength(3);
+    expect(contentVersion.get()).toBe(version);
     expect(notify).toHaveBeenCalledWith('The attachments could not be removed, so nothing was deleted.', 'bad');
     expect(inbox.listMessages).toHaveBeenCalledTimes(1);
     view.unmount();

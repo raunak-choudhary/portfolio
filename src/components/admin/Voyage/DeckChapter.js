@@ -19,6 +19,7 @@ import RecordDialog from './RecordDialog';
 import { useFixWalk } from './fixWalk';
 import { groupMoveWrites, nextOrderValue, orderWritesFor, priorityForGroup, sortRows } from './managers/schemaModel';
 import { listRecords, reorderGroups, reorderRecords } from '../../../services/voyageRecords';
+import { noteContentChanged } from './contentChanged';
 
 const LEAVE_MS = 420;
 
@@ -65,12 +66,14 @@ export default function DeckChapter({ schema, notify }) {
     setTimeout(() => { if (!alive.current) return; setRecords((rows) => rows.filter((r) => r.id !== id)); setLeaving((s) => { const n = new Set(s); n.delete(id); return n; }); }, LEAVE_MS);
   }, [walkDeleted]);
 
+  // Both reorders raise the shared content signal only once the write lands, so the activity pane and the
+  // fix queue reload after a saved order and never for the optimistic step or a rolled-back one.
   const reorder = useCallback(async (ids) => {
     const before = records;
     const writes = orderWritesFor(schema, ids);
     const byId = Object.fromEntries(writes.map((w) => [w.id, w[schema.orderKey]]));
     setRecords(sortRows(schema, records.map((r) => ({ ...r, [schema.orderKey]: byId[r.id] ?? r[schema.orderKey] }))));
-    try { await reorderRecords(schema, writes); notify('Order saved.'); } catch (err) { setRecords(before); notify(err.message || 'The new order could not be saved.', 'bad'); }
+    try { await reorderRecords(schema, writes); noteContentChanged(); notify('Order saved.'); } catch (err) { setRecords(before); notify(err.message || 'The new order could not be saved.', 'bad'); }
   }, [records, schema, notify]);
 
   const moveGroup = useCallback(async (index, delta, groups) => {
@@ -81,7 +84,7 @@ export default function DeckChapter({ schema, notify }) {
     const byValue = new Map(writes.map((w) => [w.value, w.priority]));
     const valueOf = (r) => (r[key] === undefined || r[key] === null || r[key] === '' ? null : String(r[key]));
     setRecords(sortRows(schema, records.map((r) => (byValue.has(valueOf(r)) ? { ...r, [priorityKey]: byValue.get(valueOf(r)) } : r))));
-    try { await reorderGroups(schema, writes); notify('Group order saved.'); } catch (err) { setRecords(before); notify(err.message || 'The new group order could not be saved.', 'bad'); }
+    try { await reorderGroups(schema, writes); noteContentChanged(); notify('Group order saved.'); } catch (err) { setRecords(before); notify(err.message || 'The new group order could not be saved.', 'bad'); }
   }, [records, schema, notify]);
 
   // a new record, or one moved into another group, takes that group's priority
