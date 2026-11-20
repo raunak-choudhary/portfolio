@@ -14,7 +14,7 @@ import {
 
 const UP = new THREE.Vector3(0, 1, 0);
 
-const EARTH_VERTEX = `
+export const EARTH_VERTEX = `
   varying vec2 vUv; varying vec3 vNormal; varying vec3 vView;
   void main() {
     vUv = uv;
@@ -36,7 +36,7 @@ export const TWILIGHT_SHIFT = 0.02;
  * terminator, and a blue limb that is strong on the day side and faint on the
  * night side. Colours are in linear light; the last line encodes for the screen.
  */
-const EARTH_FRAGMENT = `
+export const EARTH_FRAGMENT = `
   #define TWILIGHT_WIDTH ${TWILIGHT_WIDTH.toFixed(3)}
   #define TWILIGHT_SHIFT ${TWILIGHT_SHIFT.toFixed(3)}
   uniform sampler2D uDay; uniform sampler2D uNight; uniform sampler2D uClouds; uniform vec3 uSun; uniform float uCloudShift;
@@ -68,7 +68,7 @@ const EARTH_FRAGMENT = `
     #include <colorspace_fragment>
   }`;
 /** A halo just outside the limb on a slightly larger back-facing sphere, brightest where the Sun lights the air. */
-const HALO_FRAGMENT = `
+export const HALO_FRAGMENT = `
   uniform vec3 uSun; varying vec3 vNormal; varying vec3 vView;
   void main() {
     vec3 n = normalize(vNormal); vec3 v = normalize(vView);
@@ -173,6 +173,10 @@ export function createEarthSystem({ scene, loadTexture, assetBase, pixelRatio, s
     readout(elapsed, viewer) { return overReadout(model, elapsed, [viewer.x, viewer.y, viewer.z], date); },
     /** Satellite points are sized in device pixels; keep them the same size on screen when the canvas resolution changes. */
     setPixelRatio(ratio) { satMaterial.uniforms.uPixelRatio.value = ratio; },
-    dispose() { for (const d of disposables) d.dispose?.(); },
+    /** Takes everything out of the scene and frees it, so the day scene can replace it when the theme changes. */
+    dispose() {
+      scene.remove(group, moon, sunlight, fill, sats);
+      for (const d of disposables) d.dispose?.();
+    },
   };
 }
