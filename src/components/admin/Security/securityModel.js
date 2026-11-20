@@ -2,8 +2,7 @@
 //
 // The rules and the wording of the admin's security screens, kept pure so
 // every branch is unit tested: the voyage's Security chapter (Cassiopeia)
-// builds on all of it, and the classic Security screen shares the guard and
-// the naming rule so the two can never disagree.
+// and its add-app dialog build on all of it.
 //
 // Inputs are shaped like the real sources: Supabase MFA factors (id,
 // friendly_name, created_at), admin_passkeys rows (id, device_name, rp_id,

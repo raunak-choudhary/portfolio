@@ -1,5 +1,5 @@
-// Unit tests for the security rules and wording shared by the voyage's
-// Security chapter and the classic Security screen.
+// Unit tests for the security rules and wording behind the voyage's
+// Security chapter.
 
 import {
   HELD_REASON, PASSKEY_MATCH_SECONDS, PRIMARY_APP_NAME, agoText, appsNote, chapterState, defaultAppName, describeSession, deviceText,
