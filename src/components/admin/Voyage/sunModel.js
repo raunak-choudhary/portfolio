@@ -264,28 +264,48 @@ export function activeRegions(seed) {
 /** How many long-lived prominences (filaments when seen on the disc) a day's Sun carries. */
 export const PROMINENCE_COUNT = 7;
 
+/** A prominence at least this tall (in Sun radii) reads as a sizeable flame when it stands at the limb. */
+export const SIZEABLE_PROMINENCE = 0.1;
+
+/**
+ * Where the long-lived prominences sit (body-frame latitude and longitude in
+ * degrees, before the day's seeded jitter of up to PROMINENCE_JITTER). The
+ * camera looks down on the Sun's north side (25 to 41 degrees above its
+ * equator through the year), so the visible limb runs low across the southern
+ * hemisphere and over the north polar cap. The plan was searched so that, for
+ * every date and every moment of a six-minute turn, at least two of the five
+ * sizeable ones stand at least 0.05 radius proud of that limb (a quiet still
+ * frame or a long look never leaves the rim bare); prominencesAtLimb measures
+ * it and sunModel.test.js holds it. Most are high-latitude, like the polar
+ * crown prominences of the real Sun, and the tallest starts on the east limb.
+ */
+const PROMINENCE_PLAN = Object.freeze([
+  [15, 90], [44, 52], [46, 269], [50, 156], [53, 317], [-37, 123], [22, 199],
+]);
+/** The seeded jitter around the plan, in degrees of latitude and longitude. */
+export const PROMINENCE_JITTER = Object.freeze({ lat: 5, lon: 6 });
+
 /**
  * Long-lived prominences: sheets of cooler gas held above the surface by the
  * magnetic field for days. Seen against space at the limb they glow; seen on
  * the disc they are the same objects as dark filaments, so they are placed on
  * the surface and turn with it. Sizes follow a steep spread: one large (a third
- * of a solar radius tall), two medium, the rest small. The first three sit at
- * or near the limb at load so the still frame shows them standing.
- * @returns {{feet: number[][], centre: number[], height: number, kind: 'arch'|'hedge', lean: number, flow: number, strands: number}[]}
+ * of a solar radius tall), a few medium, two small. Their places follow
+ * PROMINENCE_PLAN, so the limb is never left without a sizeable flame.
+ * @returns {{feet: number[][], centre: number[], lat: number, lon: number, height: number, kind: 'arch'|'hedge', lean: number, flow: number, strands: number}[]}
  */
 export function prominences(seed) {
-  const heights = [0.36, 0.22, 0.15, 0.11, 0.08, 0.07, 0.06];
-  const lons = [92, -84, 70, -28, 150, 205, 32];
+  const heights = [0.36, 0.25, 0.19, 0.15, 0.12, 0.07, 0.05];
   return heights.map((base, k) => {
     const r = (f) => hash01(seed, 700 + k, f);
-    const lat = (r(0) < 0.5 ? -1 : 1) * (10 + 45 * r(1));
-    const lon = lons[k] + (r(2) - 0.5) * (k < 3 ? 14 : 40);
+    const lat = PROMINENCE_PLAN[k][0] + (r(1) - 0.5) * 2 * PROMINENCE_JITTER.lat;
+    const lon = PROMINENCE_PLAN[k][1] + (r(2) - 0.5) * 2 * PROMINENCE_JITTER.lon;
     const centre = bodyVector(lat, lon);
     // near-meridional sheets show their long side at the east and west limbs
     const orient = (r(3) - 0.5) * 1.2;
     const spread = 0.12 + base * 1.1 + 0.12 * r(4);
     return {
-      feet: feetAround(centre, orient, spread), centre,
+      feet: feetAround(centre, orient, spread), centre, lat, lon,
       height: base * (0.85 + 0.3 * r(5)),
       kind: r(6) < (k === 0 ? 0.6 : 0.45) ? 'hedge' : 'arch',
       lean: (r(7) - 0.5) * 1.1,
@@ -293,6 +313,23 @@ export function prominences(seed) {
       strands: 3 + Math.floor(r(9) * 4),
     };
   });
+}
+
+/**
+ * How far a prominence's top stands outside the visible disc `elapsed` ms
+ * after load, in Sun radii (0 when it is all on the disc or hidden behind it).
+ * Its centre turns with the surface; a top at radius 1 + height, at angle
+ * delta from the limb plane, projects to (1 + height) cos(delta) from the
+ * centre of the disc, whether it leans toward the camera or away.
+ */
+export function standingHeight(scene, prom, elapsed) {
+  const along = dot(bodyToWorld(scene, prom.centre, elapsed), scene.viewer);
+  return Math.max(0, (1 + prom.height) * Math.sqrt(Math.max(0, 1 - along * along)) - 1);
+}
+
+/** How many sizeable prominences stand at least `minHeight` radii proud of the visible limb `elapsed` ms after load. */
+export function prominencesAtLimb(scene, list, elapsed, minHeight = 0.05) {
+  return list.filter((p) => p.height >= SIZEABLE_PROMINENCE && standingHeight(scene, p, elapsed) >= minHeight).length;
 }
 
 // ---- short-lived loops and eruptions ----
