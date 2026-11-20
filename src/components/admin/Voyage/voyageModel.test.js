@@ -123,6 +123,25 @@ describe('route from the stages on the page', () => {
     expect(routeFromTops(100, [])).toBe(0); expect(routeFromTops(100, [0])).toBe(0);
     expect(routeFromTops(5, [0, 0, 10])).toBeCloseTo(1.5);   // two stages at the same top do not divide by zero
   });
+
+  it('holds on a tall stage while it fills the screen and travels only over the last part of a screen', () => {
+    const tops = [0, 900, 1800, 6300, 7200], view = 1000;   // travel = 600 px
+    // a one-screen stage (900 px): holds for 300 px, then travels
+    expect(routeFromTops(200, tops, view)).toBe(0);
+    expect(routeFromTops(300 + 300, tops, view)).toBeCloseTo(0.5);
+    // the five-screen deck holds on its constellation for 3900 of its 4500 px
+    expect(routeFromTops(1800 + 2250, tops, view)).toBe(2);
+    expect(routeFromTops(6300 - 601, tops, view)).toBe(2);
+    expect(routeFromTops(6300 - 300, tops, view)).toBeCloseTo(2.5);
+    expect(routeFromTops(6300, tops, view)).toBe(3);
+    // its last rows stay live until the next stage is most of the way up
+    const liveUntil = 6300 - 600 * (1 - 0.55);
+    expect(isChapterLive(2, routeFromTops(liveUntil - 1, tops, view))).toBe(true);
+    expect(isChapterLive(2, routeFromTops(liveUntil + 1, tops, view))).toBe(false);
+    // a stage shorter than the travel runs linearly
+    expect(routeFromTops(5, [0, 10, 20], view)).toBeCloseTo(0.5);
+    expect(routeFromTops(99999, tops, view)).toBe(4);
+  });
 });
 
 describe('greeting', () => {
