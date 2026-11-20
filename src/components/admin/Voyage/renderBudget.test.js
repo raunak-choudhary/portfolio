@@ -1,6 +1,6 @@
 import {
-  ADAPT, AMBIENT_INTERVAL_MS, MIN_PIXEL_RATIO, QUALITY_STEPS, SNAPSHOT_SETTLE_MS,
-  adaptQuality, initialAdaptState, modeFor, pixelRatioFor, renderDue, snapshotBlurPx, snapshotDue,
+  ADAPT, AMBIENT_INTERVAL_MS, MIN_PIXEL_RATIO, QUALITY_STEPS, SNAPSHOT_SETTLE_MS, SUN_SURFACE,
+  adaptQuality, initialAdaptState, modeFor, pixelRatioFor, renderDue, snapshotBlurPx, snapshotDue, sunSurfaceScale, sunTierFor,
 } from './renderBudget';
 
 describe('modeFor', () => {
@@ -112,5 +112,36 @@ describe('snapshotBlurPx', () => {
     expect(snapshotBlurPx(8)).toBe(2);
     expect(snapshotBlurPx(5)).toBe(1.3);
     expect(snapshotBlurPx(-3)).toBe(0);
+  });
+});
+
+describe('sunSurfaceScale', () => {
+  it('draws the working Sun at three quarters of a CSS pixel and showcase at one, whatever the canvas ratio', () => {
+    expect(sunSurfaceScale({ mode: 'working', pixelRatio: 1 })).toBe(SUN_SURFACE.working);
+    expect(sunSurfaceScale({ mode: 'showcase', pixelRatio: 2 })).toBe(0.5);
+    expect(sunSurfaceScale({ mode: 'showcase', pixelRatio: 1 })).toBe(1);
+    expect(sunSurfaceScale({ mode: 'working', pixelRatio: 1, phone: true })).toBe(SUN_SURFACE.phone);
+  });
+
+  it('lowers the Sun with each adaptive step, and never below the floor or above the canvas', () => {
+    const at = (level) => sunSurfaceScale({ mode: 'showcase', pixelRatio: 1, level });
+    for (let level = 1; level < QUALITY_STEPS.length; level++) expect(at(level)).toBeLessThan(at(level - 1));
+    expect(at(99)).toBe(at(QUALITY_STEPS.length - 1));
+    expect(sunSurfaceScale({ mode: 'working', pixelRatio: 0.6, level: 3 })).toBeLessThanOrEqual(1);
+    expect(sunSurfaceScale({ mode: 'working', pixelRatio: 8 })).toBe(SUN_SURFACE.min);
+  });
+
+  it('rounds to a twentieth so a small ratio change does not reallocate the buffer', () => {
+    const s = sunSurfaceScale({ mode: 'working', pixelRatio: 1.37 });
+    expect(Math.round(s * 20) / 20).toBe(s);
+  });
+});
+
+describe('sunTierFor', () => {
+  it('picks low on phones, medium for the working sky and high for showcase', () => {
+    expect(sunTierFor({ mode: 'working', phone: true })).toBe('low');
+    expect(sunTierFor({ mode: 'showcase', phone: true })).toBe('low');
+    expect(sunTierFor({ mode: 'working' })).toBe('medium');
+    expect(sunTierFor({ mode: 'showcase' })).toBe('high');
   });
 });

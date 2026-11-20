@@ -43,6 +43,36 @@ export function pixelRatioFor({ mode, devicePixelRatio = 1, phone = false, level
   return Math.max(MIN_PIXEL_RATIO, Math.round(base * step * 20) / 20);
 }
 
+/**
+ * The day Sun's surface shader is drawn into its own smaller buffer and
+ * scaled up (sunSystem.js keeps the limb sharp by shading it at full size).
+ * These are buffer pixels per CSS pixel for each case; the noise it paints is
+ * soft, so below one pixel per CSS pixel it reads the same. Measured on the
+ * M3 (2026-11-20): the surface was 12 of 17 ms a frame in the working mode.
+ */
+export const SUN_SURFACE = Object.freeze({ working: 0.75, showcase: 1, phone: 0.8, min: 0.25 });
+
+/**
+ * The surface buffer's size as a fraction of the canvas's drawing buffer,
+ * rounded to 0.05 so small changes do not reallocate it. `pixelRatio` is the
+ * canvas's current ratio and `level` the adaptive step, which lowers the Sun
+ * along with the canvas: at each step both lose the same share of pixels.
+ * @param {{mode: 'working'|'showcase', pixelRatio: number, phone?: boolean, level?: number}} input
+ */
+export function sunSurfaceScale({ mode, pixelRatio, phone = false, level = 0 }) {
+  const density = phone ? SUN_SURFACE.phone : (SUN_SURFACE[mode] ?? SUN_SURFACE.working);
+  const step = QUALITY_STEPS[Math.min(QUALITY_STEPS.length - 1, Math.max(0, level | 0))];
+  const ratio = Math.max(pixelRatio || 1, 0.25);
+  return Math.min(1, Math.max(SUN_SURFACE.min, Math.round(((density * step) / ratio) * 20) / 20));
+}
+
+/**
+ * The Sun's shader tier for a device and mode (sunSystem.SUN_TIERS): phones
+ * get the low tier, the working mode the medium one (fewer fine noise octaves,
+ * which its smaller, softer buffer cannot show anyway), showcase the high one.
+ */
+export const sunTierFor = ({ mode, phone = false }) => (phone ? 'low' : mode === 'showcase' ? 'high' : 'medium');
+
 /** When nothing on the sky moves, it is repainted at most this often (the deep-sky photographs drift over minutes). */
 export const AMBIENT_INTERVAL_MS = 500;
 /** rAF callbacks land a little before or after the ideal moment; this slack keeps a 30 fps cap from falling to 20 on a 60 Hz screen. */
