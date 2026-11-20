@@ -4,7 +4,7 @@
     "about_me_title": "TEST- About title",
     "about_me_content": "TEST- A synthetic about paragraph, written only for the admin browser tests.",
     "basic_info_title": "TEST- Basics",
-    "basic_info": [{ "label": "TEST- Field", "value": "TEST- Value" }],
+    "basic_info": [{ "key": "TEST- Field", "value": "TEST- Value", "order_index": 0 }],
     "profile_image_about": "{{storage}}/fixtures/about.png",
     "profile_image_info": null,
     "profile_image_url": null,
