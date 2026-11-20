@@ -1,10 +1,12 @@
-import { DEG, EARTH_AXIS_ECLIPTIC, OBLIQUITY, dot, length, normalize, subsolarLongitude, sunCoordinates } from './earthModel';
+import * as THREE from 'three';
+import { DEG, EARTH_AXIS_ECLIPTIC, OBLIQUITY, dot, eclipticDirection, length, normalize, subsolarLongitude, sunCoordinates } from './earthModel';
 import {
-  AU_KM, DAY_EARTH_RADIUS, EARTH_ORBIT_RADIUS, EARTH_SCENE_DIRECTION, EARTH_YEAR_MS, LOOP_SLOTS, SOLAR_INCLINATION, SUN_RADIUS,
-  differentialRate, distanceReadout, earthDirection, earthLongitude, earthPosition, eclipticVector, hash01, loopEvent, loopFootpoints,
-  seedFor, solarOrientation, solarPoleEcliptic, sunDistanceAU, sunDistanceKm, sunScene, viewAngles,
+  ACTIVE_REGION_COUNT, AU_KM, DAY_EARTH_RADIUS, DAY_NARROW_FRAMING, EARTH_ORBIT_RADIUS, EARTH_SCENE_DIRECTION, EARTH_YEAR_MS, LOOP_SLOTS,
+  PROMINENCE_COUNT, SOLAR_INCLINATION, SUN_RADIUS, activeRegions, bodyToWorld, bodyVector, differentialRate, distanceReadout, earthDirection,
+  earthLongitude, earthPosition, eclipticVector, hash01, loopEvent, loopFootpoints, prominences, seedFor, solarOrientation, solarPoleEcliptic,
+  sunDistanceAU, sunDistanceKm, sunScene, viewAngles,
 } from './sunModel';
-import { ANCHORS } from './voyageModel';
+import { ANCHORS, cameraTarget, prologueFraming } from './voyageModel';
 
 const close = (a, b, eps) => expect(Math.abs(a - b)).toBeLessThan(eps);
 const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
@@ -154,8 +156,13 @@ describe('prominences, loops and eruptions', () => {
   });
 
   it('sets footpoints on the visible limb at birth, then turns them with the Sun', () => {
-    for (let s = 0; s < LOOP_SLOTS; s++) {
-      const e = { ...loopEvent(scene.seed, s, 0), born: 0 };
+    const limbEvents = [];
+    for (let s = 0; s < LOOP_SLOTS; s++) for (let t = 0; limbEvents.length < 3 * LOOP_SLOTS && t < 300000; t += 15000) {
+      const e = loopEvent(scene.seed, s, t);
+      if (e.anchor === 'limb') limbEvents.push({ ...e, born: 0 });
+    }
+    expect(limbEvents.length).toBeGreaterThan(LOOP_SLOTS);
+    for (const e of limbEvents) {
       const [a, b] = loopFootpoints(e, scene, 0);
       close(length(a), 1, 1e-9); close(length(b), 1, 1e-9);
       expect(Math.abs(dot(a, scene.viewer))).toBeLessThan(Math.sin(0.26));   // within 15 degrees of the limb plane
@@ -164,5 +171,114 @@ describe('prominences, loops and eruptions', () => {
       close(dot(a2, scene.sunPole), dot(a, scene.sunPole), 1e-9);
       expect(dot(a2, a)).toBeLessThan(1 - 1e-6);
     }
+  });
+});
+
+describe('the surface frame: active regions and long-lived prominences', () => {
+  const scene = sunScene(new Date('2026-11-19T15:00:00Z'));
+  const facing = (v, t) => dot(bodyToWorld(scene, v, t), scene.viewer);
+
+  it('puts body longitude 0 toward the camera at load, the limb at 90 degrees, and turns prograde', () => {
+    close(facing(bodyVector(0, 0), 0), Math.sqrt(1 - dot(scene.viewer, scene.sunPole) ** 2), 1e-9);
+    close(facing(bodyVector(0, 90), 0), 0, 1e-9);
+    close(facing(bodyVector(0, -90), 0), 0, 1e-9);
+    const north = bodyToWorld(scene, bodyVector(90, 0), 12345);
+    close(dot(north, scene.sunPole), 1, 1e-9);   // the pole stays put
+    // the equator turns at the full rate, higher latitudes lag (differential rotation)
+    const turn = (lat) => Math.acos(Math.min(1, dot(bodyToWorld(scene, bodyVector(lat, 0), 20000), bodyToWorld(scene, bodyVector(lat, 0), 0)) / Math.cos(lat * DEG) ** 2 - Math.tan(lat * DEG) ** 2));
+    expect(turn(0)).toBeGreaterThan(turn(50));
+  });
+
+  it('places the day\'s active regions in the royal zones, two or three on the disc as it turns', () => {
+    const regions = activeRegions(scene.seed);
+    expect(regions).toHaveLength(ACTIVE_REGION_COUNT);
+    regions.forEach((g) => { expect(Math.abs(g.lat)).toBeGreaterThanOrEqual(8); expect(Math.abs(g.lat)).toBeLessThanOrEqual(28); close(length(g.centre), 1, 1e-9); });
+    for (let t = 0; t < 360000; t += 30000) {
+      const onDisc = regions.filter((g) => facing(g.centre, t) > 0.15).length;
+      expect(onDisc).toBeGreaterThanOrEqual(2);
+      expect(onDisc).toBeLessThanOrEqual(4);
+    }
+    expect(activeRegions(scene.seed)).toEqual(regions);   // seeded
+    expect(activeRegions(scene.seed + 1)).not.toEqual(regions);
+  });
+
+  it('gives the prominences a steep spread of sizes, one at least a quarter of the radius tall', () => {
+    const list = prominences(scene.seed);
+    expect(list).toHaveLength(PROMINENCE_COUNT);
+    const heights = list.map((f) => f.height);
+    expect(Math.max(...heights)).toBeGreaterThanOrEqual(0.25);
+    expect(Math.max(...heights)).toBeLessThanOrEqual(0.42);
+    expect(heights.filter((h) => h < 0.12).length).toBeGreaterThanOrEqual(3);
+    list.forEach((f) => { expect(['arch', 'hedge']).toContain(f.kind); f.feet.forEach((v) => close(length(v), 1, 1e-9)); });
+    // the largest stands near the limb at load, so the still frame shows it against space
+    expect(Math.abs(facing(list[0].centre, 0))).toBeLessThan(0.35);
+  });
+
+  it('roots region loops in their active region and turns them with the surface', () => {
+    const regions = activeRegions(scene.seed);
+    let found = 0;
+    for (let s = 0; s < LOOP_SLOTS; s++) for (let t = 0; t < 300000; t += 7000) {
+      const e = loopEvent(scene.seed, s, t);
+      if (e.anchor !== 'region') continue;
+      found += 1;
+      const centre = bodyToWorld(scene, regions[e.region].centre, t);
+      loopFootpoints(e, scene, t).forEach((v) => expect(dot(v, centre)).toBeGreaterThan(Math.cos(0.09)));
+    }
+    expect(found).toBeGreaterThan(10);
+  });
+
+  it('flings an eruption out only after it breaks, and the fling grows to the end', () => {
+    for (let s = 0; s < LOOP_SLOTS; s++) for (let t = 0; t < 600000; t += 500) {
+      const e = loopEvent(scene.seed, s, t);
+      if (e.kind !== 'eruption' || e.progress > 0.02) continue;
+      const period = 11000 + 8000 * hash01(scene.seed, s, -1);
+      const at = (p) => loopEvent(scene.seed, s, t + p * period * 0.92);
+      expect(at(0.3).fling).toBe(0);
+      expect(at(0.6).fling).toBeGreaterThan(0);
+      expect(at(0.9).fling).toBeGreaterThan(at(0.6).fling);
+      return;
+    }
+    throw new Error('no eruption found');
+  });
+});
+
+describe('the day prologue on narrow screens', () => {
+  const scene = sunScene(new Date('2026-11-19T15:00:00Z'));
+  // project the system as the prologue camera sees it, in percent of the screen
+  const view = (width, height) => {
+    const aspect = width / height;
+    const target = cameraTarget({ index: 0, frac: 0 });
+    const o = prologueFraming(aspect, 0, DAY_NARROW_FRAMING);
+    const camera = new THREE.PerspectiveCamera(60, aspect, 1, 9000);
+    camera.position.set(target.position.x + o.x, target.position.y + o.y, target.position.z + o.z);
+    camera.lookAt(target.look.x + o.x, target.look.y + o.y, target.look.z);
+    camera.updateMatrixWorld();
+    const right = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 0), up = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 1);
+    const box = { x0: Infinity, x1: -Infinity, y0: Infinity, y1: -Infinity };
+    const add = (p, r) => {
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const v = new THREE.Vector3(...p).addScaledVector(right, dx * r).addScaledVector(up, dy * r).project(camera);
+        const x = ((v.x + 1) / 2) * 100, y = ((1 - v.y) / 2) * 100;
+        box.x0 = Math.min(box.x0, x); box.x1 = Math.max(box.x1, x); box.y0 = Math.min(box.y0, y); box.y1 = Math.max(box.y1, y);
+      }
+    };
+    add(scene.centre, SUN_RADIUS);
+    for (let lon = 0; lon < 360; lon += 3) {
+      const d = scene.toWorld(eclipticDirection(lon));
+      add(d.map((c, k) => scene.centre[k] + c * EARTH_ORBIT_RADIUS), DAY_EARTH_RADIUS);
+    }
+    return box;
+  };
+
+  it('fits the whole Sun and the whole orbit between the top bar and the greeting on a phone', () => {
+    const box = view(390, 844);
+    expect(box.x0).toBeGreaterThan(4); expect(box.x1).toBeLessThan(96);
+    expect(box.y0).toBeGreaterThan(14); expect(box.y1).toBeLessThan(68);   // the bar ends near 13%, the greeting starts near 72%
+  });
+
+  it('fits it on a portrait tablet too', () => {
+    const box = view(768, 1024);
+    expect(box.x0).toBeGreaterThan(4); expect(box.x1).toBeLessThan(92);   // clear of the chapter rail
+    expect(box.y0).toBeGreaterThan(8); expect(box.y1).toBeLessThan(78);
   });
 });
