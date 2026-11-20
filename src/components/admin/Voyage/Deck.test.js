@@ -25,6 +25,16 @@ describe('Deck', () => {
     view.unmount();
   });
 
+  it('gives two chips with the same text their own keys (no React duplicate-key error)', () => {
+    const errors = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const twin = { ...projectsSchema, card: (row) => ({ title: row.title, subtitle: '', chips: ['Professional', 'Professional'], image: null, flags: [] }) };
+    const view = mount(<Deck schema={twin} records={rows(1)} loading={false} error={null} onOpen={() => {}} onCreate={() => {}} onReorder={() => {}} />);
+    expect(view.container.querySelectorAll('.card__chips span')).toHaveLength(2);
+    expect(errors.mock.calls.filter((c) => String(c[0]).includes('same key'))).toEqual([]);
+    errors.mockRestore();
+    view.unmount();
+  });
+
   it('shows logos whole and labels an expired certificate, with no drag where the public order is fixed', () => {
     const certs = [{ id: 'c1', title: 'AWS', issuer: 'Amazon', issue_date: '2020-01-01', expiry_date: '2021-01-01', issuer_logo_url: 'https://x.test/l.png', status: 'active' }];
     const view = mount(<Deck schema={certificationsSchema} records={certs} loading={false} error={null} onOpen={() => {}} onCreate={() => {}} onReorder={() => {}} />);

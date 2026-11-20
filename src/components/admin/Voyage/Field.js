@@ -8,6 +8,14 @@
 // and files show what is stored with Replace and Remove; pairs are rows of
 // label and value (the value grows to show all of its text) with move buttons.
 //
+// File controls take two flags from the dialog: `busy` (this field's own
+// request is running, shown as "Uploading") and `locked` (another request
+// owns the dialog: a Save, or another field's upload). Either one disables
+// the picker and the remove buttons, so a file action can never start beside
+// a Save. In a mixed list (`allowText`) only a file this field stored
+// (`upload.owns`) is removed through storage; a typed entry, even a typed
+// web address, is an ordinary unsaved form edit.
+//
 // Accessibility: the control carries aria-invalid and aria-describedby
 // pointing at the error (or the help line), and the error starts with an
 // icon and reads as a full sentence, so it never relies on colour alone.
@@ -69,13 +77,13 @@ function ImagesInput({ value, images, inputId, problemsId }) {
         {value.map((url) => (
           <figure key={url} className="thumb">
             <img src={url} alt="" loading="lazy" />
-            <button type="button" className="thumb__remove" aria-label="Remove image" onClick={() => images.onRemove(url)} disabled={images.busy}><X size={12} /></button>
+            <button type="button" className="thumb__remove" aria-label="Remove image" onClick={() => images.onRemove(url)} disabled={images.busy || images.locked}><X size={12} /></button>
           </figure>
         ))}
         {images.canUpload
           ? (
             <label className={`thumb thumb--add${images.busy ? ' is-busy' : ''}`}>
-              <input id={inputId} type="file" accept="image/jpeg,image/png,image/webp" multiple disabled={images.busy} aria-describedby={images.problems?.length ? problemsId : undefined} onChange={(e) => { const files = Array.from(e.target.files || []); e.target.value = ''; if (files.length) images.onUpload(files); }} />
+              <input id={inputId} type="file" accept="image/jpeg,image/png,image/webp" multiple disabled={images.busy || images.locked} aria-describedby={images.problems?.length ? problemsId : undefined} onChange={(e) => { const files = Array.from(e.target.files || []); e.target.value = ''; if (files.length) images.onUpload(files); }} />
               <Plus size={18} /><span>{images.busy ? 'Uploading' : 'Add images'}</span>
             </label>
           )
@@ -90,7 +98,7 @@ function ImagesInput({ value, images, inputId, problemsId }) {
 function Picker({ inputId, upload, multiple, label, describedBy }) {
   return (
     <label className={`voyage-bar__button voyage-bar__button--small picker${upload.busy ? ' is-busy' : ''}`}>
-      <input id={inputId} type="file" accept={upload.accept.join(',')} multiple={multiple} disabled={upload.busy} aria-describedby={describedBy} onChange={(e) => { const files = Array.from(e.target.files || []); e.target.value = ''; if (files.length) upload.onUpload(files); }} />
+      <input id={inputId} type="file" accept={upload.accept.join(',')} multiple={multiple} disabled={upload.busy || upload.locked} aria-describedby={describedBy} onChange={(e) => { const files = Array.from(e.target.files || []); e.target.value = ''; if (files.length) upload.onUpload(files); }} />
       <Upload size={14} aria-hidden="true" /><span>{upload.busy ? 'Uploading' : label}</span>
     </label>
   );
@@ -115,7 +123,7 @@ function SingleUpload({ field, value, upload, inputId, problemsId, labelId }) {
             {isImage ? <img src={value} alt="" loading="lazy" /> : <FileLink url={value} />}
             <div className="upload__actions">
               {upload.canUpload && <Picker inputId={inputId} upload={upload} label="Replace" describedBy={upload.problems?.length ? problemsId : undefined} />}
-              <button type="button" className="voyage-bar__button voyage-bar__button--small" onClick={() => upload.onRemove(value)} disabled={upload.busy || !upload.canUpload}><X size={14} /><span>Remove</span></button>
+              <button type="button" className="voyage-bar__button voyage-bar__button--small" onClick={() => upload.onRemove(value)} disabled={upload.busy || upload.locked || !upload.canUpload}><X size={14} /><span>Remove</span></button>
             </div>
           </div>
         )
@@ -129,6 +137,9 @@ function FilesInput({ field, value, onChange, upload, inputId, problemsId, label
   const [draft, setDraft] = useState('');
   const full = field.max && value.length >= field.max;
   const addText = () => { const next = addListItem(value, draft); if (next !== value) onChange(next); setDraft(''); };
+  // A stored file leaves through storage; anything typed (a name, or a web address someone pasted) is
+  // only in the form and is removed there. Without `owns` every web address counts as stored, as before.
+  const isStored = (entry) => isFileUrl(entry) && (upload.owns ? upload.owns(entry) : true);
   return (
     <div className="upload" role="group" aria-labelledby={labelId}>
       {value.length ? (
@@ -136,7 +147,7 @@ function FilesInput({ field, value, onChange, upload, inputId, problemsId, label
           {value.map((entry, i) => (
             <li key={`${entry}-${i}`}>
               {isFileUrl(entry) ? <FileLink url={entry} /> : <span className="file-list__text">{entry}</span>}
-              <button type="button" className="chip__remove" aria-label={`Remove ${isFileUrl(entry) ? fileNameFromUrl(entry) : entry}`} onClick={() => (isFileUrl(entry) ? upload.onRemove(entry) : onChange(value.filter((_, k) => k !== i)))} disabled={upload.busy || (isFileUrl(entry) && !upload.canUpload)}><X size={12} /></button>
+              <button type="button" className="chip__remove" aria-label={`Remove ${isFileUrl(entry) ? fileNameFromUrl(entry) : entry}`} onClick={() => (isStored(entry) ? upload.onRemove(entry) : onChange(value.filter((_, k) => k !== i)))} disabled={upload.busy || (isStored(entry) && (upload.locked || !upload.canUpload))}><X size={12} /></button>
             </li>
           ))}
         </ul>
@@ -233,8 +244,8 @@ function counterFor(field, value) {
  * @param {string} [props.error] fixed sentence to show under the field (already filtered by the dialog's timing rules).
  * @param {(value: *) => void} props.onChange
  * @param {() => void} [props.onLeave] called when focus leaves the whole field (not on moves inside it, such as chip to input).
- * @param {{onUpload: Function, onRemove: Function, busy: boolean, canUpload: boolean, singular: string, problems?: Array}} [props.images] for the images kind.
- * @param {{onUpload: Function, onRemove: Function, busy: boolean, canUpload: boolean, singular: string, accept: string[], problems?: Array}} [props.upload] for image, file and files.
+ * @param {{onUpload: Function, onRemove: Function, busy: boolean, locked?: boolean, canUpload: boolean, singular: string, problems?: Array}} [props.images] for the images kind.
+ * @param {{onUpload: Function, onRemove: Function, busy: boolean, locked?: boolean, canUpload: boolean, singular: string, accept: string[], owns?: (url: string) => boolean, problems?: Array}} [props.upload] for image, file and files.
  */
 export default function Field({ field, value, form, error, onChange, onLeave, images, upload }) {
   const id = useId();

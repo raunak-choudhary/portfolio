@@ -1,4 +1,4 @@
-import { FIELD_KINDS, addListItem, buildForm, emptyValue, fieldsForGroup, isDirty, normalizeForm, validateForm } from './schemaModel';
+import { FIELD_KINDS, addListItem, buildForm, changedColumns, emptyValue, fieldsForGroup, isBucketUrl, isDirty, normalizeForm, validateForm } from './schemaModel';
 import { deckOrder, nextOrderIndex, orderWrites, projectsSchema } from './projects.schema';
 import { SCHEMAS, schemaForTable } from './index';
 import { CHAPTERS } from '../chapters';
@@ -85,5 +85,43 @@ describe('deck order', () => {
     expect(projectsSchema.card({ awards: 'First prize', status: 'inactive' }).flags).toEqual(['award', 'hidden']);
     expect(projectsSchema.searchText(row)).toContain('tallyproof');
     expect(projectsSchema.linkFor(row)).toBe('https://tallyproof.example');
+  });
+});
+
+describe('changedColumns', () => {
+  it('keeps only what the form changed, so a display default never reaches an empty column', () => {
+    // status and team size are null in the row; the form shows "active" and 1 for them
+    const sparse = { ...row, status: null, team_size: null };
+    const form = { ...buildForm(projectsSchema, sparse), title: 'Tallyproof two' };
+    const full = normalizeForm(projectsSchema, form);
+    expect(full.status).toBe('active');                    // what a full payload would have written
+    expect(changedColumns(projectsSchema, full, sparse)).toEqual({ title: 'Tallyproof two' });
+    // an untouched form changes nothing; a real change to the defaulted column is kept
+    expect(changedColumns(projectsSchema, normalizeForm(projectsSchema, buildForm(projectsSchema, sparse)), sparse)).toEqual({});
+    expect(changedColumns(projectsSchema, { ...full, status: 'inactive' }, sparse)).toMatchObject({ status: 'inactive' });
+  });
+
+  it('writes a field the owner changed when the row stores something else than the form shows, and no other', () => {
+    // status is null in the row; the owner switched Visibility away and back to Public, and renamed the project
+    const sparse = { ...row, status: null, team_size: null };
+    const full = normalizeForm(projectsSchema, { ...buildForm(projectsSchema, sparse), title: 'Tallyproof two' });
+    expect(changedColumns(projectsSchema, full, sparse, new Set(['status', 'title']))).toEqual({ title: 'Tallyproof two', status: 'active' });
+    // team size shows 1 for its null too, but the owner never changed it
+    expect(changedColumns(projectsSchema, full, sparse, ['status'])).not.toHaveProperty('team_size');
+    // a changed field whose stored value already is what the form shows adds nothing
+    expect(changedColumns(projectsSchema, normalizeForm(projectsSchema, buildForm(projectsSchema, row)), row, ['status', 'title'])).toEqual({});
+  });
+
+  it('always keeps columns the form does not own (a group priority added by the deck)', () => {
+    const full = normalizeForm(projectsSchema, buildForm(projectsSchema, row));
+    expect(changedColumns(projectsSchema, { ...full, skill_type_priority: 3 }, row)).toEqual({ skill_type_priority: 3 });
+  });
+
+  it('tells a file in a bucket from any other web address', () => {
+    expect(isBucketUrl('https://x.supabase.co/storage/v1/object/public/skill-icons/certifications/a.pdf', 'skill-icons')).toBe(true);
+    expect(isBucketUrl('https://example.com/a.pdf', 'skill-icons')).toBe(false);
+    expect(isBucketUrl('https://x.supabase.co/storage/v1/object/public/other/a.pdf', 'skill-icons')).toBe(false);
+    expect(isBucketUrl('AWS SAA', 'skill-icons')).toBe(false);
+    expect(isBucketUrl('https://example.com/a.pdf', undefined)).toBe(false);
   });
 });

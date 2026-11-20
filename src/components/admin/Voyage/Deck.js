@@ -33,7 +33,7 @@ function CardFace({ schema, row, onOpen }) {
       <div className="card__body">
         <h4>{card.title}</h4>
         {card.subtitle && <p className="card__sub">{card.subtitle}</p>}
-        {card.chips?.length ? <div className="card__chips">{card.chips.map((c) => <span key={c}>{c}</span>)}</div> : null}
+        {card.chips?.length ? <div className="card__chips">{card.chips.map((c, i) => <span key={`${c}-${i}`}>{c}</span>)}</div> : null}
       </div>
       {flags.length ? <div className="card__flags">{flags.map((f) => { const Icon = FLAG_ICON[f]; return Icon ? <span key={f} title={FLAG_TEXT[f]} aria-label={FLAG_TEXT[f]}><Icon size={13} /></span> : null; })}</div> : null}
     </button>

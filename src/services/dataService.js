@@ -825,12 +825,20 @@ export const updateProject = async (id, projectData) => {
   }
 };
 
-// Delete Project - Admin Only (Enhanced with file cleanup)
+// Delete Project - Admin Only
+//
+// The row goes first and its files second. If the row delete fails or is
+// refused, the project keeps every image it points at; a file left behind by
+// a failed cleanup is only an orphan the media library lists. (The earlier
+// order removed the files first, so a failed row delete left a live project
+// with dead image links.) The project's storage folder is swept whether or
+// not image_urls named anything, because uploads that never reached the row
+// still live there.
+const PROJECT_IMAGES_BUCKET = 'project-images';
+const PROJECT_IMAGES_MARKER = `/storage/v1/object/public/${PROJECT_IMAGES_BUCKET}/`;
+
 export const deleteProject = async (id) => {
   try {
-    console.log('🗑️ Deleting project:', id);
-    
-    // Verify admin authentication
     const authResult = await requireAdminAuth();
     if (!authResult.success) {
       throw new Error('Authentication required');
@@ -840,78 +848,67 @@ export const deleteProject = async (id) => {
       throw new Error('Project ID is required');
     }
 
-    // Get project info before deletion for logging and cleanup
+    // The row as it stands, for its title and the files it names.
     const { data: projectInfo } = await supabase
       .from('projects')
       .select('title, image_urls')
       .eq('id', id)
-      .single();
+      .maybeSingle();
 
-    // Clean up project files from storage if they exist
-    if (projectInfo?.image_urls && Array.isArray(projectInfo.image_urls) && projectInfo.image_urls.length > 0) {
-      try {
-        console.log('🧹 Cleaning up project files...');
-        
-        // Extract file paths from URLs and delete them
-        const filePaths = projectInfo.image_urls.map(url => {
-          // Extract path from Supabase public URL
-          const urlParts = url.split('/storage/v1/object/public/project-images/');
-          return urlParts.length > 1 ? urlParts[1] : null;
-        }).filter(Boolean);
+    // Row level security refuses a delete by matching no row and reporting no
+    // error, so the deleted id is asked back and an empty answer is checked.
+    const { data: removed, error } = await supabase
+      .from('projects')
+      .delete()
+      .eq('id', id)
+      .select('id');
 
-        if (filePaths.length > 0) {
-          const { error: storageError } = await supabase.storage
-            .from('project-images')
-            .remove(filePaths);
-          
-          if (storageError) {
-            console.warn('⚠️ Some files may not have been deleted from storage:', storageError);
-          } else {
-            console.log(`✅ Cleaned up ${filePaths.length} project files`);
-          }
-        }
-
-        // Also try to clean up entire project folder
-        const folderPath = `projects/${id}`;
-        const { data: folderContents } = await supabase.storage
-          .from('project-images')
-          .list(folderPath);
-
-        if (folderContents && folderContents.length > 0) {
-          const folderFilePaths = folderContents.map(file => `${folderPath}/${file.name}`);
-          const { error: folderCleanupError } = await supabase.storage
-            .from('project-images')
-            .remove(folderFilePaths);
-          
-          if (!folderCleanupError) {
-            console.log(`✅ Cleaned up project folder: ${folderPath}`);
-          }
-        }
-      } catch (cleanupError) {
-        console.warn('⚠️ File cleanup failed, but continuing with project deletion:', cleanupError);
+    if (error) {
+      throw new Error(`Failed to delete project: ${error.message}`);
+    }
+    // Nothing came back: either the row was already gone (the outcome asked
+    // for) or the delete was refused. The first read above cannot settle it,
+    // because it may itself have failed, so the row is looked for again; a row
+    // that is still there, or a lookup that fails, is not reported as deleted.
+    if (Array.isArray(removed) && removed.length === 0) {
+      const { data: still, error: lookupError } = await supabase
+        .from('projects')
+        .select('id')
+        .eq('id', id)
+        .maybeSingle();
+      if (still || lookupError) {
+        throw new Error('Failed to delete project: the delete was refused');
       }
     }
 
-    // Delete the project from database
-    const { error } = await supabase
-      .from('projects')
-      .delete()
-      .eq('id', id);
+    // Best effort from here on: the row is gone, which is what was asked for.
+    try {
+      const listed = (Array.isArray(projectInfo?.image_urls) ? projectInfo.image_urls : [])
+        .map((url) => String(url).split(PROJECT_IMAGES_MARKER)[1] || null)
+        .filter(Boolean);
+      if (listed.length > 0) {
+        await supabase.storage.from(PROJECT_IMAGES_BUCKET).remove(listed);
+      }
 
-    if (error) {
-      console.error('❌ Project deletion error:', error);
-      throw new Error(`Failed to delete project: ${error.message}`);
+      const folderPath = `projects/${id}`;
+      const { data: folderContents } = await supabase.storage
+        .from(PROJECT_IMAGES_BUCKET)
+        .list(folderPath);
+      if (folderContents && folderContents.length > 0) {
+        await supabase.storage
+          .from(PROJECT_IMAGES_BUCKET)
+          .remove(folderContents.map((file) => `${folderPath}/${file.name}`));
+      }
+    } catch {
+      // an orphaned file at worst; the media library lists it
     }
 
-    console.log('✅ Project deleted successfully:', projectInfo?.title || id);
-    
     return {
       success: true,
       data: { id, title: projectInfo?.title },
       message: 'Project and associated files deleted successfully'
     };
   } catch (error) {
-    console.error('❌ deleteProject error:', error);
     return {
       success: false,
       error: error.message,

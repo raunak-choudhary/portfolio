@@ -92,6 +92,53 @@ describe('RecordDialog uploads', () => {
     view.unmount();
   });
 
+  it('keeps a name typed before or during an upload as an unsaved entry: not written with the file, not wiped', async () => {
+    let finish;
+    records.uploadFieldFiles.mockReturnValue(new Promise((resolve) => { finish = resolve; }));
+    records.saveRecord.mockImplementation(async (_s, payload) => ({ ...skill, ...payload }));
+    const view = openEdit();
+    const typeName = (text) => { const box = fieldFor('certifications').querySelector('.chips__add input'); setInputValue(box, text); click(button(fieldFor('certifications'), 'Add text to Certifications')); };
+    typeName('Typed before');
+    choose(fieldFor('certifications').querySelector('input[type="file"]'), [{ name: 'a.pdf', size: 5 }]);
+    await flush();
+    typeName('Typed during');
+    await act(async () => { finish({ urls: [`${STORE}certifications/a.pdf`], failed: [] }); });
+    await flush();
+    // the write holds what the row had plus the file, and nothing that was only typed
+    expect(records.saveRecord).toHaveBeenCalledTimes(1);
+    expect(records.saveRecord).toHaveBeenCalledWith(skillsSchema, { certifications: ['AWS SAA', `${STORE}certifications/a.pdf`] }, 7);
+    const shown = [...fieldFor('certifications').querySelectorAll('.file-list li')].map((li) => li.textContent);
+    expect(shown).toEqual(['AWS SAA', 'Typed before', 'Typed during', 'a.pdf']);
+    expect(document.querySelector('.record-dialog__status').textContent).toBe('Unsaved changes');
+    view.unmount();
+  });
+
+  it('removes a failed upload from storage when the row could not take it', async () => {
+    records.uploadFieldFiles.mockResolvedValue({ urls: [`${STORE}icons/new.png`], failed: [] });
+    records.saveRecord.mockRejectedValue(new Error('refused'));
+    const view = openEdit();
+    choose(fieldFor('icon_url').querySelector('input[type="file"]'), [{ name: 'new.png', size: 10, type: 'image/png' }]);
+    await flush();
+    expect(records.removeStoredFiles).toHaveBeenCalledTimes(1);
+    expect(records.removeStoredFiles).toHaveBeenCalledWith('skill-icons', [`${STORE}icons/new.png`]);
+    expect(fieldFor('icon_url').querySelector('img').getAttribute('src')).toBe(`${STORE}icons/old.png`);
+    view.unmount();
+  });
+
+  it('lets a typed web address be removed like any typed entry, also before the first save', () => {
+    const view = mount(<RecordDialog schema={skillsSchema} record={null} open {...props} />);
+    const box = fieldFor('certifications').querySelector('.chips__add input');
+    setInputValue(box, 'https://example.com/my-certificate');
+    click(button(fieldFor('certifications'), 'Add text to Certifications'));
+    const remove = fieldFor('certifications').querySelector('.file-list .chip__remove');
+    expect(remove.disabled).toBe(false);
+    click(remove);
+    expect(fieldFor('certifications').querySelector('.file-list')).toBeNull();
+    expect(records.saveRecord).not.toHaveBeenCalled();
+    expect(records.removeStoredFiles).not.toHaveBeenCalled();
+    view.unmount();
+  });
+
   it('offers no upload for an unsaved skill (the classic "temp" id bug)', () => {
     const view = mount(<RecordDialog schema={skillsSchema} record={null} open {...props} />);
     expect(fieldFor('icon_url').querySelector('input[type="file"]')).toBeNull();
@@ -119,7 +166,8 @@ describe('RecordDialog in form-only mode', () => {
     setInputValue(fieldFor('title').querySelector('input'), 'Hello again');
     click(button(dialog, 'Save'));
     await flush();
-    expect(records.saveRecord).toHaveBeenCalledWith(heroSchema, expect.objectContaining({ title: 'Hello again', is_active: false }), 'h1');
+    // only the edited column is written; the switch the owner did not touch is not
+    expect(records.saveRecord).toHaveBeenCalledWith(heroSchema, { title: 'Hello again' }, 'h1');
     expect(props.onSaved).toHaveBeenCalled();
     expect(props.onClose).toHaveBeenCalled();
     view.unmount();

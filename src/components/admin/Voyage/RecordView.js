@@ -23,6 +23,9 @@ export const readableDate = (iso) => { const v = String(iso).slice(0, 10); if (!
 
 const NotSet = () => <span className="record-view__unset">Not set</span>;
 
+/** A list field's value as a list: a legacy row can hold one string where the form expects an array. */
+const asList = (value) => (Array.isArray(value) ? value : [value]).filter((v) => v !== null && v !== undefined).map(String);
+
 const isEmpty = (value) => value === null || value === undefined || (typeof value === 'string' && !value.trim()) || (Array.isArray(value) && value.length === 0);
 
 /** Only http(s) links become anchors; anything else stays text so a stray `javascript:` value can never run. */
@@ -55,9 +58,9 @@ export function ReadValue({ field, value }) {
     case 'textarea':
       return <div className="record-view__prose">{String(value).split(/\n+/).filter((p) => p.trim()).map((p, i) => <p key={i}>{p}</p>)}</div>;
     case 'tags':
-      return <ul className="record-view__chips">{value.map((t, i) => <li key={`${t}-${i}`}>{t}</li>)}</ul>;
+      return <ul className="record-view__chips">{asList(value).map((t, i) => <li key={`${t}-${i}`}>{t}</li>)}</ul>;
     case 'urls':
-      return <ul className="record-view__links">{value.map((u, i) => <li key={`${u}-${i}`}><LinkOut url={u} /></li>)}</ul>;
+      return <ul className="record-view__links">{asList(value).map((u, i) => <li key={`${u}-${i}`}><LinkOut url={u} /></li>)}</ul>;
     case 'url':
       return <LinkOut url={value} />;
     case 'select': {
@@ -65,7 +68,7 @@ export function ReadValue({ field, value }) {
       return <span>{option ? option.label : String(value)}</span>;
     }
     case 'images':
-      return <ImageStrip urls={value} />;
+      return <ImageStrip urls={asList(value)} />;
     case 'image': {
       const href = safeHref(value);
       return href ? <a className="record-view__image" href={href} target="_blank" rel="noopener noreferrer" aria-label={`Open ${field.label.toLowerCase()} in a new tab`}><img src={href} alt="" loading="lazy" /></a> : <span>{String(value)}</span>;
@@ -73,7 +76,8 @@ export function ReadValue({ field, value }) {
     case 'file':
       return <FileOut url={value} />;
     case 'files': {
-      const files = value.filter(isFileUrl), texts = value.filter((v) => !isFileUrl(v));
+      const list = asList(value);
+      const files = list.filter(isFileUrl), texts = list.filter((v) => !isFileUrl(v));
       return (
         <div className="record-view__files">
           {texts.length ? <ul className="record-view__chips">{texts.map((t, i) => <li key={`${t}-${i}`}>{t}</li>)}</ul> : null}
@@ -99,7 +103,7 @@ function ImageStrip({ urls }) {
     <ul className="record-view__strip">
       {urls.map((url, i) => {
         const href = safeHref(url);
-        return <li key={url}>{href ? <a href={href} target="_blank" rel="noopener noreferrer" aria-label={`Open image ${i + 1} of ${urls.length} in a new tab`}><img src={href} alt="" loading="lazy" /></a> : null}</li>;
+        return <li key={`${url}-${i}`}>{href ? <a href={href} target="_blank" rel="noopener noreferrer" aria-label={`Open image ${i + 1} of ${urls.length} in a new tab`}><img src={href} alt="" loading="lazy" /></a> : null}</li>;
       })}
     </ul>
   );

@@ -41,7 +41,7 @@ Common: `key`, `label`, `kind`, `required`, `help`, `placeholder`, `default`.
 | `number` | number or null | `min`, `max`, `integer` |
 | `rating` | whole number 1..max or null | `max` (default 5) |
 | `toggle` | boolean | `clears` (key or keys emptied when switched on) |
-| `select` | string or null | `options [{value,label}]`, `allowEmpty`, `emptyLabel`, `tolerateUnknown` (a stored value outside the list stays valid), `ignoreCase` (a stored value that differs from an option only in case loads as that option and saves in its spelling), `max` |
+| `select` | string or null | `options [{value,label}]`, `allowEmpty`, `emptyLabel`, `tolerateUnknown` (a stored value outside the list stays valid), `ignoreCase` (a stored value that differs from an option only in case loads as that option; it is saved in the option's spelling once the owner changes that field, see "What a save writes"), `max` |
 | `url` | string or null | `loose` (bare domains saved with https://), `pattern`, `patternMessage`, `max` |
 | `link` | string or null | web address, `/path` or `#anchor`; `max` |
 | `date` | `YYYY-MM-DD` or null | `min`, `max` (a date or `'today'`), `disabledWhen` (toggle key; the date clears and saves null), `disabledHelp` |
@@ -70,6 +70,39 @@ An empty value (`emptyValue`), validation with fixed sentences (`validateForm`),
 normalisation for the write (`normalizeForm`), a dirty check against the saved
 row (`isDirty`), a labelled control with counter, `aria-invalid` and
 `aria-describedby` (`Field.js`), and a read rendering (`RecordView.js`).
+
+## What a save writes
+
+A new record writes every field. An update writes only the columns whose
+normalised value differs from the saved row (`changedColumns`), plus any
+column the deck adds (a group's priority). A field's `default` therefore only
+fills the form for a new record or shows in place of an empty column; it is
+never written to an existing row the owner did not change.
+
+One more case is written: a field the owner changed during this editing
+session whose stored value is not what the form now holds, even when the form
+shows the same thing it showed at the start. Switching Visibility away and
+back to "Public" on a row whose status is null writes "active"; doing the same
+on an `ignoreCase` select writes the option's own spelling over "completed";
+retyping a bare domain writes its `https://` form. Merely opening or tabbing
+through a field is not a change, and choosing the option a select already
+shows fires no change at all, so a displayed default is stored only once the
+owner has actually moved that field. It travels with the next save that has
+something else to write as well, because Save is enabled by a real difference.
+
+"Overwrite" after a conflict writes every field, because the owner chose to
+put this version over the other one, with one exception: file columns (image,
+images, file, files) are left out unless the form changed them. Those columns
+are written the moment a file is added or removed, so the form's copy can only
+be stale; writing it would re-list files removed elsewhere and drop new ones.
+
+File actions (upload, replace, remove) write their one column at once, built
+from the saved row's list, so entries typed into a mixed list stay unsaved
+edits. In a mixed list only a URL inside the field's bucket (`isBucketUrl`) is
+treated as a stored file. When that write fails, the uploaded files leave
+storage again only after the row has been read back and does not name them: a
+write can commit and lose its answer, and a file the row lists is never
+removed. If the row cannot be read, nothing is removed.
 
 ## Adding a section
 

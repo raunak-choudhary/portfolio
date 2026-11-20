@@ -314,6 +314,42 @@ export function isDirty(schema, form, row) {
   return JSON.stringify(before) !== JSON.stringify(after);
 }
 
+/**
+ * The part of an update payload that differs from the saved row, so a save
+ * writes only what was changed in the form. A full payload would also write
+ * every value the form had to invent for a column the row leaves empty: a
+ * select with no blank choice shows its default for a null (status "active",
+ * which publishes the row), a toggle shows false, a number shows its default.
+ * Those are display values, not edits, and must never reach the database.
+ * Columns the form does not own (added by the deck, such as a group's
+ * priority) are always kept.
+ *
+ * `edited` names the fields the owner changed a value in during this editing
+ * session. For those, the form's value is also written when it differs from
+ * what the row really stores, even if it equals what the form showed at the
+ * start: the owner set that field, so the stored null takes the default they
+ * chose to keep, "completed" takes the option's own spelling, a bare domain
+ * takes its https:// prefix. A field the owner never changed is never written
+ * for that reason, whatever the form displays for it.
+ * @param {object} payload the normalised form, plus any columns the deck added.
+ * @param {object|null} row the saved row the form was built from.
+ * @param {Iterable<string>} [edited] keys of the fields the owner changed.
+ */
+export function changedColumns(schema, payload, row, edited = []) {
+  const before = normalizeForm(schema, buildForm(schema, row));
+  const same = (a, b) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+  const set = new Set(edited);
+  const out = {};
+  for (const [key, value] of Object.entries(payload)) {
+    if (!(key in before) || !same(before[key], value)) out[key] = value;
+    else if (set.has(key) && !same(row?.[key], value)) out[key] = value;
+  }
+  return out;
+}
+
+/** True for a public storage URL inside `bucket`: a file this app stored, as opposed to a typed web address. */
+export const isBucketUrl = (value, bucket) => Boolean(bucket) && String(value ?? '').includes(`/storage/v1/object/public/${bucket}/`);
+
 /** Adds one clean entry to a list field, ignoring blanks and duplicates. */
 export function addListItem(list, item) {
   const clean = String(item ?? '').trim();
@@ -460,8 +496,7 @@ export function pickSingleton(rows) {
 export function cleanupTargets(schema, row) {
   const byBucket = new Map();
   for (const { key, bucket } of schema.cleanup || []) {
-    const marker = `/storage/v1/object/public/${bucket}/`;
-    const values = [].concat(row?.[key] ?? []).map((v) => String(v)).filter((v) => v.includes(marker));
+    const values = [].concat(row?.[key] ?? []).map((v) => String(v)).filter((v) => isBucketUrl(v, bucket));
     if (!values.length) continue;
     byBucket.set(bucket, [...new Set([...(byBucket.get(bucket) || []), ...values])]);
   }
