@@ -3,7 +3,7 @@
 // One shared "the content changed" signal for the voyage. Anything that saves
 // or deletes portfolio content bumps it (the record dialog does, for every
 // chapter that edits through it); anything that shows numbers derived from
-// the content (the fix queue, the Health tile, later the activity pane)
+// the content (the fix queue, the Health tile, the activity pane)
 // reloads quietly when it moves. A plain counter, so readers compare
 // versions and never need the payload.
 

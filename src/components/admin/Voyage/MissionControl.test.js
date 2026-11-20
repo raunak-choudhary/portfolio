@@ -2,6 +2,7 @@
 // Integration: the bento and the activity pane share one feed, and every row click goes through openRecord.
 import MissionControl, { chapterForTable } from './MissionControl';
 import { ACTIVITY_PANE_ID, ACTIVITY_TITLE_ID } from './ActivityPane';
+import { noteContentChanged } from './contentChanged';
 import { clearIntent, recordIntent } from './recordIntent';
 import { React, act, click, mount } from '../SkyBackground/testUtils';
 
@@ -148,6 +149,20 @@ describe('MissionControl', () => {
       expect(tile().querySelectorAll('.tile__act > div')).toHaveLength(5);
       await flush();
       expect(service.listActivity).toHaveBeenCalledTimes(2);
+      expect(tile().querySelector('.tile__act > div').textContent).toBe('13:59Edited Saved just now');
+    });
+
+    it('reloads once when a save elsewhere and the return into view arrive together', async () => {
+      render();
+      await flush();
+      observe(true);
+      observe(false);
+      service.listActivity.mockClear();
+      service.listActivity.mockResolvedValue({ rows: [row(9, { at: '2026-11-19T18:59:00.000Z', recordTitle: 'Saved just now' }), ...ROWS], hasMore: false });
+      act(() => { noteContentChanged(); });
+      observe(true);
+      await flush();
+      expect(service.listActivity).toHaveBeenCalledTimes(1);
       expect(tile().querySelector('.tile__act > div').textContent).toBe('13:59Edited Saved just now');
     });
   });
