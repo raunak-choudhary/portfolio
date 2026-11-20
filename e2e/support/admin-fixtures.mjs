@@ -14,7 +14,9 @@
 //   fonts, jsdelivr icons, NASA Sun image -> local stand-ins
 //   anything else                         -> recorded in `unexpected`, aborted
 //
-// Writes (POST, PATCH, DELETE on a fixture table) are applied to an in-memory
+// Table reads are recorded in `reads`, and both reads and writes carry one
+// shared sequence number, so a test can prove a screen re-read a table after
+// a write. Writes (POST, PATCH, DELETE on a fixture table) are applied to an in-memory
 // copy of the table, answered like PostgREST, and recorded in `writes` so a
 // test can assert exactly which writes a screen sent; RPC and Edge Function
 // calls are answered from their fixture and recorded in `calls`. Each context gets its
@@ -97,7 +99,9 @@ export async function installAdminFixtures(context, { session = 'aal2', tables: 
   const supabaseOrigin = new URL(supabaseUrl).origin;
   const unexpected = [];
   const writes = [];
+  const reads = [];
   const calls = [];
+  let seq = 0;
   const seen = [];
   const handled = new Set();
   const tables = new Map();
@@ -179,11 +183,12 @@ export async function installAdminFixtures(context, { session = 'aal2', tables: 
       const rows = tableRows(table);
       if (rows === undefined) return fail(route, 'no fixture');
       if (method === 'GET' || method === 'HEAD') {
+        reads.push({ seq: seq += 1, table, method, query: new URL(url).search });
         return route.fulfill(readResponse(rows, { method, url, accept: headers.accept, prefer: headers.prefer }));
       }
       if (['POST', 'PATCH', 'DELETE'].includes(method)) {
         const body = safeJson(request);
-        writes.push({ table, method, query: new URL(url).search, body });
+        writes.push({ seq: seq += 1, table, method, query: new URL(url).search, body });
         const result = applyWrite(rows, { method, url, body });
         tables.set(table, result.rows);
         return route.fulfill(writeResponse(result.touched, { method, accept: headers.accept, prefer: headers.prefer }));
@@ -232,6 +237,8 @@ export async function installAdminFixtures(context, { session = 'aal2', tables: 
     unexpected,
     /** REST writes (POST, PATCH, DELETE on a table), in order. */
     writes,
+    /** REST reads (GET, HEAD on a table), in order; `seq` is shared with `writes` so the two can be ordered. */
+    reads,
     /** RPC and Edge Function calls, in order. */
     calls,
     /** Non-local requests no intercept handled: must be empty. */
