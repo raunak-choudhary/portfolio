@@ -83,11 +83,12 @@ const Hero = () => {
     }
   };
 
-  // Show loading only initially
+  // Show loading only initially. The key stops React reusing this wrapper as
+  // the light-rays layer below, which the browser counted as a layout shift.
   if (loading && !heroData) {
     return (
       <section className="hero-section">
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+        <div key="hero-loading" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
           <LoadingSpinner size="large" message="Loading hero content..." />
         </div>
       </section>
