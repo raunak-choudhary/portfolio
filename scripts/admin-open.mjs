@@ -10,11 +10,17 @@
 //   node scripts/admin-open.mjs                         visible window, stays open until closed
 //   node scripts/admin-open.mjs --shots out/dir         headless: 390, 768, 1024, 1440 screenshots + error report
 //   node scripts/admin-open.mjs --path /admindashboard  which admin route to open (default /admindashboard)
-//   node scripts/admin-open.mjs --skip-entry            set the flag that skips the Matrix entry animation
+//   node scripts/admin-open.mjs --url http://localhost:4173  which server to open it on (default http://localhost:3000)
+//
+// The session is the owner's real one, so routes that act on it are refused
+// before any browser starts (exit code 4): /adminsignout signs the owner out
+// for real and ends the saved session; /adminlogin is pointless with it.
+// See lib/admin-open-path.mjs.
 
 import { access, mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import { chromium } from '@playwright/test';
+import { checkAdminOpenPath } from './lib/admin-open-path.mjs';
 
 const STATE_FILE = path.join('.playwright', 'admin-state.json');
 export const WIDTHS = [[390, 844], [768, 1024], [1024, 768], [1440, 900]];
@@ -24,7 +30,16 @@ const DASHBOARD_SELECTOR = '.admin-dashboard, .voyage';
 
 async function main(argv) {
   const arg = (name, fallback) => { const i = argv.indexOf(name); return i >= 0 ? argv[i + 1] : fallback; };
-  const base = arg('--url', 'http://localhost:3000'), route = arg('--path', '/admindashboard'), shots = arg('--shots', null);
+  const base = arg('--url', 'http://localhost:3000') ?? 'http://localhost:3000', route = arg('--path', '/admindashboard') ?? '/admindashboard', shots = arg('--shots', null);
+  // checked on the route and on the whole address, in case --url carries a path of its own
+  let target;
+  try { target = new URL(`${base}${route}`); } catch {
+    process.stderr.write(`admin-open: ${base}${route} is not a valid address.\n`);
+    return 4;
+  }
+  for (const check of [checkAdminOpenPath(route), checkAdminOpenPath(target.pathname, 'the address')]) {
+    if (!check.ok) { process.stderr.write(`${check.message}\n`); return 4; }
+  }
   try { await access(STATE_FILE); } catch {
     process.stderr.write(`No saved session at ${STATE_FILE}. The owner runs: node scripts/admin-login-capture.mjs\n`);
     return 2;
@@ -38,8 +53,7 @@ async function main(argv) {
     const errors = [];
     page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
     page.on('console', (m) => { if (m.type() === 'error') errors.push(`console: ${m.text().slice(0, 200)}`); });
-    if (argv.includes('--skip-entry')) await context.addInitScript(() => { try { sessionStorage.setItem('rc-admin-entry-seen', '1'); } catch { /* ignore */ } });
-    await page.goto(`${base}${route}`, { waitUntil: 'networkidle' });
+    await page.goto(target.href, { waitUntil: 'networkidle' });
     await page.waitForTimeout(1500);
     const onDashboard = await page.locator(DASHBOARD_SELECTOR).count();
     if (!onDashboard) {
