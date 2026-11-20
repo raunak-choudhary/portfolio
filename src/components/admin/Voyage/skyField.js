@@ -1,8 +1,9 @@
 // src/components/admin/Voyage/skyField.js
 //
 // The 3D field the voyage travels through, built with Three.js: a seeded star
-// field in three depth bands, the Earth and Moon scene at the first chapter
-// (earthSystem.js), one constellation group per chapter (lines drawn by
+// field in three depth bands, the opening scene at the first chapter (the
+// Earth and Moon by night, earthSystem.js; the Sun with the Earth on its
+// orbit by day, sunSystem.js), one constellation group per chapter (lines drawn by
 // scroll, star points by magnitude, the atlas drawing on a plane), and eight
 // real deep-sky photographs far behind the route, blended by their own light
 // so the stars hang in front of them and nothing reads as a pasted layer.
@@ -22,12 +23,20 @@ import { CHAPTERS } from './chapters';
 import { PALETTES, buildFigureGeometry, buildStarField, drawRangeFor, drawingPlacement, paletteForTheme } from './skyFieldMath';
 import { ANCHORS, cameraTarget, deepSkyLayout, figureState, prologueFraming, routePosition } from './voyageModel';
 import { createEarthSystem } from './earthSystem';
+import { createSunSystem } from './sunSystem';
 import { renderDue } from './renderBudget';
 
+/**
+ * Stars, with a glare term for the day scene: within a few radii of the Sun
+ * (uGlareDir, the Sun's direction in view space; uGlareCos, the cosines where
+ * the fade starts and where the stars are gone) they dim as they would in
+ * its light. By night uGlare is 0 and the term is exactly 1.
+ */
 const STAR_VERTEX = `
   attribute float aSize; varying vec3 vColor; uniform float uPixelRatio;
+  uniform float uGlare; uniform vec3 uGlareDir; uniform vec2 uGlareCos;
   varying float vNear;
-  void main() { vColor = color; vec4 mv = modelViewMatrix * vec4(position, 1.0); float depth = max(1.0, -mv.z); vNear = smoothstep(40.0, 140.0, depth); gl_PointSize = clamp(aSize * (900.0 / depth), 0.6, 7.0) * uPixelRatio; gl_Position = projectionMatrix * mv; }`;
+  void main() { vColor = color; vec4 mv = modelViewMatrix * vec4(position, 1.0); float depth = max(1.0, -mv.z); vNear = smoothstep(40.0, 140.0, depth) * (1.0 - uGlare * smoothstep(uGlareCos.x, uGlareCos.y, dot(normalize(mv.xyz), uGlareDir))); gl_PointSize = clamp(aSize * (900.0 / depth), 0.6, 7.0) * uPixelRatio; gl_Position = projectionMatrix * mv; }`;
 const STAR_FRAGMENT = `
   uniform float uAlpha; varying vec3 vColor; varying float vNear;
   void main() { float d = length(gl_PointCoord - 0.5); if (d > 0.5) discard; gl_FragColor = vec4(vColor, smoothstep(0.5, 0.1, d) * uAlpha * vNear); }`;
@@ -87,7 +96,7 @@ export function createSkyField({ canvas, figures, deepManifest, assetBase, quali
   starGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
   starGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
   starGeometry.setAttribute('aSize', new THREE.BufferAttribute(sizes, 1));
-  const starMaterial = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, vertexColors: true, uniforms: { uAlpha: { value: 1 }, uPixelRatio: { value: quality.pixelRatio } }, vertexShader: STAR_VERTEX, fragmentShader: STAR_FRAGMENT });
+  const starMaterial = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, vertexColors: true, uniforms: { uAlpha: { value: 1 }, uPixelRatio: { value: quality.pixelRatio }, uGlare: { value: 0 }, uGlareDir: { value: new THREE.Vector3() }, uGlareCos: { value: new THREE.Vector2(1, 1) } }, vertexShader: STAR_VERTEX, fragmentShader: STAR_FRAGMENT });
   const pixelRatioUniforms = [starMaterial.uniforms.uPixelRatio];   // every shader that sizes points in device pixels
   const stars = new THREE.Points(starGeometry, starMaterial);
   stars.renderOrder = 2;   // after the photographs, so stars lie over them
@@ -97,9 +106,25 @@ export function createSkyField({ canvas, figures, deepManifest, assetBase, quali
   const placeholderTexture = new THREE.DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1); placeholderTexture.needsUpdate = true;
   disposables.push(placeholderTexture);
 
-  // ---- the Earth, the Moon and the satellites at the first chapter ----
-  const earth = createEarthSystem({ scene, loadTexture, assetBase, pixelRatio: quality.pixelRatio, satellites: quality.stars < 5000 ? 6 : 9, date });
-  disposables.push(earth);
+  // ---- the opening scene at the first chapter: the Earth and Moon by night, the Sun by day ----
+  // Each scene loads its textures through its own scope, so a theme switch frees the old
+  // scene's GPU memory (geometry, programs and textures) instead of keeping both resident.
+  const scopedLoader = () => {
+    const mine = []; let closed = false;
+    const load = (url, onLoad) => loadTexture(url, (t) => { if (closed) return false; mine.push(t); onLoad(t); return true; });
+    load.release = () => { closed = true; for (const t of mine) loadTexture.release(t); mine.length = 0; };
+    return load;
+  };
+  const prologueKind = (t) => (t === 'light' ? 'sun' : 'earth');
+  const makePrologue = (t) => {
+    const load = scopedLoader();
+    const system = prologueKind(t) === 'sun'
+      ? createSunSystem({ scene, loadTexture: load, assetBase, pixelRatio: renderer.getPixelRatio(), detail: quality.stars < 5000 ? 'low' : 'high', date })
+      : createEarthSystem({ scene, loadTexture: load, assetBase, pixelRatio: renderer.getPixelRatio(), satellites: quality.stars < 5000 ? 6 : 9, date });
+    return { kind: prologueKind(t), system, release: () => { system.dispose(); load.release(); } };
+  };
+  let prologue = makePrologue(theme);
+  const glareDir = new THREE.Vector3();
 
   // ---- one constellation per chapter ----
   const groups = CHAPTERS.map((chapter, i) => {
@@ -160,7 +185,7 @@ export function createSkyField({ canvas, figures, deepManifest, assetBase, quali
 
   const cameraPosition = new THREE.Vector3(0, 20, ANCHORS[0].z + 520), cameraLook = new THREE.Vector3(ANCHORS[0].x, ANCHORS[0].y, ANCHORS[0].z);
   const wantPosition = new THREE.Vector3(), wantLook = new THREE.Vector3();
-  let startedAt = null, readoutAt = -Infinity, over = '', aspect = 16 / 9, disposed = false;
+  let startedAt = null, readoutAt = -Infinity, over = '', aspect = 16 / 9, disposed = false, lastElapsed = 0;
   let frameInterval = quality.frameInterval || 0, lastRenderAt = -Infinity;
 
   // Compile every shader now (the drawing planes are hidden until their textures land, and
@@ -176,7 +201,17 @@ export function createSkyField({ canvas, figures, deepManifest, assetBase, quali
 
   return {
     resize(width, height) { renderer.setSize(width, height, false); aspect = width / Math.max(1, height); camera.aspect = aspect; camera.updateProjectionMatrix(); dirty = true; },
-    setTheme(next) { palette = paletteForTheme(next); applyPalette(); dirty = true; },
+    setTheme(next) {
+      palette = paletteForTheme(next); applyPalette();
+      if (prologueKind(next) !== prologue.kind && !disposed) {
+        prologue.release();
+        prologue = makePrologue(next);
+        if (startedAt !== null) prologue.system.update(fly ? lastElapsed : 0);
+        try { renderer.compile(scene, camera); } catch { /* compiled on first use instead */ }
+        readoutAt = -Infinity;
+      }
+      dirty = true;
+    },
     setFly(next) { fly = !!next; dirty = true; },
     /**
      * Change the resolution and the shortest gap between renders without rebuilding the scene.
@@ -186,13 +221,15 @@ export function createSkyField({ canvas, figures, deepManifest, assetBase, quali
       if (Number.isFinite(pixelRatio) && pixelRatio > 0 && pixelRatio !== renderer.getPixelRatio()) {
         renderer.setPixelRatio(pixelRatio);
         for (const u of pixelRatioUniforms) u.value = pixelRatio;
-        earth.setPixelRatio(pixelRatio);
+        prologue.system.setPixelRatio(pixelRatio);
         dirty = true;
       }
       if (Number.isFinite(interval) && interval >= 0) frameInterval = interval;
     },
     /** The canvas resolution in use, for the measurement script and tests. */
     get pixelRatio() { return renderer.getPixelRatio(); },
+    /** Which opening scene is built ('earth' or 'sun') and the renderer's resource counts, for leak checks. */
+    get info() { return { prologue: prologue.kind, geometries: renderer.info.memory.geometries, textures: renderer.info.memory.textures, programs: renderer.info.programs?.length ?? 0 }; },
     /**
      * Advance one animation frame. `scrollFraction` is 0..1 over the page; `now` is the animation clock in ms.
      * The scene is redrawn only when something on it moves or changed, and no more often than the
@@ -206,7 +243,7 @@ export function createSkyField({ canvas, figures, deepManifest, assetBase, quali
     frame(scrollFraction, now, { snap = false } = {}) {
       const route = routePosition(scrollFraction);
       const target = cameraTarget(route, fly);
-      const framing = prologueFraming(aspect, route.f);   // zero on landscape screens and past the prologue
+      const framing = prologueFraming(aspect, route.f, prologue.system.framing);   // zero on landscape screens and past the prologue
       wantPosition.set(target.position.x + framing.x, target.position.y + framing.y, target.position.z + framing.z); wantLook.set(target.look.x + framing.x, target.look.y + framing.y, target.look.z);
       // 8% of the way per 60 Hz frame, scaled by the real gap so the glide takes the same time at 30 fps.
       const steps = Number.isFinite(lastRenderAt) ? Math.min(6, Math.max(0, now - lastRenderAt) / (1000 / 60)) : 1;
@@ -215,11 +252,26 @@ export function createSkyField({ canvas, figures, deepManifest, assetBase, quali
       const settled = cameraPosition.distanceToSquared(wantPosition) < 0.01 && cameraLook.distanceToSquared(wantLook) < 0.01;
       const earthLive = fly && route.f < EARTH_VISIBLE_UNTIL;   // the Earth turns and the satellites move only while it is in view
       if (!snap && !renderDue({ now, lastRenderAt, frameInterval, active: !settled || earthLive || dirty })) {
-        if (now - readoutAt > 1000 && route.f < EARTH_VISIBLE_UNTIL) { readoutAt = now; over = earth.readout(fly && startedAt !== null ? now - startedAt : 0, cameraPosition); }
+        if (now - readoutAt > 1000 && route.f < EARTH_VISIBLE_UNTIL) { readoutAt = now; over = prologue.system.readout(fly && startedAt !== null ? now - startedAt : 0, cameraPosition); }
         return { index: route.index, f: route.f, over, rendered: false, settled };
       }
       cameraPosition.lerp(wantPosition, ease); cameraLook.lerp(wantLook, ease);
       camera.position.copy(cameraPosition); camera.lookAt(cameraLook);
+      // the day Sun dims the stars near it; computed in view space after the camera has moved
+      const glare = prologue.system.centre;
+      const presence = 1 - THREE.MathUtils.smoothstep(route.f, 0.3, 0.8);   // the day Sun leaves with the prologue (see sunSystem.setPresence)
+      prologue.system.setPresence?.(presence);
+      if (glare) {
+        camera.updateMatrixWorld();
+        glareDir.copy(glare).applyMatrix4(camera.matrixWorldInverse);
+        const distance = Math.max(1, glareDir.length());
+        glareDir.divideScalar(distance);
+        starMaterial.uniforms.uGlareDir.value.copy(glareDir);
+        starMaterial.uniforms.uGlareCos.value.set(Math.cos(Math.atan((prologue.system.glareRadius * 4.2) / distance)), Math.cos(Math.atan((prologue.system.glareRadius * 1.3) / distance)));
+        starMaterial.uniforms.uGlare.value = presence;
+      } else {
+        starMaterial.uniforms.uGlare.value = 0;
+      }
       groups.forEach((g, i) => {
         if (!g.lines) return;
         const state = figureState(i, route.f);
@@ -234,9 +286,10 @@ export function createSkyField({ canvas, figures, deepManifest, assetBase, quali
         d.mesh.visible = d.mesh.material.uniforms.uAlpha.value > 0.01;
       }
       if (startedAt === null) startedAt = now;
-      const elapsed = fly ? now - startedAt : 0;   // a still frame under reduced motion: today's terminator, tonight's Moon
-      earth.update(elapsed);
-      if (now - readoutAt > 1000) { readoutAt = now; over = earth.readout(elapsed, cameraPosition); }
+      const elapsed = fly ? now - startedAt : 0;   // a still frame under reduced motion: today's terminator, tonight's Moon, today's Sun
+      lastElapsed = elapsed;
+      prologue.system.update(elapsed);
+      if (now - readoutAt > 1000) { readoutAt = now; over = prologue.system.readout(elapsed, cameraPosition); }
       render(now);
       return { index: route.index, f: route.f, over, rendered: true, settled };
     },
@@ -266,6 +319,7 @@ export function createSkyField({ canvas, figures, deepManifest, assetBase, quali
     dispose() {
       if (disposed) return;
       disposed = true;
+      prologue.release();
       for (const d of disposables) d.dispose?.();
       for (const t of loadTexture.loaded) { t.dispose(); t.image?.close?.(); }   // ImageBitmaps hold decoded pixels until closed
       renderer.dispose();
@@ -290,8 +344,9 @@ export function createTextureLoader(renderer, onAnyLoad = () => {}) {
   const plain = new THREE.TextureLoader();
   const finish = (t, onLoad) => {
     t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
+    // a caller that no longer wants the texture (its scene was swapped out meanwhile) answers false
+    if (onLoad(t) === false) { t.dispose(); t.image?.close?.(); return; }
     loaded.push(t);
-    onLoad(t);
     try { renderer.initTexture(t); } catch { /* uploaded on first use instead */ }
     onAnyLoad(t);
   };
@@ -306,6 +361,8 @@ export function createTextureLoader(renderer, onAnyLoad = () => {}) {
     }, undefined, () => viaPlain(url, onLoad));
   };
   load.loaded = loaded;
+  /** Frees one texture now (GPU copy and decoded pixels) and forgets it. */
+  load.release = (t) => { t.dispose(); t.image?.close?.(); const i = loaded.indexOf(t); if (i >= 0) loaded.splice(i, 1); };
   return load;
 }
 
