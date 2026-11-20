@@ -531,7 +531,17 @@ export const unenrollFactor = async (factorId, friendlyName = null) => {
  *   hasVerifiedFactor whether an authenticator is enrolled and confirmed
  *   needsSecondFactor an authenticator exists but this session has not used it yet
  *   needsEnrollment   no authenticator exists yet, so the dashboard shows only the setup screen
- * Any failure reads as the most restrictive state.
+ *   unknown           true when a check could not be completed (see below)
+ *
+ * The level is decoded from the stored token; the factor list is a network
+ * read. When only the list fails (offline, a laptop waking up), the answer
+ * comes from the token alone: a session at level 2, or one Auth asks to step
+ * up, has a verified factor. Before, that failure read as "no authenticator",
+ * which locked a level-2 dashboard to the setup screen and let a level-1
+ * session past the code step. When the level itself cannot be read, the
+ * most restrictive state is returned with `levelUnknown` as well. Either way
+ * `unknown` is set, so a caller that already holds an answer can keep it and
+ * ask again.
  */
 export const getAssuranceState = async () => {
   const restrictive = {
@@ -540,24 +550,30 @@ export const getAssuranceState = async () => {
     hasVerifiedFactor: false,
     needsSecondFactor: false,
     needsEnrollment: true,
-    checked: true
+    checked: true,
+    unknown: true,
+    levelUnknown: true
   };
   try {
     const [levels, factors] = await Promise.all([
       supabase.auth.mfa.getAuthenticatorAssuranceLevel(),
       listTotpFactors()
     ]);
-    if (levels.error || !factors.success) return restrictive;
+    if (levels.error) return restrictive;
     const currentLevel = levels.data?.currentLevel || 'aal1';
+    const nextLevel = levels.data?.nextLevel || currentLevel;
     // A passkey bridge is a real second factor too: Auth asks for level 2.
-    const hasVerifiedFactor = factors.data.verified.length > 0 || Boolean(factors.data.bridge);
+    const hasVerifiedFactor = factors.success
+      ? factors.data.verified.length > 0 || Boolean(factors.data.bridge)
+      : currentLevel === 'aal2' || nextLevel === 'aal2';
     return {
       currentLevel,
-      nextLevel: levels.data?.nextLevel || currentLevel,
+      nextLevel,
       hasVerifiedFactor,
       needsSecondFactor: hasVerifiedFactor && currentLevel !== 'aal2',
       needsEnrollment: !hasVerifiedFactor,
-      checked: true
+      checked: true,
+      ...(factors.success ? {} : { unknown: true })
     };
   } catch (error) {
     return restrictive;
@@ -587,37 +603,85 @@ export const signInAdmin = async (email) => {
 };
 
 /**
+ * Forgets the session on this device without asking the server: the stored
+ * tokens are removed and every listener hears SIGNED_OUT. Used when the
+ * sign-out request cannot reach the server; the tokens then simply expire
+ * there. supabase-js keeps the session on any sign-out failure other than
+ * 401, 403 or 404, which left a "signed out" admin one reload away from the
+ * dashboard.
+ *
+ * @returns {Promise<boolean>} true once nothing is stored here any more.
+ */
+/** Full page load of the login; replaceable in tests (jsdom cannot navigate). */
+export const navigation = { toLogin: () => window.location.replace('/adminlogin') };
+const reloadToLogin = () => { try { navigation.toLogin(); } catch { /* the cleared storage still signs the next load out */ } };
+
+export const forgetLocalSession = async () => {
+  try {
+    // The client's own routine also notifies its subscribers (internal API of the pinned supabase-js).
+    if (typeof supabase.auth._removeSession === 'function') {
+      await supabase.auth._removeSession();
+    } else if (typeof window !== 'undefined' && supabase.auth.storageKey) {
+      // Without the client's routine nothing announces SIGNED_OUT, so the
+      // running page would still believe it is signed in and the login would
+      // bounce back to the dashboard. Clear the keys, then load the login
+      // afresh: a new page reads the empty storage and starts signed out.
+      for (const suffix of ['', '-code-verifier', '-user']) localStorage.removeItem(`${supabase.auth.storageKey}${suffix}`);
+      localStorage.removeItem('admin_analytics_session');
+      reloadToLogin();
+      return true;
+    } else {
+      return false;
+    }
+    if (typeof window !== 'undefined') localStorage.removeItem('admin_analytics_session');
+    return true;
+  } catch (error) {
+    return false;
+  }
+};
+
+/**
  * Ends the session in this browser only. Other browsers and devices signed in
  * as the admin stay signed in; signOutEverywhere below ends those too. The
  * scope is stated explicitly because supabase-js defaults to 'global'.
+ *
+ * A request that fails is tried once more. If the server still cannot be
+ * reached, the session is forgotten on this device anyway (`localOnly` in
+ * the result): signing out must never leave the admin signed in here.
  */
 export const signOutAdmin = async () => {
-  try {
-    const { error } = await supabase.auth.signOut({ scope: 'local' });
-
-    if (error) {
-      return {
-        success: false,
-        error: authError('SIGN_OUT_FAILED', error.message, error)
-      };
+  const attempt = async () => {
+    try {
+      const { error } = await supabase.auth.signOut({ scope: 'local' });
+      return error || null;
+    } catch (error) {
+      return error;
     }
+  };
 
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('admin_analytics_session');
+  let failure = await attempt();
+  if (failure) failure = await attempt();
+
+  if (failure) {
+    if (await forgetLocalSession()) {
+      return { success: true, data: { message: 'Logged out on this device', localOnly: true } };
     }
-
-    return {
-      success: true,
-      data: {
-        message: 'Logged out successfully'
-      }
-    };
-  } catch (error) {
     return {
       success: false,
-      error: authError('SIGN_OUT_ERROR', 'Sign out failed', error.message)
+      error: authError('SIGN_OUT_FAILED', failure.message || 'Sign out failed', failure)
     };
   }
+
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('admin_analytics_session');
+  }
+
+  return {
+    success: true,
+    data: {
+      message: 'Logged out successfully'
+    }
+  };
 };
 
 /** The fixed sentence shown when ending every session did not reach the server. */
@@ -724,9 +788,44 @@ export const getCurrentSession = async () => {
   return data?.session || null;
 };
 
+/** Error code for a session check that got no answer; the session may well be valid. */
+export const SESSION_CHECK_UNAVAILABLE = 'SESSION_CHECK_UNAVAILABLE';
+
+/**
+ * True when a PostgREST call failed without a verdict: the request never
+ * completed (supabase-js reports status 0 and a fetch error) or the server
+ * answered 5xx. A 4xx is a real answer and is not included.
+ */
+const isUnreachable = (error, status) => {
+  if (typeof status === 'number' && status >= 500) return true;
+  if (typeof status === 'number' && status >= 400) return false;
+  return /failed to fetch|networkerror|network request failed|load failed|fetch failed/i.test(`${error?.message || ''} ${error?.details || ''}`);
+};
+
+/**
+ * True when reading the session failed without a verdict: auth-js names a
+ * refresh that never reached the server AuthRetryableFetchError (status 0, or
+ * 502 to 504). Any other auth error is a real answer.
+ */
+const isSessionReadUnreachable = (error) =>
+  error?.name === 'AuthRetryableFetchError' || isUnreachable(error, error?.status);
+
 export const verifyAdminSession = async () => {
   try {
-    const session = await getCurrentSession();
+    // Read directly, not through getCurrentSession: that helper turns every
+    // error into "no session". Close to expiry auth-js refreshes the token
+    // inside getSession; offline that refresh fails with a retryable fetch
+    // error and the stored session is kept. That is "no answer", not "signed
+    // out": only a real refusal (auth-js then removes the session itself and
+    // the next read returns none without an error) may sign the admin out.
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError && isSessionReadUnreachable(sessionError)) {
+      return {
+        success: false,
+        error: authError(SESSION_CHECK_UNAVAILABLE, 'The session could not be refreshed because the server was not reached', sessionError)
+      };
+    }
+    const session = sessionError ? null : sessionData?.session || null;
 
     if (!session?.user) {
       return {
@@ -744,12 +843,22 @@ export const verifyAdminSession = async () => {
       };
     }
 
-    const { data: adminUser, error: adminError } = await supabase
+    const { data: adminUser, error: adminError, status } = await supabase
       .from('admin_users')
       .select('id,email,is_active')
       .eq('email', email)
       .eq('is_active', true)
       .maybeSingle();
+
+    // The lookup did not get an answer (no connection, or the server failed):
+    // that says nothing about who the account is. Callers keep what they knew
+    // and ask again, instead of treating a network blip as "not the admin".
+    if (adminError && isUnreachable(adminError, status)) {
+      return {
+        success: false,
+        error: authError(SESSION_CHECK_UNAVAILABLE, 'The admin check could not reach the server', adminError)
+      };
+    }
 
     if (adminError || !adminUser) {
       return {
@@ -772,9 +881,10 @@ export const verifyAdminSession = async () => {
       }
     };
   } catch (error) {
+    // a thrown fetch error is the same "no answer" as a failed one
     return {
       success: false,
-      error: authError('SESSION_CHECK_FAILED', 'Failed to verify admin session', error.message)
+      error: authError(isUnreachable(error) ? SESSION_CHECK_UNAVAILABLE : 'SESSION_CHECK_FAILED', 'Failed to verify admin session', error.message)
     };
   }
 };
@@ -812,6 +922,7 @@ const authService = {
   removeUnverifiedFactors,
   signInAdmin,
   signOutAdmin,
+  forgetLocalSession,
   signOutEverywhere,
   getSessionFacts,
   getCurrentAdmin,

@@ -9,7 +9,7 @@
 
 import { ThemeProvider } from '../../../contexts/ThemeContext';
 import { GOOGLE_PENDING_KEY } from '../../../services/authService';
-import MfaCodeStep, { AUTO_PROMPT_PASSKEY, LAUNCH_HOLD_MS } from './MfaCodeStep';
+import MfaCodeStep, { AUTO_PROMPT_PASSKEY, LAUNCH_HOLD_MS, LAUNCH_STALLED_MESSAGE } from './MfaCodeStep';
 import PreflightSky from './PreflightSky';
 import { React, act, click, mount, setInputValue, stubCanvas } from '../SkyBackground/testUtils';
 
@@ -64,7 +64,7 @@ describe('MfaCodeStep (pre-flight steps 02 and 03)', () => {
     canvas = stubCanvas();
     window.matchMedia = () => ({ matches: false });
     onHoldChange = jest.fn();
-    mockAuth = { refreshAssurance: jest.fn().mockResolvedValue({}), signOut: jest.fn(), user: { email: 'raunak@example.com' } };
+    mockAuth = { refreshAssurance: jest.fn().mockResolvedValue({ currentLevel: 'aal2' }), signOut: jest.fn(), user: { email: 'raunak@example.com' } };
     listTotpFactors.mockResolvedValue({ success: true, data: { verified: [{ id: 'f1', friendly_name: 'Phone' }], unverified: [] } });
     verifyTotpChallenge.mockResolvedValue({ success: true, data: { factorId: 'f1' } });
     passkeys.getPasskeyStatus.mockResolvedValue({ known: false, available: false, bridgeFactorId: undefined, passkeyCount: 0 });
@@ -223,6 +223,56 @@ describe('MfaCodeStep (pre-flight steps 02 and 03)', () => {
       const view = render();
       await flush();
       expect(view.container.querySelectorAll('#admin-factor option').length).toBe(2);
+      view.unmount();
+    });
+  });
+
+  describe('when something does not answer', () => {
+    it('offers Try again after a failed authenticator read, and the code works after it', async () => {
+      listTotpFactors.mockResolvedValueOnce({ success: false, error: { code: 'MFA_LIST_ERROR', message: 'Could not read your authenticators.' } });
+      const view = render();
+      await flush();
+      expect($(view, '[role="alert"]').textContent).toContain('Could not read your authenticators.');
+      expect(codeInput(view).disabled).toBe(true);
+      const retry = buttonByText(view, /^Try again$/);
+      expect(retry).toBeDefined();
+      click(retry);
+      await flush();
+      expect(listTotpFactors).toHaveBeenCalledTimes(2);
+      expect($(view, '[role="alert"]')).toBeNull();
+      expect(buttonByText(view, /^Try again$/)).toBeUndefined();
+      expect(codeInput(view).disabled).toBe(false);
+      setInputValue(codeInput(view), '123456');
+      await flush();
+      expect(verifyTotpChallenge).toHaveBeenCalledWith('f1', '123456');
+      view.unmount();
+    });
+
+    it('gives the screen back with the reason when the level-2 session cannot be re-read', async () => {
+      mockAuth.refreshAssurance = jest.fn().mockResolvedValue({ currentLevel: 'aal1', unknown: true });
+      const view = render();
+      await flush();
+      setInputValue(codeInput(view), '123456');
+      await flush();
+      expect($(view, '.preflight').classList.contains('preflight--launching')).toBe(true);
+      await wait(LAUNCH_HOLD_MS + 20);
+      // not a black screen for good: the step is back, with a fixed sentence
+      expect($(view, '.preflight').classList.contains('preflight--launching')).toBe(false);
+      expect($(view, '[role="alert"]').textContent).toContain(LAUNCH_STALLED_MESSAGE);
+      expect(onHoldChange.mock.calls).toEqual([[true], [false]]);
+      view.unmount();
+    });
+
+    it('keeps focus where the admin put it when the route hands down a new hold function', async () => {
+      passkeys.getPasskeyStatus.mockResolvedValue({ known: true, available: true, bridgeFactorId: undefined, passkeyCount: 1 });
+      const element = (hold) => <ThemeProvider><MfaCodeStep now={NOW} onHoldChange={hold} autoPromptPasskey={false} /></ThemeProvider>;
+      const view = mount(element(jest.fn()));
+      await flush();
+      expect(document.activeElement).toBe(unlock(view));
+      const other = buttonByText(view, /Use a code instead/);
+      act(() => { other.focus(); });
+      view.rerender(element(jest.fn()));   // what every auth event used to cause
+      expect(document.activeElement).toBe(other);
       view.unmount();
     });
   });
@@ -529,7 +579,7 @@ describe('MfaCodeStep with the passkey bridge', () => {
     canvas = stubCanvas();
     window.matchMedia = () => ({ matches: false });
     onHoldChange = jest.fn();
-    mockAuth = { refreshAssurance: jest.fn().mockResolvedValue({}), signOut: jest.fn(), user: { email: 'raunak@example.com' } };
+    mockAuth = { refreshAssurance: jest.fn().mockResolvedValue({ currentLevel: 'aal2' }), signOut: jest.fn(), user: { email: 'raunak@example.com' } };
     verifyTotpChallenge.mockResolvedValue({ success: true, data: { factorId: 'f1' } });
     passkeys.signInWithPasskey.mockResolvedValue({ success: true });
   });

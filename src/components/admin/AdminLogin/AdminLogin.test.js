@@ -12,7 +12,7 @@ import {
   LOGIN_LINK_SENT_MESSAGE,
   NOT_ADMIN_EMAIL_MESSAGE
 } from '../../../services/authService';
-import AdminLogin from './AdminLogin';
+import AdminLogin, { ENTRY_REFUSED_MESSAGE, ENTRY_UNREACHABLE_MESSAGE } from './AdminLogin';
 import { React, act, click, mount, setInputValue, stubCanvas } from '../SkyBackground/testUtils';
 
 const mockNavigate = jest.fn();
@@ -197,5 +197,59 @@ describe('AdminLogin (pre-flight step 01)', () => {
     const view = render();
     expect(mockNavigate).toHaveBeenCalledWith('/admindashboard', { replace: true });
     view.unmount();
+  });
+
+  it('gives the controls back when the browser restores the page after Back from Google', async () => {
+    const view = render();
+    click(view.container.querySelector('.preflight-google'));
+    await flush();
+    expect(view.container.querySelector('.preflight-google').disabled).toBe(true);
+    // the back-forward cache brings the page back exactly as it was left
+    act(() => { const event = new Event('pageshow'); event.persisted = true; window.dispatchEvent(event); });
+    const google = view.container.querySelector('.preflight-google');
+    expect(google.disabled).toBe(false);
+    expect(google.textContent).toBe('Continue with Google');
+    // an ordinary first show changes nothing
+    act(() => { const event = new Event('pageshow'); event.persisted = false; window.dispatchEvent(event); });
+    expect(view.container.querySelector('.preflight-google').disabled).toBe(false);
+    view.unmount();
+  });
+
+  describe('a code accepted, but the admin check after it fails', () => {
+    /** Goes through the email fallback until the code is accepted. */
+    const acceptCode = async (view) => {
+      click(buttonByText(view.container, 'Use an email code instead'));
+      const emailInput = view.container.querySelector('#admin-email');
+      setInputValue(emailInput, 'raunak@example.com');
+      await act(async () => { emailInput.form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })); });
+      await flush();
+      const code = view.container.querySelector('#admin-email-code');
+      setInputValue(code, '123456');
+      await act(async () => { code.form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })); });
+      await flush();
+      expect(view.container.querySelector('[role="status"]').textContent).toBe('Code accepted. Opening the admin area...');
+    };
+    const element = () => <ThemeProvider><AdminLogin now={NOW} /></ThemeProvider>;
+
+    it('replaces "Opening the admin area..." with a fixed sentence when the check refuses', async () => {
+      const view = render();
+      await acceptCode(view);
+      mockAuth = { ...mockAuth, error: { code: 'NOT_ADMIN', message: 'server text that must not be shown' } };
+      view.rerender(element());
+      const alert = view.container.querySelector('[role="alert"]');
+      expect(alert.textContent).toContain(ENTRY_REFUSED_MESSAGE);
+      expect(view.container.textContent).not.toContain('server text');
+      expect(view.container.textContent).not.toContain('Opening the admin area');
+      view.unmount();
+    });
+
+    it('says the server could not be reached when that is the reason', async () => {
+      const view = render();
+      await acceptCode(view);
+      mockAuth = { ...mockAuth, error: { code: 'SESSION_CHECK_UNAVAILABLE', message: 'x' } };
+      view.rerender(element());
+      expect(view.container.querySelector('[role="alert"]').textContent).toContain(ENTRY_UNREACHABLE_MESSAGE);
+      view.unmount();
+    });
   });
 });

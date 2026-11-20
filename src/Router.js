@@ -1,6 +1,6 @@
 // src/Router.js - public portfolio router
 
-import React, { Suspense, lazy, useState } from 'react';
+import React, { Suspense, lazy, useCallback, useState } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import Header from './components/common/Header';
 import Footer from './components/common/Footer';
@@ -55,10 +55,13 @@ export const ProtectedAdminRoute = () => {
   // once; without the hold the route would swap to the dashboard mid-launch
   // and Suspense would hide the screen while that chunk loads.
   const [secondFactorHeld, setSecondFactorHeld] = useState(false);
-  const holdSecondFactor = (held) => {
+  // Stable identity: the code step lists it in an effect's dependencies, and a
+  // new function on every auth event re-ran that effect and pulled focus back
+  // to the first control while the admin was tabbing elsewhere.
+  const holdSecondFactor = useCallback((held) => {
     setSecondFactorHeld(held);
     if (held) loadAdminWelcome().catch(() => {}); // warm the dashboard chunk during the hold
-  };
+  }, []);
 
   if (isLoading || !sessionChecked || (isAuthenticated && !assurance.checked)) {
     // Dark like the login sky: a Google return waits here for its code

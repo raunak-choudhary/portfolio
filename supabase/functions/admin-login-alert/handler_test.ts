@@ -1,5 +1,5 @@
 import { assert, assertEquals, assertFalse, assertStringIncludes } from 'jsr:@std/assert@1';
-import { ALERT_INTERVAL_MS, type AlertState, handleRequest, maskAddress, nextState, renderAlert } from './handler.ts';
+import { ALERT_INTERVAL_MS, type AlertState, handleRequest, maskAddress, nextState, renderAlert, RETRY_BACKOFF_MS, undeliveredState } from './handler.ts';
 
 const ORIGIN = 'https://www.raunakchoudhary.com';
 const KEY = 'sb_publishable_testkey1234567890';
@@ -116,4 +116,41 @@ Deno.test('preflight from an allowed origin is accepted', async () => {
   );
   assertEquals(response.status, 204);
   assertStringIncludes(response.headers.get('Access-Control-Allow-Headers') ?? '', 'x-application-name');
+});
+
+Deno.test('a failed delivery keeps the attempt counted, backs off briefly, then alerts with the full count', async () => {
+  const before: AlertState = { attempts: 2, windowStartedAt: '2026-11-09T18:00:00.000Z', lastAlertAt: new Date(NOW.getTime() - ALERT_INTERVAL_MS - 1).toISOString() };
+  const { deps, sent, state } = makeDeps(before);
+  let calls = 0;
+  deps.sendEmail = (() => { calls += 1; return Promise.resolve({ error: 'Resend responded 500' }); }) as never;
+  const failed = await handleRequest(post({ attemptedEmail: 'x@y.com' }), deps);
+  assertEquals(failed.status, 502);
+  // not remembered as sent: the three attempts are still on the count
+  assertEquals(state()?.attempts, 3);
+  assertEquals(state()?.windowStartedAt, before.windowStartedAt);
+
+  // while the provider is failing, the next request does not call it again
+  const muted = await handleRequest(post({ attemptedEmail: 'x@y.com' }), deps);
+  assertEquals((await muted.json()).data, { alerted: false, attempts: 4 });
+  assertEquals(calls, 1);
+
+  // after the back-off the alert goes out and reports all five
+  deps.now = () => new Date(NOW.getTime() + RETRY_BACKOFF_MS);
+  deps.sendEmail = (message: { to: string[]; subject: string; text: string }) => { sent.push(message); return Promise.resolve({ id: 'email-2' }); };
+  const next = await handleRequest(post({ attemptedEmail: 'x@y.com' }), deps);
+  assertEquals((await next.json()).data, { alerted: true, attempts: 5, emailId: 'email-2' });
+  assertEquals(sent.length, 1);
+});
+
+Deno.test('undeliveredState keeps the attempt and backs off briefly instead of leaving every request due', () => {
+  const failed = undeliveredState(null, NOW);
+  assertEquals(failed.attempts, 1);
+  assertEquals(failed.windowStartedAt, NOW.toISOString());
+  // not due again at once: a failing mail provider is not called on every request
+  assertFalse(nextState(failed, new Date(NOW.getTime() + 1000)).sendAlert);
+  assertFalse(nextState(failed, new Date(NOW.getTime() + RETRY_BACKOFF_MS - 1)).sendAlert);
+  // due again after the back-off, with the attempts made meanwhile still counted
+  const later = nextState(failed, new Date(NOW.getTime() + RETRY_BACKOFF_MS));
+  assert(later.sendAlert);
+  assertEquals(later.attemptsToReport, 2);
 });

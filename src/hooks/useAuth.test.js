@@ -3,7 +3,7 @@
 // starts a session check while still signed in, then signs out. The check
 // resolves after the sign-out and must not put the session back.
 
-import { useAuth } from './useAuth';
+import { RECHECK_DELAYS_MS, useAuth } from './useAuth';
 import { React, act, mount } from '../components/admin/SkyBackground/testUtils';
 
 jest.mock('../services/authService', () => ({
@@ -120,5 +120,108 @@ describe('useAuth', () => {
       expect(latest.current.assurance.currentLevel).toBe('aal2');
       view.unmount();
     });
+  });
+
+  describe('a check that gets no answer', () => {
+    const unavailable = { success: false, error: { code: 'SESSION_CHECK_UNAVAILABLE', message: 'no answer' } };
+
+    it('keeps a signed-in admin signed in and asks again, instead of signing the screen out', async () => {
+      jest.useFakeTimers();
+      try {
+        const tick = () => act(async () => { for (let i = 0; i < 10; i++) await Promise.resolve(); });
+        authService.verifyAdminSession.mockResolvedValue(signedIn);
+        const { latest, view } = harness();
+        await tick();
+        expect(latest.current.isAuthenticated).toBe(true);
+
+        // the tab comes back while the laptop is still offline: auth-js announces the session, the check fails
+        authService.verifyAdminSession.mockResolvedValue(unavailable);
+        act(() => { mockAuthListener('SIGNED_IN', {}); });
+        await tick();
+        expect(latest.current.isAuthenticated).toBe(true);
+        expect(latest.current.assurance).toEqual(level2);
+        expect(latest.current.error).toBeNull();
+
+        // the re-check runs by itself once the wait is over, and succeeds
+        const calls = authService.verifyAdminSession.mock.calls.length;
+        authService.verifyAdminSession.mockResolvedValue(signedIn);
+        await act(async () => { jest.advanceTimersByTime(RECHECK_DELAYS_MS[0] + 10); for (let i = 0; i < 10; i++) await Promise.resolve(); });
+        expect(authService.verifyAdminSession.mock.calls.length).toBe(calls + 1);
+        expect(latest.current.isAuthenticated).toBe(true);
+        view.unmount();
+      } finally { jest.useRealTimers(); }
+    });
+
+    it('re-checks at once when the connection comes back', async () => {
+      authService.verifyAdminSession.mockResolvedValue(signedIn);
+      const { latest, view } = harness();
+      await flush();
+      authService.verifyAdminSession.mockResolvedValue(unavailable);
+      act(() => { mockAuthListener('TOKEN_REFRESHED', {}); });
+      await flush();
+      const calls = authService.verifyAdminSession.mock.calls.length;
+      authService.verifyAdminSession.mockResolvedValue(signedIn);
+      act(() => { window.dispatchEvent(new Event('online')); });
+      await flush();
+      expect(authService.verifyAdminSession.mock.calls.length).toBe(calls + 1);
+      expect(latest.current.isAuthenticated).toBe(true);
+      view.unmount();
+    });
+
+    it('starts no re-check timer when an unanswered check resolves after the hook is gone', async () => {
+      jest.useFakeTimers();
+      try {
+        const tick = () => act(async () => { for (let i = 0; i < 10; i++) await Promise.resolve(); });
+        authService.verifyAdminSession.mockResolvedValue(signedIn);
+        const { view } = harness();
+        await tick();
+        // a check is in flight when the hook unmounts, and comes back unanswered afterwards
+        let answer;
+        authService.verifyAdminSession.mockReturnValue(new Promise((resolve) => { answer = resolve; }));
+        act(() => { mockAuthListener('SIGNED_IN', {}); });
+        view.unmount();
+        const calls = authService.verifyAdminSession.mock.calls.length;
+        answer(unavailable);
+        await tick();
+        await act(async () => { jest.advanceTimersByTime(RECHECK_DELAYS_MS[RECHECK_DELAYS_MS.length - 1] * 10); for (let i = 0; i < 10; i++) await Promise.resolve(); });
+        expect(authService.verifyAdminSession.mock.calls.length).toBe(calls);
+      } finally { jest.useRealTimers(); }
+    });
+
+    it('still signs out on a real refusal', async () => {
+      authService.verifyAdminSession.mockResolvedValue(signedIn);
+      const { latest, view } = harness();
+      await flush();
+      authService.verifyAdminSession.mockResolvedValue({ success: false, error: { code: 'NOT_ADMIN', message: 'no' } });
+      act(() => { mockAuthListener('SIGNED_IN', {}); });
+      await flush();
+      expect(latest.current.isAuthenticated).toBe(false);
+      expect(latest.current.error.code).toBe('NOT_ADMIN');
+      view.unmount();
+    });
+
+    it('keeps the held factor state when the level cannot be read', async () => {
+      authService.verifyAdminSession.mockResolvedValue(signedIn);
+      const { latest, view } = harness();
+      await flush();
+      authService.getAssuranceState.mockResolvedValue({ currentLevel: 'aal1', needsEnrollment: true, needsSecondFactor: false, checked: true, unknown: true, levelUnknown: true });
+      act(() => { mockAuthListener('SIGNED_IN', {}); });
+      await flush();
+      expect(latest.current.assurance).toEqual(level2);       // not locked to "set up an authenticator"
+      await act(async () => { await latest.current.refreshAssurance(); });
+      expect(latest.current.assurance).toEqual(level2);
+      view.unmount();
+    });
+  });
+
+  it('a sign-out that could not clear the session does not claim to be signed out', async () => {
+    authService.verifyAdminSession.mockResolvedValue(signedIn);
+    const { latest, view } = harness();
+    await flush();
+    authService.signOutAdmin.mockResolvedValue({ success: false, error: { code: 'SIGN_OUT_FAILED', message: 'x' } });
+    await act(async () => { await latest.current.signOut(); });
+    expect(latest.current.isAuthenticated).toBe(true);
+    expect(latest.current.error.code).toBe('SIGN_OUT_FAILED');
+    view.unmount();
   });
 });

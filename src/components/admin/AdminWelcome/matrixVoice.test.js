@@ -1,4 +1,4 @@
-import { clipUrlFor, createVoicePlayer } from './matrixVoice';
+import { RESUME_WAIT_MS, canStartAudio, clipUrlFor, createVoicePlayer } from './matrixVoice';
 
 /** Minimal AudioContext stand-in that records what was connected and started. */
 const fakeAudioContext = (state = 'running') => {
@@ -55,5 +55,48 @@ describe('matrixVoice', () => {
 
   it('does nothing without Web Audio support', async () => {
     expect(await createVoicePlayer({ fetchImpl: jest.fn() }).play('welcome')).toBe(false);
+  });
+
+  describe('without a gesture on the page', () => {
+    const original = Object.getOwnPropertyDescriptor(window.navigator, 'userActivation');
+    const setActivation = (value) => Object.defineProperty(window.navigator, 'userActivation', { configurable: true, value });
+    afterEach(() => { if (original) Object.defineProperty(window.navigator, 'userActivation', original); else delete window.navigator.userActivation; });
+
+    it('creates no AudioContext, so the browser has nothing to warn about', async () => {
+      setActivation({ hasBeenActive: false });
+      const { ctx } = fakeAudioContext();
+      window.AudioContext = jest.fn(() => ctx);
+      const fetchImpl = jest.fn(async () => okResponse);
+      expect(await createVoicePlayer({ fetchImpl }).play('welcome')).toBe(false);
+      expect(window.AudioContext).not.toHaveBeenCalled();
+      expect(fetchImpl).not.toHaveBeenCalled();
+    });
+
+    it('plays once the page has been clicked', async () => {
+      setActivation({ hasBeenActive: true });
+      const { ctx, started } = fakeAudioContext();
+      window.AudioContext = jest.fn(() => ctx);
+      expect(await createVoicePlayer({ fetchImpl: jest.fn(async () => okResponse) }).play('welcome')).toBe(true);
+      expect(started).toHaveLength(1);
+    });
+
+    it('canStartAudio trusts browsers that cannot say', () => {
+      expect(canStartAudio({})).toBe(true);
+      expect(canStartAudio({ userActivation: { hasBeenActive: false } })).toBe(false);
+    });
+  });
+
+  it('skips the line when a suspended context does not resume in time, instead of speaking late', async () => {
+    jest.useFakeTimers();
+    try {
+      const { ctx, started } = fakeAudioContext('suspended');
+      ctx.resume = jest.fn(() => new Promise(() => {}));   // pending until some later click
+      window.AudioContext = jest.fn(() => ctx);
+      const playing = createVoicePlayer({ fetchImpl: jest.fn(async () => okResponse) }).play('welcome');
+      await Promise.resolve();
+      jest.advanceTimersByTime(RESUME_WAIT_MS + 10);
+      expect(await playing).toBe(false);
+      expect(started).toHaveLength(0);
+    } finally { jest.useRealTimers(); }
   });
 });

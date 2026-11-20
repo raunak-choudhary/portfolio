@@ -38,6 +38,11 @@ import { CodeField, ErrorLine, GoogleMark, NoticeLine } from './PreflightControl
 
 export const MODE = Object.freeze({ GOOGLE: 'google', EMAIL: 'email', CODE: 'code' });
 
+/** Shown when the code was accepted but the admin check could not reach the server. */
+export const ENTRY_UNREACHABLE_MESSAGE = 'The code was accepted, but the admin check could not reach the server. Check the connection; it tries again by itself.';
+/** Shown when the code was accepted but the admin area did not open. */
+export const ENTRY_REFUSED_MESSAGE = 'The code was accepted, but the admin area could not be opened. Try again.';
+
 /**
  * Where to look for a returning redirect's result: the dashboard route hands
  * over the address it was reached with, or the visitor landed here directly.
@@ -47,7 +52,7 @@ const returnSource = (location) => location.state?.returnUrl || { search: locati
 const AdminLogin = ({ now }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { clearError, isAuthenticated, isSigningIn, sessionChecked, signIn } = useAuthContext();
+  const { clearError, error: authError, isAuthenticated, isSigningIn, sessionChecked, signIn } = useAuthContext();
 
   // Read once, on the first render; the effect below acts on it exactly once.
   const [loginReturn] = useState(() => readLoginReturn(returnSource(location), isGoogleReturnPending()));
@@ -58,6 +63,7 @@ const AdminLogin = ({ now }) => {
   const [notice, setNotice] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [isLeavingForGoogle, setIsLeavingForGoogle] = useState(false);
+  const [awaitingEntry, setAwaitingEntry] = useState(false);   // a code was accepted; the admin check is running
   const [resendCooldown, setResendCooldown] = useState(0);
   const emailInputRef = useRef(null);
   const codeInputRef = useRef(null);
@@ -83,6 +89,25 @@ const AdminLogin = ({ now }) => {
       navigate('/admindashboard', { replace: true });
     }
   }, [isAuthenticated, sessionChecked, navigate]);
+
+  // The code was accepted but the admin check that follows did not pass:
+  // say so, instead of "Opening the admin area..." for ever. Fixed
+  // sentences only; the check's own text never reaches the page.
+  useEffect(() => {
+    if (!awaitingEntry || isAuthenticated || !sessionChecked || !authError) return;
+    setAwaitingEntry(false);
+    setNotice('');
+    setFormError(authError.code === 'SESSION_CHECK_UNAVAILABLE' ? ENTRY_UNREACHABLE_MESSAGE : ENTRY_REFUSED_MESSAGE);
+  }, [awaitingEntry, authError, isAuthenticated, sessionChecked]);
+
+  // Coming Back from Google's page, the browser may restore this page from
+  // its back-forward cache exactly as it was left: "Opening Google..." with
+  // every control disabled. A restored page gets its controls back.
+  useEffect(() => {
+    const onPageShow = (event) => { if (event.persisted) setIsLeavingForGoogle(false); };
+    window.addEventListener('pageshow', onPageShow);
+    return () => window.removeEventListener('pageshow', onPageShow);
+  }, []);
 
   useEffect(() => {
     if (resendCooldown <= 0) return undefined;
@@ -170,6 +195,7 @@ const AdminLogin = ({ now }) => {
       // The session is now stored; the auth state listener picks it up and
       // the effect above moves on to the dashboard route.
       setNotice('Code accepted. Opening the admin area...');
+      setAwaitingEntry(true);
     } finally {
       setIsVerifying(false);
     }
