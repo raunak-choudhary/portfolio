@@ -3,11 +3,22 @@
 // Pure model of the voyage's opening scene: Earth, its Moon and a few
 // satellites near the first chapter. Real where it matters (today's solar
 // declination sets the axial tilt against the Sun, the subsolar point sets
-// where the terminator falls at load, the Moon starts at tonight's phase),
-// stylised where reality is invisible (the Earth turns once in a few minutes,
-// the Moon orbits in ten minutes, and sits under two Earth radii out
-// instead of sixty, close enough to share the frame). No Three.js here so every rule is unit tested; the
+// where the terminator falls at load, the Moon starts where it truly is
+// tonight against the Earth and the Sun, in its true orbit plane, with its
+// own tilted axis and the near side toward the Earth), stylised where reality
+// is invisible (the Earth turns once in a few minutes, the Moon orbits in ten
+// minutes, and sits under two Earth radii out instead of sixty, close enough
+// to share the frame). No Three.js here so every rule is unit tested; the
 // scene applies the vectors.
+//
+// The Moon's phase and the moving orbit. The Moon is lit by the scene's one
+// Sun, so its phase is never painted: it is whatever the geometry gives. At
+// load (and for good under reduced motion, which holds elapsed at 0) the
+// Earth to Moon line is tonight's true line from moonModel.js, so the Sun
+// lights exactly tonight's share of the side facing the Earth. The ten-minute
+// orbit then carries it on from there, through the month's phases. The camera
+// is not on the Earth, so it sees the Moon from a little off that line; what
+// New York sees tonight is drawn on the Bento "Tonight" tile.
 //
 // Frames. Everything is computed in an ecliptic frame (y = ecliptic north,
 // x = the vernal equinox, z = toward the point of ecliptic longitude 270°)
@@ -17,7 +28,8 @@
 // crosses the globe) and tips the whole system so we look down on the
 // Moon's orbit from a little above.
 
-import { julianDay, moonPhase, seededRandom } from '../SkyBackground/skyModel';
+import { julianDay, seededRandom } from '../SkyBackground/skyModel';
+import { MOON_EQUATOR_INCLINATION, moonGeocentric } from './moonModel';
 import { ANCHORS } from './voyageModel';
 
 export const DEG = Math.PI / 180;
@@ -96,8 +108,21 @@ export function subsolarLongitude(date) {
 export const eclipticDirection = (lambda) => [Math.cos(lambda * DEG), 0, -Math.sin(lambda * DEG)];
 /** Earth's rotation axis in the ecliptic frame: tilted by the obliquity toward longitude 90°. */
 export const EARTH_AXIS_ECLIPTIC = Object.freeze([0, Math.cos(OBLIQUITY * DEG), -Math.sin(OBLIQUITY * DEG)]);
-/** Normal of the Moon's orbit in the ecliptic frame, tilted by its inclination (node placed at longitude 0). */
-export const MOON_ORBIT_NORMAL_ECLIPTIC = Object.freeze([Math.sin(MOON_INCLINATION * DEG), Math.cos(MOON_INCLINATION * DEG), 0]);
+/** Direction of ecliptic longitude λ and latitude β (degrees) in the ecliptic frame. */
+export const eclipticVector = (lambda, beta) => [Math.cos(beta * DEG) * Math.cos(lambda * DEG), Math.sin(beta * DEG), -Math.cos(beta * DEG) * Math.sin(lambda * DEG)];
+/**
+ * Normal of the Moon's orbit in the ecliptic frame, tilted by its inclination
+ * away from the ascending node Ω (degrees): the orbit rises north through the
+ * ecliptic at longitude Ω, so its pole leans toward longitude Ω - 90°.
+ */
+export const moonOrbitNormal = (node) => [Math.sin(MOON_INCLINATION * DEG) * Math.sin(node * DEG), Math.cos(MOON_INCLINATION * DEG), Math.sin(MOON_INCLINATION * DEG) * Math.cos(node * DEG)];
+/**
+ * The Moon's north pole in the ecliptic frame by Cassini's laws (Meeus ch. 53):
+ * its equator is tilted 1.54° to the ecliptic, with the descending node of the
+ * equator on the ascending node of the orbit, so the pole sits across the
+ * ecliptic pole from the orbit's pole.
+ */
+export const moonPole = (node) => [-Math.sin(MOON_EQUATOR_INCLINATION * DEG) * Math.sin(node * DEG), Math.cos(MOON_EQUATOR_INCLINATION * DEG), -Math.sin(MOON_EQUATOR_INCLINATION * DEG) * Math.cos(node * DEG)];
 
 /**
  * The world frame of the scene: rotates ecliptic-frame vectors so the Sun
@@ -121,9 +146,15 @@ export function earthScene(date = new Date(), anchor = ANCHORS[0]) {
   const sun = sunCoordinates(date);
   const sunDir = normalize(toWorld(eclipticDirection(sun.longitude)));
   const axis = normalize(toWorld(EARTH_AXIS_ECLIPTIC));
-  const moonNormal = normalize(toWorld(MOON_ORBIT_NORMAL_ECLIPTIC));
+  const moon = moonGeocentric(date);
+  const moonNormal = normalize(toWorld(moonOrbitNormal(moon.moon.Omega)));
+  const moonPoleDir = normalize(toWorld(moonPole(moon.moon.Omega)));
+  const moonAtLoad = normalize(toWorld(eclipticVector(moon.moon.longitude, moon.moon.latitude)));
   const centre = [anchor.x + EARTH_OFFSET.x, anchor.y + EARTH_OFFSET.y, anchor.z + EARTH_OFFSET.z];
-  return { sunDir, axis, moonNormal, centre, declination: sun.declination, subsolarLongitude: subsolarLongitude(date), spinAtLoad: spinForSubsolar(axis, sunDir, sun.declination, subsolarLongitude(date)), moonPhaseAtLoad: moonPhase(date).fraction };
+  return {
+    sunDir, axis, moonNormal, moonPole: moonPoleDir, moonAtLoad, moonLibrationLon: moon.libration.lon, moonFractionAtLoad: moon.fraction,
+    centre, declination: sun.declination, subsolarLongitude: subsolarLongitude(date), spinAtLoad: spinForSubsolar(axis, sunDir, sun.declination, subsolarLongitude(date)),
+  };
 }
 
 /** Where a surface point (latitude, longitude in degrees) sits in the Earth mesh's own frame, before any rotation. */
@@ -146,17 +177,37 @@ export const earthSpin = (spinAtLoad, elapsed, period = EARTH_SPIN_MS) => spinAt
 // ---- the Moon ----
 
 /**
- * Unit direction from Earth to the Moon for a phase fraction (0 new, 0.5 full):
- * the Sun's direction projected onto the orbit plane and swung east by the
- * elongation. Then world position = centre + direction × orbit radius.
+ * Unit direction from the Earth to the Moon at `elapsed` ms after load: tonight's
+ * true direction, carried eastward about the orbit's normal, one orbit per period.
  */
-export function moonDirection(sunDir, orbitNormal, fraction) {
-  const inPlane = normalize(add(sunDir, scale(orbitNormal, -dot(sunDir, orbitNormal))));
-  return rotateAbout(inPlane, orbitNormal, fraction * 2 * Math.PI);
+export const moonDirection = (scene, elapsed, period = MOON_ORBIT_MS) => rotateAbout(scene.moonAtLoad, scene.moonNormal, (2 * Math.PI * elapsed) / period);
+export const moonPosition = (scene, elapsed) => add(scene.centre, scale(moonDirection(scene, elapsed), MOON_ORBIT_RADIUS));
+/** Share of the Earth-facing disc that the Sun lights (Meeus 48.1 with the Sun at infinity, as the scene's one light is). */
+export const moonFractionSeen = (sunDir, moonDir) => (1 - dot(sunDir, moonDir)) / 2;
+/**
+ * How full the Earth looks from the Moon, which sets the earthshine on the
+ * Moon's night side: the whole Earth is lit at new Moon, none of it at full.
+ */
+export const earthshineFactor = (sunDir, moonDir) => (1 + dot(sunDir, moonDir)) / 2;
+
+/**
+ * The Moon's orientation as three world-space unit vectors, for Matrix4.makeBasis:
+ * the mesh's local +x (longitude 0, the middle of the map), +y (north pole) and +z
+ * (longitude 270°, so east is local -z, as on the Earth's mesh). The Moon is
+ * tidally locked: longitude 0 faces the Earth, turned by the libration in
+ * longitude, and the pole is Cassini's, so the libration in latitude and the
+ * tilt of the axis come out of the geometry.
+ */
+export function moonBasis(scene, moonDir) {
+  const pole = scene.moonPole;
+  const toEarth = scale(moonDir, -1);
+  const level = normalize(add(toEarth, scale(pole, -dot(toEarth, pole))));
+  // the sub-Earth point sits at longitude l, so longitude 0 lies l west of it
+  const x = rotateAbout(level, pole, -scene.moonLibrationLon * DEG);
+  return { x, y: pole, z: cross(x, pole) };
 }
-/** Phase fraction at `elapsed` ms after load (stylised: one orbit per MOON_ORBIT_MS). */
-export const moonFraction = (fractionAtLoad, elapsed, period = MOON_ORBIT_MS) => (fractionAtLoad + elapsed / period) % 1;
-export const moonPosition = (scene, elapsed) => add(scene.centre, scale(moonDirection(scene.sunDir, scene.moonNormal, moonFraction(scene.moonPhaseAtLoad, elapsed)), MOON_ORBIT_RADIUS));
+/** Selenographic latitude and longitude (degrees) of the point facing direction `d`, for a basis from moonBasis. */
+export const moonPointFacing = (basis, d) => ({ lat: Math.asin(Math.max(-1, Math.min(1, dot(d, basis.y)))) / DEG, lon: Math.atan2(-dot(d, basis.z), dot(d, basis.x)) / DEG });
 
 // ---- satellites ----
 
