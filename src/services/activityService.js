@@ -299,6 +299,16 @@ const browserSessionStorage = () => {
   }
 };
 
+/**
+ * True in a browser driven by automation (Playwright, Selenium, WebDriver):
+ * the standard navigator.webdriver flag. The saved-session checks that open
+ * the real dashboard at several widths each start with empty session storage,
+ * so every one of them used to add a "sign-in" row that no person made.
+ * This keeps the log honest; it is not a security control (the log is written
+ * by the page, so a hostile client could always skip it).
+ */
+export const isAutomatedBrowser = () => typeof navigator !== 'undefined' && navigator.webdriver === true;
+
 let signInInFlight = null;
 
 /**
@@ -306,11 +316,13 @@ let signInInFlight = null;
  * 2. The flag holds the auth session's id, so a new sign-in in the same tab
  * is logged again while reloads and repeated checks are not. The flag is set
  * before the request, so a failed log is not retried on every check.
- * Concurrent calls share one attempt. Never throws.
- * @param {{storage?: Storage|null}} [options]
+ * Concurrent calls share one attempt. Never throws. An automated browser
+ * (isAutomatedBrowser) logs nothing.
+ * @param {{storage?: Storage|null, automated?: boolean}} [options]
  * @returns {Promise<boolean>} true when a sign-in was logged by this call
  */
-export function noteSecondFactorSignIn({ storage = browserSessionStorage() } = {}) {
+export function noteSecondFactorSignIn({ storage = browserSessionStorage(), automated = isAutomatedBrowser() } = {}) {
+  if (automated) return Promise.resolve(false);
   if (!signInInFlight) {
     signInInFlight = recordSignIn(storage).catch(() => false).finally(() => { signInInFlight = null; });
   }

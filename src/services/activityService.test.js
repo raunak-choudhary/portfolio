@@ -5,7 +5,7 @@
 
 import {
   ACTIVITY_NOT_SET_UP, LOG_TIMEOUT_MS, SIGN_IN_FLAG, cleanSecurityLabel, isActivityAvailable, listActivity, listDeletedRecords,
-  logSecurityEvent, noteSecondFactorSignIn, recordHistory, sessionIdFromToken, signInLabel, toActivityRow,
+  isAutomatedBrowser, logSecurityEvent, noteSecondFactorSignIn, recordHistory, sessionIdFromToken, signInLabel, toActivityRow,
 } from './activityService';
 import { failureKind } from './voyageRecords';
 import { supabase } from './supabaseClient';
@@ -325,6 +325,30 @@ describe('noteSecondFactorSignIn', () => {
     supabase.from.mockReturnValue(query({ data: [], error: null }));
     supabase.rpc.mockResolvedValue({ data: null, error: null });
   };
+
+  it('logs nothing in an automated browser, and leaves the session flag unset for a real visit', async () => {
+    atLevel('aal2');
+    const storage = memory();
+    await expect(noteSecondFactorSignIn({ storage, automated: true })).resolves.toBe(false);
+    expect(supabase.rpc).not.toHaveBeenCalled();
+    expect(supabase.auth.getSession).not.toHaveBeenCalled();
+    expect(storage.values.has(SIGN_IN_FLAG)).toBe(false);
+    // the same session in a person's browser is still logged
+    await expect(noteSecondFactorSignIn({ storage, automated: false })).resolves.toBe(true);
+    expect(supabase.rpc).toHaveBeenCalledTimes(1);
+  });
+
+  it('reads automation from navigator.webdriver', () => {
+    const original = Object.getOwnPropertyDescriptor(Navigator.prototype, 'webdriver');
+    try {
+      Object.defineProperty(Navigator.prototype, 'webdriver', { configurable: true, get: () => true });
+      expect(isAutomatedBrowser()).toBe(true);
+      Object.defineProperty(Navigator.prototype, 'webdriver', { configurable: true, get: () => false });
+      expect(isAutomatedBrowser()).toBe(false);
+    } finally {
+      if (original) Object.defineProperty(Navigator.prototype, 'webdriver', original); else delete Navigator.prototype.webdriver;
+    }
+  });
 
   it('logs the first level 2 check of a session once, with its label', async () => {
     atLevel('aal2');
