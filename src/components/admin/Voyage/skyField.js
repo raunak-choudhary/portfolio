@@ -74,7 +74,7 @@ const DEEP_FRAGMENT = `
  * @param {string} input.assetBase URL prefix, e.g. "/admin/sky/".
  * @param {{stars: number, pixelRatio: number, fly: boolean, frameInterval?: number}} input.quality from qualityFor.
  * @param {'dark'|'light'} input.theme
- * @param {boolean} [input.smallTextures] use the 512 px photographs.
+ * @param {boolean} [input.smallTextures] use the 512 px photographs and the 1024 px Moon maps.
  * @param {Date} [input.date] the moment the Earth scene is set for.
  */
 export function createSkyField({ canvas, figures, deepManifest, assetBase, quality, theme, smallTextures = false, date = new Date() }) {
@@ -120,7 +120,7 @@ export function createSkyField({ canvas, figures, deepManifest, assetBase, quali
     const load = scopedLoader();
     const system = prologueKind(t) === 'sun'
       ? createSunSystem({ scene, loadTexture: load, assetBase, pixelRatio: renderer.getPixelRatio(), detail: quality.stars < 5000 ? 'low' : 'high', mode: skyMode, date })
-      : createEarthSystem({ scene, loadTexture: load, assetBase, pixelRatio: renderer.getPixelRatio(), satellites: quality.stars < 5000 ? 6 : 9, date });
+      : createEarthSystem({ scene, loadTexture: load, assetBase, pixelRatio: renderer.getPixelRatio(), satellites: quality.stars < 5000 ? 6 : 9, date, moonTier: smallTextures ? 1024 : 2048 });
     system.setQuality?.({ level: qualityLevel });
     return { kind: prologueKind(t), system, release: () => { system.dispose(); load.release(); } };
   };
