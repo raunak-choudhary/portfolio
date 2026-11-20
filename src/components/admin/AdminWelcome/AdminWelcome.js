@@ -1,15 +1,14 @@
 // src/components/admin/AdminWelcome/AdminWelcome.js
 //
-// Entry into the admin area. The dashboard renders at once, underneath, so its
+// Entry into the admin area. The voyage renders at once, underneath, so its
 // data loads while the Matrix entry plays on top; when the entry finishes it is
 // removed and the dashboard is already there. Replaces the 2025 developer
 // scene (owner decision 2026-11-10).
 //
 // `requireSecurityEnrollment` is passed through so a session without an
-// authenticator sees only the Security screen.
+// authenticator sees only the Security chapter's request.
 
 import React, { useEffect, useMemo, useState } from 'react';
-import AdminDashboard from '../AdminDashboard/AdminDashboard';
 import VoyagePage from '../Voyage/VoyagePage';
 import MatrixEntry from './MatrixEntry';
 import { useAuthContext } from '../../../contexts/AuthContext';
@@ -37,8 +36,7 @@ const useEntryCounts = () => {
   return counts;
 };
 
-/** @param {'classic'|'voyage'} [props.view] which dashboard the entry opens onto. */
-const AdminWelcome = ({ requireSecurityEnrollment = false, view = 'classic' }) => {
+const AdminWelcome = ({ requireSecurityEnrollment = false }) => {
   const { assurance } = useAuthContext();
   const [entryDone, setEntryDone] = useState(false);
   const counts = useEntryCounts();
@@ -55,7 +53,7 @@ const AdminWelcome = ({ requireSecurityEnrollment = false, view = 'classic' }) =
   return (
     <>
       <div inert={!entryDone} aria-hidden={!entryDone}>
-        {view === 'voyage' ? <VoyagePage requireSecurityEnrollment={requireSecurityEnrollment} /> : <AdminDashboard requireSecurityEnrollment={requireSecurityEnrollment} />}
+        <VoyagePage requireSecurityEnrollment={requireSecurityEnrollment} />
       </div>
       {!entryDone && <MatrixEntry facts={facts} onDone={() => setEntryDone(true)} />}
     </>
