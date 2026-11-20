@@ -69,11 +69,54 @@ export function summarizeLongTasks(tasks) {
 }
 
 /**
+ * Summarise GPU time per rendered frame (ms), as measured in the page by
+ * EXT_disjoint_timer_query_webgl2 (method 'timer') or, where that extension is
+ * missing, by forcing a sync with a one-pixel readPixels after each render
+ * (method 'sync', approximate: it also counts the CPU time spent issuing the
+ * draws). Frames that drew nothing are not samples, so a sky that renders at
+ * 30 fps is judged by the frames it drew.
+ * @param {{method: string|null, samples: number[]}|null|undefined} gpu
+ * @returns {{method: string|null, frames: number, medianMs: number|null, p90Ms: number|null}}
+ */
+export function summarizeGpu(gpu) {
+  const samples = (gpu?.samples || []).filter((v) => Number.isFinite(v) && v >= 0);
+  const sorted = [...samples].sort((a, b) => a - b);
+  // two decimals: a quiet night frame is a couple of milliseconds, and the budget compares tenths
+  const round2 = (v) => (Number.isFinite(v) ? Math.round(v * 100) / 100 : null);
+  return { method: gpu?.method || null, frames: sorted.length, medianMs: round2(median(sorted)), p90Ms: round2(quantile(sorted, 0.9)) };
+}
+
+/**
+ * The runs a budget file asks for. A budget with `profiles` names each
+ * configuration (viewport, pixel ratio, theme, panels, CPU rates and the
+ * limits per scenario); an older budget without them is one profile whose
+ * settings come from the command line.
+ * @param {object} budget parsed scripts/frame-budget.json.
+ * @param {object} defaults command-line settings (width, height, dpr, theme, panels, rates, scenarios).
+ * @returns {{name: string, width: number, height: number, dpr: number, theme: string, panels: string, rates: number[], scenarios: string[], limits: object}[]}
+ */
+export function budgetProfiles(budget, defaults) {
+  const profiles = budget && budget.profiles;
+  if (!profiles) {
+    const limits = Object.fromEntries(Object.entries(budget || {}).filter(([k]) => !k.startsWith('_')));
+    return [{ name: 'default', ...defaults, limits }];
+  }
+  return Object.entries(profiles).map(([name, p]) => {
+    const limits = p.limits || {};
+    const scenarios = Object.keys(limits);
+    // every rate any scenario names, in ascending order
+    const rates = [...new Set(scenarios.flatMap((s) => Object.keys(limits[s]).map(Number)))].sort((a, b) => a - b);
+    return { name, width: p.width ?? defaults.width, height: p.height ?? defaults.height, dpr: p.dpr ?? defaults.dpr, theme: p.theme ?? defaults.theme, panels: p.panels ?? defaults.panels, rates, scenarios, limits };
+  });
+}
+
+/**
  * Check measured results against a budget.
  *
  * Budget shape (scripts/frame-budget.json): `{ "<scenario>": { "<cpuRate>": { "<phase>": limits } } }`
  * where limits may hold `minMedianFps`, `maxP95FrameMs`, `maxOver50`,
- * `maxLongTasks` and `minPresentedFps`. A result is `{ scenario, cpuRate, phase, frames, longTasks }`
+ * `maxLongTasks`, `minPresentedFps`, and the GPU time per rendered frame
+ * `maxGpuMedianMs` and `maxGpuP90Ms`. A result is `{ scenario, cpuRate, phase, frames, longTasks }`
  * as produced by summarizeFrames and summarizeLongTasks.
  *
  * A budget entry with no matching result is a failure too, so a scenario
@@ -98,6 +141,8 @@ export function checkFrameBudget(results, budget) {
         if (limits.maxP95FrameMs !== undefined && !atMost(frames.p95FrameMs, limits.maxP95FrameMs)) failures.push(`${label}: p95 frame ${frames.p95FrameMs} ms is over ${limits.maxP95FrameMs}`);
         if (limits.maxOver50 !== undefined && frames.over50 > limits.maxOver50) failures.push(`${label}: ${frames.over50} frames over ${HITCH_MS} ms (limit ${limits.maxOver50})`);
         if (limits.minPresentedFps !== undefined && !atLeast(result.compositor?.presentedFps, limits.minPresentedFps)) failures.push(`${label}: ${result.compositor?.presentedFps ?? 'no'} presented fps is under ${limits.minPresentedFps}`);
+        if (limits.maxGpuMedianMs !== undefined && !atMost(result.gpu?.medianMs, limits.maxGpuMedianMs)) failures.push(`${label}: GPU ${result.gpu?.medianMs ?? 'not measured'} ms median per frame is over ${limits.maxGpuMedianMs}`);
+        if (limits.maxGpuP90Ms !== undefined && !atMost(result.gpu?.p90Ms, limits.maxGpuP90Ms)) failures.push(`${label}: GPU ${result.gpu?.p90Ms ?? 'not measured'} ms p90 per frame is over ${limits.maxGpuP90Ms}`);
         if (limits.maxLongTasks !== undefined && longTasks.count > limits.maxLongTasks) failures.push(`${label}: ${longTasks.count} long tasks, longest ${longTasks.maxMs} ms (limit ${limits.maxLongTasks})`);
       }
     }
@@ -110,8 +155,10 @@ export function checkFrameBudget(results, budget) {
  * @param {Array<{scenario: string, cpuRate: number, phase: string, frames: object, longTasks: object}>} results
  */
 export function formatTable(results) {
-  const head = '| scenario | cpu | phase | median fps | p95 frame ms | frames > 50 ms | long tasks (max ms) | presented fps | GPU busy |\n|---|---|---|---|---|---|---|---|---|';
+  const head = '| scenario | cpu | phase | median fps | p95 frame ms | frames > 50 ms | long tasks (max ms) | presented fps | GPU busy | GPU ms median | GPU ms p90 | GPU frames |\n|---|---|---|---|---|---|---|---|---|---|---|---|';
   const dash = (v, unit = '') => (v === null || v === undefined ? 'n/a' : `${v}${unit}`);
-  const rows = results.map((r) => `| ${r.scenario} | ${r.cpuRate}x | ${r.phase} | ${r.frames.medianFps} | ${r.frames.p95FrameMs} | ${r.frames.over50} of ${r.frames.frames} | ${r.longTasks.count} (${r.longTasks.maxMs}) | ${dash(r.compositor?.presentedFps)} | ${dash(r.compositor?.gpuBusyPct, '%')} |`);
+  // a sync measurement is marked with a tilde: it is an approximation, not a GPU timer
+  const gpuMs = (r, key) => (r.gpu?.[key] === null || r.gpu?.[key] === undefined ? 'n/a' : `${r.gpu.method === 'sync' ? '~' : ''}${r.gpu[key]}`);
+  const rows = results.map((r) => `| ${r.scenario} | ${r.cpuRate}x | ${r.phase} | ${r.frames.medianFps} | ${r.frames.p95FrameMs} | ${r.frames.over50} of ${r.frames.frames} | ${r.longTasks.count} (${r.longTasks.maxMs}) | ${dash(r.compositor?.presentedFps)} | ${dash(r.compositor?.gpuBusyPct, '%')} | ${gpuMs(r, 'medianMs')} | ${gpuMs(r, 'p90Ms')} | ${r.gpu?.frames ?? 0} |`);
   return [head, ...rows].join('\n');
 }
