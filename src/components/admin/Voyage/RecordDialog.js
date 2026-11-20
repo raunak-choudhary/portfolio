@@ -42,7 +42,7 @@
 // a → b") and offers the next record or the way back to the queue; an
 // editOnly dialog stays open for that instead of closing.
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AlertCircle, AlertTriangle, ArrowRight, Check, LogIn, Pencil, RefreshCw, Trash2, WifiOff, Wrench, X } from 'lucide-react';
 import Field from './Field';
@@ -139,8 +139,12 @@ export default function RecordDialog({ schema, record, open, onClose, onSaved, o
 
   // A fresh dialog whenever it opens or moves to another record. Keyed on the
   // id, not the row object: the deck hands back a new object after every
-  // image save, and rebuilding the form then would wipe typed text.
-  useEffect(() => {
+  // image save, and rebuilding the form then would wipe typed text. A layout
+  // effect, so the form is rebuilt before the dialog is first painted: as a
+  // plain effect the first frame showed the previous opening's form, and text
+  // typed into that frame was overwritten a moment later (found by the
+  // Unit 4.4 write proof on the live database).
+  useLayoutEffect(() => {
     if (!open) return;
     const row = recordRef.current;
     setBase(row); setForm(buildForm(schema, row)); setMode(row?.id && !opensInForm ? 'read' : 'edit');
