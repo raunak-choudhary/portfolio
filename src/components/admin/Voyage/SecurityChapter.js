@@ -16,9 +16,8 @@
 // passkey note show.
 //
 // Every rule and sentence comes from Security/securityModel.js; every call
-// goes through authService and passkeyService, which the classic Security
-// screen uses too. Failures are fixed sentences; nothing from a server is
-// shown.
+// goes through authService and passkeyService. Failures are fixed
+// sentences; nothing from a server is shown.
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { AlertCircle, Check, Fingerprint, Lock, LogOut, Plus, RefreshCw, ShieldCheck, Smartphone, Trash2, TriangleAlert } from 'lucide-react';
