@@ -87,9 +87,6 @@
 .fx-plain small { display: block; color: var(--voyage-muted); font-size: 12px; margin-top: 2px; }
 .fx-plain .voyage-bar__button { min-height: 32px; padding: 4px 10px; font-size: 13px; }
 .fx-days { font-family: var(--voyage-cond); color: var(--voyage-warn); letter-spacing: .04em; }
-.fx-how summary { list-style: none; justify-self: start; }
-.fx-how summary::-webkit-details-marker { display: none; }
-.fx-how[open] summary { margin-bottom: 4px; }
 
 .fx-pane .v5-empty b { color: var(--voyage-fg); }
 

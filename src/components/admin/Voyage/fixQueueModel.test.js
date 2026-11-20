@@ -3,7 +3,7 @@ import path from 'path';
 import { SECTION_HEALTH_RULES } from '../../../services/analyticsService';
 import {
   NOTE_MAX, STALE_DAYS, availableFilters, buildFixQueue, chapterForTable, checkItem, filterGroups, findRuleTarget, gainText,
-  resolveTargetField, round1, ruleKeyFor, scoreExplainer, scoreSummary, staleSections, stepIntent, walkIntent,
+  resolveTargetField, round1, ruleKeyFor, scoreGuide, scoreSummary, staleSections, stepIntent, walkIntent,
 } from './fixQueueModel';
 import { projectsSchema } from './managers/projects.schema';
 
@@ -256,15 +256,23 @@ describe('stale sections', () => {
 });
 
 describe('how the score works', () => {
-  it('quotes the real weights and shares', () => {
-    const text = scoreExplainer();
-    expect(text).toContain('Projects 20');
-    expect(text).toContain('Hero 12');
-    expect(text).toContain('100 in all');
-    expect(text).toContain('earns 70');
-    expect(text).toContain('30 for its quality checks');
-    expect(text).toContain('Skills 8');
-    expect(text).not.toContain('Projects 22');
+  it('reads the guide from the real rules', () => {
+    const guide = scoreGuide();
+    expect(guide).toMatchObject({ total: 100, required: 70, quality: 30, minDescription: 40 });
+    expect(guide.targets).toEqual([
+      { name: 'Projects', table: 'projects', minItems: 3 },
+      { name: 'Skills', table: 'skills', minItems: 8 },
+      { name: 'Certifications', table: 'certifications', minItems: 2 },
+    ]);
+  });
+
+  it('gives every section its precise points, which add up to the score', () => {
+    const model = buildFixQueue({ rowsByTable: { projects: [{ id: 1, title: 'A', short_description: 'x'.repeat(50), image_urls: ['a.png'] }] } });
+    const projects = model.points.find((p) => p.table === 'projects');
+    expect(projects).toMatchObject({ weight: 20, active: 1, minItems: 3, available: true });
+    expect(projects.earned).toBeCloseTo(20 * (85 / 100) / 3);   // 70 + half of 30, one of three projects
+    expect(model.points.filter((p) => !p.available).length).toBe(model.unavailable.length);
+    expect(model.points.reduce((s, p) => s + p.earned, 0)).toBeCloseTo(model.preciseScore);
   });
 });
 

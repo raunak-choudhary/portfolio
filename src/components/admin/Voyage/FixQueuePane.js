@@ -6,21 +6,23 @@
 // dialog (through the record intent store), "Not needed" hides a group or a
 // single record with an optional reason, and "Marked not needed" brings any
 // of them back. Below the queue: sections nobody has touched for over 90
-// days (no score effect) and how the score is worked out, from the real
-// rule weights.
+// days (no score effect) and an "i" that opens how the score is worked
+// out (ScoreGuide), drawn from the real rules and this model.
 //
 // The data and its actions live in useFixQueue, so the page can feed the
 // bento tile and this pane from one load. The numbers come from
 // fixQueueModel.js; nothing here does arithmetic of its own.
 
 import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
-import { AlertCircle, ArrowRight, CalendarX, Check, ChevronDown, CircleSlash, Info, Pencil, Undo2, Wrench } from 'lucide-react';
+import { AlertCircle, ArrowRight, CalendarX, Check, ChevronDown, CircleSlash, Pencil, Undo2, Wrench } from 'lucide-react';
 import { dismiss, restore } from '../../../services/fixDismissalsService';
 import { loadFixQueueData } from '../../../services/fixQueueData';
-import { NOTE_MAX, SEVERITY_LABEL, scoreSummary, availableFilters, buildFixQueue, filterGroups, gainText, resolveTargetField, round1, scoreExplainer, staleSections, walkIntent } from './fixQueueModel';
+import { NOTE_MAX, SEVERITY_LABEL, scoreSummary, availableFilters, buildFixQueue, filterGroups, gainText, resolveTargetField, round1, staleSections, walkIntent } from './fixQueueModel';
 import { fixesChanged, setIntent } from './recordIntent';
 import { useSignal } from './signal';
 import { schemaForTable } from './managers';
+import { InfoButton } from './ExplainDialog';
+import ScoreGuide from './ScoreGuide';
 import './Activity.css';   // the shared V5 pieces: pane, head, note, filter, empty, skeleton
 import './FixQueue.css';
 
@@ -156,6 +158,7 @@ export default function FixQueuePane({ fixes, onReview, notify = () => {} }) {
   const [filter, setFilter] = useState('all');
   const [openKey, setOpenKey] = useState(null);
   const [dismissing, setDismissingState] = useState(null);
+  const [guideOpen, setGuideOpen] = useState(false);
   // Focus never drops to the page: closing the reason form returns it to the
   // button that opened it, and the hidden list's controls hand it on (focusNext).
   const returnFocus = useRef(null);
@@ -269,10 +272,10 @@ export default function FixQueuePane({ fixes, onReview, notify = () => {} }) {
       )}
 
       {model && (
-        <details className="fx-sub fx-how">
-          <summary className="fx-toggle"><Info size={14} aria-hidden="true" />How the score works</summary>
-          <p className="v5-note">{scoreExplainer()} The Health tile rounds each section before averaging, so it can differ from the figure here by a point.</p>
-        </details>
+        <div className="fx-sub fx-how">
+          <InfoButton label="How the score works" onClick={() => setGuideOpen(true)} />
+          <ScoreGuide open={guideOpen} onClose={() => setGuideOpen(false)} model={model} />
+        </div>
       )}
     </section>
   );

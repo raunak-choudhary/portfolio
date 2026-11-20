@@ -245,6 +245,7 @@ export function buildFixQueue({ rowsByTable = {}, dismissals = [], rules = SECTI
   const list = Array.isArray(dismissals) ? dismissals : [];
   const unavailable = [];
   const sections = [];
+  const points = [];   // each section's precise points out of its weight, for the score guide
   let precise = 0, dismissedGain = 0;
   const groups = [];
   const coveredBy = new Map();   // dismissal id -> number of items it currently hides
@@ -254,11 +255,13 @@ export function buildFixQueue({ rowsByTable = {}, dismissals = [], rules = SECTI
     if (!Array.isArray(rows)) {
       unavailable.push(rule.name);
       sections.push({ name: rule.name, table: rule.table, weight: rule.weight || 0, completeness: 0, issues: [] });
+      points.push({ name: rule.name, table: rule.table, weight: rule.weight || 0, earned: 0, active: 0, minItems: rule.minItems || 1, available: false });
       return;
     }
     sections.push(evaluateContentSectionHealth(rule, rows));
     const { precise: part, gaps: allGaps } = evaluateSection(rule, rows, totalWeight);
     precise += part;
+    points.push({ name: rule.name, table: rule.table, weight: rule.weight || 0, earned: part, active: rows.filter(isActiveContentRow).length, minItems: rule.minItems || 1, available: true });
     // a singleton chapter edits one row; gaps on any extra row cannot be walked there
     const shown = SINGLETON_TABLES.includes(rule.table) ? pickSingleton(rows.filter(isActiveContentRow)) : null;
     const gaps = shown ? allGaps.filter((g) => sameId(g.recordId, shown.id)) : allGaps;
@@ -300,6 +303,7 @@ export function buildFixQueue({ rowsByTable = {}, dismissals = [], rules = SECTI
     afterOpenFixes: Math.min(100, precise + totalGain),
     totalGain,
     groups,
+    points,
     dismissed: describeDismissals(list, rowsByTable, rules, coveredBy),
     unavailable,
   };
@@ -368,19 +372,18 @@ export function staleSections(freshness, now = new Date(), days = STALE_DAYS) {
 }
 
 /**
- * "How the score works", from the real rules: every weight, the 70/30
- * split, the description length and the volume targets.
+ * "How the score works", from the real rules: the total, the 70/30 split,
+ * the description length and the volume targets. The score guide dialog
+ * draws these as blocks, so no number in it is typed by hand.
  */
-export function scoreExplainer(rules = SECTION_HEALTH_RULES) {
-  const total = rules.reduce((s, r) => s + (r.weight || 0), 0);
-  const weights = [...rules].sort((a, b) => (b.weight || 0) - (a.weight || 0)).map((r) => `${r.name} ${r.weight}`).join(', ');
-  const targets = rules.filter((r) => (r.minItems || 1) > 1).map((r) => `${r.name} ${r.minItems}`).join(', ');
-  return [
-    `Each section has a weight: ${weights}; ${total} in all.`,
-    `Inside a section every record earns ${REQUIRED_SHARE} for its required fields and ${QUALITY_SHARE} for its quality checks (pictures, proof links), and a description counts once it reaches ${DEFAULT_MIN_DESCRIPTION_LENGTH} characters.`,
-    targets ? `A section with fewer records than its target (${targets}) is scaled down.` : '',
-    'The gain beside each fix is that arithmetic run forward, so the queue is ordered by what moves the score most.',
-  ].filter(Boolean).join(' ');
+export function scoreGuide(rules = SECTION_HEALTH_RULES) {
+  return {
+    total: rules.reduce((s, r) => s + (r.weight || 0), 0),
+    required: REQUIRED_SHARE,
+    quality: QUALITY_SHARE,
+    minDescription: DEFAULT_MIN_DESCRIPTION_LENGTH,
+    targets: rules.filter((r) => (r.minItems || 1) > 1).map((r) => ({ name: r.name, table: r.table, minItems: r.minItems })),
+  };
 }
 
 /**
