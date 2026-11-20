@@ -10,6 +10,9 @@
 // the site sends is not a JWT. The handler therefore authorises in code: the
 // request must carry a known public key in the `apikey` header and come from
 // an allowed origin. The service-side key never leaves this function.
+//
+// Abuse control: both checks can be forged outside a browser, so the number
+// of emails per hour is capped in the database (takeEmailSlot).
 
 import {
   acceptedPublicKeys,
@@ -38,6 +41,14 @@ export interface HandlerDeps {
   sendEmail: (
     message: { from: string; to: string[]; replyTo: string[]; subject: string; html: string; text: string },
   ) => Promise<{ id: string } | { error: string }>;
+  /**
+   * Takes one of the hour's email slots (take_contact_email_slot in the
+   * database). False means the hour is used up and nothing is sent, so a
+   * flood of requests cannot spend the email quota that login alerts and
+   * reports share. Absent, or failing, it does not block: the limit must
+   * never be the reason a real message is lost.
+   */
+  takeEmailSlot?: () => Promise<boolean>;
   now?: () => Date;
 }
 
@@ -121,6 +132,20 @@ export async function handleRequest(request: Request, deps: HandlerDeps): Promis
 
   if (!deps.env.RESEND_API_KEY) {
     return json(500, { success: false, error: 'Email service not configured' }, cors);
+  }
+
+  // After validation, so malformed requests never use a slot.
+  let slotFree = true;
+  if (deps.takeEmailSlot) {
+    try {
+      slotFree = await deps.takeEmailSlot();
+    } catch {
+      console.error('send-contact-email: email slot check failed; sending anyway');
+    }
+  }
+  if (!slotFree) {
+    console.error('send-contact-email: hourly email limit reached; not sent');
+    return json(429, { success: false, error: 'Too many messages right now' }, { ...cors, 'Retry-After': '3600' });
   }
 
   const recipient = deps.env.CONTACT_RECIPIENT_EMAIL || DEFAULT_RECIPIENT;

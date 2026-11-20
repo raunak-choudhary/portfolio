@@ -236,3 +236,36 @@ Deno.test('rejects methods other than POST', async () => {
   );
   assertEquals(response.status, 405);
 });
+
+Deno.test("sends nothing once the hour's email slots are used up", async () => {
+  let asked = 0;
+  const { deps, sent, signed } = makeDeps({ takeEmailSlot: () => Promise.resolve(++asked <= 2) });
+
+  assertEquals((await handleRequest(post(body()), deps)).status, 200);
+  assertEquals((await handleRequest(post(body()), deps)).status, 200);
+  const refused = await handleRequest(post(body()), deps);
+
+  assertEquals(refused.status, 429);
+  assertEquals(refused.headers.get('Retry-After'), '3600');
+  assertEquals(await refused.json(), { success: false, error: 'Too many messages right now' });
+  assertEquals(sent.length, 2);
+  assertEquals(signed.length, 2); // no link is signed for a refused request
+});
+
+Deno.test('a request that fails validation or the key check does not use an email slot', async () => {
+  let asked = 0;
+  const { deps } = makeDeps({ takeEmailSlot: () => Promise.resolve(++asked > 0) });
+
+  assertEquals((await handleRequest(post({ ...body(), email: 'not-an-address' }), deps)).status, 400);
+  assertEquals((await handleRequest(post(body(), { apikey: 'unknown' }), deps)).status, 401);
+  assertEquals(asked, 0);
+});
+
+Deno.test('still delivers when the slot check itself fails', async () => {
+  const { deps, sent } = makeDeps({ takeEmailSlot: () => Promise.reject(new Error('database away')) });
+
+  const response = await handleRequest(post(body()), deps);
+
+  assertEquals(response.status, 200);
+  assertEquals(sent.length, 1);
+});

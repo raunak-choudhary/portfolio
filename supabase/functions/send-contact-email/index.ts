@@ -28,9 +28,13 @@ if (!serviceKey) {
   console.log(`send-contact-email: signing attachment links with the ${serviceKey.source} key`);
 }
 
-const storage = serviceKey && env.SUPABASE_URL
-  ? createClient(env.SUPABASE_URL, serviceKey.key, { auth: { persistSession: false, autoRefreshToken: false } }).storage
+const service = serviceKey && env.SUPABASE_URL
+  ? createClient(env.SUPABASE_URL, serviceKey.key, { auth: { persistSession: false, autoRefreshToken: false } })
   : null;
+const storage = service?.storage ?? null;
+
+/** Emails allowed per hour; the database clamps it to 1..100. */
+const EMAILS_PER_HOUR = 10;
 
 /**
  * Keys confirmed by Supabase Auth, remembered for a short time so a disabled
@@ -54,6 +58,13 @@ const deps: HandlerDeps = {
       verifiedKeys.set(key, Date.now());
     }
     return response.ok;
+  },
+  takeEmailSlot: async () => {
+    if (!service) return true;
+    const { data, error } = await service.rpc('take_contact_email_slot', { p_max: EMAILS_PER_HOUR });
+    // A missing function (migration not applied yet) or any other failure does not block delivery.
+    if (error) throw new Error('slot check unavailable');
+    return data !== false;
   },
   signUrl: async (path, ttlSeconds) => {
     if (!storage) return { error: 'service key unavailable' };
