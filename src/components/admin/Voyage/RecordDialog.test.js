@@ -305,6 +305,8 @@ describe('RecordDialog', () => {
     expect(dialog().dataset.mode).toBe('edit');
     expect(inputFor('title').value).toBe('Typed before the upload');
     // a storage failure is listed by file name and still leaves the form alone
+    // (a file action checks the stamp too, against the one the image save returned)
+    records.fetchUpdatedAt.mockResolvedValue('2026-11-18T10:05:00.000Z');
     records.imageProblems.mockReturnValue({ accepted: [good], problems: [] });
     records.uploadImages.mockResolvedValue({ urls: [], failed: [{ name: 'b.png', message: 'did not upload: the connection dropped.' }] });
     await act(async () => { input.dispatchEvent(new Event('change', { bubbles: true })); });
@@ -359,6 +361,172 @@ describe('RecordDialog', () => {
     click(button('Add thing'));
     await flush();
     expect(records.saveRecord.mock.calls[1][1]).toEqual(expect.objectContaining({ order_index: 2 }));
+    view.unmount();
+  });
+
+  it('writes only the columns that changed, never a value the form showed for an empty column', async () => {
+    // status and team size are null in the row; the form has to show "active" and 1 for them
+    const sparse = { ...existing, status: null, team_size: null };
+    records.saveRecord.mockImplementation(async (_s, payload) => ({ ...sparse, ...payload }));
+    const view = render({ record: sparse });
+    click(button('Edit'));
+    setInputValue(inputFor('title'), 'Tallyproof, renamed');
+    click(button('Save'));
+    await flush();
+    expect(records.saveRecord).toHaveBeenCalledTimes(1);
+    expect(records.saveRecord).toHaveBeenCalledWith(projectsSchema, { title: 'Tallyproof, renamed' }, 'p1');
+    view.unmount();
+  });
+
+  it('ignores Enter on a clean form and a second submit while the first is on its way', async () => {
+    let finish;
+    records.saveRecord.mockReturnValue(new Promise((resolve) => { finish = resolve; }));
+    const view = render();
+    click(button('Edit'));
+    const submit = () => act(() => { document.querySelector('.record-form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })); });
+    submit();                                             // Enter in a text input, nothing changed
+    await flush();
+    expect(records.fetchUpdatedAt).not.toHaveBeenCalled();
+    expect(records.saveRecord).not.toHaveBeenCalled();
+    setInputValue(inputFor('title'), 'Tallyproof two');
+    submit(); submit();                                   // two in the same tick
+    await flush();
+    expect(records.saveRecord).toHaveBeenCalledTimes(1);
+    // while the save is on its way no image can be removed or added
+    expect(fieldFor('image_urls').querySelector('.thumb__remove').disabled).toBe(true);
+    expect(fieldFor('image_urls').querySelector('input[type="file"]').disabled).toBe(true);
+    await act(async () => { finish({ ...existing, title: 'Tallyproof two' }); });
+    await flush();
+    expect(dialog().dataset.mode).toBe('read');
+    view.unmount();
+  });
+
+  it('checks the row before a file action, so an upload cannot hide a change made elsewhere', async () => {
+    records.fetchUpdatedAt.mockResolvedValue('2026-11-18T11:00:00.000Z');   // changed elsewhere since this dialog opened
+    records.imageProblems.mockImplementation((files) => ({ accepted: files, problems: [] }));
+    const view = render();
+    click(button('Edit'));
+    const input = document.querySelector('.thumb--add input');
+    Object.defineProperty(input, 'files', { configurable: true, value: [{ name: 'b.png', type: 'image/png', size: 10 }] });
+    await act(async () => { input.dispatchEvent(new Event('change', { bubbles: true })); });
+    await flush();
+    expect(records.uploadImages).not.toHaveBeenCalled();
+    expect(records.saveRecord).not.toHaveBeenCalled();
+    expect(banner().textContent).toContain('changed somewhere else');
+    expect(fieldFor('image_urls').querySelector('.field__problems').textContent).toContain('Reload the latest version');
+    expect(button('Overwrite').disabled).toBe(true);      // nothing was typed here to put over it
+    view.unmount();
+  });
+
+  it('takes uploaded files out of storage again when the row refuses to list them', async () => {
+    records.imageProblems.mockImplementation((files) => ({ accepted: files, problems: [] }));
+    records.uploadImages.mockResolvedValue({ urls: ['https://cdn/new.png'], failed: [] });
+    records.saveRecord.mockRejectedValue(new Error('row level security'));
+    records.removeImage.mockResolvedValue();
+    const view = render();
+    click(button('Edit'));
+    const input = document.querySelector('.thumb--add input');
+    Object.defineProperty(input, 'files', { configurable: true, value: [{ name: 'new.png', type: 'image/png', size: 10 }] });
+    await act(async () => { input.dispatchEvent(new Event('change', { bubbles: true })); });
+    await flush();
+    expect(records.removeImage).toHaveBeenCalledWith(projectsSchema, 'https://cdn/new.png');
+    expect(fieldFor('image_urls').querySelectorAll('.thumb img')).toHaveLength(1);
+    expect(fieldFor('image_urls').querySelector('.field__problems').textContent).toContain('could not be added');
+    view.unmount();
+  });
+
+  it('keeps an uploaded file the row turns out to list, and removes nothing when the row cannot be read', async () => {
+    const upload = async () => {
+      const view = render();
+      click(button('Edit'));
+      const input = document.querySelector('.thumb--add input');
+      Object.defineProperty(input, 'files', { configurable: true, value: [{ name: 'new.png', type: 'image/png', size: 10 }] });
+      await act(async () => { input.dispatchEvent(new Event('change', { bubbles: true })); });
+      await flush();
+      view.unmount();
+    };
+    records.imageProblems.mockImplementation((files) => ({ accepted: files, problems: [] }));
+    records.uploadImages.mockResolvedValue({ urls: ['https://cdn/new.png'], failed: [] });
+    records.removeImage.mockResolvedValue();
+    // the write committed but its answer was lost: the row names the new file
+    records.saveRecord.mockRejectedValue(new TypeError('Failed to fetch'));
+    records.getRecord.mockResolvedValue({ ...existing, image_urls: [...existing.image_urls, 'https://cdn/new.png'] });
+    await upload();
+    expect(records.getRecord).toHaveBeenCalledWith(projectsSchema, 'p1');
+    expect(records.removeImage).not.toHaveBeenCalled();
+    // the row cannot be read back: an orphan is safer than a dead link
+    records.getRecord.mockRejectedValue(new TypeError('Failed to fetch'));
+    await upload();
+    expect(records.removeImage).not.toHaveBeenCalled();
+  });
+
+  it('takes a newer stamp for the same record from the deck (its own reorder), so the next Save sees no conflict', async () => {
+    records.saveRecord.mockImplementation(async (_s, payload) => ({ ...existing, ...payload }));
+    const view = render();
+    click(button('Edit'));
+    setInputValue(inputFor('title'), 'Typed before the stamp');
+    const stamped = { ...existing, updated_at: '2026-11-18T11:00:00.000Z' };
+    records.fetchUpdatedAt.mockResolvedValue(stamped.updated_at);
+    view.rerender(<RecordDialog schema={projectsSchema} record={stamped} open {...props} />);
+    expect(inputFor('title').value).toBe('Typed before the stamp');   // only the stamp moved
+    click(button('Save'));
+    await flush();
+    expect(banner()).toBeNull();
+    expect(records.saveRecord).toHaveBeenCalledWith(projectsSchema, { title: 'Typed before the stamp' }, 'p1');
+    view.unmount();
+  });
+
+  it('writes a displayed default once the owner has set that field, and never the file columns on Overwrite', async () => {
+    const sparse = { ...existing, status: null };
+    records.saveRecord.mockImplementation(async (_s, payload) => ({ ...sparse, ...payload }));
+    let view = render({ record: sparse });
+    click(button('Edit'));
+    const choose = (value) => act(() => { const select = inputFor('status'); select.value = value; select.dispatchEvent(new Event('change', { bubbles: true })); });
+    choose('inactive');
+    choose('active');                                                 // back to what the form showed for the null
+    setInputValue(inputFor('title'), 'Tallyproof, renamed');
+    click(button('Save'));
+    await flush();
+    expect(records.saveRecord).toHaveBeenCalledWith(projectsSchema, { title: 'Tallyproof, renamed', status: 'active' }, 'p1');
+    view.unmount();
+    document.body.innerHTML = '';
+    // Overwrite after a conflict: every column but the image list, which is only written by file actions
+    records.saveRecord.mockClear();
+    records.fetchUpdatedAt.mockResolvedValue('2026-11-18T12:30:00.000Z');
+    view = render();
+    click(button('Edit'));
+    setInputValue(inputFor('title'), 'Mine wins');
+    click(button('Save'));
+    await flush();
+    click(button('Overwrite'));
+    await flush();
+    const payload = records.saveRecord.mock.calls[0][1];
+    expect(payload).toMatchObject({ title: 'Mine wins', status: 'active', team_size: 1 });
+    expect(payload).not.toHaveProperty('image_urls');
+    view.unmount();
+  });
+
+  it('keeps Tab inside an open confirmation, pulls stray focus back in, and returns focus when the confirmation is cancelled', () => {
+    const view = render();
+    const tab = (shiftKey = false) => { const e = new KeyboardEvent('keydown', { key: 'Tab', shiftKey, cancelable: true }); act(() => { document.dispatchEvent(e); }); return e; };
+    const remove = button('Delete');
+    remove.focus();
+    click(remove);
+    const [cancel, confirm] = document.querySelectorAll('.dialog button');
+    expect(document.activeElement).toBe(confirm);
+    tab();                                                // from the last button it wraps to Cancel, not to the dialog behind
+    expect(document.activeElement).toBe(cancel);
+    tab(true);
+    expect(document.activeElement).toBe(confirm);
+    click(cancel);
+    expect(document.querySelector('[role="alertdialog"]')).toBeNull();
+    expect(document.activeElement).toBe(remove);          // back on the control that asked
+    // focus lost to the page (its element was removed): the next Tab lands inside the dialog
+    act(() => { document.activeElement.blur(); });
+    expect(document.activeElement).toBe(document.body);
+    const stray = tab();
+    expect(stray.defaultPrevented).toBe(true);
+    expect(dialog().contains(document.activeElement)).toBe(true);
     view.unmount();
   });
 

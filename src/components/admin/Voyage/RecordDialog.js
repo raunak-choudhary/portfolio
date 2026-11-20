@@ -23,9 +23,19 @@
 //   5. image problems are reported per file next to the image field, and a
 //      failed upload leaves the form exactly as it was.
 //
+// One request at a time. Save, Reload, Delete and every file action share a
+// single lock (`lock`), taken synchronously, so a Save can never run beside
+// an upload or a removal and write a list the other has just changed. An
+// update writes only the columns the form changed (`changedColumns`), so a
+// column the owner did not touch is never rewritten.
+//
 // Uploads and removals of stored files persist at once (a file in storage
 // and a row that does not list it must never drift apart), so files can be
-// added only after the first save. That covers the projects gallery
+// added only after the first save. A file action writes its one column from
+// the stored list, never from the form, so text typed into a mixed list
+// stays an unsaved edit; it first checks that the row is still the one this
+// dialog loaded, because its write refreshes the dialog's updated_at and
+// would otherwise hide a change made elsewhere from the next Save. That covers the projects gallery
 // (`images`) and every field with an upload rule (`image`, `file`, `files`).
 //
 // The read view opens with the record's history line (HistoryLine): when
@@ -50,7 +60,7 @@ import ConfirmDialog from './ConfirmDialog';
 import RecordView, { WIDE_KINDS } from './RecordView';
 import HistoryLine from './HistoryLine';
 import useOnline from './useOnline';
-import { UPLOAD_KINDS, applyChange, buildForm, cleanupTargets, fieldsForGroup, isDirty, normalizeForm, validateForm } from './managers/schemaModel';
+import { UPLOAD_KINDS, applyChange, buildForm, changedColumns, cleanupTargets, fieldsForGroup, isBucketUrl, isDirty, normalizeForm, validateForm } from './managers/schemaModel';
 import { round1, gainText } from './fixQueueModel';
 import { noteContentChanged } from './contentChanged';
 import './FixQueue.css';
@@ -129,6 +139,12 @@ export default function RecordDialog({ schema, record, open, onClose, onSaved, o
   const [fixResult, setFixResult] = useState(null);         // after a save in fix mode: { passes, state, before, after }
   const panelRef = useRef(null), openerRef = useRef(null), recordRef = useRef(record);
   recordRef.current = record;
+  // One request at a time (see the header). A ref, not state: two handlers fired in the
+  // same tick (Save, then Enter in a field) must see each other before React re-renders.
+  const lock = useRef(false);
+  const beforeConfirm = useRef(null);                       // what had focus when a confirmation opened
+  // Fields the owner changed a value in during this editing session (see changedColumns). A ref: read only at Save.
+  const edited = useRef(new Set());
 
   const isNew = !base?.id;
   const recordId = record?.id;
@@ -149,10 +165,21 @@ export default function RecordDialog({ schema, record, open, onClose, onSaved, o
     const row = recordRef.current;
     setBase(row); setForm(buildForm(schema, row)); setMode(row?.id && !opensInForm ? 'read' : 'edit');
     setTouched(new Set()); setSubmitted(false); setConfirm(null); setFailure(null); setConflict(false); setImageIssues([]); setUploadIssues({}); setFixResult(null);
+    lock.current = false; edited.current = new Set();
   }, [open, recordId, schema, opensInForm]);
+
+  // The deck can stamp this row while the dialog is open: a reorder or a group move writes updated_at on
+  // every row it touches. That write is this admin's own, so the dialog takes the newer stamp; without
+  // it the next Save here would report a change "somewhere else". Only the stamp moves, never the form.
+  const recordStamp = record?.updated_at;
+  useEffect(() => {
+    if (!open || !recordId || recordStamp == null) return;
+    setBase((b) => (b && b.id === recordId && b.updated_at != null && Date.parse(recordStamp) > Date.parse(b.updated_at) ? { ...b, updated_at: recordStamp } : b));
+  }, [open, recordId, recordStamp]);
 
   const backToRead = useCallback(() => {
     setForm(buildForm(schema, base)); setMode('read'); setTouched(new Set()); setSubmitted(false); setFailure(null); setConflict(false); setImageIssues([]); setUploadIssues({});
+    edited.current = new Set();
   }, [schema, base]);
 
   const requestClose = useCallback(() => { if (saving || busyImages || busyField) return; if (mode === 'edit' && dirty) setConfirm('close'); else onClose(); }, [mode, dirty, saving, busyImages, busyField, onClose]);
@@ -165,10 +192,15 @@ export default function RecordDialog({ schema, record, open, onClose, onSaved, o
   keyRef.current = (e) => {
     if (e.key === 'Escape') { e.stopPropagation(); if (confirm) setConfirm(null); else requestClose(); return; }
     if (e.key !== 'Tab' || !panelRef.current) return;
-    const nodes = [...panelRef.current.querySelectorAll(FOCUSABLE)].filter((n) => !n.disabled && !n.closest('[hidden]'));
-    if (!nodes.length) return;
+    // While a confirmation is open, Tab stays inside it: the controls behind it (Close, Edit, Delete) are out of reach.
+    const scope = panelRef.current.querySelector('.dialog') || panelRef.current;
+    const nodes = [...scope.querySelectorAll(FOCUSABLE)].filter((n) => !n.disabled && !n.closest('[hidden]'));
+    if (!nodes.length) { e.preventDefault(); return; }
     const [head, tail] = [nodes[0], nodes[nodes.length - 1]];
-    if (e.shiftKey && document.activeElement === head) { e.preventDefault(); tail.focus(); } else if (!e.shiftKey && document.activeElement === tail) { e.preventDefault(); head.focus(); }
+    // Focus can fall out of the dialog when its element is removed (a chip, a pairs row, an image); the
+    // page behind is not inert, so the next Tab is pulled back in instead of walking the page.
+    const inside = scope.contains(document.activeElement);
+    if (e.shiftKey && (document.activeElement === head || !inside)) { e.preventDefault(); tail.focus(); } else if (!e.shiftKey && (document.activeElement === tail || !inside)) { e.preventDefault(); head.focus(); }
   };
 
   // body scroll lock, Escape, focus trap and focus return, once per opening
@@ -181,6 +213,21 @@ export default function RecordDialog({ schema, record, open, onClose, onSaved, o
     document.addEventListener('keydown', onKey, true);
     return () => { document.removeEventListener('keydown', onKey, true); document.body.style.overflow = previousOverflow; openerRef.current?.focus?.(); };
   }, [open]);
+
+  // A confirmation takes focus when it opens; when it is cancelled, focus goes back to the control that
+  // opened it (if it is still there). The opener is noted in a layout effect, which runs before the
+  // confirmation's own effect moves focus. The restore is declared before the per-view focus effect,
+  // which wins when the confirmation changed the view.
+  useLayoutEffect(() => {
+    if (open && confirm) beforeConfirm.current = document.activeElement;
+  }, [confirm, open]);
+  useEffect(() => {
+    if (!open) { beforeConfirm.current = null; return; }
+    if (confirm) return;
+    const back = beforeConfirm.current;
+    beforeConfirm.current = null;
+    if (back && panelRef.current?.contains(back) && !back.disabled) back.focus();
+  }, [confirm, open]);
 
   // first focus per view: the first field when editing, the Edit button when reading
   // (in fix mode: the target field, then the banner's next step once saved)
@@ -209,6 +256,15 @@ export default function RecordDialog({ schema, record, open, onClose, onSaved, o
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [busyImages, isNew, online]);
 
+  // A step fixed by an upload reports Fixed while that request is still finishing, when the banner's
+  // buttons are disabled and cannot take focus; once the dialog is idle the next step takes it,
+  // unless the owner has already put focus somewhere in the dialog.
+  useEffect(() => {
+    if (!open || !fixResult || saving || busyImages || busyField || !panelRef.current) return;
+    const step = panelRef.current.querySelector('[data-fix-step]');
+    if (step && !step.disabled && !panelRef.current.contains(document.activeElement)) step.focus();
+  }, [open, fixResult, saving, busyImages, busyField]);
+
   // after a refused Save, the first invalid field in reading order takes focus
   useEffect(() => {
     if (!focusTick || !panelRef.current) return;
@@ -216,30 +272,52 @@ export default function RecordDialog({ schema, record, open, onClose, onSaved, o
     (field?.querySelector('[aria-invalid="true"]') || field?.querySelector(FOCUSABLE))?.focus();
   }, [focusTick]);
 
-  const set = (key) => (value) => setForm((f) => applyChange(schema, f, key, value));
+  const set = (key) => (value) => { edited.current.add(key); setForm((f) => applyChange(schema, f, key, value)); };
   const leave = (key) => () => setTouched((t) => (t.has(key) ? t : new Set(t).add(key)));
 
   const fail = (err, action) => setFailure({ kind: failureKind(err), action, message: err?.message || '' });
 
+  // The conflict check, shared by Save and by every file action: only for a saved row, and only
+  // when the table keeps updated_at. False (with the conflict banner up) when the row changed elsewhere.
+  const stillCurrent = async () => {
+    if (isNew || !base || !Object.prototype.hasOwnProperty.call(base, 'updated_at')) return true;
+    const current = await fetchUpdatedAt(schema, base.id);
+    if (current === undefined) throw new Error(`This ${schema.singular} no longer exists. It may have been deleted elsewhere; copy anything needed before closing.`);
+    if (sameStamp(current, base.updated_at)) return true;
+    setConflict(true);
+    return false;
+  };
+
   const save = async ({ overwrite = false } = {}) => {
-    if (!online || saving) return;
+    // Enter in a text input submits the form even while the Save button is disabled, so every
+    // condition the button has is repeated here: nothing else in flight, and something to save.
+    if (!online || lock.current) return;
+    if (!isNew && !dirty && !overwrite) return;
     setSubmitted(true);
     if (errorCount) { setFocusTick((t) => t + 1); return; }
+    lock.current = true;
     setFailure(null); setConflict(false); setSaving(true);
     try {
-      // conflict check: only for updates, and only when the table keeps updated_at
-      if (!isNew && !overwrite && base && Object.prototype.hasOwnProperty.call(base, 'updated_at')) {
-        const current = await fetchUpdatedAt(schema, base.id);
-        if (current === undefined) throw new Error(`This ${schema.singular} no longer exists. It may have been deleted elsewhere; copy anything needed before closing.`);
-        if (!sameStamp(current, base.updated_at)) { setConflict(true); return; }
-      }
+      if (!overwrite && !(await stillCurrent())) return;
       let payload = normalizeForm(schema, form);
       // a new record goes after the others unless the form itself sets the
       // order (internships show "Display order" as a field as well as a drag)
       if (isNew && schema.orderKey && (payload[schema.orderKey] === null || payload[schema.orderKey] === undefined)) payload[schema.orderKey] = nextOrder;
       if (prepare) payload = prepare(payload, { isNew, base });
+      // An update writes only what changed, plus a field the owner changed whose stored value is
+      // not what the form shows for it. "Overwrite" is the owner's explicit choice to put this
+      // version over the one saved elsewhere, so it writes every column, except the file columns:
+      // those are written the moment a file is added or removed, so the form's copy of them is
+      // only ever stale, and writing it would re-list files removed elsewhere and drop new ones.
+      if (!isNew && !overwrite) payload = changedColumns(schema, payload, base, edited.current);
+      else if (!isNew) {
+        const fileKeys = new Set(schema.fields.filter((f) => UPLOAD_KINDS.has(f.kind)).map((f) => f.key));
+        const changedFiles = changedColumns(schema, payload, base);
+        payload = Object.fromEntries(Object.entries(payload).filter(([key]) => !fileKeys.has(key) || key in changedFiles));
+      }
       const row = await saveRecord(schema, payload, base?.id || null);
       setBase(row); setForm(buildForm(schema, row)); setMode(editOnly && !fix ? 'edit' : 'read'); setTouched(new Set()); setSubmitted(false);
+      edited.current = new Set();
       onSaved(row, isNew);
       noteContentChanged();
       notify(isNew ? `${capital(schema.singular)} added.` : 'Saved.');
@@ -247,34 +325,59 @@ export default function RecordDialog({ schema, record, open, onClose, onSaved, o
         const result = fix.check ? fix.check(row) : { passes: true, state: null };
         setFixResult({ ...result, before: fix.score, after: fix.score + (result.passes ? fix.gain : 0) });
       } else if (editOnly) onClose();
-    } catch (err) { fail(err, 'save'); } finally { setSaving(false); }
+    } catch (err) { fail(err, 'save'); } finally { lock.current = false; setSaving(false); }
   };
 
   const reloadLatest = async () => {
+    if (lock.current) return;
+    lock.current = true;
     setSaving(true); setFailure(null);
     try {
       const row = await getRecord(schema, base.id);
       setBase(row); setForm(buildForm(schema, row)); setConflict(false); setMode(editOnly ? 'edit' : 'read'); setTouched(new Set()); setSubmitted(false);
+      edited.current = new Set();
       onSaved(row, false);
       notify('Showing the latest saved version.');
-    } catch (err) { fail(err, 'reload'); } finally { setSaving(false); }
+    } catch (err) { fail(err, 'reload'); } finally { lock.current = false; setSaving(false); }
   };
 
   const remove = async () => {
-    setConfirm(null); setSaving(true); setFailure(null);
-    try { await deleteRecord(schema, base.id, base); onDeleted(base.id); noteContentChanged(); notify(`${capital(schema.singular)} deleted.`); } catch (err) { fail(err, 'delete'); } finally { setSaving(false); }
+    setConfirm(null);
+    if (lock.current) return;
+    lock.current = true;
+    setSaving(true); setFailure(null);
+    try { await deleteRecord(schema, base.id, base); onDeleted(base.id); noteContentChanged(); notify(`${capital(schema.singular)} deleted.`); } catch (err) { fail(err, 'delete'); } finally { lock.current = false; setSaving(false); }
   };
 
   const imageField = schema.fields.find((f) => f.kind === 'images');
-  // persists only the image column; the base takes the returned row so its
-  // updated_at stays current and the next Save does not see a false conflict
-  const persistImages = async (urls) => {
-    const row = await saveRecord(schema, { [imageField.key]: urls }, base.id);
+  /** The list a column holds in the saved row (never the form's copy, which may carry unsaved entries). */
+  const storedList = (key) => (Array.isArray(base?.[key]) ? base[key].map(String) : []);
+  const CONFLICT_ISSUE = { name: null, message: `This ${schema.singular} changed somewhere else. Reload the latest version, then try again.` };
+  // After a failed file write: the uploaded files the stored row does not name, which may leave
+  // storage again. The row is read back because "failed" is not proof: an update can commit and
+  // lose its answer on the way (a connection flap), and removing those files would leave the
+  // row, and the public page, pointing at nothing. When the row cannot be read, nothing is
+  // removed: an orphan is listed by the media library, a dead link is seen by visitors.
+  const orphansOf = async (key, urls) => {
+    if (!urls.length) return [];
+    try {
+      const row = await getRecord(schema, base.id);
+      const named = new Set((Array.isArray(row?.[key]) ? row[key] : [row?.[key]]).filter(Boolean).map(String));
+      return urls.filter((url) => !named.has(String(url)));
+    } catch { return []; }
+  };
+  // Persists only the image column, built from the stored list. The base takes the returned
+  // row so its updated_at stays current and the next Save does not see a false conflict.
+  // `written` runs the moment the row has taken the list, before any step that could throw.
+  const persistImages = async (change, written) => {
+    const next = change(storedList(imageField.key));
+    const row = await saveRecord(schema, { [imageField.key]: next }, base.id);
+    written?.();
     setBase(row);
-    setForm((f) => ({ ...f, [imageField.key]: urls }));
+    setForm((f) => ({ ...f, [imageField.key]: change(f[imageField.key]) }));
     onSaved(row, false);
     noteContentChanged();
-    fixedByUpload(row, imageField.key, urls);
+    fixedByUpload(row, imageField.key, change(form[imageField.key]));
   };
   // In fix mode an upload is the save: the column is written at once, so the
   // form never gets dirty and "Save and next" would never light up. When the
@@ -288,37 +391,54 @@ export default function RecordDialog({ schema, record, open, onClose, onSaved, o
     if (!isDirty(schema, { ...form, [key]: value }, row)) { setMode('read'); setTouched(new Set()); setSubmitted(false); }
   };
   const images = imageField ? {
-    singular: schema.singular, busy: busyImages, canUpload: !isNew && online, problems: imageIssues,
+    singular: schema.singular, busy: busyImages, canUpload: !isNew && online, locked: saving || Boolean(busyField), problems: imageIssues,
     onUpload: async (files) => {
-      const current = form[imageField.key];
-      const { accepted, problems } = imageProblems(files, { existing: current.length, max: schema.images?.max || imageField.max || 10 });
+      if (lock.current) return;
+      const { accepted, problems } = imageProblems(files, { existing: form[imageField.key].length, max: schema.images?.max || imageField.max || 10 });
       setImageIssues(problems);
       if (!accepted.length) return;
+      lock.current = true;
       setBusyImages(true);
+      let unlisted = [];                                    // uploaded, not yet named by the row
       try {
+        if (!(await stillCurrent())) { setImageIssues([...problems, CONFLICT_ISSUE]); return; }
         const { urls, failed } = await uploadImages(schema, base.id, accepted);
-        if (urls.length) { await persistImages([...current, ...urls]); notify(urls.length === 1 ? 'Image added.' : `${urls.length} images added.`); }
+        unlisted = urls;
+        if (urls.length) { await persistImages((list) => [...list, ...urls], () => { unlisted = []; }); notify(urls.length === 1 ? 'Image added.' : `${urls.length} images added.`); }
         setImageIssues([...problems, ...failed]);
       } catch (err) {
+        // files the row did not take leave storage again instead of staying as orphans
+        await Promise.all((await orphansOf(imageField.key, unlisted)).map((url) => removeImage(schema, url).catch(() => null)));
         setImageIssues([...problems, { name: null, message: `The images could not be added to the ${schema.singular}. ${failureCopy(failureKind(err), 'save', err?.message).title}` }]);
-      } finally { setBusyImages(false); }
+      } finally { lock.current = false; setBusyImages(false); }
     },
     onRemove: async (url) => {
+      if (lock.current) return;
+      lock.current = true;
       setBusyImages(true); setImageIssues([]);
-      try { await persistImages(form[imageField.key].filter((u) => u !== url)); await removeImage(schema, url); notify('Image removed.'); } catch (err) { setImageIssues([{ name: null, message: `The image could not be removed. ${failureCopy(failureKind(err), 'save', err?.message).title}` }]); } finally { setBusyImages(false); }
+      try {
+        if (!(await stillCurrent())) { setImageIssues([CONFLICT_ISSUE]); return; }
+        await persistImages((list) => list.filter((u) => u !== url)); await removeImage(schema, url); notify('Image removed.');
+      } catch (err) { setImageIssues([{ name: null, message: `The image could not be removed. ${failureCopy(failureKind(err), 'save', err?.message).title}` }]); } finally { lock.current = false; setBusyImages(false); }
     },
   } : undefined;
 
   // One uploader per field with an upload rule. The stored list or URL is
-  // written to the row at once (only that column), and a replaced or removed
-  // file leaves storage after the row stops pointing at it.
-  const persistField = async (key, value) => {
-    const row = await saveRecord(schema, { [key]: value }, base.id);
+  // written to the row at once (only that column, built from what the row
+  // holds), and a replaced or removed file leaves storage after the row stops
+  // pointing at it. `change` maps a list to its next state and is applied to
+  // the stored list for the write and to the form's own list for the screen,
+  // so entries typed into a mixed list (before or during an upload) stay in
+  // the form as unsaved edits: never written silently, never wiped.
+  const persistField = async (key, many, change, written) => {
+    const next = many ? change(storedList(key)) : change();
+    const row = await saveRecord(schema, { [key]: next }, base.id);
+    written?.();
     setBase(row);
-    setForm((f) => ({ ...f, [key]: value }));
+    setForm((f) => ({ ...f, [key]: many ? change(f[key]) : next }));
     onSaved(row, false);
     noteContentChanged();
-    fixedByUpload(row, key, value);
+    fixedByUpload(row, key, many ? change(form[key]) : next);
   };
   const uploaderFor = (field) => {
     const rule = field.upload;
@@ -327,35 +447,52 @@ export default function RecordDialog({ schema, record, open, onClose, onSaved, o
     const many = field.kind === 'files';
     const failed = (what, err) => [{ name: null, message: `The ${what} could not be ${what === 'file' || what === 'image' ? 'changed' : 'updated'}. ${failureCopy(failureKind(err), 'save', err?.message).title}` }];
     return {
-      singular: schema.singular, accept: rule.accept, busy: busyField === field.key, canUpload: !isNew && online && !busyField, problems: issues,
+      singular: schema.singular, accept: rule.accept, busy: busyField === field.key, canUpload: !isNew && online, problems: issues,
+      // another request owns the dialog: a Save, the gallery, or another field's upload
+      locked: saving || busyImages || Boolean(busyField && busyField !== field.key),
+      // a file this field stored, as opposed to a web address typed into a mixed list
+      owns: (url) => isBucketUrl(url, rule.bucket),
       onUpload: async (files) => {
+        if (lock.current) return;
         const current = form[field.key];
         const { accepted, problems } = fileProblems(files, rule, { existing: many ? current.length : 0 });
         setIssues(problems);
         if (!accepted.length) return;
+        lock.current = true;
         setBusyField(field.key);
+        let unlisted = [];                                  // uploaded, not yet named by the row
         try {
+          if (!(await stillCurrent())) { setIssues([...problems, CONFLICT_ISSUE]); return; }
           const { urls, failed: lost } = await uploadFieldFiles(rule, { id: base.id, form }, accepted);
+          unlisted = urls;
           if (urls.length) {
-            if (many) await persistField(field.key, [...current, ...urls]);
+            const taken = () => { unlisted = []; };
+            if (many) await persistField(field.key, true, (list) => [...list, ...urls], taken);
             else {
-              await persistField(field.key, urls[0]);
-              if (current && rule.removeReplaced) await removeStoredFiles(rule.bucket, [current]);
+              const replaced = base[field.key];
+              await persistField(field.key, false, () => urls[0], taken);
+              if (replaced && replaced !== urls[0] && rule.removeReplaced) await removeStoredFiles(rule.bucket, [replaced]);
             }
             notify(many ? (urls.length === 1 ? 'File added.' : `${urls.length} files added.`) : field.kind === 'image' ? 'Image saved.' : 'File saved.');
           }
           setIssues([...problems, ...lost]);
         } catch (err) {
+          // files the row did not take leave storage again instead of staying as orphans
+          const orphans = await orphansOf(field.key, unlisted);
+          if (orphans.length) await removeStoredFiles(rule.bucket, orphans).catch(() => null);
           setIssues([...problems, ...failed(field.kind === 'image' ? 'image' : 'file', err)]);
-        } finally { setBusyField(null); }
+        } finally { lock.current = false; setBusyField(null); }
       },
       onRemove: async (url) => {
+        if (lock.current) return;
+        lock.current = true;
         setBusyField(field.key); setIssues([]);
         try {
-          await persistField(field.key, many ? form[field.key].filter((u) => u !== url) : null);
+          if (!(await stillCurrent())) { setIssues([CONFLICT_ISSUE]); return; }
+          await persistField(field.key, many, many ? (list) => list.filter((u) => u !== url) : () => null);
           if (rule.removeReplaced) await removeStoredFiles(rule.bucket, [url]);
           notify(field.kind === 'image' ? 'Image removed.' : 'File removed.');
-        } catch (err) { setIssues(failed(field.kind === 'image' ? 'image' : 'file', err)); } finally { setBusyField(null); }
+        } catch (err) { setIssues(failed(field.kind === 'image' ? 'image' : 'file', err)); } finally { lock.current = false; setBusyField(null); }
       },
     };
   };
@@ -395,7 +532,7 @@ export default function RecordDialog({ schema, record, open, onClose, onSaved, o
               <p>Reload latest shows the saved version and drops the edits made here. Overwrite saves this version over it.</p>
               <div className="record-banner__actions">
                 <button type="button" className="voyage-bar__button" onClick={reloadLatest} disabled={busy}><RefreshCw size={14} /><span>Reload latest</span></button>
-                <button type="button" className="voyage-bar__button voyage-bar__button--danger" onClick={() => save({ overwrite: true })} disabled={busy || !online}><span>Overwrite</span></button>
+                <button type="button" className="voyage-bar__button voyage-bar__button--danger" onClick={() => save({ overwrite: true })} disabled={busy || !online || !dirty} title={dirty ? undefined : 'Nothing was changed here, so there is nothing to save over it'}><span>Overwrite</span></button>
               </div>
             </Banner>
           )}
@@ -519,9 +656,10 @@ function FixBanner({ fix, result, busy, onSkip, onStop, onEditAgain, onNext, onQ
         <div className="record-banner__actions">
           {!result && <button type="button" className="voyage-bar__button voyage-bar__button--small" onClick={onSkip} disabled={busy}><ArrowRight size={15} /><span>Skip this one</span></button>}
           {!result && <button type="button" className="voyage-bar__button voyage-bar__button--small" onClick={onStop} disabled={busy}><span>Stop fixing</span></button>}
-          {result && !result.passes && <button type="button" className="voyage-bar__button voyage-bar__button--small" onClick={onEditAgain}><Pencil size={14} /><span>Edit again</span></button>}
-          {result && fix.next && <button type="button" data-fix-step className="voyage-bar__button voyage-bar__button--small voyage-bar__button--primary" onClick={onNext}><ArrowRight size={15} /><span>Next: {fix.next.label}</span></button>}
-          {result && <button type="button" data-fix-step={fix.next ? undefined : true} className="voyage-bar__button voyage-bar__button--small" onClick={onQueue}><span>Back to the queue</span></button>}
+          {/* Disabled while a request is in flight: moving to another record mid-upload would let the old request release the new record's lock. */}
+          {result && !result.passes && <button type="button" className="voyage-bar__button voyage-bar__button--small" onClick={onEditAgain} disabled={busy}><Pencil size={14} /><span>Edit again</span></button>}
+          {result && fix.next && <button type="button" data-fix-step className="voyage-bar__button voyage-bar__button--small voyage-bar__button--primary" onClick={onNext} disabled={busy}><ArrowRight size={15} /><span>Next: {fix.next.label}</span></button>}
+          {result && <button type="button" data-fix-step={fix.next ? undefined : true} className="voyage-bar__button voyage-bar__button--small" onClick={onQueue} disabled={busy}><span>Back to the queue</span></button>}
         </div>
       </div>
     </div>

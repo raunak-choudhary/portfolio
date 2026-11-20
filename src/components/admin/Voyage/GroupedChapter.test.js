@@ -40,8 +40,12 @@ describe('a grouped chapter', () => {
     expect(records.reorderGroups).toHaveBeenCalledWith(skillsSchema, [{ value: 'Cloud Platforms', priority: 1 }, { value: 'Programming Languages', priority: 2 }]);
     expect(heads(view.container)).toEqual(['Cloud Platforms', 'Programming Languages']);
     expect(notify).toHaveBeenCalledWith('Group order saved.');
+    // the failed move reloads what the database holds (some of its writes may have landed)
+    const loads = records.listRecords.mock.calls.length;
+    records.listRecords.mockResolvedValue([{ ...rows[0], skill_type_priority: 2 }, { ...rows[1], skill_type_priority: 1 }]);
     click(view.container.querySelector('[aria-label="Move Programming Languages up"]'));
     await flush();
+    expect(records.listRecords.mock.calls.length).toBe(loads + 1);
     expect(heads(view.container)).toEqual(['Cloud Platforms', 'Programming Languages']);
     expect(notify).toHaveBeenLastCalledWith('The new group order could not be saved.', 'bad');
     expect(contentVersion.get()).toBe(version + 1);   // the rolled-back one is not

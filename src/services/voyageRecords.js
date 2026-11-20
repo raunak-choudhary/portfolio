@@ -30,12 +30,24 @@ export async function saveRecord(schema, payload, id = null) {
   return result.data;
 }
 
+/** A write the database accepted but applied to no row: under row level security that is a refusal, not a success. */
+function refusedError(message) {
+  const refused = new Error(message);
+  refused.code = 'SECOND_FACTOR_REQUIRED';
+  return refused;
+}
+
 /**
  * Deletes one row, then the stored files it owned (`schema.cleanup`).
  * Projects go through the data service, which clears their images itself.
  * The row goes first: if the delete is refused, its files are still there
  * for it; a file left behind by a failed cleanup is only an orphan, which
  * the media library lists, never a broken record.
+ *
+ * The delete asks for the removed id back. Row level security refuses a
+ * delete by matching no row and reporting no error, so an empty answer is
+ * checked: a row that is still there means the delete was refused; a row
+ * that is gone was already deleted elsewhere, which is the outcome asked for.
  * @param {object} [row] the saved row, needed to know its files.
  */
 export async function deleteRecord(schema, id, row = null) {
@@ -44,17 +56,30 @@ export async function deleteRecord(schema, id, row = null) {
     if (!result?.success) throw new Error('The project could not be deleted.');
     return;
   }
-  const { error } = await getAdminSupabaseClient().from(schema.table).delete().eq('id', id);
+  const client = getAdminSupabaseClient();
+  const { data, error } = await client.from(schema.table).delete().eq('id', id).select('id');
   if (error) throw new Error(`The ${schema.singular} could not be deleted.`);
+  if (Array.isArray(data) && data.length === 0) {
+    const { data: still } = await client.from(schema.table).select('id').eq('id', id).maybeSingle();
+    if (still) throw refusedError(`The ${schema.singular} could not be deleted.`);
+  }
   if (!row) return;
   await Promise.all(cleanupTargets(schema, row).map(({ bucket, urls }) => removeAdminStorageFiles(bucket, urls).catch(() => null)));
 }
 
 /**
  * Moves whole groups (skills by type): writes each group's new priority to
- * every row of that group. A missing group value is matched with IS NULL,
- * because `eq(col, null)` matches nothing in PostgREST.
+ * every row of that group. A missing group value is matched with IS NULL
+ * (`eq(col, null)` matches nothing in PostgREST) or the empty string, the
+ * two values the deck shows as one group.
+ *
+ * Every write asks for the rows it touched. A write that touched none was
+ * refused (row level security answers a refused update with no rows and no
+ * error), so the call fails instead of reporting an order that was never
+ * stored. The returned stamps let the deck keep each row's `updated_at`
+ * current, so the next Save of a moved record does not see a false conflict.
  * @param {Array<{value: string|null, priority: number}>} writes
+ * @returns {Promise<Array<{id: string, updated_at: string}>>} the rows written.
  */
 export async function reorderGroups(schema, writes) {
   const client = getAdminSupabaseClient();
@@ -62,21 +87,27 @@ export async function reorderGroups(schema, writes) {
   const stamp = new Date().toISOString();
   const results = await Promise.all(writes.map((w) => {
     const query = client.from(schema.table).update({ [priorityKey]: w.priority, updated_at: stamp });
-    return w.value === null ? query.is(key, null) : query.eq(key, w.value);
+    // The deck files rows with an empty string under the same "no group" heading as rows with a null,
+    // so the write must reach both, or it would touch no row and read as a refusal.
+    return (w.value === null ? query.or(`${key}.is.null,${key}.eq.""`) : query.eq(key, w.value)).select('id, updated_at');
   }));
-  if (results.some((r) => r.error)) throw new Error('The new group order could not be saved.');
+  if (results.some((r) => r.error || !Array.isArray(r.data) || r.data.length === 0)) throw new Error('The new group order could not be saved.');
+  return results.flatMap((r) => r.data);
 }
 
 /**
  * Writes a new order column: each entry's value under `schema.orderKey`.
- * All writes run together; the first failure fails the call.
+ * All writes run together; the first failure fails the call, and so does a
+ * write that touched no row (refused, or the row was deleted elsewhere).
  * @param {Array<{id: string}>} writes
+ * @returns {Promise<Array<{id: string, updated_at: string}>>} the rows written, with their new stamps.
  */
 export async function reorderRecords(schema, writes) {
   const client = getAdminSupabaseClient();
   const stamp = new Date().toISOString();
-  const results = await Promise.all(writes.map((w) => client.from(schema.table).update({ [schema.orderKey]: w[schema.orderKey], updated_at: stamp }).eq('id', w.id)));
-  if (results.some((r) => r.error)) throw new Error('The new order could not be saved.');
+  const results = await Promise.all(writes.map((w) => client.from(schema.table).update({ [schema.orderKey]: w[schema.orderKey], updated_at: stamp }).eq('id', w.id).select('id, updated_at')));
+  if (results.some((r) => r.error || !Array.isArray(r.data) || r.data.length !== 1)) throw new Error('The new order could not be saved.');
+  return results.flatMap((r) => r.data);
 }
 
 /**

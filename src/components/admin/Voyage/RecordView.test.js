@@ -15,6 +15,14 @@ describe('read view of the new kinds', () => {
     expect(readableDate('soon')).toBe('soon');
   });
 
+  it('reads a list column that holds one plain string instead of an array without crashing', () => {
+    for (const kind of ['tags', 'urls', 'files', 'images']) {
+      const view = read({ kind }, kind === 'tags' ? 'React' : 'https://example.com/a.pdf');
+      expect(view.container.querySelectorAll('li')).toHaveLength(1);
+      view.unmount();
+    }
+  });
+
   it('shows pairs as a definition list in order, and Not set when empty', () => {
     const view = read({ kind: 'pairs' }, [{ key: 'City', value: 'NYC', order_index: 1 }, { key: 'Degree', value: 'MS', order_index: 0 }]);
     expect([...view.container.querySelectorAll('dt')].map((d) => d.textContent)).toEqual(['Degree', 'City']);

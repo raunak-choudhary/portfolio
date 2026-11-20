@@ -4,7 +4,7 @@
 // stage: loads the records (with a retry when the load fails), opens the
 // dialog for a card or for a new record, merges saves back into the deck,
 // drops deleted cards, and writes a new order after a drag or a group move
-// (optimistically, rolled back if the write fails). For a grouped schema a
+// (optimistically; if the write fails the deck reloads what the database holds). For a grouped schema a
 // saved record takes its group's priority, so a new skill joins its group
 // where the group already sits instead of at the default position.
 //
@@ -66,26 +66,61 @@ export default function DeckChapter({ schema, notify }) {
     setTimeout(() => { if (!alive.current) return; setRecords((rows) => rows.filter((r) => r.id !== id)); setLeaving((s) => { const n = new Set(s); n.delete(id); return n; }); }, LEAVE_MS);
   }, [walkDeleted]);
 
+  // Order writes run one after another. Two quick drags used to send their writes together, and whichever
+  // request landed last decided each row's order. An idle queue starts its task at once.
+  const orderQueue = useRef(null);
+  const inOrder = useCallback((task) => {
+    const run = orderQueue.current ? orderQueue.current.then(task) : task();
+    const tracked = run.finally(() => { if (orderQueue.current === tracked) orderQueue.current = null; });
+    orderQueue.current = tracked;
+    return tracked;
+  }, []);
+
+  // The reorder writes stamp updated_at on every row they touch. The deck takes those stamps, and so
+  // does the record the dialog holds (it may have been opened while the write was in flight), or the
+  // next Save of a moved record would compare against the old one and report a change "somewhere else".
+  // `apply` also puts the written order back on the rows: when an earlier queued write failed and the
+  // deck reloaded from the database, that reload predates this write, and without it the deck would
+  // show an order the database no longer holds.
+  const landed = useCallback((written, apply) => {
+    const byId = new Map((written || []).filter((w) => w && w.id).map((w) => [w.id, w.updated_at]));
+    const stamp = (r) => (byId.has(r.id) ? { ...r, updated_at: byId.get(r.id) } : r);
+    setRecords((rows) => sortRows(schema, rows.map((r) => stamp(apply(r)))));
+    setDialog((d) => (d.record && byId.has(d.record.id) ? { ...d, record: stamp(apply(d.record)) } : d));
+  }, [schema]);
+
+  // A failed order write may have stored part of the new order (the writes are separate requests), so
+  // the deck goes back to what the database holds; the optimistic copy is only the fallback.
+  const restore = useCallback(async (before) => {
+    try { const rows = await listRecords(schema); if (alive.current) setRecords(sortRows(schema, rows)); } catch { if (alive.current) setRecords(before); }
+  }, [schema]);
+
   // Both reorders raise the shared content signal only once the write lands, so the activity pane and the
   // fix queue reload after a saved order and never for the optimistic step or a rolled-back one.
-  const reorder = useCallback(async (ids) => {
+  const reorder = useCallback((ids) => {
     const before = records;
     const writes = orderWritesFor(schema, ids);
     const byId = Object.fromEntries(writes.map((w) => [w.id, w[schema.orderKey]]));
-    setRecords(sortRows(schema, records.map((r) => ({ ...r, [schema.orderKey]: byId[r.id] ?? r[schema.orderKey] }))));
-    try { await reorderRecords(schema, writes); noteContentChanged(); notify('Order saved.'); } catch (err) { setRecords(before); notify(err.message || 'The new order could not be saved.', 'bad'); }
-  }, [records, schema, notify]);
+    const apply = (r) => (r.id in byId ? { ...r, [schema.orderKey]: byId[r.id] } : r);
+    setRecords(sortRows(schema, records.map(apply)));
+    return inOrder(async () => {
+      try { const written = await reorderRecords(schema, writes); if (alive.current) landed(written, apply); noteContentChanged(); notify('Order saved.'); } catch (err) { notify(err.message || 'The new order could not be saved.', 'bad'); await restore(before); }
+    });
+  }, [records, schema, notify, inOrder, landed, restore]);
 
-  const moveGroup = useCallback(async (index, delta, groups) => {
+  const moveGroup = useCallback((index, delta, groups) => {
     const { key, priorityKey } = schema.group;
     const writes = groupMoveWrites(groups, index, delta);
-    if (!writes.length) return;
+    if (!writes.length) return undefined;
     const before = records;
     const byValue = new Map(writes.map((w) => [w.value, w.priority]));
     const valueOf = (r) => (r[key] === undefined || r[key] === null || r[key] === '' ? null : String(r[key]));
-    setRecords(sortRows(schema, records.map((r) => (byValue.has(valueOf(r)) ? { ...r, [priorityKey]: byValue.get(valueOf(r)) } : r))));
-    try { await reorderGroups(schema, writes); noteContentChanged(); notify('Group order saved.'); } catch (err) { setRecords(before); notify(err.message || 'The new group order could not be saved.', 'bad'); }
-  }, [records, schema, notify]);
+    const apply = (r) => (byValue.has(valueOf(r)) ? { ...r, [priorityKey]: byValue.get(valueOf(r)) } : r);
+    setRecords(sortRows(schema, records.map(apply)));
+    return inOrder(async () => {
+      try { const written = await reorderGroups(schema, writes); if (alive.current) landed(written, apply); noteContentChanged(); notify('Group order saved.'); } catch (err) { notify(err.message || 'The new group order could not be saved.', 'bad'); await restore(before); }
+    });
+  }, [records, schema, notify, inOrder, landed, restore]);
 
   // a new record, or one moved into another group, takes that group's priority
   const prepare = useMemo(() => (schema.group?.priorityKey ? (payload, { isNew, base }) => {

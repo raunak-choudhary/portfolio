@@ -9,13 +9,13 @@ const data = jest.requireMock('./dataService');
 const schema = { table: 'projects', singular: 'project', orderKey: 'order_index', images: { bucket: 'project-images', folder: 'projects', max: 10 } };
 const other = { table: 'skills', singular: 'skill', orderKey: 'order_index' };
 
-/** A chainable fake of the parts of the Supabase query builder the service touches. */
+/** A chainable fake of the parts of the Supabase query builder the service touches. `rows` may be a function of the query, for answers that differ per call. */
 function fakeClient({ rows = [], error = null } = {}) {
   const calls = [];
   const chain = (table) => {
     const q = { table, ops: [] };
     const self = new Proxy(q, { get(t, p) {
-      if (p === 'then') return (resolve) => resolve({ data: rows, error });
+      if (p === 'then') return (resolve) => resolve({ data: typeof rows === 'function' ? rows(t) : rows, error });
       if (p === 'table' || p === 'ops') return t[p];
       return (...args) => { t.ops.push([p, ...args]); return self; };
     } });
@@ -51,19 +51,37 @@ it('deletes projects through the data service and other tables directly', async 
   expect(data.deleteProject).toHaveBeenCalledWith('p1');
   data.deleteProject.mockResolvedValue({ success: false });
   await expect(deleteRecord(schema, 'p1')).rejects.toThrow('The project could not be deleted.');
-  const client = fakeClient();
+  const client = fakeClient({ rows: [{ id: 's1' }] });
   admin.getAdminSupabaseClient.mockReturnValue(client);
   await deleteRecord(other, 's1');
-  expect(client.calls[0].ops).toEqual([['delete'], ['eq', 'id', 's1']]);
+  expect(client.calls).toHaveLength(1);
+  expect(client.calls[0].ops).toEqual([['delete'], ['eq', 'id', 's1'], ['select', 'id']]);
 });
 
-it('rewrites the order column in one go and fails on any error', async () => {
-  const client = fakeClient();
+it('treats a delete that removed no row as refused while the row is still there, and as done when it is gone', async () => {
+  // row level security refuses a delete with no rows and no error; the row is still there
+  const refused = fakeClient({ rows: (q) => (q.ops[0][0] === 'delete' ? [] : { id: 's1' }) });
+  admin.getAdminSupabaseClient.mockReturnValue(refused);
+  await expect(deleteRecord(other, 's1', { id: 's1' })).rejects.toMatchObject({ message: 'The skill could not be deleted.', code: 'SECOND_FACTOR_REQUIRED' });
+  expect(refused.calls[1].ops).toEqual([['select', 'id'], ['eq', 'id', 's1'], ['maybeSingle']]);
+  expect(failureKind(Object.assign(new Error('x'), { code: 'SECOND_FACTOR_REQUIRED' }))).toBe('permission');
+  expect(admin.removeAdminStorageFiles).not.toHaveBeenCalled();
+  // deleted elsewhere in the meantime: the outcome asked for
+  admin.getAdminSupabaseClient.mockReturnValue(fakeClient({ rows: (q) => (q.ops[0][0] === 'delete' ? [] : null) }));
+  await expect(deleteRecord(other, 's1')).resolves.toBeUndefined();
+});
+
+it('rewrites the order column in one go, hands back the new stamps, and fails on an error or a write that touched no row', async () => {
+  const client = fakeClient({ rows: (q) => [{ id: q.ops[1][2], updated_at: 'S' }] });
   admin.getAdminSupabaseClient.mockReturnValue(client);
-  await reorderRecords(schema, [{ id: 'a', order_index: 2 }, { id: 'b', order_index: 1 }]);
+  await expect(reorderRecords(schema, [{ id: 'a', order_index: 2 }, { id: 'b', order_index: 1 }])).resolves.toEqual([{ id: 'a', updated_at: 'S' }, { id: 'b', updated_at: 'S' }]);
   expect(client.calls).toHaveLength(2);
   expect(client.calls[0].ops[0][0]).toBe('update'); expect(client.calls[0].ops[0][1]).toMatchObject({ order_index: 2 }); expect(client.calls[0].ops[1]).toEqual(['eq', 'id', 'a']);
+  expect(client.calls[0].ops[2]).toEqual(['select', 'id, updated_at']);
   admin.getAdminSupabaseClient.mockReturnValue(fakeClient({ error: { message: 'no' } }));
+  await expect(reorderRecords(schema, [{ id: 'a', order_index: 1 }])).rejects.toThrow('The new order could not be saved.');
+  // refused by row level security: no error, no row
+  admin.getAdminSupabaseClient.mockReturnValue(fakeClient({ rows: [] }));
   await expect(reorderRecords(schema, [{ id: 'a', order_index: 1 }])).rejects.toThrow('The new order could not be saved.');
 });
 
@@ -134,12 +152,12 @@ it('removes an image file and swallows storage misses', async () => {
 const STORE = 'https://x.supabase.co/storage/v1/object/public/skill-icons/';
 
 it('deletes a skill row first, then its icon and certificate files, leaving typed names and other hosts alone', async () => {
-  const client = fakeClient();
+  const client = fakeClient({ rows: [{ id: 's1' }] });
   admin.getAdminSupabaseClient.mockReturnValue(client);
   admin.removeAdminStorageFiles.mockResolvedValue({});
   const row = { id: 's1', icon_url: `${STORE}icons/a.png`, certifications: ['AWS Certified Developer', `${STORE}certifications/c.pdf`, 'https://elsewhere.example/c.pdf'] };
   await deleteRecord(skillsSchema, 's1', row);
-  expect(client.calls[0].ops).toEqual([['delete'], ['eq', 'id', 's1']]);
+  expect(client.calls[0].ops).toEqual([['delete'], ['eq', 'id', 's1'], ['select', 'id']]);
   expect(admin.removeAdminStorageFiles).toHaveBeenCalledTimes(1);
   expect(admin.removeAdminStorageFiles).toHaveBeenCalledWith('skill-icons', [`${STORE}icons/a.png`, `${STORE}certifications/c.pdf`]);
   // a refused cleanup does not fail a delete that already happened
@@ -152,14 +170,18 @@ it('deletes a skill row first, then its icon and certificate files, leaving type
   expect(admin.removeAdminStorageFiles).not.toHaveBeenCalled();
 });
 
-it('moves whole groups by writing the priority to every row of each group, matching a missing group with IS NULL', async () => {
-  const client = fakeClient();
+it('moves whole groups by writing the priority to every row of each group; a missing group matches null and the empty string, as the deck does', async () => {
+  const client = fakeClient({ rows: [{ id: 1, updated_at: 'S' }] });
   admin.getAdminSupabaseClient.mockReturnValue(client);
-  await reorderGroups(skillsSchema, [{ value: 'Cloud Platforms', priority: 1 }, { value: null, priority: 2 }]);
+  await expect(reorderGroups(skillsSchema, [{ value: 'Cloud Platforms', priority: 1 }, { value: null, priority: 2 }])).resolves.toEqual([{ id: 1, updated_at: 'S' }, { id: 1, updated_at: 'S' }]);
   expect(client.calls[0].ops[0][1]).toMatchObject({ skill_type_priority: 1 });
   expect(client.calls[0].ops[1]).toEqual(['eq', 'skill_type', 'Cloud Platforms']);
-  expect(client.calls[1].ops[1]).toEqual(['is', 'skill_type', null]);
+  expect(client.calls[0].ops[2]).toEqual(['select', 'id, updated_at']);
+  expect(client.calls[1].ops[1]).toEqual(['or', 'skill_type.is.null,skill_type.eq.""']);
   admin.getAdminSupabaseClient.mockReturnValue(fakeClient({ error: { message: 'no' } }));
+  await expect(reorderGroups(skillsSchema, [{ value: 'x', priority: 1 }])).rejects.toThrow('The new group order could not be saved.');
+  // a group write that touched no row was refused, not saved
+  admin.getAdminSupabaseClient.mockReturnValue(fakeClient({ rows: [] }));
   await expect(reorderGroups(skillsSchema, [{ value: 'x', priority: 1 }])).rejects.toThrow('The new group order could not be saved.');
 });
 
