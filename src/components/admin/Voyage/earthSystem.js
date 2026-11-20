@@ -2,17 +2,28 @@
 //
 // The opening scene in Three.js: Earth with NASA's day map, city lights on
 // the night side, drifting clouds, a twilight band along the terminator and a
-// blue atmosphere; the Moon, starting from tonight's true place and phase on
-// a stylised orbit, lit only by the same Sun and a little earthshine; a few
-// satellites in low orbit. All directions, tilts and tempos come from
-// earthModel.js; this file only builds meshes and applies the numbers each
-// frame.
+// blue atmosphere, all lit by the scene's one Sun; the Moon, starting from
+// tonight's true place on a stylised orbit, shown and lit as New York sees it
+// tonight; a few satellites in low orbit. All directions, tilts and tempos
+// come from earthModel.js and moonView.js; this file only builds meshes and
+// applies the numbers each frame.
+//
+// The Moon's light is the one deliberate departure from single-Sun physics in
+// the scene (moonView.js explains it in full). Real: tonight's illuminated
+// fraction, the bright limb's tilt as New York sees it (the same moonTonight
+// value the Tonight tile draws), the axis, the librations, the surface maps.
+// Not real: the Moon is lit by its own "New York light", built each render
+// from the camera's view of it, and turned so the camera sees the face New
+// York sees; lit by the Earth's Sun from this camera it would show the
+// Earth's own phase instead, a crescent most nights.
 
 import * as THREE from 'three';
 import {
-  EARTH_RADIUS, MOON_ORBIT_RADIUS, MOON_RADIUS, earthScene, earthSpin, earthshineFactor, moonBasis, moonDirection, overReadout, satelliteOrbits, satellitePosition,
+  EARTH_RADIUS, MOON_ORBIT_RADIUS, MOON_RADIUS, earthScene, earthSpin, moonDirection, overReadout, satelliteOrbits, satellitePosition,
 } from './earthModel';
-import { EARTHLIGHT, EARTHSHINE, RELIEF_EXAGGERATION, RELIEF_GAIN, SUNLIGHT } from './moonShading';
+import { moonTonight } from './moonModel';
+import { EARTHLIGHT, EARTHSHINE, LIGHT_SOFTNESS, RELIEF_EXAGGERATION, RELIEF_GAIN, SUNLIGHT, TONE_KNEE, moonExposure } from './moonShading';
+import { newYorkBasis, newYorkLight, screenFrame } from './moonView';
 
 export { EARTHSHINE };
 
@@ -85,19 +96,24 @@ export const HALO_FRAGMENT = `
 /** The Moon's map tiers: 2048 px wide where the screen is wide, 1024 px on phones (the disc is under 200 device pixels either way). */
 export const MOON_TIERS = Object.freeze([1024, 2048]);
 /**
- * The Moon's surface: the LROC colour map lit by one Sun with the Lunar-Lambert
- * law (McEwen 1991), a mix of Lommel-Seeliger, which keeps the full Moon flat
- * to the limb with no darkening, and Lambert, which takes over at large phase
- * angles; the weight L(α) is McEwen's cubic. No specular term, since the
- * regolith has none. The normal is tilted by the LOLA relief map in the local
- * east and north frame, so craters and ridges catch the light along the
- * terminator. The night side gets only earthshine from the Earth's direction.
+ * The Moon's surface: the LROC colour map lit by the New York light (uSun, see
+ * moonView.js) with the Lunar-Lambert law (McEwen 1991), a mix of
+ * Lommel-Seeliger, which keeps the full Moon flat to the limb with no
+ * darkening, and Lambert, which takes over at large phase angles; the weight
+ * L(α) is McEwen's cubic. No specular term, since the regolith has none. The
+ * normal is tilted by the LOLA relief map in the local east and north frame,
+ * so craters and ridges catch the light along the terminator, with a soft
+ * knee so single pixels do not flicker there. The night side gets only
+ * earthshine, from the viewer's side as for an observer on the Earth. The
+ * exposure and the tone curve are the Tonight tile's (moonShading.js).
  */
 export const MOON_FRAGMENT = `
   #define RELIEF_SCALE ${(RELIEF_EXAGGERATION / RELIEF_GAIN).toFixed(4)}
   #define SUNLIGHT vec3(${SUNLIGHT.map((v) => v.toFixed(3)).join(', ')})
   #define EARTHLIGHT vec3(${EARTHLIGHT.map((v) => v.toFixed(3)).join(', ')})
-  uniform sampler2D uAlbedo; uniform sampler2D uRelief; uniform vec3 uSun; uniform vec3 uPole; uniform vec3 uEarth; uniform float uEarthshine;
+  #define SOFT ${LIGHT_SOFTNESS.toFixed(3)}
+  #define KNEE ${TONE_KNEE.toFixed(3)}
+  uniform sampler2D uAlbedo; uniform sampler2D uRelief; uniform vec3 uSun; uniform vec3 uPole; uniform vec3 uEarth; uniform float uEarthshine; uniform float uExposure;
   varying vec2 vUv; varying vec3 vNormal; varying vec3 vView;
   void main() {
     vec3 n = normalize(vNormal); vec3 v = normalize(vView);
@@ -107,15 +123,20 @@ export const MOON_FRAGMENT = `
     vec3 north = cross(n, east);
     vec2 tilt = (texture2D(uRelief, vUv).rg * 2.0 - 1.0) * RELIEF_SCALE;
     vec3 bumped = normalize(n * sqrt(max(0.0, 1.0 - dot(tilt, tilt))) + east * tilt.x + north * tilt.y);
-    float mu0 = max(dot(bumped, uSun), 0.0), mu = max(dot(n, v), 0.0);
+    float b = dot(bumped, uSun);
+    float mu0 = b <= -SOFT ? 0.0 : (b >= SOFT ? b : (b + SOFT) * (b + SOFT) / (4.0 * SOFT));
+    float mu = max(dot(n, v), 0.0);
     // the terminator follows the sphere, not the bumps, so it stays sharp and round
     mu0 *= smoothstep(-0.02, 0.03, dot(n, uSun));
     float alpha = degrees(acos(clamp(dot(uSun, v), -1.0, 1.0)));
     float L = clamp(1.0 - 0.019 * alpha + 2.42e-4 * alpha * alpha - 1.46e-6 * alpha * alpha * alpha, 0.0, 1.0);
-    float sunlit = L * 2.0 * mu0 / (mu0 + mu + 1e-4) + (1.0 - L) * mu0;
+    float sunlit = (L * 2.0 * mu0 / (mu0 + mu + 1e-4) + (1.0 - L) * mu0) * uExposure;
     float earthlit = uEarthshine * max(dot(n, uEarth), 0.0);
     vec3 albedo = texture2D(uAlbedo, vUv).rgb;
     vec3 color = albedo * (SUNLIGHT * sunlit + EARTHLIGHT * earthlit);
+    // a gentle shoulder above the knee, so the bright highlands keep their detail at full
+    vec3 over = max(color - KNEE, 0.0);
+    color = min(color, vec3(KNEE)) + (1.0 - KNEE) * (1.0 - exp(-over / (1.0 - KNEE)));
     gl_FragColor = vec4(color, 1.0);
     #include <colorspace_fragment>
   }`;
@@ -136,7 +157,7 @@ const SATELLITE_FRAGMENT = `
  * @param {number} [input.satellites] how many satellites to draw.
  * @param {Date} [input.date] the moment the scene is set for (real Sun, tilt and Moon phase).
  * @param {number} [input.moonTier] width of the Moon maps, one of MOON_TIERS.
- * @returns {{group: THREE.Group, scene: object, update(elapsed: number): void, readout(elapsed: number, viewer: THREE.Vector3): string, setPixelRatio(ratio: number): void, dispose(): void}}
+ * @returns {{group: THREE.Group, scene: object, moonView: object, update(elapsed: number): void, beforeRender(renderer: THREE.WebGLRenderer, camera: THREE.Camera): void, readout(elapsed: number, viewer: THREE.Vector3): string, setPixelRatio(ratio: number): void, dispose(): void}}
  */
 export function createEarthSystem({ scene, loadTexture, assetBase, pixelRatio, satellites = 9, date = new Date(), moonTier = 2048 }) {
   const model = earthScene(date);
@@ -170,12 +191,12 @@ export function createEarthSystem({ scene, loadTexture, assetBase, pixelRatio, s
   halo.renderOrder = 4;
   group.add(halo);
 
-  // ---- Moon, lit by the same Sun and nothing else ----
+  // ---- Moon, shown and lit as New York sees it tonight (moonView.js) ----
   // Stand-ins until the maps land, so the program is compiled once: mid grey, and a flat relief.
   const grey = new THREE.DataTexture(new Uint8Array([128, 128, 128, 255]), 1, 1); grey.colorSpace = THREE.SRGBColorSpace; grey.needsUpdate = true;
   const flat = new THREE.DataTexture(new Uint8Array([128, 128, 128, 255]), 1, 1); flat.needsUpdate = true;
   const moonMaterial = new THREE.ShaderMaterial({
-    uniforms: { uAlbedo: { value: grey }, uRelief: { value: flat }, uSun: { value: sun }, uPole: { value: new THREE.Vector3(...model.moonPole) }, uEarth: { value: new THREE.Vector3() }, uEarthshine: { value: 0 } },
+    uniforms: { uAlbedo: { value: grey }, uRelief: { value: flat }, uSun: { value: new THREE.Vector3(0, 0, 1) }, uPole: { value: new THREE.Vector3(...model.moonPole) }, uEarth: { value: new THREE.Vector3(0, 0, 1) }, uEarthshine: { value: 0 }, uExposure: { value: 1 } },
     vertexShader: EARTH_VERTEX, fragmentShader: MOON_FRAGMENT,
   });
   const tier = MOON_TIERS.includes(moonTier) ? moonTier : 2048;
@@ -185,6 +206,41 @@ export function createEarthSystem({ scene, loadTexture, assetBase, pixelRatio, s
   const moon = new THREE.Mesh(new THREE.SphereGeometry(MOON_RADIUS, 64, 48), moonMaterial);
   scene.add(moon);
   const basis = new THREE.Matrix4(), axisX = new THREE.Vector3(), axisY = new THREE.Vector3(), axisZ = new THREE.Vector3();
+  // Tonight's Moon from New York: the phase now, and the tilt now or at the next moonrise
+  // (the Tonight tile's own source). Refreshed on the minute against the wall clock, so
+  // a page left open past midnight moves on with the real date; never per frame.
+  const startedAt = Date.now();
+  let view = moonTonight(date), viewAt = startedAt;
+  const applyView = () => {
+    moonMaterial.uniforms.uEarthshine.value = EARTHSHINE * (1 - view.fraction);   // how full the Earth looks from the Moon
+    moonMaterial.uniforms.uExposure.value = moonExposure(view.phaseAngle);
+  };
+  applyView();
+  const refreshView = () => {
+    const wall = Date.now();
+    if (wall - viewAt < 60000) return;
+    viewAt = wall;
+    view = moonTonight(new Date(date.getTime() + (wall - startedAt)));
+    applyView();
+  };
+  // scratch for the per-render pose: no allocation per frame
+  const moonAt = [0, 0, 0], cameraAt = [0, 0, 0], cameraUp = [0, 0, 0], light = [0, 0, 0];
+  const frame = { r: [0, 0, 0], u: [0, 0, 0], v: [0, 0, 0], distance: 1 };
+  const moonAxes = { x: [0, 0, 0], y: [0, 0, 0], z: [0, 0, 0] };
+  /** Turn and light the Moon for a camera (world position, and screen up from its world matrix). */
+  const poseMoon = (camera) => {
+    camera.updateMatrixWorld();
+    const m = camera.matrixWorld.elements;
+    moonAt[0] = moon.position.x; moonAt[1] = moon.position.y; moonAt[2] = moon.position.z;
+    cameraAt[0] = m[12]; cameraAt[1] = m[13]; cameraAt[2] = m[14];
+    cameraUp[0] = m[4]; cameraUp[1] = m[5]; cameraUp[2] = m[6];
+    screenFrame(moonAt, cameraAt, cameraUp, frame);
+    newYorkBasis(frame, view, moonAxes);
+    moon.quaternion.setFromRotationMatrix(basis.makeBasis(axisX.fromArray(moonAxes.x), axisY.fromArray(moonAxes.y), axisZ.fromArray(moonAxes.z)));
+    moonMaterial.uniforms.uPole.value.fromArray(moonAxes.y);
+    moonMaterial.uniforms.uSun.value.fromArray(newYorkLight(frame, view, light, Math.asin(Math.min(1, MOON_RADIUS / frame.distance))));
+    moonMaterial.uniforms.uEarth.value.fromArray(frame.v);   // earthshine from the observer's side, as from the Earth
+  };
 
   // ---- satellites ----
   const orbits = satelliteOrbits(satellites);
@@ -207,15 +263,17 @@ export function createEarthSystem({ scene, loadTexture, assetBase, pixelRatio, s
       spinQuaternion.setFromAxisAngle(UP, earthSpin(model.spinAtLoad, elapsed));
       earth.quaternion.copy(align).multiply(spinQuaternion);
       earthMaterial.uniforms.uCloudShift.value = (elapsed / 900000) % 1;   // clouds drift west to east over the ground
-      const d = moonDirection(model, elapsed), b = moonBasis(model, d);
+      const d = moonDirection(model, elapsed);
       moon.position.set(centre.x + d[0] * MOON_ORBIT_RADIUS, centre.y + d[1] * MOON_ORBIT_RADIUS, centre.z + d[2] * MOON_ORBIT_RADIUS);
-      moon.quaternion.setFromRotationMatrix(basis.makeBasis(axisX.set(...b.x), axisY.set(...b.y), axisZ.set(...b.z)));   // the near side faces Earth
-      moonMaterial.uniforms.uEarth.value.set(-d[0], -d[1], -d[2]);
-      moonMaterial.uniforms.uEarthshine.value = EARTHSHINE * earthshineFactor(model.sunDir, d);
+      refreshView();
       for (let i = 0; i < orbits.length; i++) { const p = satellitePosition(orbits[i], elapsed, model); satPositions[i * 3] = p[0]; satPositions[i * 3 + 1] = p[1]; satPositions[i * 3 + 2] = p[2]; }
       satGeometry.attributes.position.needsUpdate = true;
       satMaterial.uniforms.uTime.value = elapsed;
     },
+    /** Turn and light the Moon for the camera about to draw (it travels with scroll; the Moon orbits). */
+    beforeRender(renderer, camera) { poseMoon(camera); },
+    /** Tonight's Moon from New York as the scene uses it (moonTonight), for tests and the tile's agreement check. */
+    get moonView() { return view; },
     /** The city passing under the viewer and its time on the scene's clock. */
     readout(elapsed, viewer) { return overReadout(model, elapsed, [viewer.x, viewer.y, viewer.z], date); },
     /** Satellite points are sized in device pixels; keep them the same size on screen when the canvas resolution changes. */

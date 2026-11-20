@@ -4,21 +4,26 @@
 // satellites near the first chapter. Real where it matters (today's solar
 // declination sets the axial tilt against the Sun, the subsolar point sets
 // where the terminator falls at load, the Moon starts where it truly is
-// tonight against the Earth and the Sun, in its true orbit plane, with its
-// own tilted axis and the near side toward the Earth), stylised where reality
-// is invisible (the Earth turns once in a few minutes, the Moon orbits in ten
-// minutes, and sits under two Earth radii out instead of sixty, close enough
-// to share the frame). No Three.js here so every rule is unit tested; the
-// scene applies the vectors.
+// tonight against the Earth and the Sun, in its true orbit plane), stylised
+// where reality is invisible (the Earth turns once in a few minutes, the Moon
+// orbits in ten minutes, and sits under two Earth radii out instead of sixty,
+// close enough to share the frame); the Moon's light and face are New York's
+// (below). No Three.js here so every rule is unit tested; the scene applies
+// the vectors.
 //
-// The Moon's phase and the moving orbit. The Moon is lit by the scene's one
-// Sun, so its phase is never painted: it is whatever the geometry gives. At
-// load (and for good under reduced motion, which holds elapsed at 0) the
-// Earth to Moon line is tonight's true line from moonModel.js, so the Sun
-// lights exactly tonight's share of the side facing the Earth. The ten-minute
-// orbit then carries it on from there, through the month's phases. The camera
-// is not on the Earth, so it sees the Moon from a little off that line; what
-// New York sees tonight is drawn on the Bento "Tonight" tile.
+// The Moon's place and its light. At load (and for good under reduced
+// motion, which holds elapsed at 0) the Earth to Moon line is tonight's true
+// line from moonModel.js, in the true orbit plane, and the ten-minute orbit
+// carries it on from there. Its light is not this Sun's: the scene's one Sun
+// lights the Earth, but from the prologue camera, outside the system, a Moon
+// lit by it would show roughly the Earth's own phase. So the Moon is shown
+// and lit as New York sees it tonight (moonView.js, the one departure from
+// single-Sun physics in the scene): tonight's illuminated fraction with the
+// bright limb at New York's tilt on the screen, the face New York sees turned
+// to the camera, whatever the Moon's place on the orbit or the camera's. The
+// functions below that relate the Moon to this Sun (moonFractionSeen,
+// earthshineFactor, moonBasis) describe the physical geometry and are kept
+// for the tests that pin the orbit to the ephemeris.
 //
 // Frames. Everything is computed in an ecliptic frame (y = ecliptic north,
 // x = the vernal equinox, z = toward the point of ecliptic longitude 270°)
