@@ -1,6 +1,6 @@
 /* eslint-disable testing-library/render-result-naming-convention */
 import fs from 'fs';
-import { createSkyRenderer } from './skyRenderer';
+import { LIVE_SUN_URL, createSkyRenderer, terminatorOffset } from './skyRenderer';
 import { fakeContext } from './testUtils';
 
 /** A minimal canvas stand-in whose context records every call. */
@@ -95,5 +95,60 @@ describe('createSkyRenderer', () => {
     jest.advanceTimersByTime(15 * 60 * 1000);
     expect(liveLoads()).toBe(2);
     global.Image = RealImage;
+  });
+});
+
+describe('the Moon terminator', () => {
+  it('matches the lit fraction: the shadow edge sits at 1 - 2k of the radius', () => {
+    expect(terminatorOffset(0)).toBe(1);        // new Moon: the shadow covers the disc
+    expect(terminatorOffset(0.5)).toBe(0);      // half Moon: a straight edge down the middle
+    expect(terminatorOffset(1)).toBe(-1);       // full Moon: no shadow
+    expect(terminatorOffset(0.25)).toBeCloseTo(0.5, 12);     // a crescent a quarter lit (cos(pi * k) drew 0.707 here)
+    expect(terminatorOffset(0.75)).toBeCloseTo(-0.5, 12);
+    expect(terminatorOffset(-3)).toBe(1); expect(terminatorOffset(7)).toBe(-1);
+  });
+
+  it('draws the shadow ellipse at that width', () => {
+    jest.useFakeTimers().setSystemTime(new Date(Date.UTC(2000, 0, 6, 18, 14) + 29.530588853 * 86400000 / 6));   // a sixth of a cycle after new Moon: a quarter lit
+    const calls = [];
+    const renderer = build(calls);
+    renderer.resize(1440, 900, 1);
+    renderer.setTheme('dark');
+    renderer.frame(1000);
+    const ellipses = calls.filter(([name]) => name === 'ellipse');
+    const [, , radiusX, radiusY] = ellipses[ellipses.length - 1][1];
+    expect(radiusX / radiusY).toBeCloseTo(0.5, 6);
+    renderer.destroy();
+  });
+});
+
+describe('the live Sun image', () => {
+  const online = Object.getOwnPropertyDescriptor(Navigator.prototype, 'onLine');
+  let requested, OriginalImage;
+  beforeEach(() => {
+    requested = [];
+    OriginalImage = global.Image;
+    global.Image = class FakeImage { set src(value) { requested.push(value); } };
+  });
+  afterEach(() => { global.Image = OriginalImage; Object.defineProperty(Navigator.prototype, 'onLine', online); jest.useRealTimers(); });
+  const withLiveSun = () => createSkyRenderer({ skyCanvas: fakeCanvas([]), liveCanvas: fakeCanvas([]), figures, assetBase: '/admin/sky/', doc: fakeDocument([]), liveSun: true });
+
+  it('is requested while online', () => {
+    Object.defineProperty(Navigator.prototype, 'onLine', { configurable: true, get: () => true });
+    const renderer = withLiveSun();
+    expect(requested.some((src) => src.startsWith(LIVE_SUN_URL))).toBe(true);
+    renderer.destroy();
+  });
+
+  it('is not requested while offline, so no failed load reaches the console; the next refresh tries again', () => {
+    jest.useFakeTimers();
+    let isOnline = false;
+    Object.defineProperty(Navigator.prototype, 'onLine', { configurable: true, get: () => isOnline });
+    const renderer = withLiveSun();
+    expect(requested.some((src) => src.startsWith(LIVE_SUN_URL))).toBe(false);
+    isOnline = true;
+    jest.advanceTimersByTime(15 * 60 * 1000);
+    expect(requested.some((src) => src.startsWith(LIVE_SUN_URL))).toBe(true);
+    renderer.destroy();
   });
 });

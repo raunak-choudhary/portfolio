@@ -1,6 +1,7 @@
 // src/services/adminDataService.js - shared admin operations
 
 import { supabase } from './supabaseClient';
+import { reportFailure } from '../utils/diagnostics';
 import { recordSave } from './adminSessionFacts';
 
 export const getAdminSupabaseClient = () => supabase;
@@ -258,7 +259,8 @@ export const saveAdminData = async (table, data, existingId = null) => {
     return result;
     
   } catch (error) {
-    console.error(`Admin save failed for ${table}:`, error);
+    // the typed error below reaches the manager; the console stays clean unless diagnostics are on
+    reportFailure(`Admin save failed for ${table}`, error);
     // Managers show error.message and keep their form state, so the typed
     // sentence reaches the owner and nothing typed is lost.
     const described = describeAdminWriteError(error);

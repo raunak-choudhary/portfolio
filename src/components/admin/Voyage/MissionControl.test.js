@@ -52,7 +52,7 @@ describe('MissionControl', () => {
     render({ motion: false });
     await flush();
     click([...tile().querySelectorAll('button')].find((b) => b.textContent === 'See all activity'));
-    expect(Element.prototype.scrollIntoView).toHaveBeenCalledWith({ behavior: 'auto', block: 'start' });
+    expect(Element.prototype.scrollIntoView).toHaveBeenCalledWith({ behavior: 'instant', block: 'start' });
     expect(Element.prototype.scrollIntoView.mock.instances[0].id).toBe(ACTIVITY_PANE_ID);
   });
 

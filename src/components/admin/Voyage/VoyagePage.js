@@ -24,6 +24,7 @@ import { recordVoyagePosition } from '../../../services/voyagePosition';
 import { markDashboardReady } from '../AdminWelcome/adminReadiness';
 import SkyBackground, { SKY_ASSET_BASE } from '../SkyBackground/SkyBackground';
 import SkyControls from '../SkyBackground/SkyControls';
+import { watchPixelRatio } from '../SkyBackground/watchPixelRatio';
 import { SkySettingsProvider, useSkySettings } from '../SkyBackground/SkySettingsContext';
 import { CHAPTERS, chapterIndex, chapterPlace } from './chapters';
 import DeckChapter from './DeckChapter';
@@ -42,9 +43,29 @@ import CommandPalette from './CommandPalette';
 import StarRail from './StarRail';
 import { createSkyField, webglAvailable } from './skyField';
 import { createSignal, useSignal } from './signal';
-import { MODES, SNAPSHOT_SCALE, adaptQuality, initialAdaptState, modeFor, pixelRatioFor, snapshotBlurPx, snapshotDue } from './renderBudget';
+import { MODES, SNAPSHOT_SCALE, SNAPSHOT_SETTLE_MS, adaptQuality, initialAdaptState, modeFor, pixelRatioFor, snapshotBlurPx, snapshotDue } from './renderBudget';
 import { isChapterLive, liveChapterIndex, qualityFor, routeFromTops, routePosition, greetingFor } from './voyageModel';
 import './Voyage.css';
+
+/** First wait before a failed glass snapshot is tried again; each further failure doubles it. */
+const SNAPSHOT_RETRY_MS = 2000;
+
+/**
+ * Gives back whatever WebGL context a canvas holds. Used when the 3D field
+ * could not be built: the renderer may already have taken a context before it
+ * threw, and browsers allow only a handful per page. Asking the canvas for a
+ * context returns the one it already has; every step is allowed to fail.
+ */
+export function releaseContext(canvas) {
+  for (const kind of ['webgl2', 'webgl']) {
+    try {
+      const gl = canvas?.getContext?.(kind);
+      const lose = gl?.getExtension?.('WEBGL_lose_context');
+      if (lose) { lose.loseContext(); return true; }
+    } catch { /* nothing to give back */ }
+  }
+  return false;
+}
 
 /** Names of the constellations, from figures.json, for the rail and the palette. */
 // chapter kinds with their own component; the rest show the placeholder until their unit
@@ -92,6 +113,11 @@ function VoyageView({ requireSecurityEnrollment }) {
   const [activeSignal] = useState(() => createSignal(0)), [overSignal] = useState(() => createSignal(''));
   const { toast, notify } = useToast();
   const [webgl] = useState(() => webglAvailable());
+  // The probe can pass and the real renderer still be refused (a GPU reset, a shader the driver
+  // rejects). The page then stands on the 2D sky, exactly as it does without WebGL.
+  const [fieldFailed, setFieldFailed] = useState(false);
+  const use3d = webgl && !fieldFailed;
+  const pictureChangedAt = useRef(null);   // when a texture last landed or the GPU context came back; the glass snapshot is retaken once it settles
   const canvasRef = useRef(null), fieldRef = useRef(null), stageRefs = useRef([]);
   const routeRef = useRef(0);   // the camera's route coordinate, kept for the sign-out film's backdrop
   const names = useMemo(() => namesFrom(figures), [figures]);
@@ -152,19 +178,28 @@ function VoyageView({ requireSecurityEnrollment }) {
 
   // ---- the field ----
   useEffect(() => {
-    if (!webgl || !figures || !canvasRef.current) return undefined;
+    if (!use3d || !figures || !canvasRef.current) return undefined;
     const quality = qualityFor({ width: window.innerWidth, devicePixelRatio: window.devicePixelRatio || 1, reducedMotion: !effectiveMotion, webgl: true, sky: modeRef.current });
     let field;
     try {
-      field = createSkyField({ canvas: canvasRef.current, figures, deepManifest: deep, assetBase: SKY_ASSET_BASE, quality, theme: resolvedTheme, smallTextures: window.innerWidth < 768 });
-    } catch { return undefined; }   // a GPU refusal falls through to the 2D sky on the next render
+      field = createSkyField({
+        canvas: canvasRef.current, figures, deepManifest: deep, assetBase: SKY_ASSET_BASE, quality, theme: resolvedTheme, smallTextures: window.innerWidth < 768,
+        onPictureChange: () => { pictureChangedAt.current = performance.now(); },
+      });
+    } catch {
+      // A GPU refusal: the next render shows the 2D sky. The renderer may have taken a WebGL context
+      // before it threw; it is given back, or it would count against the browser's limit until collected.
+      releaseContext(canvasRef.current);
+      setFieldFailed(true);
+      return undefined;
+    }
     fieldRef.current = field;
     const resize = () => { field.resize(window.innerWidth, window.innerHeight); snapshotStale.current = true; };
     resize();
     window.addEventListener('resize', resize);
     return () => { window.removeEventListener('resize', resize); field.dispose(); fieldRef.current = null; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [webgl, figures, deep]);
+  }, [use3d, figures, deep]);
   useEffect(() => { fieldRef.current?.setTheme(resolvedTheme); snapshotStale.current = true; }, [resolvedTheme, figures]);
   useEffect(() => { snapshotStale.current = true; }, [settings.blur, mode]);
   // The mode on the page (for the panel fade) and on <html> (for the record dialog, portalled outside the page).
@@ -187,6 +222,8 @@ function VoyageView({ requireSecurityEnrollment }) {
     const resizeObserver = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(invalidate) : null;
     stageRefs.current.forEach((el) => el && resizeObserver?.observe(el));
     window.addEventListener('resize', invalidate);
+    // Dragging the window to a screen with another pixel density fires no resize; the canvas resolution follows it here.
+    const unwatchRatio = watchPixelRatio(() => { fieldRef.current?.setQuality({ pixelRatio: ratioFor(adapt.level), level: adapt.level }); snapshotStale.current = true; });
     const scrollFraction = () => { if (!tops) measure(); return routeFromTops(window.scrollY, tops, window.innerHeight - TOP_BAR) / Math.max(1, CHAPTERS.length - 1); };
 
     // Adaptive resolution: a long run of slow frames lowers the pixel ratio a step, a longer run of fast ones raises it.
@@ -194,18 +231,23 @@ function VoyageView({ requireSecurityEnrollment }) {
     const ratioFor = (level) => pixelRatioFor({ mode: modeRef.current, devicePixelRatio: window.devicePixelRatio || 1, phone: window.innerWidth < 768, level });
     // The working mode's glass: a small blurred still of the sky, taken when the camera rests.
     let stillSince = null, snapshotF = null, snapshotUrl = null, taking = false;
+    // A still that fails is owed again, but not on the very next frame: an encoder that keeps
+    // refusing would cost a full extra render per frame. Each failure doubles the wait, up to 30 s.
+    let retryAt = 0, retryWait = SNAPSHOT_RETRY_MS;
+    const snapshotFailed = () => { taking = false; snapshotStale.current = true; retryAt = performance.now() + retryWait; retryWait = Math.min(retryWait * 2, 30000); };
     const takeSnapshot = (field, f) => {
       taking = true;
       snapshotStale.current = false;
       const blur = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sky-blur')) || 5;
       field.snapshot({ scale: SNAPSHOT_SCALE, blurPx: snapshotBlurPx(blur) }).then((blob) => {
-        taking = false;
-        if (stopped || !blob) return;
+        // A still that could not be used (the tab went hidden, the encoder refused) is owed again, after a wait.
+        if (stopped || !blob) { snapshotFailed(); return; }
+        taking = false; retryWait = SNAPSHOT_RETRY_MS;
         const url = URL.createObjectURL(blob);
         document.documentElement.style.setProperty(SNAPSHOT_PROPERTY, `url("${url}")`);
         if (snapshotUrl) URL.revokeObjectURL(snapshotUrl);
         snapshotUrl = url; snapshotF = f;
-      }, () => { taking = false; });
+      }, snapshotFailed);
     };
 
     const tick = (now) => {
@@ -229,7 +271,9 @@ function VoyageView({ requireSecurityEnrollment }) {
           if (adapt.changed) field.setQuality({ pixelRatio: ratioFor(adapt.level), level: adapt.level });   // the day Sun's surface buffer steps down with the canvas
         }
         stillSince = route.settled ? (stillSince ?? now) : null;
-        if (modeRef.current === 'working' && !taking && snapshotDue({ hasSnapshot: snapshotUrl !== null, stillForMs: stillSince === null ? 0 : now - stillSince, f: route.f, snapshotF, stale: snapshotStale.current })) takeSnapshot(field, route.f);
+        // Textures arrive in a burst after the first stills; one retake once the burst is over, not one per texture.
+        if (pictureChangedAt.current !== null && performance.now() - pictureChangedAt.current > SNAPSHOT_SETTLE_MS) { pictureChangedAt.current = null; snapshotStale.current = true; }
+        if (modeRef.current === 'working' && !taking && now >= retryAt && snapshotDue({ hasSnapshot: snapshotUrl !== null, stillForMs: stillSince === null ? 0 : now - stillSince, f: route.f, snapshotF, stale: snapshotStale.current })) takeSnapshot(field, route.f);
       }
       lastFrameAt = now;
       frame = requestAnimationFrame(tick);
@@ -241,6 +285,7 @@ function VoyageView({ requireSecurityEnrollment }) {
       stopped = true; cancelAnimationFrame(frame);
       document.removeEventListener('visibilitychange', onVisibility);
       window.removeEventListener('resize', invalidate);
+      unwatchRatio();
       resizeObserver?.disconnect();
       document.documentElement.style.removeProperty(SNAPSHOT_PROPERTY);
       if (snapshotUrl) URL.revokeObjectURL(snapshotUrl);
@@ -250,7 +295,8 @@ function VoyageView({ requireSecurityEnrollment }) {
   const jump = useCallback((i) => {
     const el = stageRefs.current[i];
     const top = el ? Math.max(0, el.offsetTop - 56) : 0;
-    window.scrollTo({ top, behavior: effectiveMotion ? 'smooth' : 'auto' });
+    // 'instant', not 'auto': auto defers to the public stylesheet's `scroll-behavior: smooth`, which would glide with motion off
+    window.scrollTo({ top, behavior: effectiveMotion ? 'smooth' : 'instant' });
   }, [effectiveMotion]);
   const go = useCallback((id) => jump(Math.max(0, chapterIndex(id))), [jump]);
 
@@ -274,7 +320,7 @@ function VoyageView({ requireSecurityEnrollment }) {
   useEffect(() => () => resetRecordIntent(), []);
   useEffect(() => {
     if (!queueAsked) return;
-    document.getElementById(FIX_QUEUE_ID)?.scrollIntoView({ behavior: effectiveMotion ? 'smooth' : 'auto', block: 'start' });
+    document.getElementById(FIX_QUEUE_ID)?.scrollIntoView({ behavior: effectiveMotion ? 'smooth' : 'instant', block: 'start' });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queueAsked]);
   // a walk ended: the health tile reloads with the queue
@@ -287,7 +333,9 @@ function VoyageView({ requireSecurityEnrollment }) {
   // The film on /adminsignout plays over this same sky, frozen where the camera is now.
   const signOut = useCallback(() => {
     recordVoyagePosition({ f: routeRef.current, theme: resolvedTheme });
-    window.location.assign('/adminsignout');
+    // replace, not assign: the dashboard must not stay in history, or Back after signing out
+    // could bring it back from the back-forward cache with the records still on screen
+    window.location.replace('/adminsignout');
   }, [resolvedTheme]);
   const actions = useMemo(() => [
     { id: 'signout', label: 'Sign out', hint: 'the film plays', run: signOut },
@@ -299,8 +347,8 @@ function VoyageView({ requireSecurityEnrollment }) {
   const countFor = (chapter) => { const s = data.stats; if (!s || !chapter.table) return null; const key = { hero_content: null, about_content: null, projects: 'projects', internships: 'internships', education: 'education', work_experience: 'workExperience', skills: 'skills', certifications: 'certifications', recommendations: 'recommendations', achievements: 'achievements', leadership: 'leadership', contact_messages: 'messages' }[chapter.table]; return key ? s[key] ?? null : null; };
 
   return (
-    <div className={`voyage${webgl ? ' voyage--webgl' : ' voyage--flat'}`} data-testid="voyage" data-mode={mode}>
-      {webgl ? <canvas ref={canvasRef} className="voyage-field" aria-hidden="true" /> : <div className="voyage-flat-sky"><SkyBackground motion={false} /></div>}
+    <div className={`voyage${use3d ? ' voyage--webgl' : ' voyage--flat'}`} data-testid="voyage" data-mode={mode}>
+      {use3d ? <canvas ref={canvasRef} className="voyage-field" aria-hidden="true" /> : <div className="voyage-flat-sky"><SkyBackground motion={false} /></div>}
       <header className="voyage-bar">
         <span className="voyage-bar__brand">RC · ADMIN</span>
         <span className="voyage-bar__hint">scroll to travel · <kbd>⌘K</kbd> jump anywhere</span>
@@ -342,9 +390,9 @@ function VoyageView({ requireSecurityEnrollment }) {
         ))}
       </main>
 
-      <LiveRail signal={activeSignal} onJump={jump} names={names} />
+      <LiveRail signal={activeSignal} onJump={jump} names={names} theme={resolvedTheme} />
       <Toast toast={toast} />
-      <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} onJump={jump} actions={actions} names={names} />
+      <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} onJump={jump} actions={actions} names={names} theme={resolvedTheme} />
     </div>
   );
 }

@@ -7,9 +7,16 @@
 
 import { supabase } from './supabaseClient';
 import { EDITED_TABLES } from './editedTables';
+import { nyDate, parseDbInstant } from '../components/admin/Voyage/insightsTime';
 
 const isoDaysAgo = (days) => new Date(Date.now() - days * 86400000).toISOString();
-const dayKey = (iso) => String(iso).slice(0, 10);
+/**
+ * The New York calendar day of an instant as "YYYY-MM-DD". Days are counted
+ * in New York like the rest of the analytics, and one function names the day
+ * for both the empty buckets and the rows, so a late-evening view can never
+ * fall on a key the series does not hold.
+ */
+const dayKey = (ms) => { const d = nyDate(ms); return `${d.y}-${String(d.m).padStart(2, '0')}-${String(d.d).padStart(2, '0')}`; };
 
 /**
  * Page views per day for the last `days` days, oldest first, with the
@@ -36,15 +43,16 @@ export async function getVisitorSeries(days = 30) {
 
 /** Pure: turns page-view rows into the daily series; exported for tests. */
 export function summarizeVisitorEvents(rows, days, now) {
-  const cutoff = new Date(now.getTime() - days * 86400000);
+  const cutoff = now.getTime() - days * 86400000;
   const byDay = new Map();
   const current = new Set(), previous = new Set();
-  for (let i = days - 1; i >= 0; i--) byDay.set(dayKey(new Date(now.getTime() - i * 86400000).toISOString()), { views: 0, sessions: new Set() });
+  for (let i = days - 1; i >= 0; i--) byDay.set(dayKey(now.getTime() - i * 86400000), { views: 0, sessions: new Set() });
   for (const row of rows) {
-    const when = new Date(row.created_at);
-    if (Number.isNaN(when.getTime())) continue;
+    // a stamp without a zone is UTC (parseDbInstant); Date would read it as local time
+    const when = parseDbInstant(row.created_at);
+    if (when === null) continue;
     if (when >= cutoff) {
-      const bucket = byDay.get(dayKey(when.toISOString()));
+      const bucket = byDay.get(dayKey(when));
       if (bucket) { bucket.views += 1; if (row.session_id) bucket.sessions.add(row.session_id); }
       if (row.session_id) current.add(row.session_id);
     } else if (row.session_id) previous.add(row.session_id);
@@ -89,6 +97,8 @@ export function normalizePage(label) {
 
 /**
  * Unread messages: the count and the newest three, only the fields a tile shows.
+ * "Unread" means what the inbox chapter means (inboxModel: not read, and not
+ * spam), so the tile and the inbox's Unread filter always show the same number.
  * @returns {Promise<{count: number, latest: Array<{id: string, name: string, subject: string, createdAt: string}>}>}
  */
 export async function getUnreadMessages() {
@@ -96,7 +106,8 @@ export async function getUnreadMessages() {
     const { data, error, count } = await supabase
       .from('contact_messages')
       .select('id, name, subject, created_at', { count: 'exact' })
-      .eq('status', 'unread')
+      .neq('status', 'read')
+      .not('is_spam', 'is', true)
       .order('created_at', { ascending: false })
       .limit(3);
     if (error) return { count: 0, latest: [] };
@@ -120,7 +131,7 @@ export async function getRecentEdits(limit = 6) {
       if (error || !Array.isArray(data)) return [];
       return data.filter((r) => r.updated_at).map((r) => ({ section, label: r[labelField] || section, at: r.updated_at }));
     }));
-    return results.flat().sort((a, b) => new Date(b.at) - new Date(a.at)).slice(0, limit);
+    return results.flat().sort((a, b) => (parseDbInstant(b.at) ?? 0) - (parseDbInstant(a.at) ?? 0)).slice(0, limit);
   } catch {
     return [];
   }
@@ -147,12 +158,14 @@ export async function getSectionFreshness() {
 
 /** Short relative time for tiles: "2 h ago", "3 d ago". */
 export function relativeTime(iso, now = new Date()) {
-  const ms = now.getTime() - new Date(iso).getTime();
-  if (!Number.isFinite(ms) || ms < 0) return 'just now';
+  const at = parseDbInstant(iso);   // zone-less database stamps are UTC
+  if (at === null) return 'just now';
+  const ms = now.getTime() - at;
+  if (ms < 0) return 'just now';
   const m = Math.round(ms / 60000), h = Math.round(ms / 3600000), d = Math.round(ms / 86400000);
   if (m < 1) return 'just now';
   if (m < 60) return `${m} min ago`;
   if (h < 24) return `${h} h ago`;
   if (d < 30) return `${d} d ago`;
-  return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  return new Date(at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 }

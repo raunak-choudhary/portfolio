@@ -446,6 +446,15 @@ export const pageNameForPath = (pathname = '') => {
   return pages.find((page) => pathname.includes(`/${page}`)) || 'home';
 };
 
+/**
+ * True for the admin's own routes (/adminlogin, /admindashboard, /adminsignout
+ * and anything under them). Visitor tracking never runs there: a signed-in
+ * admin's insert is refused by the database (the insert policy is for
+ * anonymous visitors), which printed an error on every dashboard load, and a
+ * signed-out visit to those routes was counted as a "home" view.
+ */
+export const isAdminPath = (pathname = '') => /^\/admin/i.test(String(pathname));
+
 let engagementTimer = null;
 
 /**
@@ -474,6 +483,9 @@ export const startEngagementTimer = () => {
 
   const fire = () => {
     stop();
+    // A visitor who has moved on to an admin route is not "engaged" with a page;
+    // the session's one engaged event stays unspent for a later public visit.
+    if (isAdminPath(window.location.pathname)) return;
     if (!markOncePerSession(ENGAGED_KEY)) return;
     insertEngagementEvent('engaged', pageNameForPath(window.location.pathname), {
       seconds: ENGAGED_AFTER_MS / 1000
@@ -528,6 +540,8 @@ export const resetEngagementTrackingForTests = () => {
  */
 export const initializeVisitorTracking = () => {
   if (!isAnalyticsEnabled()) return () => {};
+  // The admin is not a visitor page (see isAdminPath): no page view, no engaged clock.
+  if (isAdminPath(window.location.pathname)) return () => {};
   trackPageView(pageNameForPath(window.location.pathname), document.title);
   return startEngagementTimer();
 };

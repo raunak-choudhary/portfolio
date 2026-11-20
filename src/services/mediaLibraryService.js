@@ -228,8 +228,14 @@ export const createMediaLibraryItem = async ({
   if (bucket.isPublic) {
     previewUrl = getPublicUrl ? getPublicUrl(filePath) : null;
   } else if (createSignedUrl) {
-    previewUrl = await createSignedUrl(filePath, signedUrlExpiresIn);
-    previewExpiresIn = signedUrlExpiresIn;
+    // One file that cannot be signed must not fail its whole bucket: it is
+    // listed without a preview, and opening it asks for a fresh link.
+    try {
+      previewUrl = await createSignedUrl(filePath, signedUrlExpiresIn);
+      previewExpiresIn = signedUrlExpiresIn;
+    } catch {
+      previewUrl = null;
+    }
   }
 
   return {
@@ -251,26 +257,41 @@ export const createMediaLibraryItem = async ({
   };
 };
 
-const isFolderEntry = (entry = {}) => (
-  !entry.id &&
-  !entry.metadata &&
-  !String(entry.name || '').includes('.')
-);
+/**
+ * Storage lists a folder as an entry with neither an id nor metadata; a file
+ * always has both. The name is not consulted: a folder may contain a dot.
+ */
+const isFolderEntry = (entry = {}) => !entry.id && !entry.metadata;
+
+/** Entries asked for per storage request; a full page means there may be more. */
+export const LIST_PAGE_SIZE = 100;
+/** A stop for a listing that never comes back short (50 pages is 5,000 entries per folder). */
+const LIST_MAX_PAGES = 50;
 
 const listBucketFiles = async ({ bucket, prefix = '', depth = 0, maxDepth = 3 }) => {
   const storage = supabase.storage.from(bucket.id);
-  const { data, error } = await storage.list(prefix, {
-    limit: 100,
-    sortBy: { column: 'updated_at', order: 'desc' }
-  });
+  // Read the folder page by page until a page comes back short: one request
+  // returns at most LIST_PAGE_SIZE entries, and the rest would be dropped
+  // without a word. Sorted by name so the pages are stable between requests.
+  const entries = [];
+  for (let page = 0; page < LIST_MAX_PAGES; page += 1) {
+    const { data, error } = await storage.list(prefix, {
+      limit: LIST_PAGE_SIZE,
+      offset: page * LIST_PAGE_SIZE,
+      sortBy: { column: 'name', order: 'asc' }
+    });
 
-  if (error) {
-    throw error;
+    if (error) {
+      throw error;
+    }
+
+    entries.push(...(data || []));
+    if ((data || []).length < LIST_PAGE_SIZE) break;
   }
 
   const files = [];
 
-  for (const entry of data || []) {
+  for (const entry of entries) {
     const entryPath = prefix ? `${prefix}/${entry.name}` : entry.name;
 
     if (isFolderEntry(entry) && depth < maxDepth) {
@@ -292,8 +313,14 @@ const listBucketFiles = async ({ bucket, prefix = '', depth = 0, maxDepth = 3 })
   return files;
 };
 
+/**
+ * The rows that may point at stored files. A table that cannot be read is
+ * named in `failedTables`: without its rows every file it uses would read
+ * "Unknown", and the library has to say so instead of looking sure.
+ */
 const getReferenceRows = async (referenceTables = REFERENCE_TABLES) => {
   const rowsByTable = {};
+  const failedTables = [];
 
   await Promise.all(referenceTables.map(async ({ table, bucketFields }) => {
     const columns = Array.from(new Set(
@@ -306,17 +333,25 @@ const getReferenceRows = async (referenceTables = REFERENCE_TABLES) => {
       .from(table)
       .select(columns);
 
+    if (error) failedTables.push(table);
     rowsByTable[table] = error ? [] : (data || []);
   }));
 
-  return rowsByTable;
+  return { rowsByTable, failedTables: failedTables.sort() };
 };
+
+/**
+ * How long a private file's thumbnail link lasts. An hour, so plates shown
+ * later by "Show more" still load; opening a file always signs a fresh,
+ * short link (createMediaSignedUrl).
+ */
+export const PREVIEW_LINK_SECONDS = 3600;
 
 export const getMediaLibrarySnapshot = async ({
   buckets = MEDIA_LIBRARY_BUCKETS,
   referenceTables = REFERENCE_TABLES
 } = {}) => {
-  const rowsByTable = await getReferenceRows(referenceTables);
+  const { rowsByTable, failedTables } = await getReferenceRows(referenceTables);
   const referencedPaths = collectReferencedMediaPaths(rowsByTable, referenceTables);
   const bucketSummaries = [];
   const items = [];
@@ -331,6 +366,7 @@ export const getMediaLibrarySnapshot = async ({
         filePath: file.path,
         referencedPaths,
         getPublicUrl: (path) => storage.getPublicUrl(path).data.publicUrl,
+        signedUrlExpiresIn: PREVIEW_LINK_SECONDS,
         createSignedUrl: async (path, expiresIn) => {
           const { data, error } = await storage.createSignedUrl(path, expiresIn);
           if (error) {
@@ -374,6 +410,8 @@ export const getMediaLibrarySnapshot = async ({
       privateFiles: items.filter(item => item.isPrivate).length,
       publicFiles: items.filter(item => !item.isPrivate).length
     },
+    // tables whose rows could not be read; their files show as Unknown for that reason alone
+    referenceErrors: failedTables,
     generatedAt: new Date().toISOString()
   };
 };

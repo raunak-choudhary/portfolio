@@ -1,6 +1,6 @@
 import {
   ACTIONS, FILTERS, INQUIRY_LABELS, applyPatch, attachmentsOf, bulkActionsFor, countMessages, formatStamp, humanize, inquiryLabel,
-  mergeRows, patchFor, preview, pruneSelection, replyHref, roleLabel, selectionState, stampsFor, telegramNumber, toggleAll, toggleId, visibleMessages,
+  mergeRows, patchFor, preview, pruneSelection, replyAddress, replyHref, roleLabel, selectionState, stampsFor, telegramNumber, toggleAll, toggleId, visibleMessages,
 } from './inboxModel';
 
 const msg = (id, extra = {}) => ({ id, name: `Sender ${id}`, email: `${id}@example.com`, subject: `Subject ${id}`, message: 'Hello', status: 'read', priority: 'normal', is_starred: false, is_archived: false, is_spam: false, created_at: '2026-11-10T10:00:00Z', ...extra });
@@ -150,5 +150,24 @@ describe('inbox selection', () => {
     const s = new Set(['a', 'b']);
     expect([...pruneSelection(s, ['b', 'c'])]).toEqual(['b']);
     expect(pruneSelection(s, ['a', 'b', 'c'])).toBe(s);
+  });
+});
+
+describe('database stamps and reply addresses (deep pass 2026-11-20)', () => {
+  it('reads a stamp without a zone as UTC, the way the database stores it', () => {
+    // PostgREST sends "timestamp without time zone" columns with no zone; Date.parse
+    // would take them as local time and show them hours off
+    expect(formatStamp('2026-11-18T14:08:00')).toBe(formatStamp('2026-11-18T14:08:00Z'));
+    expect(formatStamp('2026-11-18 14:08:00.204377')).toBe(formatStamp('2026-11-18T14:08:00.204Z'));
+    expect(formatStamp(null)).toBe('');
+  });
+
+  it('refuses an address that could add a second recipient to the reply', () => {
+    expect(replyAddress('a@example.com')).toBe('a@example.com');
+    expect(replyAddress('a%40x.com%2Cb@c.com')).toBeNull();
+    expect(replyAddress('a@example.com,b@example.com')).toBeNull();
+    expect(replyAddress('a@example.com;b@example.com')).toBeNull();
+    expect(replyHref({ email: 'a%40x.com%2Cb@c.com', subject: 'Hi' })).toBeNull();
+    expect(replyHref({ email: 'first.last+tag@example.com', subject: '' })).toBe('mailto:first.last%2Btag@example.com?subject=Re%3A%20your%20message');
   });
 });

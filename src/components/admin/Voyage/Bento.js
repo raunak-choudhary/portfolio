@@ -8,7 +8,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { DndContext, PointerSensor, KeyboardSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, arrayMove, rectSortingStrategy, sortableKeyboardCoordinates, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Activity, Inbox, ListChecks, ShieldCheck, Sparkles, TrendingUp, Wrench } from 'lucide-react';
+import { Activity, GripVertical, Inbox, ListChecks, ShieldCheck, Sparkles, TrendingUp, Wrench } from 'lucide-react';
 import TonightTile from './TonightTile';
 import { relativeTime } from '../../../services/voyageData';
 import { describe as describeActivity, sentenceText, tileWhen } from './activityModel';
@@ -52,7 +52,7 @@ function TileBody({ id, data, onGo, onSeeActivity, now }) {
     }
     case 'visitors': {
       const v = data.visitors; const change = v ? percentChange(v.totalVisitors, v.previousVisitors) : null;
-      return <><h5><TrendingUp size={14} /> Visitors · 30 days</h5><div className="tile__big">{v ? v.totalVisitors.toLocaleString() : '…'}{change !== null && <small>{change >= 0 ? '+' : ''}{change}%</small>}</div><Sparkline values={(v?.days || []).map((d) => d.views)} /></>;
+      return <><h5><TrendingUp size={14} /> Visitors · 30 days</h5><div className="tile__big">{v ? v.totalVisitors.toLocaleString() : '…'}{change !== null && <small>{change >= 0 ? '+' : ''}{change}%</small>}</div><div className="tile__note">sessions · the line is page views per day</div><Sparkline values={(v?.days || []).map((d) => d.views)} /></>;
     }
     case 'inbox':
       return <><h5><Inbox size={14} /> Inbox</h5><div className="tile__big">{data.inbox ? data.inbox.count : '…'}<small>unread</small></div><div className="tile__muted">{data.inbox?.latest?.[0] ? `${data.inbox.latest[0].name} · ${relativeTime(data.inbox.latest[0].createdAt)}` : 'Nothing waiting.'}</div><button type="button" className="tile__link" onClick={() => onGo('inbox')}>Open the inbox</button></>;
@@ -117,11 +117,22 @@ function RecentActivity({ data, onSeeActivity, now }) {
 // space. The last-row gap at six columns is closed in CSS.
 const SPANS = { health: 'w2', visitors: 'w2', inbox: 'w2', fixes: 'w2', sections: 'w2', edits: 'w2', pages: 'w2', tonight: 'w2' };
 
+/** What each tile is called on its drag handle. */
+export const TILE_NAMES = { health: 'Health', visitors: 'Visitors', inbox: 'Inbox', fixes: 'Fix next', sections: 'Sections', edits: 'Recent activity', pages: 'Top pages', tonight: 'Tonight' };
+
+/**
+ * One tile. Dragging starts only from the grip in its corner
+ * (`setActivatorNodeRef`): with the listeners on the whole tile, Enter or
+ * Space on a button inside it ("Open the inbox") started a keyboard drag and
+ * the click never happened, and the tile itself was announced as a button
+ * with buttons inside.
+ */
 function SortableTile({ id, children }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id });
   return (
-    <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition }} className={`voyage-pane tile ${SPANS[id]}${isDragging ? ' is-dragging' : ''}`} {...attributes} {...listeners}>
+    <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition }} className={`voyage-pane tile ${SPANS[id]}${isDragging ? ' is-dragging' : ''}`} data-tile={id}>
       {children}
+      <button type="button" ref={setActivatorNodeRef} className="tile__grip" aria-label={`Move the ${TILE_NAMES[id] ?? id} tile`} title="Drag to reorder" {...attributes} {...listeners}><GripVertical size={16} aria-hidden="true" /></button>
     </div>
   );
 }

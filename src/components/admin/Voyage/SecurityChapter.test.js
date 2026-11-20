@@ -142,6 +142,20 @@ describe('SecurityChapter', () => {
     expect(root.querySelector('#sec-everywhere').textContent).toBe('Ends this session and every other browser or device signed in as you.');
   });
 
+  it('says the level could not be read, never "one step", when the session facts fail', async () => {
+    auth.getSessionFacts.mockResolvedValueOnce({ success: false, error: 'offline' });
+    const root = await render();
+    const unknown = root.querySelector('[data-testid="sec-session-unknown"]');
+    expect(unknown.textContent).toContain('Could not be read');
+    expect(root.querySelector('.sec-facts').textContent).not.toContain('One step only');
+    expect(root.querySelector('.sec-facts').textContent).not.toContain('Content changes are refused');
+    // "Check again" re-reads; the session answers this time
+    await act(async () => { click(buttonNamed(unknown, 'Check again')); });
+    await flush();
+    expect(root.querySelector('[data-testid="sec-session-unknown"]')).toBeNull();
+    expect(root.querySelector('.sec-facts').textContent).toContain('Both steps passed');
+  });
+
   it('leaves the sign-in time out when the session does not carry one', async () => {
     given({ methods: [{ method: 'oauth', timestamp: null }, { method: 'totp', timestamp: null }] });
     const root = await render();

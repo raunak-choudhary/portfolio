@@ -176,9 +176,15 @@
    list tiles in a row end together instead of one leaving the others
    standing in empty space, and scroll inside the tile with the shared
    visible scrollbar. */
-.tile { padding: 14px 16px; display: grid; grid-template-rows: auto minmax(0, 1fr); align-content: start; gap: 6px; min-width: 0; cursor: grab; touch-action: manipulation; }
-.tile:active { cursor: grabbing; }
+.tile { position: relative; padding: 14px 16px; display: grid; grid-template-rows: auto minmax(0, 1fr); align-content: start; gap: 6px; min-width: 0; touch-action: manipulation; }
 .tile.is-dragging { opacity: .6; z-index: 2; }
+/* The drag handle: the only part of a tile that starts a drag, so the buttons inside a tile stay ordinary buttons. */
+.tile > h5 { padding-right: 30px; }
+.tile__grip { position: absolute; top: 8px; right: 8px; width: 28px; height: 28px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 8px; background: transparent; color: var(--voyage-muted); cursor: grab; touch-action: none; opacity: .55; }
+.tile__grip:hover, .tile__grip:focus-visible, .tile.is-dragging .tile__grip { opacity: 1; background: var(--voyage-soft-strong); }
+.tile__grip:focus-visible { outline: 2px solid var(--voyage-accent); outline-offset: 1px; }
+.tile__grip:active, .tile.is-dragging .tile__grip { cursor: grabbing; }
+.tile__note { font: 500 11px system-ui, sans-serif; color: var(--voyage-muted); }
 .tile h5 { margin: 0; display: flex; align-items: center; gap: 6px; font-family: var(--voyage-cond); font-weight: 600; letter-spacing: .2em; font-size: 11px; text-transform: uppercase; color: var(--voyage-muted); }
 .tile .tile__big { font-family: var(--voyage-cond); font-weight: 700; font-size: 40px; line-height: 1; }
 .tile .tile__big small { font-size: 14px; color: var(--voyage-muted); font-weight: 500; margin-left: 6px; letter-spacing: .1em; }
@@ -249,7 +255,8 @@
 /* ---- palette ---- */
 .voyage-palette { position: fixed; inset: 0; z-index: 30; display: grid; place-items: start center; padding-top: 12vh; background: rgba(0, 0, 0, .4); }
 .voyage-palette__box { width: min(560px, 92vw); padding: 10px; border-radius: 16px; border: 1px solid var(--voyage-line); background: rgba(10, 16, 32, .95); color: #e6edf7; box-shadow: 0 18px 50px rgba(0, 0, 0, .45); }
-[data-theme="light"] .voyage-palette__box { background: rgba(255, 255, 255, .96); color: #16212f; }
+/* The day palette is a near-white box on the warm dawn page, whose line and muted tokens are pale; it needs dark ones of its own. */
+[data-theme="light"] .voyage-palette__box { background: rgba(255, 255, 255, .96); color: #16212f; --voyage-line: rgba(22, 33, 47, .2); --voyage-muted: #566273; }
 .voyage-palette__input { width: 100%; box-sizing: border-box; font: 16px system-ui, sans-serif; color: inherit; background: transparent; border: 0; border-bottom: 1px solid var(--voyage-line); padding: 10px 8px; outline: none; }
 .voyage-palette__list { max-height: 44vh; overflow: auto; margin-top: 6px; }
 .voyage-palette__list [cmdk-group-heading] { font: 600 10px var(--voyage-cond); letter-spacing: .3em; text-transform: uppercase; color: var(--voyage-muted); padding: 10px 8px 4px; }

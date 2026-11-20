@@ -2,12 +2,14 @@
 import { ThemeProvider } from '../../../contexts/ThemeContext';
 import { CHAPTERS } from './chapters';
 import { VOYAGE_POSITION_KEY } from '../../../services/voyagePosition';
-import VoyagePage, { ENROLMENT_LOCK_TEXT, VOYAGE_ROOT_CLASS } from './VoyagePage';
+import VoyagePage, { ENROLMENT_LOCK_TEXT, VOYAGE_ROOT_CLASS, releaseContext } from './VoyagePage';
 import { React, act, click, mount, stubCanvas } from '../SkyBackground/testUtils';
 import { isDashboardReady, resetDashboardReady } from '../AdminWelcome/adminReadiness';
 import { openRecord, queueRequests, recordIntent, showQueue } from './recordIntent';
 
-jest.mock('./skyField', () => ({ createSkyField: jest.fn(), webglAvailable: () => false }));
+// WebGL is off unless a test raises the flag (the probe then passes and createSkyField decides).
+jest.mock('./skyField', () => ({ createSkyField: jest.fn(), webglAvailable: () => global.__voyageWebglProbe === true }));
+const { createSkyField } = jest.requireMock('./skyField');
 // cmdk ships package "exports" this Jest cannot resolve; the palette is verified in the real browser.
 // The stand-in honours the same props so the page's wiring (open on Cmd+K, jump, actions) is still exercised.
 jest.mock('./CommandPalette', () => {
@@ -118,6 +120,32 @@ describe('VoyagePage (2D fallback)', () => {
     document.body.style.removeProperty('transform');
   });
 
+  it('stands on the 2D sky when the WebGL probe passes but the renderer is refused', async () => {
+    global.__voyageWebglProbe = true;
+    createSkyField.mockImplementation(() => { throw new Error('WebGL context could not be created'); });
+    try {
+      const view = render();
+      await flush();
+      expect(createSkyField).toHaveBeenCalledTimes(1);
+      expect(view.container.querySelector('.voyage-field')).toBeNull();
+      expect(view.container.querySelector('.voyage--flat')).not.toBeNull();
+      expect(view.container.querySelector('.sky-background')).not.toBeNull();
+      expect(view.container.querySelectorAll('.voyage-chapter')).toHaveLength(CHAPTERS.length);
+      view.unmount();
+    } finally {
+      delete global.__voyageWebglProbe;
+    }
+  });
+
+  it('jumps without gliding when motion is off, whatever the stylesheet says', async () => {
+    window.matchMedia = (query) => ({ matches: /prefers-reduced-motion/.test(query) });
+    const view = render();
+    await flush();
+    click(view.container.querySelectorAll('.voyage-rail__dot')[4]);
+    expect(window.scrollTo).toHaveBeenCalledWith({ top: 0, behavior: 'instant' });
+    view.unmount();
+  });
+
   it('fills mission control with the loaded facts and counts the deck chapters', async () => {
     const view = render();
     await flush();
@@ -181,14 +209,15 @@ describe('VoyagePage (2D fallback)', () => {
     window.requestAnimationFrame.mockImplementation((cb) => { frames.push(cb); return frames.length; });
     const location = window.location;
     delete window.location;
-    window.location = { assign: jest.fn() };
+    window.location = { replace: jest.fn(), assign: jest.fn() };
     Object.defineProperty(window, 'scrollY', { configurable: true, value: 900 });
     try {
       const view = render();
       await flush();
       act(() => { frames.splice(0).forEach((cb) => cb(16)); });   // one frame of the loop: the stage tops are 0 in jsdom, so 900 px is past the last
       click(view.container.querySelector('.voyage-bar__button[aria-label="Sign out"]'));
-      expect(window.location.assign).toHaveBeenCalledWith('/adminsignout');
+      expect(window.location.replace).toHaveBeenCalledWith('/adminsignout');   // replace: the dashboard does not stay in history
+      expect(window.location.assign).not.toHaveBeenCalled();
       const recorded = JSON.parse(window.sessionStorage.getItem(VOYAGE_POSITION_KEY));
       expect(recorded).toEqual({ f: CHAPTERS.length - 1, chapter: 'security', theme: expect.stringMatching(/^(dark|light)$/) });
       view.unmount();
@@ -277,7 +306,7 @@ describe('VoyagePage (2D fallback)', () => {
   it('places the Security chapter and lets it hand over to the sign-out film', async () => {
     const location = window.location;
     delete window.location;
-    window.location = { assign: jest.fn() };
+    window.location = { replace: jest.fn(), assign: jest.fn() };
     try {
       const view = render();
       await flush();
@@ -285,11 +314,24 @@ describe('VoyagePage (2D fallback)', () => {
       expect(view.container.querySelector('#chapter-security .voyage-placeholder')).toBeNull();
       expect(view.container.querySelectorAll('.voyage-notice')).toHaveLength(0);
       click(view.container.querySelector('[data-testid="security-chapter"]'));
-      expect(window.location.assign).toHaveBeenCalledWith('/adminsignout');
+      expect(window.location.replace).toHaveBeenCalledWith('/adminsignout');   // replace: the dashboard does not stay in history
+      expect(window.location.assign).not.toHaveBeenCalled();
       expect(JSON.parse(window.sessionStorage.getItem(VOYAGE_POSITION_KEY)).f).toEqual(expect.any(Number));
       view.unmount();
     } finally {
       window.location = location;
     }
+  });
+});
+
+describe('releaseContext', () => {
+  it('gives back the context a canvas holds and survives a canvas that has none or throws', () => {
+    const loseContext = jest.fn();
+    const canvas = { getContext: jest.fn((kind) => (kind === 'webgl' ? { getExtension: (name) => (name === 'WEBGL_lose_context' ? { loseContext } : null) } : null)) };
+    expect(releaseContext(canvas)).toBe(true);
+    expect(loseContext).toHaveBeenCalledTimes(1);
+    expect(releaseContext({ getContext: () => null })).toBe(false);
+    expect(releaseContext({ getContext: () => { throw new Error('refused'); } })).toBe(false);
+    expect(releaseContext(null)).toBe(false);
   });
 });

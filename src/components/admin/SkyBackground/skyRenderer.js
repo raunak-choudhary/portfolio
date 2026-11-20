@@ -26,6 +26,19 @@ const SUN_FALLBACK = { cx: 303, cy: 287, r: 233 };
 
 const TAU = Math.PI * 2;
 
+/**
+ * Half-width of the terminator's ellipse for a lit fraction k of the disc,
+ * as a share of the radius: the terminator is a great circle seen at the
+ * phase angle i, where k = (1 + cos i) / 2, so its projected semi-axis is
+ * cos i = 2k - 1. The shadow side uses the mirror value, 1 - 2k: positive
+ * while the shadow covers more than half the disc (a crescent Moon),
+ * negative once the lit part does (a gibbous Moon).
+ */
+export const terminatorOffset = (lit) => 1 - 2 * Math.min(1, Math.max(0, lit));
+
+/** The phase changes by under 0.1% of the disc a minute; computing it once a minute is exact enough for a drawing. */
+const PHASE_REFRESH_MS = 60 * 1000;
+
 /** Colours per theme. Rust is the only day colour, by the owner's choice. */
 const PALETTES = {
   light: {
@@ -98,9 +111,13 @@ export function createSkyRenderer({ skyCanvas, liveCanvas, figures, assetBase, d
   loadImage(`${assetBase}sun-uv.webp`, (img) => { sunFallback = img; });
   loadImage(`${assetBase}moon.webp`, (img) => { moonImage = img; });
   const loadLiveSun = () => {
+    // Offline, the request can only fail, and the browser prints each failed image load as a
+    // red console error; the archived Sun stands in until the next refresh finds a connection.
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
     const img = new Image();
     img.referrerPolicy = 'no-referrer';
     img.onload = () => { liveSunImage = img; liveSunStamp = Date.now(); };
+    img.onerror = () => { /* keep the last good image, or the archived fallback */ };
     img.src = `${LIVE_SUN_URL}?t=${Math.floor(Date.now() / LIVE_SUN_REFRESH_MS)}`;
   };
   if (liveSun) { loadLiveSun(); liveSunTimer = setInterval(loadLiveSun, LIVE_SUN_REFRESH_MS); }
@@ -237,6 +254,8 @@ export function createSkyRenderer({ skyCanvas, liveCanvas, figures, assetBase, d
   };
 
   // ---- the Moon ----------------------------------------------------------
+  let phase = null, phaseAt = -Infinity;
+  const phaseNow = () => { const t = Date.now(); if (!phase || t - phaseAt > PHASE_REFRESH_MS) { phase = moonPhase(new Date(t)); phaseAt = t; } return phase; };
   const drawMoon = (cx, cy, R, now) => {
     const pulse = settings.motion ? 1 + 0.015 * Math.sin(now / 2200) : 1;
     const halo = ctx.createRadialGradient(cx, cy, R * 0.8, cx, cy, R * 3.6 * pulse);
@@ -247,8 +266,8 @@ export function createSkyRenderer({ skyCanvas, liveCanvas, figures, assetBase, d
     else { ctx.fillStyle = '#d8dde8'; ctx.fillRect(cx - R, cy - R, R * 2, R * 2); }
     ctx.restore();
     // tonight's phase: the shadow is drawn over the lit disc; the dark part keeps faint earthshine
-    const { lit, waxing } = moonPhase(new Date());
-    const a = R * Math.cos(Math.PI * lit);
+    const { lit, waxing } = phaseNow();
+    const a = R * terminatorOffset(lit);
     ctx.save(); ctx.translate(cx, cy); if (!waxing) ctx.scale(-1, 1);
     ctx.fillStyle = 'rgba(5,10,24,0.82)'; ctx.beginPath(); ctx.arc(0, 0, R, Math.PI / 2, (3 * Math.PI) / 2);
     if (a >= 0) ctx.ellipse(0, 0, Math.max(0.01, a), R, 0, (3 * Math.PI) / 2, Math.PI / 2);
@@ -257,6 +276,17 @@ export function createSkyRenderer({ skyCanvas, liveCanvas, figures, assetBase, d
   };
 
   // ---- figures -----------------------------------------------------------
+  // A figure's total line length never changes; measured once, not on every frame.
+  const lineLengths = new Map();
+  const lineLength = (fig) => {
+    let total = lineLengths.get(fig.id);
+    if (total === undefined) {
+      total = 0;
+      for (const seg of fig.lines) for (let k = 1; k < seg.length; k++) total += Math.hypot(seg[k][0] - seg[k - 1][0], seg[k][1] - seg[k - 1][1]);
+      lineLengths.set(fig.id, total);
+    }
+    return total;
+  };
   const drawFigures = (now, elapsed) => {
     const pal = PALETTES[theme];
     ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.textAlign = 'center';
@@ -276,8 +306,7 @@ export function createSkyRenderer({ skyCanvas, liveCanvas, figures, assetBase, d
         }
       }
       // lines, drawn along their length
-      const lens = fig.lines.map((seg) => { let l = 0; for (let k = 1; k < seg.length; k++) l += Math.hypot(seg[k][0] - seg[k - 1][0], seg[k][1] - seg[k - 1][1]); return l; });
-      let budget = progress * lens.reduce((acc, l) => acc + l, 0);
+      let budget = progress * lineLength(fig);
       ctx.strokeStyle = drawing ? pal.line : pal.lineSoft;
       ctx.lineWidth = ZODIAC_IDS.includes(fig.id) ? Math.max(1.4, t.scale * 0.09) : Math.max(1.2, t.scale * 0.07);
       ctx.globalAlpha = 1;

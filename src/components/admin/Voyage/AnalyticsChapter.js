@@ -496,7 +496,7 @@ export default function AnalyticsChapter({ notify, motion = true, clock = Date.n
             <p>Cards fill toward the dashed line, last quarter's total. They empty on {chartDay(c.quarter.next)} and start filling again; the visits themselves stay in the database.</p>
           </div>
         )}
-        {c?.truncated && tab !== 'reports' && <p className="orion-sparse"><Info size={14} aria-hidden="true" /><span>This range holds more events than one read takes, so the counts cover its first 60,000 events.</span></p>}
+        {c?.truncated && tab !== 'reports' && <p className="orion-sparse"><Info size={14} aria-hidden="true" /><span>This range holds more events than one read takes (60,000, counted from the oldest), so the newest visits are missing from these counts. A shorter range gives exact numbers.</span></p>}
       </div>
       <div id="ins-panel" role="tabpanel" aria-labelledby={`ins-tab-${tab}`} className="ins-grid" tabIndex={-1}>
         {body}

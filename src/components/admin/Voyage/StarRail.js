@@ -12,8 +12,9 @@ import { CHAPTERS, chapterPlace } from './chapters';
  * @param {number} props.active index of the live chapter.
  * @param {(index: number) => void} props.onJump
  * @param {Record<string, string>} [props.names] constellation id to display name (from figures.json).
+ * @param {'dark'|'light'} [props.theme] the sky's theme; by day the prologue is named for the Sun's neighbourhood.
  */
-export default function StarRail({ active, onJump, names = {} }) {
+export default function StarRail({ active, onJump, names = {}, theme = 'dark' }) {
   return (
     <nav className="voyage-rail" aria-label="Chapters">
       {CHAPTERS.map((chapter, i) => (
@@ -21,9 +22,9 @@ export default function StarRail({ active, onJump, names = {} }) {
           key={chapter.id}
           type="button"
           className={`voyage-rail__dot${chapter.rail ? ' is-glyph' : ''}${i === active ? ' is-active' : ''}`}
-          aria-label={`${chapter.name} (${chapterPlace(chapter, names)})`}
+          aria-label={`${chapter.name} (${chapterPlace(chapter, names, theme)})`}
           aria-current={i === active ? 'true' : undefined}
-          data-name={`${chapter.name} · ${chapterPlace(chapter, names)}`}
+          data-name={`${chapter.name} · ${chapterPlace(chapter, names, theme)}`}
           onClick={() => onJump(i)}
         >
           {chapter.rail || chapter.constellation}

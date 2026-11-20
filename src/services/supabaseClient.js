@@ -1,17 +1,11 @@
 // src/services/supabaseClient.js - FIXED FOR PRODUCTION
 
 import { createClient } from '@supabase/supabase-js';
+import { reportFailure } from '../utils/diagnostics';
 
 // Supabase configuration
 const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
 const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
-
-// Debug environment variables in development only
-if (process.env.NODE_ENV === 'development') {
-  console.log('🔧 Environment Variables Debug:');
-  console.log('URL:', supabaseUrl);
-  console.log('Anon Key Present:', !!supabaseAnonKey);
-}
 
 // Validate required environment variables
 if (!supabaseUrl || !supabaseAnonKey) {
@@ -157,7 +151,7 @@ export const getCurrentSession = async () => {
 
     return { success: true, session };
   } catch (error) {
-    console.error('Error getting session:', error.message);
+    reportFailure('Error getting session', error.message);
     return { success: false, error: error.message, session: null };
   }
 };
@@ -179,14 +173,15 @@ export const signOut = async () => {
 
     return { success: true, message: 'Signed out successfully' };
   } catch (error) {
-    console.error('Error signing out:', error.message);
+    reportFailure('Error signing out', error.message);
     return { success: false, error: error.message };
   }
 };
 
 // ✅ Error handler utility
 export const handleSupabaseError = (error, context = 'Operation') => {
-  console.error(`${context} failed:`, error);
+  // the caller gets the described error back; nothing is printed unless diagnostics are on
+  reportFailure(`${context} failed`, error);
   
   const errorMessages = {
     'Failed to fetch': 'Network error. Please check your connection.',
@@ -216,13 +211,13 @@ export const config = {
   environment: process.env.NODE_ENV
 };
 
-// ✅ Development helper (only in development)
+// Development helpers: window.supabase, window.supabaseConfig and
+// window.testContactFormAccess() for the console. Nothing is logged at load,
+// so the console starts empty on every route.
 if (process.env.NODE_ENV === 'development') {
   window.supabase = supabase;
   window.supabaseConfig = config;
   window.testContactFormAccess = testContactFormAccess;
-  console.log('🔧 Supabase client available in window.supabase for debugging');
-  console.log('🔧 Test contact form access with: window.testContactFormAccess()');
 }
 
 export default supabase;

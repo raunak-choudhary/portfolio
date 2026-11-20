@@ -119,7 +119,7 @@ export default function InboxChapter({ notify }) {
   const open = openId ? messages.find((m) => m.id === openId) || null : null;
 
   // a new filter or search starts a new selection; a change that moves
-  // messages out of view (read under Unread, archive under All) drops them
+  // messages out of view (read under Unread, spam under All) drops them
   useEffect(() => { setSelected(new Set()); }, [filter, query]);
   useEffect(() => { setSelected((s) => pruneSelection(s, shownIds)); }, [shownIds]);
   useEffect(() => { if (allRef.current) allRef.current.indeterminate = pick.some; }, [pick.some]);

@@ -101,4 +101,21 @@ describe('MediaChapter', () => {
     expect(view.container.querySelector('.media__more')).toBeNull();
     view.unmount();
   });
+
+  it('says which sections could not be read, so Unknown is not taken at face value', async () => {
+    media.getMediaLibrarySnapshot.mockResolvedValue({ ...snapshot([item('a', { isReferenced: false, status: 'unknown' })]), referenceErrors: ['projects', 'skills'] });
+    const view = mount(<MediaChapter notify={notify} />);
+    await flush();
+    const warn = view.container.querySelector('[data-testid="media-reference-warning"]');
+    expect(warn.textContent).toContain('2 sections could not be read (projects, skills)');
+    view.unmount();
+  });
+
+  it('shows no such warning when every section was read', async () => {
+    media.getMediaLibrarySnapshot.mockResolvedValue({ ...snapshot([item('a')]), referenceErrors: [] });
+    const view = mount(<MediaChapter notify={notify} />);
+    await flush();
+    expect(view.container.querySelector('[data-testid="media-reference-warning"]')).toBeNull();
+    view.unmount();
+  });
 });

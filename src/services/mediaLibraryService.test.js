@@ -6,6 +6,9 @@ import {
   createMediaSignedUrl,
   REFERENCE_TABLES,
   createMediaLibraryItem,
+  getMediaLibrarySnapshot,
+  LIST_PAGE_SIZE,
+  PREVIEW_LINK_SECONDS,
   extractStoragePathFromPublicUrl,
   formatFileSize,
   getMediaFileKind
@@ -179,5 +182,63 @@ describe('media references against the real columns', () => {
   it.each(REFERENCE_TABLES.map((t) => [t.table, t]))('%s names only columns its table has', (table, { bucketFields }) => {
     const columns = columnsOf(table);
     Object.values(bucketFields).flat().forEach((field) => expect([table, field, columns.has(field)]).toEqual([table, field, true]));
+  });
+});
+
+describe('reading the buckets (deep pass 2026-11-20)', () => {
+  const file = (name) => ({ id: `id-${name}`, name, metadata: { size: 10, mimetype: 'image/png' }, updated_at: '2026-11-10T00:00:00Z' });
+  const bucket = { id: 'project-images', label: 'Project Images', isPublic: true };
+  const privateBucket = { id: 'contact-attachments', label: 'Contact Attachments', isPublic: false };
+  const tableOk = () => ({ select: jest.fn().mockResolvedValue({ data: [], error: null }) });
+
+  beforeEach(() => { jest.clearAllMocks(); });
+
+  it('reads a folder page by page until a short page, so nothing past the first 100 is dropped', async () => {
+    const full = Array.from({ length: LIST_PAGE_SIZE }, (_, i) => file(`a${String(i).padStart(3, '0')}.png`));
+    const list = jest.fn()
+      .mockResolvedValueOnce({ data: full, error: null })
+      .mockResolvedValueOnce({ data: [file('z1.png'), file('z2.png')], error: null });
+    supabase.storage.from.mockReturnValue({ list, getPublicUrl: (p) => ({ data: { publicUrl: `https://example.com/${p}` } }) });
+    supabase.from.mockImplementation(tableOk);
+
+    const snap = await getMediaLibrarySnapshot({ buckets: [bucket], referenceTables: [] });
+    expect(snap.items).toHaveLength(LIST_PAGE_SIZE + 2);
+    expect(list).toHaveBeenCalledTimes(2);
+    expect(list.mock.calls[0][1]).toMatchObject({ limit: LIST_PAGE_SIZE, offset: 0 });
+    expect(list.mock.calls[1][1]).toMatchObject({ limit: LIST_PAGE_SIZE, offset: LIST_PAGE_SIZE });
+  });
+
+  it('walks into a folder whose name has a dot, and lists the file inside', async () => {
+    const list = jest.fn((prefix) => Promise.resolve(prefix === ''
+      ? { data: [{ id: null, name: 'v1.2', metadata: null }], error: null }
+      : { data: [file('inside.png')], error: null }));
+    supabase.storage.from.mockReturnValue({ list, getPublicUrl: (p) => ({ data: { publicUrl: `https://example.com/${p}` } }) });
+    const snap = await getMediaLibrarySnapshot({ buckets: [bucket], referenceTables: [] });
+    expect(snap.items.map((i) => i.path)).toEqual(['v1.2/inside.png']);
+  });
+
+  it('keeps a private bucket listed when one file cannot be signed, and signs thumbnails for an hour', async () => {
+    const list = jest.fn().mockResolvedValue({ data: [file('ok.png'), file('gone.png')], error: null });
+    const createSignedUrl = jest.fn((p) => Promise.resolve(p === 'gone.png'
+      ? { data: null, error: new Error('Object not found') }
+      : { data: { signedUrl: `https://example.com/signed/${p}` }, error: null }));
+    supabase.storage.from.mockReturnValue({ list, createSignedUrl });
+
+    const snap = await getMediaLibrarySnapshot({ buckets: [privateBucket], referenceTables: [] });
+    expect(snap.buckets[0]).toMatchObject({ status: 'available', fileCount: 2 });
+    expect(snap.items.find((i) => i.name === 'ok.png').previewUrl).toBe('https://example.com/signed/ok.png');
+    expect(snap.items.find((i) => i.name === 'gone.png').previewUrl).toBeNull();
+    expect(createSignedUrl).toHaveBeenCalledWith('ok.png', PREVIEW_LINK_SECONDS);
+    expect(PREVIEW_LINK_SECONDS).toBe(3600);
+  });
+
+  it('names the tables it could not read instead of treating them as empty', async () => {
+    supabase.storage.from.mockReturnValue({ list: jest.fn().mockResolvedValue({ data: [], error: null }) });
+    supabase.from.mockImplementation((table) => ({ select: jest.fn().mockResolvedValue(table === 'skills' ? { data: null, error: { message: 'denied' } } : { data: [], error: null }) }));
+    const snap = await getMediaLibrarySnapshot({
+      buckets: [bucket],
+      referenceTables: [{ table: 'projects', bucketFields: { 'project-images': ['image_urls'] } }, { table: 'skills', bucketFields: { 'skill-icons': ['icon_url'] } }],
+    });
+    expect(snap.referenceErrors).toEqual(['skills']);
   });
 });
