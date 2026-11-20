@@ -3,7 +3,7 @@ import { DEG, EARTH_AXIS_ECLIPTIC, OBLIQUITY, dot, eclipticDirection, length, no
 import {
   ACTIVE_REGION_COUNT, AU_KM, DAY_EARTH_RADIUS, DAY_NARROW_FRAMING, EARTH_ORBIT_RADIUS, EARTH_SCENE_DIRECTION, EARTH_YEAR_MS, LOOP_SLOTS,
   PROMINENCE_COUNT, SOLAR_INCLINATION, SUN_RADIUS, activeRegions, bodyToWorld, bodyVector, differentialRate, distanceReadout, earthDirection,
-  earthLongitude, earthPosition, eclipticVector, hash01, loopEvent, loopFootpoints, prominences, seedFor, solarOrientation, solarPoleEcliptic,
+  earthLongitude, earthPosition, eclipticVector, hash01, loopEvent, loopFootpoints, prominences, prominencesAtLimb, seedFor, SIZEABLE_PROMINENCE, standingHeight, solarOrientation, solarPoleEcliptic,
   sunDistanceAU, sunDistanceKm, sunScene, viewAngles,
 } from './sunModel';
 import { ANCHORS, cameraTarget, prologueFraming } from './voyageModel';
@@ -208,10 +208,33 @@ describe('the surface frame: active regions and long-lived prominences', () => {
     const heights = list.map((f) => f.height);
     expect(Math.max(...heights)).toBeGreaterThanOrEqual(0.25);
     expect(Math.max(...heights)).toBeLessThanOrEqual(0.42);
-    expect(heights.filter((h) => h < 0.12).length).toBeGreaterThanOrEqual(3);
+    expect(heights.filter((h) => h < SIZEABLE_PROMINENCE).length).toBeGreaterThanOrEqual(2);
+    expect(heights.filter((h) => h >= SIZEABLE_PROMINENCE).length).toBeGreaterThanOrEqual(4);
     list.forEach((f) => { expect(['arch', 'hedge']).toContain(f.kind); f.feet.forEach((v) => close(length(v), 1, 1e-9)); });
     // the largest stands near the limb at load, so the still frame shows it against space
     expect(Math.abs(facing(list[0].centre, 0))).toBeLessThan(0.35);
+  });
+
+  it('keeps at least two sizeable prominences standing at the limb through a whole turn, on any day of the year', () => {
+    // a still frame or a long look at the prologue never shows a bare rim
+    for (let month = 0; month < 12; month++) {
+      const day = sunScene(new Date(Date.UTC(2026, month, 3 + month * 2, 15)));
+      const list = prominences(day.seed);
+      let fewest = Infinity;
+      for (let t = 0; t <= 360000; t += 1000) fewest = Math.min(fewest, prominencesAtLimb(day, list, t));
+      expect(fewest).toBeGreaterThanOrEqual(2);
+    }
+  });
+
+  it('measures how far a prominence stands proud of the limb', () => {
+    const onLimb = { centre: bodyVector(0, 90), height: 0.3 };   // in the limb plane at load: all of it shows
+    close(standingHeight(scene, onLimb, 0), 0.3, 1e-9);
+    const b = dot(scene.viewer, scene.sunPole);
+    const towardCamera = { centre: [0, b, Math.sqrt(1 - b * b)], height: 0.3 };   // the viewer's own direction in the body frame
+    expect(standingHeight(scene, towardCamera, 0)).toBe(0);
+    // a quarter turn later the limb prominence has turned onto the disc or behind it, and shows less
+    expect(standingHeight(scene, onLimb, 90000)).toBeLessThan(0.3);
+    expect(prominencesAtLimb(scene, [onLimb, { ...onLimb, height: 0.05 }], 0)).toBe(1);   // the small one does not count
   });
 
   it('roots region loops in their active region and turns them with the surface', () => {
