@@ -9,6 +9,7 @@
 //
 // Run: npm run build:e2e, then npm run e2e:admin.
 
+import { readFileSync } from 'node:fs';
 import { test, expect } from '@playwright/test';
 import { goToChapter, hasHorizontalOverflow, openAdmin, waitForDashboard, writesTo } from './support/admin-setup.mjs';
 
@@ -258,6 +259,213 @@ test.describe('fix queue', () => {
       await expect(hidden.getByRole('button', { name: /^Bring back: / })).toBeVisible();
       await expect(hidden).toContainText('TEST- pictures come later');
       await expect(queue.getByRole('button', { name: 'Not needed: 1 project has no picture' })).toHaveCount(0);
+      expect(errors).toEqual([]);
+      await expectOffline(net);
+    } finally {
+      await context.close();
+    }
+  });
+});
+
+// The fix walk: two TEST- leadership roles with no description give the queue
+// one TEXT gap with two records. The override keeps the fixture's complete
+// role, so only the two new rows count against the score.
+const LEADERSHIP_FIXTURE = JSON.parse(readFileSync('e2e/fixtures/admin/tables/leadership.json', 'utf8'));
+const walkRole = (n, title) => ({
+  ...LEADERSHIP_FIXTURE[0],
+  id: `TEST-leadership-walk-${n}`,
+  title,
+  description: '',
+  position_number: n + 1,
+  updated_at: `2026-11-1${n}T10:00:00.000Z`,
+});
+const WALK_TABLES = { leadership: [...LEADERSHIP_FIXTURE, walkRole(1, 'TEST- Walk Role One'), walkRole(2, 'TEST- Walk Role Two')] };
+const LONG_DESCRIPTION = 'TEST- Led a synthetic team of ten through a full year of events.';
+const SHORT_DESCRIPTION = 'TEST- Too short.';
+
+/** The queue row for the leadership description gap. */
+const walkRow = (page) => page.getByTestId('fix-queue').locator('.fx-row[data-rule="leadership:description"]');
+
+/** Opens the queue's two-record walk and returns the dialog, its banner and the target field. */
+async function startDescriptionWalk(page) {
+  const row = walkRow(page);
+  await row.scrollIntoViewIfNeeded();
+  await expect(row).toContainText('2 leadership roles have no description');
+  await row.getByRole('button', { name: 'Fix 2, one by one' }).click();
+  const dialog = page.getByTestId('record-dialog');
+  const banner = dialog.getByTestId('fix-banner');
+  const field = dialog.getByRole('textbox', { name: 'Description', exact: true });
+  await expect(banner).toBeVisible();
+  return { dialog, banner, field };
+}
+
+/** Reads "Fixed. Health a → b" off the banner. */
+async function healthChange(banner) {
+  const title = await banner.locator('.record-banner__title').innerText();
+  const match = /^Fixed\. Health (\d+(?:\.\d+)?) → (\d+(?:\.\d+)?)$/.exec(title.trim());
+  expect(match, `banner title "${title}"`).not.toBeNull();
+  return { before: Number(match[1]), after: Number(match[2]) };
+}
+
+/** True when two boxes share any area. */
+const overlaps = (a, b) => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+
+/** At phone width the banner must leave the ringed field visible and the page must not scroll sideways. */
+async function expectBannerClearOfField(page, banner, cell, width) {
+  if (width >= 768) return;
+  const [bannerBox, cellBox] = [await banner.boundingBox(), await cell.boundingBox()];
+  expect(bannerBox && cellBox, 'banner and field both on screen').toBeTruthy();
+  expect(overlaps(bannerBox, cellBox), 'the banner does not cover the target field').toBe(false);
+  expect(await hasHorizontalOverflow(page), 'no horizontal overflow').toBe(false);
+}
+
+test.describe('fix walk', () => {
+  for (const width of [1440, 390]) {
+    test(`"Fix 2, one by one" opens the first record in edit mode at 1 of 2, field ringed and focused, at ${width}px`, async ({ browser }) => {
+      const { page, context, net, errors } = await openAdmin(browser, { width, tables: WALK_TABLES });
+      try {
+        await waitForDashboard(page);
+        const { dialog, banner, field } = await startDescriptionWalk(page);
+        await expect(dialog.getByRole('heading', { name: 'TEST- Walk Role One' })).toBeVisible();
+        await expect(banner).toContainText('Fixing: fill in the description');
+        await expect(banner.locator('.record-banner__step')).toHaveText(' · 1 of 2');
+        await expect(field).toBeVisible();
+        await expect(field).toBeFocused();
+        const cell = dialog.locator('.record-form__cell.is-target');
+        await expect(cell).toHaveCount(1);
+        await expect(cell).toContainText('Missing');
+        await expect(cell.getByRole('textbox', { name: 'Description', exact: true })).toHaveCount(1);
+        await expect(dialog.getByRole('button', { name: 'Save and next' })).toBeVisible();
+        await expectBannerClearOfField(page, banner, cell, width);
+        expect(net.writes, 'opening the walk writes nothing').toEqual([]);
+        expect(errors).toEqual([]);
+        await expectOffline(net);
+      } finally {
+        await context.close();
+      }
+    });
+
+    test(`"Save and next" sends one write, shows Fixed with the health going up, and Next opens 2 of 2, at ${width}px`, async ({ browser }) => {
+      const { page, context, net, errors } = await openAdmin(browser, { width, tables: WALK_TABLES });
+      try {
+        await waitForDashboard(page);
+        const { dialog, banner, field } = await startDescriptionWalk(page);
+        await field.fill(LONG_DESCRIPTION);
+        await dialog.getByRole('button', { name: 'Save and next' }).click();
+
+        await expect(banner.locator('.record-banner__title')).toHaveText(/^Fixed\. Health /);
+        const { before, after } = await healthChange(banner);
+        expect(after).toBeGreaterThan(before);
+        await expect(banner).toContainText('1 left in this group. Next: TEST- Walk Role Two.');
+
+        const writes = writesTo(net, 'leadership');
+        expect(writes).toHaveLength(1);
+        expect(writes[0].method).toBe('PATCH');
+        expect(writes[0].query).toContain('id=eq.TEST-leadership-walk-1');
+        expect(writes[0].body).toMatchObject({ description: LONG_DESCRIPTION });
+        expect(net.writes, 'nothing else was written').toHaveLength(1);
+
+        await banner.getByRole('button', { name: 'Next: TEST- Walk Role Two' }).click();
+        await expect(dialog.getByRole('heading', { name: 'TEST- Walk Role Two' })).toBeVisible();
+        await expect(banner.locator('.record-banner__step')).toHaveText(' · 2 of 2');
+        await expect(banner).toContainText('This is the last one in this group.');
+        await expect(field).toHaveValue('');
+        await expect(field).toBeFocused();
+        await expectBannerClearOfField(page, banner, dialog.locator('.record-form__cell.is-target'), width);
+        expect(net.writes, 'moving on writes nothing').toHaveLength(1);
+        expect(errors).toEqual([]);
+        await expectOffline(net);
+      } finally {
+        await context.close();
+      }
+    });
+  }
+
+  test('a description still under 40 characters is saved but not called fixed', async ({ browser }) => {
+    const { page, context, net, errors } = await openAdmin(browser, { tables: WALK_TABLES });
+    try {
+      await waitForDashboard(page);
+      const { dialog, banner, field } = await startDescriptionWalk(page);
+      await field.fill(SHORT_DESCRIPTION);
+      await dialog.getByRole('button', { name: 'Save and next' }).click();
+
+      await expect(banner.locator('.record-banner__title')).toHaveText('Saved, but this one still needs work.');
+      await expect(banner).toContainText('The description is still under 40 characters. Next: TEST- Walk Role Two.');
+      await expect(banner).not.toContainText('Fixed');
+      await expect(banner.getByRole('button', { name: 'Edit again' })).toBeVisible();
+      const writes = writesTo(net, 'leadership');
+      expect(writes).toHaveLength(1);
+      expect(writes[0].body).toMatchObject({ description: SHORT_DESCRIPTION });
+
+      // Edit again shows the form with the field marked too short, not missing.
+      await banner.getByRole('button', { name: 'Edit again' }).click();
+      await expect(dialog.locator('.record-form__cell.is-target')).toContainText('Too short');
+      await expect(field).toHaveValue(SHORT_DESCRIPTION);
+      expect(errors).toEqual([]);
+      await expectOffline(net);
+    } finally {
+      await context.close();
+    }
+  });
+
+  test('"Stop fixing" mid-walk closes the walk; the queue keeps the remaining role and drops the fixed one', async ({ browser }) => {
+    const { page, context, net, errors } = await openAdmin(browser, { tables: WALK_TABLES });
+    try {
+      await waitForDashboard(page);
+      const { dialog, banner, field } = await startDescriptionWalk(page);
+      await field.fill(LONG_DESCRIPTION);
+      await dialog.getByRole('button', { name: 'Save and next' }).click();
+      await banner.getByRole('button', { name: 'Next: TEST- Walk Role Two' }).click();
+      await expect(banner.locator('.record-banner__step')).toHaveText(' · 2 of 2');
+
+      await banner.getByRole('button', { name: 'Stop fixing' }).click();
+      await expect(dialog).toHaveCount(0);
+
+      const row = walkRow(page);
+      await expect(row).toContainText('1 leadership role has no description');
+      await row.scrollIntoViewIfNeeded();
+      await row.getByRole('button', { name: 'Show it' }).click();
+      const items = row.locator('.fx-items');
+      await expect(items.getByRole('button', { name: 'Fix TEST- Walk Role Two' })).toBeVisible();
+      await expect(items.getByText('TEST- Walk Role One')).toHaveCount(0);
+      await expect(row.getByRole('button', { name: 'Fix it' })).toBeVisible();
+      expect(writesTo(net, 'leadership'), 'only the first role was written').toHaveLength(1);
+      expect(errors).toEqual([]);
+      await expectOffline(net);
+    } finally {
+      await context.close();
+    }
+  });
+
+  test('after the walk ends the activity pane and the fix queue re-read their tables without a reload', async ({ browser }) => {
+    const { page, context, net, errors } = await openAdmin(browser, { tables: WALK_TABLES });
+    try {
+      await waitForDashboard(page);
+      await page.evaluate(() => { window.__sameDocument = true; });
+      const { dialog, banner, field } = await startDescriptionWalk(page);
+      await field.fill(LONG_DESCRIPTION);
+      await dialog.getByRole('button', { name: 'Save and next' }).click();
+      await banner.getByRole('button', { name: 'Next: TEST- Walk Role Two' }).click();
+      await expect(banner.locator('.record-banner__step')).toHaveText(' · 2 of 2');
+      await field.fill(LONG_DESCRIPTION);
+      await dialog.getByRole('button', { name: 'Save and next' }).click();
+      await expect(banner.locator('.record-banner__title')).toHaveText(/^Fixed\. Health /);
+      await expect(banner).toContainText('That was the last one in this group.');
+
+      const writes = writesTo(net, 'leadership');
+      expect(writes.map((w) => w.query.match(/id=eq\.[^&]+/)?.[0])).toEqual(['id=eq.TEST-leadership-walk-1', 'id=eq.TEST-leadership-walk-2']);
+      // everything read so far happened before the walk ended
+      const endedAt = Math.max(...net.reads.map((r) => r.seq), ...net.writes.map((w) => w.seq));
+      await banner.getByRole('button', { name: 'Back to the queue' }).click();
+      await expect(dialog).toHaveCount(0);
+
+      const readAfter = (table) => net.reads.filter((r) => r.table === table && r.method === 'GET' && r.seq > endedAt).length;
+      await expect.poll(() => readAfter('admin_activity'), { message: 'the activity pane re-read admin_activity' }).toBeGreaterThan(0);
+      await expect.poll(() => readAfter('leadership'), { message: 'the fix queue re-read leadership' }).toBeGreaterThan(0);
+      await expect(walkRow(page)).toHaveCount(0);
+      await expect(page.getByTestId('fix-queue')).toBeInViewport();
+      expect(await page.evaluate(() => window.__sameDocument), 'no page reload').toBe(true);
+      expect(net.writes, 'only the two descriptions were written').toHaveLength(2);
       expect(errors).toEqual([]);
       await expectOffline(net);
     } finally {
