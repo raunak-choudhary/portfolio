@@ -1,9 +1,10 @@
 import {
   CITIES, OCEAN_KM, clockIn, distanceKm, facingPoint, nearestCity, overReadout, sceneTime,
-  EARTH_AXIS_ECLIPTIC, EARTH_RADIUS, MOON_ORBIT_RADIUS, OBLIQUITY, DEG, alignYTo, dot, earthScene, earthSpin, eclipticDirection, length, moonDirection, moonFraction, moonPosition,
+  EARTH_AXIS_ECLIPTIC, EARTH_RADIUS, MOON_ORBIT_RADIUS, OBLIQUITY, DEG, alignYTo, dot, earthScene, earthSpin, eclipticDirection, length, moonBasis, moonDirection, moonFractionSeen, moonPointFacing, moonPosition, earthshineFactor,
   normalize, rotateAbout, satelliteOrbits, satellitePosition, sceneFrame, spinForSubsolar, subsolarLongitude, sunCoordinates, surfacePoint,
 } from './earthModel';
 import { ANCHORS } from './voyageModel';
+import { moonGeocentric } from './moonModel';
 
 const close = (a, b, eps = 1e-6) => expect(Math.abs(a - b)).toBeLessThan(eps);
 const closeVec = (a, b, eps = 1e-6) => a.forEach((v, i) => close(v, b[i], eps));
@@ -91,23 +92,56 @@ describe('the Earth', () => {
 describe('the Moon', () => {
   const date = new Date('2026-11-12T18:30:00Z');
   const scene = earthScene(date);
+  const asin = (v) => Math.asin(v) / DEG;
 
-  it('starts toward the Sun when new and opposite it when full, in its tilted orbit plane', () => {
-    const newMoon = moonDirection(scene.sunDir, scene.moonNormal, 0), full = moonDirection(scene.sunDir, scene.moonNormal, 0.5);
-    expect(dot(newMoon, scene.sunDir)).toBeGreaterThan(0.99);
-    expect(dot(full, scene.sunDir)).toBeLessThan(-0.99);
-    close(dot(newMoon, scene.moonNormal), 0, 1e-9);
-    close(length(newMoon), 1);
+  it('starts at tonight\'s true elongation from the Sun, so the one light gives tonight\'s lit fraction', () => {
+    // the scene's Sun uses the short series, the Moon model the full one: they agree to a few arcminutes
+    for (const iso of ['2026-11-12T18:30:00Z', '2026-11-21T01:00:00Z', '2026-11-24T14:53:00Z', '2027-02-28T12:00:00Z']) {
+      const s = earthScene(new Date(iso)), truth = moonGeocentric(new Date(iso));
+      close(moonFractionSeen(s.sunDir, moonDirection(s, 0)), truth.fraction, 0.003);
+      close(s.moonFractionAtLoad, truth.fraction, 1e-12);
+    }
+    // three days past the 9 November new moon: a thin crescent, close to the Sun
+    expect(moonFractionSeen(scene.sunDir, moonDirection(scene, 0))).toBeLessThan(0.15);
   });
 
-  it('orbits once per period and sits under two Earth radii out', () => {
-    close(moonFraction(0.1, 600000 / 2), 0.6);
-    close(moonFraction(0.9, 600000 / 2), 0.4);
-    expect(600000 / 150000).toBe(4);   // four Earth turns per Moon orbit, the Earth clearly faster
+  it('orbits once per period about its tilted normal, east like the real Moon, and sits under two Earth radii out', () => {
+    const start = moonDirection(scene, 0);
+    closeVec(moonDirection(scene, 600000), start, 1e-9);
+    close(dot(moonDirection(scene, 150000), scene.moonNormal), dot(start, scene.moonNormal), 1e-9);
+    // a quarter orbit on, the Moon has moved about 90° further from the Sun: waxing toward first quarter and beyond
+    expect(moonFractionSeen(scene.sunDir, moonDirection(scene, 150000))).toBeGreaterThan(0.5);
+    close(Math.acos(dot(scene.moonNormal, normalize(sceneFrame(date)([0, 1, 0])))) / DEG, 5.145, 1e-6);
     const p = moonPosition(scene, 0);
     close(length([p[0] - scene.centre[0], p[1] - scene.centre[1], p[2] - scene.centre[2]]), MOON_ORBIT_RADIUS);
     expect(MOON_ORBIT_RADIUS).toBeCloseTo(EARTH_RADIUS * 1.6);
-    expect(scene.moonPhaseAtLoad).toBeGreaterThan(0.05); expect(scene.moonPhaseAtLoad).toBeLessThan(0.15);   // three days past the 9 November new moon
+  });
+
+  it('turns its near side to the Earth with the true librations, and its pole by Cassini\'s law', () => {
+    for (const iso of ['2026-03-22T00:30:00Z', '2026-11-21T01:00:00Z', '2027-09-20T03:00:00Z']) {
+      const s = earthScene(new Date(iso)), truth = moonGeocentric(new Date(iso));
+      const d = moonDirection(s, 0), basis = moonBasis(s, d);
+      const subEarth = moonPointFacing(basis, d.map((v) => -v));
+      close(subEarth.lon, truth.libration.lon, 1e-6);
+      close(subEarth.lat, truth.libration.lat, 0.02);   // from the geometry alone, Meeus's b' to an arcminute
+      // a right-handed orthonormal basis, so makeBasis is a pure rotation
+      closeVec([dot(basis.x, basis.y), dot(basis.y, basis.z), dot(basis.z, basis.x)], [0, 0, 0], 1e-9);
+      close(dot(basis.z, [basis.x[1] * basis.y[2] - basis.x[2] * basis.y[1], basis.x[2] * basis.y[0] - basis.x[0] * basis.y[2], basis.x[0] * basis.y[1] - basis.x[1] * basis.y[0]]), 1, 1e-9);
+      // the equator is 1.54° from the ecliptic, the orbit 5.15°, on opposite sides of the ecliptic pole
+      const eclipticPole = normalize(sceneFrame(new Date(iso))([0, 1, 0]));
+      close(Math.acos(dot(basis.y, eclipticPole)) / DEG, 1.54242, 1e-6);
+      close(Math.acos(dot(basis.y, s.moonNormal)) / DEG, 1.54242 + 5.145, 1e-6);
+    }
+    // the near side keeps facing the Earth all the way round
+    const later = moonDirection(scene, 200000), basis = moonBasis(scene, later);
+    expect(Math.abs(moonPointFacing(basis, later.map((v) => -v)).lon)).toBeLessThan(8);
+    expect(Math.abs(asin(dot(later, basis.y)))).toBeLessThan(7);
+  });
+
+  it('gets earthshine from how full the Earth looks from the Moon: all of it at new Moon, none at full', () => {
+    close(earthshineFactor(scene.sunDir, scene.sunDir), 1);
+    close(earthshineFactor(scene.sunDir, scene.sunDir.map((v) => -v)), 0);
+    close(earthshineFactor(scene.sunDir, moonDirection(scene, 0)) + moonFractionSeen(scene.sunDir, moonDirection(scene, 0)), 1, 1e-12);
   });
 });
 
