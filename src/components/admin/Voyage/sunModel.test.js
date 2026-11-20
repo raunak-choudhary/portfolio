@@ -1,13 +1,14 @@
 import * as THREE from 'three';
 import { DEG, EARTH_AXIS_ECLIPTIC, OBLIQUITY, dot, rotateAbout, eclipticDirection, length, normalize, subsolarLongitude, sunCoordinates } from './earthModel';
 import {
-  ACTIVE_REGION_COUNT, AU_KM, DAY_EARTH_RADIUS, DAY_NARROW_FRAMING, EARTH_ORBIT_RADIUS, EARTH_SCENE_DIRECTION, EARTH_YEAR_MS, LOOP_SLOTS,
+  ACTIVE_REGION_COUNT, AU_KM, DAY_EARTH_RADIUS, DAY_EARTH_SPIN_MS, DAY_MOON_MONTH_MS, DAY_MOON_ORBIT_RADIUS, DAY_MOON_RADIUS, dayMoonDirection, dayMoonFraction, DAY_NARROW_FRAMING, EARTH_ORBIT_RADIUS, EARTH_SCENE_DIRECTION, EARTH_YEAR_MS, LOOP_SLOTS,
   PROMINENCE_COUNT, SOLAR_INCLINATION, SUN_RADIUS, activeRegions, bodyToWorld, bodyVector, differentialRate, distanceReadout, earthDirection,
   bodyToWorldInto, createLoopTracker, earthDirectionInto, eclipticBasis, rotateAboutInto,
   earthLongitude, earthPosition, eclipticVector, hash01, loopEvent, loopFootpoints, prominences, prominencesAtLimb, seedFor, SIZEABLE_PROMINENCE, standingHeight, solarOrientation, solarPoleEcliptic,
   sunDistanceAU, sunDistanceKm, sunScene, viewAngles,
 } from './sunModel';
 import { ANCHORS, cameraTarget, prologueFraming } from './voyageModel';
+import { moonTonight } from './moonModel';
 
 const close = (a, b, eps) => expect(Math.abs(a - b)).toBeLessThan(eps);
 const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
@@ -71,7 +72,10 @@ describe('the day scene', () => {
   it('sizes the Sun like the night Earth and keeps a stylised orbit', () => {
     expect(SUN_RADIUS).toBeGreaterThan(300);
     expect(EARTH_ORBIT_RADIUS / SUN_RADIUS).toBeCloseTo(2.3);
-    expect(SUN_RADIUS / DAY_EARTH_RADIUS).toBeGreaterThan(7);
+    expect(SUN_RADIUS / DAY_EARTH_RADIUS).toBeGreaterThan(5);
+    expect(DAY_MOON_RADIUS / DAY_EARTH_RADIUS).toBeCloseTo(0.2727);
+    expect(DAY_MOON_ORBIT_RADIUS).toBeGreaterThan(DAY_EARTH_RADIUS + DAY_MOON_RADIUS);   // clear of the Earth and its halo
+    expect(EARTH_ORBIT_RADIUS - DAY_MOON_ORBIT_RADIUS - DAY_MOON_RADIUS).toBeGreaterThan(SUN_RADIUS * 1.5);   // never into the Sun
     expect(scene.centre).toEqual([ANCHORS[0].x + 440, ANCHORS[0].y - 300, ANCHORS[0].z - 900]);
     [scene.sunPole, scene.orbitNormal, scene.earthAxis, scene.viewer].forEach((v) => close(length(v), 1, 1e-9));
   });
@@ -289,7 +293,7 @@ describe('the day prologue on narrow screens', () => {
     add(scene.centre, SUN_RADIUS);
     for (let lon = 0; lon < 360; lon += 3) {
       const d = scene.toWorld(eclipticDirection(lon));
-      add(d.map((c, k) => scene.centre[k] + c * EARTH_ORBIT_RADIUS), DAY_EARTH_RADIUS);
+      add(d.map((c, k) => scene.centre[k] + c * EARTH_ORBIT_RADIUS), DAY_MOON_ORBIT_RADIUS + DAY_MOON_RADIUS);   // the Earth with the Moon's whole orbit round it
     }
     return box;
   };
@@ -304,6 +308,46 @@ describe('the day prologue on narrow screens', () => {
     const box = view(768, 1024);
     expect(box.x0).toBeGreaterThan(4); expect(box.x1).toBeLessThan(92);   // clear of the chapter rail
     expect(box.y0).toBeGreaterThan(8); expect(box.y1).toBeLessThan(78);
+  });
+});
+
+describe('the day Moon', () => {
+  const date = new Date('2026-11-20T15:00:00Z');
+  const scene = sunScene(date);
+  const sunFromEarth = (t) => earthDirection(scene, t).map((v) => -v);
+
+  it('starts at tonight\'s angle from the Sun, so its phase is tonight\'s', () => {
+    // 20 Nov 2026: waxing gibbous, full on 24 Nov; the Tonight tile's own model gives about 80 percent
+    const seen = moonTonight(date).fraction;
+    close(dayMoonFraction(sunFromEarth(0), dayMoonDirection(scene, 0)), seen, 0.02);
+    expect(seen).toBeGreaterThan(0.6); expect(seen).toBeLessThan(0.95);
+  });
+
+  it('circles prograde in its own plane, about five degrees off the ecliptic, once per stylised month', () => {
+    close(length(scene.moonAtLoad), 1, 1e-9); close(length(scene.moonNormal), 1, 1e-9);
+    close(dot(scene.moonAtLoad, scene.moonNormal), 0, 1e-6);
+    close(Math.acos(dot(scene.moonNormal, scene.orbitNormal)) / DEG, 5.145, 0.6);
+    const a = dayMoonDirection(scene, 0), b = dayMoonDirection(scene, DAY_MOON_MONTH_MS);
+    a.forEach((v, k) => close(v, b[k], 1e-9));
+    const r1 = dayMoonDirection(scene, 1000);
+    const c = [a[1] * r1[2] - a[2] * r1[1], a[2] * r1[0] - a[0] * r1[2], a[0] * r1[1] - a[1] * r1[0]];
+    expect(dot(c, scene.orbitNormal)).toBeGreaterThan(0);   // the same sense as the Earth's orbit
+  });
+
+  it('keeps the real order of rates: the Earth turns fastest, then the Moon circles, then the year', () => {
+    expect(DAY_EARTH_SPIN_MS).toBeLessThan(DAY_MOON_MONTH_MS);
+    expect(DAY_MOON_MONTH_MS).toBeLessThan(EARTH_YEAR_MS);
+    expect(EARTH_YEAR_MS / DAY_MOON_MONTH_MS).toBe(4);
+  });
+
+  it('runs through every phase: the synodic month is a hundred seconds', () => {
+    const synodic = 1 / (1 / DAY_MOON_MONTH_MS - 1 / EARTH_YEAR_MS);
+    close(synodic, 100000, 1e-6);
+    const f = (t) => dayMoonFraction(sunFromEarth(t), dayMoonDirection(scene, t));
+    close(f(synodic), f(0), 0.01);
+    const samples = Array.from({ length: 100 }, (_, k) => f((k * synodic) / 100));
+    expect(Math.min(...samples)).toBeLessThan(0.02);   // new
+    expect(Math.max(...samples)).toBeGreaterThan(0.98);   // full
   });
 });
 

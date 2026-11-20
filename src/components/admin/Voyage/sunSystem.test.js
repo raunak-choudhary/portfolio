@@ -3,7 +3,7 @@ import { CHAPTERS, chapterPlace } from './chapters';
 import { createTextureLoader } from './skyField';
 import { CORONA_EXTENT, SUN_TIERS, SUN_VISIBLE_UNTIL, createSunSystem } from './sunSystem';
 import { SUN_SURFACE } from './renderBudget';
-import { DAY_NARROW_FRAMING, LOOP_SLOTS, SUN_RADIUS, sunScene } from './sunModel';
+import { DAY_MOON_MONTH_MS, DAY_MOON_ORBIT_RADIUS, DAY_NARROW_FRAMING, LOOP_SLOTS, SUN_RADIUS, sunScene } from './sunModel';
 
 // The day scene builds its geometry and shaders without a GPU, so the wiring can be
 // checked here: what goes into the scene, what moves on update, and what is freed.
@@ -40,19 +40,46 @@ const cameraOn = (target, from) => {
 };
 
 describe('createSunSystem', () => {
-  it('adds the Sun group and the Earth, centred where the model puts the Sun', () => {
+  it('adds the Sun group, the Earth and the Moon, centred where the model puts the Sun', () => {
     const { scene, system } = build();
     expect(system.kind).toBe('sun');
     expect(system.framing).toBe(DAY_NARROW_FRAMING);
     expect(system.glareRadius).toBe(SUN_RADIUS);
     expect(system.centre.toArray()).toEqual(sunScene(DATE).centre);
-    expect(scene.children).toHaveLength(2);
+    expect(scene.children).toHaveLength(3);
     expect(CORONA_EXTENT).toBeGreaterThan(2);
   });
 
-  it('asks only for the NASA Earth maps already in public/admin/sky', () => {
+  it('asks only for the NASA Earth and Moon maps already in public/admin/sky', () => {
     const { loadTexture } = build();
-    expect(loadTexture.mock.calls.map(([url]) => url)).toEqual(['/admin/sky/earth/earth-day.webp', '/admin/sky/earth/earth-night.webp', '/admin/sky/earth/earth-clouds.webp']);
+    expect(loadTexture.mock.calls.map(([url]) => url)).toEqual(['/admin/sky/earth/earth-day.webp', '/admin/sky/earth/earth-night.webp', '/admin/sky/earth/earth-clouds.webp', '/admin/sky/moon/moon-color-1024.webp', '/admin/sky/moon/moon-relief-1024.webp']);
+  });
+
+  it('keeps the Moon on its orbit round the Earth, near side to the Earth, lit from the Sun', () => {
+    const { scene, system } = build();
+    const earth = scene.children[1], moon = scene.children[2];
+    for (const t of [0, 20000, 61000]) {
+      system.update(t);
+      expect(moon.position.distanceTo(earth.position)).toBeCloseTo(DAY_MOON_ORBIT_RADIUS, 6);
+      const toEarth = earth.position.clone().sub(moon.position).normalize();
+      // map longitude 0 is the mesh's +x: it faces the Earth (to within the orbit's tilt off the pole's plane)
+      expect(new THREE.Vector3(1, 0, 0).applyQuaternion(moon.quaternion).dot(toEarth)).toBeGreaterThan(0.99);
+      const toSun = system.centre.clone().sub(moon.position).normalize();
+      expect(moon.material.uniforms.uSun.value.dot(toSun)).toBeCloseTo(1, 6);
+      expect(moon.material.uniforms.uEarth.value.dot(toEarth)).toBeCloseTo(1, 6);
+    }
+    // it moves: a quarter of its stylised month carries it a quarter of the way round
+    system.update(0); const a = moon.position.clone().sub(earth.position);
+    system.update(DAY_MOON_MONTH_MS / 4); const b = moon.position.clone().sub(earth.position);
+    expect(Math.abs(a.angleTo(b) - Math.PI / 2)).toBeLessThan(0.2);   // the Earth moved too, so not exact
+  });
+
+  it('shows and hides the Moon with the Earth, and frees it on dispose', () => {
+    const { scene, system } = build();
+    const moon = scene.children[2];
+    system.setPresence(0.3); expect(moon.visible).toBe(false);
+    system.setPresence(1); expect(moon.visible).toBe(true);
+    system.dispose(); expect(scene.children).not.toContain(moon);
   });
 
   it('turns the Sun, moves the Earth and lights loop footpoints on update', () => {
