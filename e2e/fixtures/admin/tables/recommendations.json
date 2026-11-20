@@ -1,0 +1,23 @@
+[
+  {
+    "id": "TEST-rec-1",
+    "recommender_name": "TEST- Reviewer",
+    "recommender_title": "TEST- Manager",
+    "organization": "TEST- Example Corp",
+    "relationship": "Manager",
+    "content": "TEST- A synthetic recommendation, written for the tests and about no one.",
+    "linkedin_profile_url": "https://example.test/profile/reviewer",
+    "profile_image_url": "{{storage}}/fixtures/reviewer.png",
+    "recommendation_type": "Professional",
+    "recommendation_number": 1,
+    "date_received": "2025-02-01",
+    "rating": null,
+    "word_count": 12,
+    "is_featured": true,
+    "is_public": true,
+    "order_index": null,
+    "status": "active",
+    "created_at": "2026-11-01T10:00:00.000Z",
+    "updated_at": "2026-11-12T10:00:00.000Z"
+  }
+]

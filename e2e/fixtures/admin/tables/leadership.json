@@ -1,0 +1,31 @@
+[
+  {
+    "id": "TEST-leadership-1",
+    "title": "TEST- Club Lead",
+    "organization": "TEST- Example Society",
+    "organization_type": "Student Organization",
+    "description": "TEST- A synthetic leadership description long enough for the rules.",
+    "initiative_type": "Community",
+    "location": "TEST- Example City",
+    "start_date": "2023-01-01",
+    "end_date": "2023-12-31",
+    "is_current": false,
+    "is_featured": false,
+    "position_number": 1,
+    "team_size": 10,
+    "mentees_count": 2,
+    "budget_managed": null,
+    "volunteer_hours": null,
+    "impact": "TEST- Impact",
+    "challenges_overcome": "TEST- Challenge",
+    "key_responsibilities": ["TEST- Responsibility"],
+    "achievements": [],
+    "recognition_received": [],
+    "skills_developed": ["TEST- Skill"],
+    "training_provided": [],
+    "order_index": null,
+    "status": "active",
+    "created_at": "2026-11-01T10:00:00.000Z",
+    "updated_at": "2026-11-12T10:00:00.000Z"
+  }
+]

@@ -1,0 +1,24 @@
+[
+  {
+    "id": "TEST-internship-1",
+    "title": "TEST- Intern",
+    "company": "TEST- Example Labs",
+    "company_logo_url": "{{storage}}/fixtures/labs.png",
+    "description": "TEST- A synthetic internship description long enough for the rules.",
+    "duration": "3 months",
+    "start_date": "2025-06-01",
+    "end_date": "2025-08-31",
+    "location": "TEST- Remote",
+    "internship_type": "Remote",
+    "internship_number": 1,
+    "key_responsibilities": ["TEST- Responsibility"],
+    "achievements": ["TEST- Achievement"],
+    "skills_gained": ["TEST- Skill"],
+    "technologies": ["Go"],
+    "certificate_urls": ["{{storage}}/fixtures/certificate.pdf"],
+    "order_index": 1,
+    "status": "active",
+    "created_at": "2026-11-01T10:00:00.000Z",
+    "updated_at": "2026-11-12T10:00:00.000Z"
+  }
+]

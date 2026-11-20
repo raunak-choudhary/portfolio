@@ -1,0 +1,28 @@
+[
+  {
+    "id": "TEST-education-1",
+    "degree": "TEST- Master of Science",
+    "institution": "TEST- Example University",
+    "institution_logo_url": "{{storage}}/fixtures/university.png",
+    "college": "TEST- School of Testing",
+    "description": "TEST- A synthetic education description long enough for the rules.",
+    "education_level": "Masters",
+    "education_status": "Completed",
+    "degree_type": null,
+    "major": null,
+    "minor": null,
+    "thesis_title": null,
+    "location": "TEST- Example City",
+    "start_date": "2024-09-01",
+    "end_date": "2026-05-31",
+    "gpa_received": "3.9",
+    "max_gpa_scale": "4.0",
+    "coursework": ["TEST- Course"],
+    "achievements": [],
+    "activities": [],
+    "order_index": null,
+    "status": "active",
+    "created_at": "2026-11-01T10:00:00.000Z",
+    "updated_at": "2026-11-12T10:00:00.000Z"
+  }
+]
