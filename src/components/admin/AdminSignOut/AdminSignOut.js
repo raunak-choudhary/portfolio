@@ -16,7 +16,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Volume2, VolumeX } from 'lucide-react';
-import { getAssuranceState, signOutAdmin } from '../../../services/authService';
+import { forgetLocalSession, hasSecondFactorSession, signOutAdmin } from '../../../services/authService';
 import { SkySettingsProvider } from '../SkyBackground/SkySettingsContext';
 import { createExitAudio } from './exitAudio';
 import { skyCovered } from './exitBackdrop';
@@ -45,6 +45,24 @@ function loadCondensedFont() {
   } catch { /* fallback fonts */ }
 }
 
+/** How long the way to the login waits for a sign-out still in flight before ending the session locally. */
+export const SIGN_OUT_WAIT_MS = 3000;
+
+/**
+ * Whether this page was reached by the sign-out click itself (a fresh
+ * navigation carrying the session's facts), as opposed to a reload or a
+ * direct visit. Chrome lets sound start after a same-site navigation that
+ * began with a click; on a reload it refuses and logs a warning, so there
+ * the sound waits for the first click or key on this page.
+ */
+const arrivedFromSignOutClick = (hasRecord) => {
+  try {
+    if (navigator.userActivation?.hasBeenActive) return true;
+    const entry = performance.getEntriesByType?.('navigation')?.[0];
+    return hasRecord && (!entry || entry.type === 'navigate');
+  } catch { return hasRecord; }
+};
+
 /** Whether the visitor asked the operating system for less motion. */
 const prefersReducedMotion = () => { try { return !!window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { return false; } };
 
@@ -71,30 +89,48 @@ export default function AdminSignOut() {
   // The script: cast from the farewells, crew from this session's facts (only what was recorded).
   const script = useMemo(() => buildScript({ farewells: FAREWELLS, facts: creditFacts({ facts, now, assurance }), director: DIRECTOR }), [facts, now, assurance]);
 
+  // The film loop reads the script through a ref. The script changes once,
+  // when the assurance level arrives; as an effect dependency that change
+  // rebuilt the loop and restarted its clock, so the clapperboard rose twice.
+  const scriptRef = useRef(script);
+  scriptRef.current = script;
+
   const rootRef = useRef(null), leaderRef = useRef(null), bgRef = useRef(null), planeRefs = useRef([]);
-  const audioRef = useRef(null), releaseSkyRef = useRef(null);
+  const audioRef = useRef(null), releaseSkyRef = useRef(null), phaseRef = useRef('');
   const [muted, setMuted] = useState(false);
+  // The sign-out in flight: { promise, settled }. One per mount, so React's
+  // development double-run of effects does not sign out twice.
+  const signOutRef = useRef(null), aliveRef = useRef(true);
 
   useEffect(() => { loadCondensedFont(); }, []);
 
-  // End the session: read the assurance level first (for the credits), then sign out.
+  // End the session. The sign-out request starts at once and is not held up
+  // by the level read for the credits, which runs beside it: that read uses
+  // the stored token and normally needs no request, but auth-js refreshes a
+  // token close to expiry first, which is one. The way to the login waits for
+  // the sign-out, with a cap (see finish below).
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try { const state = await getAssuranceState(); if (!cancelled) setAssurance(state?.currentLevel || null); } catch { /* the line is simply omitted */ }
-      await signOutAdmin();
-    })();
-    return () => { cancelled = true; };
+    aliveRef.current = true;
+    if (!signOutRef.current) {
+      const state = { settled: false, promise: null };
+      state.promise = (async () => {
+        try { const verified = await hasSecondFactorSession(); if (aliveRef.current) setAssurance(verified ? 'aal2' : null); } catch { /* the line is simply omitted */ }
+        // signOutAdmin retries and, if the server cannot be reached, forgets the session on this device
+        try { await signOutAdmin(); } catch { /* handled on the way to the login */ }
+        state.settled = true;
+      })();
+      signOutRef.current = state;
+    }
+    return () => { aliveRef.current = false; };
   }, []);
 
   // The master clock.
   useEffect(() => {
     const root = rootRef.current;
     if (!root) return undefined;
-    const audio = createExitAudio({ enabled: !muted && !reduced });
+    const audio = createExitAudio({ enabled: !muted && !reduced, eager: arrivedFromSignOutClick(Boolean(facts || skyPosition)) });
     audioRef.current = audio;
     const arcs = makeArcs();
-    const creditScale = (T.creditsEnd - T.credits) / script.length;
     let start = performance.now(), boost = 0, jumpTo = null, lastClasses = '', lastNum = null, frame = 0, finished = false;
     let view = { W: window.innerWidth, H: window.innerHeight, dpr: Math.min(window.devicePixelRatio || 1, 2), font: CONDENSED };
     const size = () => {
@@ -104,15 +140,30 @@ export default function AdminSignOut() {
     size();
     const has = (classes, name) => classes.includes(name);
     const flash = () => { const f = root.querySelector('.exit-flash'); if (!f) return; f.style.transition = 'none'; f.style.opacity = '0.9'; requestAnimationFrame(() => { f.style.transition = 'opacity 160ms ease'; f.style.opacity = '0'; }); };
-    const finish = () => {
-      if (finished) return;
-      finished = true;
-      audio.whirOff();
+    const leave = () => {
       releaseSkyRef.current?.();   // give the WebGL context back before the login mounts
       clearSession();
       clearVoyagePosition();
       try { localStorage.removeItem('admin_analytics_session'); } catch { /* nothing to clear */ }
       navigate('/adminlogin', { replace: true });
+    };
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      audio.whirOff();
+      // The login page sends a signed-in visitor straight back to the
+      // dashboard, so it must not mount while the session is still stored.
+      // Usually the sign-out finished long ago; after an early Escape or on
+      // a slow network, wait for it briefly, then end the session on this
+      // device regardless.
+      const signOut = signOutRef.current;
+      if (!signOut || signOut.settled) { leave(); return; }
+      let timer = null;
+      const timeout = new Promise((resolve) => { timer = setTimeout(() => resolve('timeout'), SIGN_OUT_WAIT_MS); });
+      Promise.race([signOut.promise, timeout])
+        .then((outcome) => { clearTimeout(timer); return outcome === 'timeout' ? forgetLocalSession() : null; })
+        .catch(() => {})
+        .then(() => { if (aliveRef.current) leave(); });
     };
     const tick = (nowMs) => {
       if (finished) return;
@@ -123,10 +174,12 @@ export default function AdminSignOut() {
       if (key !== lastClasses) {
         const wasSnap = lastClasses.includes('snap'), wasLeader = lastClasses.includes('leader');
         root.className = `exit ${key}`;
-        if (!wasSnap && has(classes, 'snap')) { audio.clap(); setTimeout(flash, 40); }
+        // the board claps only while it is on screen: a skip to the card or the login passes 'snap' without it
+        if (!wasSnap && has(classes, 'snap') && t < T.black) { audio.clap(); setTimeout(flash, 40); }
         if (!wasLeader && has(classes, 'leader')) audio.whirOn();
         if (wasLeader && !has(classes, 'leader')) audio.whirOff();
         lastClasses = key;
+        phaseRef.current = key;
       }
       if (has(classes, 'leader') && leaderRef.current) {
         const ctx = leaderRef.current.getContext('2d');
@@ -136,7 +189,8 @@ export default function AdminSignOut() {
         const ctx = bgRef.current?.getContext('2d');
         if (ctx) drawCreditBackground(ctx, view, nowMs, arcs);
         const squeeze = view.W < 640 ? 0.35 : 1, ct = t - T.credits;
-        script.planes.forEach((plane, i) => {
+        const current = scriptRef.current, creditScale = (T.creditsEnd - T.credits) / current.length;
+        current.planes.forEach((plane, i) => {
           const el = planeRefs.current[i]; if (!el) return;
           const state = planeState(plane, ct, creditScale, squeeze);
           if (!state) { el.style.opacity = '0'; return; }
@@ -151,8 +205,9 @@ export default function AdminSignOut() {
     let touchY = null;
     const onTouchStart = (e) => { touchY = e.touches[0]?.clientY ?? null; };
     const onTouchMove = (e) => { if (touchY === null || !lastClasses.includes('credits')) return; const y = e.touches[0].clientY; boost += (touchY - y) * 8; touchY = y; };
-    const onClick = (e) => { if (e.target.closest('.exit-mute')) return; const t = performance.now() - start + boost; if (t < T.card) jumpTo = T.card; };
-    const onKey = (e) => { if (e.key === 'Escape') jumpTo = T.login; };
+    // Any click or key on this page is a gesture the browser accepts for sound (a reload has none until then).
+    const onClick = (e) => { audio.unlock(); if (e.target.closest('.exit-mute')) return; const t = performance.now() - start + boost; if (t < T.card) jumpTo = T.card; };
+    const onKey = (e) => { audio.unlock(); if (e.key === 'Escape') jumpTo = T.login; };
     window.addEventListener('resize', size);
     window.addEventListener('wheel', onWheel, { passive: true });
     window.addEventListener('touchstart', onTouchStart, { passive: true });
@@ -167,11 +222,17 @@ export default function AdminSignOut() {
       window.removeEventListener('touchmove', onTouchMove); window.removeEventListener('keydown', onKey); root.removeEventListener('click', onClick);
       audio.dispose(); audioRef.current = null;
     };
-    // The loop is built once per script; mute is applied through the audio object below.
+    // The loop is built once; the script is read through its ref and mute is applied through the audio object below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [script, T, navigate, reduced]);
+  }, [T, navigate, reduced]);
 
-  useEffect(() => { audioRef.current?.setEnabled(!muted && !reduced); }, [muted, reduced]);
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.setEnabled(!muted && !reduced);
+    // sound switched back on during the countdown: the projector whir comes back with it
+    if (!muted && !reduced && phaseRef.current.includes('leader')) audio.whirOn();
+  }, [muted, reduced]);
 
   return (
     <div className="exit" ref={rootRef} data-testid="exit-sequence">
@@ -208,9 +269,12 @@ export default function AdminSignOut() {
       </div>
 
       <div className="exit-flash" aria-hidden="true" />
-      <button type="button" className="exit-mute" onClick={() => setMuted((m) => !m)} aria-pressed={muted} title={muted ? 'Sound off' : 'Sound on'}>
-        {muted ? <VolumeX size={16} aria-hidden="true" /> : <Volume2 size={16} aria-hidden="true" />}
-      </button>
+      {/* with reduced motion there is no sound to switch, so no switch */}
+      {!reduced && (
+        <button type="button" className="exit-mute" onClick={() => setMuted((m) => !m)} aria-pressed={muted} title={muted ? 'Sound off' : 'Sound on'}>
+          {muted ? <VolumeX size={16} aria-hidden="true" /> : <Volume2 size={16} aria-hidden="true" />}
+        </button>
+      )}
       <p className="exit-hint">click · skip to the card &nbsp; scroll · speed the credits &nbsp; esc · login</p>
     </div>
   );

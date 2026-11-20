@@ -9,7 +9,10 @@ import {
   isUnknownAccountError,
   requireAdminAuth,
   requestAdminLoginOtp,
-  signOutAdmin
+  signOutAdmin,
+  forgetLocalSession,
+  navigation,
+  SESSION_CHECK_UNAVAILABLE
 } from './authService';
 import { supabase } from './supabaseClient';
 
@@ -205,6 +208,31 @@ describe('authService secure admin auth', () => {
       expect(result.error.code).toBe('NO_SESSION');
     });
 
+    it('reads a token refresh that never reached the server as unavailable, not as signed out', async () => {
+      // auth-js near expiry, offline: getSession tries a refresh, fails, keeps the stored session
+      supabase.auth.getSession.mockResolvedValue({ data: { session: null }, error: { name: 'AuthRetryableFetchError', message: 'Failed to fetch', status: 0 } });
+
+      const result = await requireAdminAuth();
+
+      expect(result.success).toBe(false);
+      expect(result.error.code).toBe(SESSION_CHECK_UNAVAILABLE);
+      expect(supabase.from).not.toHaveBeenCalled();
+    });
+
+    it('reads a gateway failure during the refresh as unavailable too', async () => {
+      supabase.auth.getSession.mockResolvedValue({ data: { session: null }, error: { name: 'AuthRetryableFetchError', message: 'Bad Gateway', status: 502 } });
+      expect((await requireAdminAuth()).error.code).toBe(SESSION_CHECK_UNAVAILABLE);
+    });
+
+    it('still reads a refused refresh (a revoked or expired refresh token) as no session', async () => {
+      supabase.auth.getSession.mockResolvedValue({ data: { session: null }, error: authApiError(400, 'refresh_token_not_found', 'Invalid Refresh Token') });
+
+      const result = await requireAdminAuth();
+
+      expect(result.success).toBe(false);
+      expect(result.error.code).toBe('NO_SESSION');
+    });
+
     it('rejects protected access when the signed-in user is not an active admin', async () => {
       const user = { id: 'user-2', email: 'visitor@example.com' };
       supabase.auth.getSession.mockResolvedValue({ data: { session: { user, access_token: 'token' } }, error: null });
@@ -240,6 +268,66 @@ describe('authService secure admin auth', () => {
       expect(supabase.auth.signOut).toHaveBeenCalledTimes(1);
       expect(supabase.auth.signOut).toHaveBeenCalledWith({ scope: 'local' });
       expect(localStorage.getItem('admin_analytics_session')).toBeNull();
+    });
+
+    it('tries a failed sign out once more, then forgets the session on this device', async () => {
+      supabase.auth.signOut.mockResolvedValue({ error: { message: 'Failed to fetch' } });
+      supabase.auth._removeSession = jest.fn().mockResolvedValue(undefined);
+      localStorage.setItem('admin_analytics_session', 'x');
+      try {
+        const result = await signOutAdmin();
+        expect(supabase.auth.signOut).toHaveBeenCalledTimes(2);
+        expect(supabase.auth._removeSession).toHaveBeenCalledTimes(1);
+        expect(result).toEqual({ success: true, data: expect.objectContaining({ localOnly: true }) });
+        expect(localStorage.getItem('admin_analytics_session')).toBeNull();
+      } finally { delete supabase.auth._removeSession; }
+    });
+
+    it('a second try that works needs no local clean-up', async () => {
+      supabase.auth.signOut.mockResolvedValueOnce({ error: { message: 'Failed to fetch' } }).mockResolvedValueOnce({ error: null });
+      supabase.auth._removeSession = jest.fn();
+      try {
+        const result = await signOutAdmin();
+        expect(result.success).toBe(true);
+        expect(result.data.localOnly).toBeUndefined();
+        expect(supabase.auth._removeSession).not.toHaveBeenCalled();
+      } finally { delete supabase.auth._removeSession; }
+    });
+
+    it('forgetLocalSession removes the stored keys itself when the client has no routine for it, then loads the login afresh', async () => {
+      supabase.auth.storageKey = 'sb-test-auth-token';
+      localStorage.setItem('sb-test-auth-token', '{}');
+      localStorage.setItem('sb-test-auth-token-code-verifier', 'v');
+      const toLogin = jest.spyOn(navigation, 'toLogin').mockImplementation(() => {});
+      try {
+        expect(await forgetLocalSession()).toBe(true);
+        expect(localStorage.getItem('sb-test-auth-token')).toBeNull();
+        expect(localStorage.getItem('sb-test-auth-token-code-verifier')).toBeNull();
+        // no listener heard SIGNED_OUT on this path, so the running page is replaced
+        expect(toLogin).toHaveBeenCalledTimes(1);
+      } finally { delete supabase.auth.storageKey; toLogin.mockRestore(); }
+    });
+
+    it('forgetLocalSession does not reload when the client announces the sign-out itself', async () => {
+      supabase.auth._removeSession = jest.fn().mockResolvedValue(undefined);
+      const toLogin = jest.spyOn(navigation, 'toLogin').mockImplementation(() => {});
+      try {
+        expect(await forgetLocalSession()).toBe(true);
+        expect(supabase.auth._removeSession).toHaveBeenCalledTimes(1);
+        expect(toLogin).not.toHaveBeenCalled();
+      } finally { delete supabase.auth._removeSession; toLogin.mockRestore(); }
+    });
+
+    it('reads an unanswered admin lookup as unavailable, not as "not the admin"', async () => {
+      const user = { id: 'user-1', email: 'admin@example.com' };
+      supabase.auth.getSession.mockResolvedValue({ data: { session: { user, access_token: 'token' } }, error: null });
+      adminQuery.maybeSingle.mockResolvedValue({ data: null, error: { message: 'TypeError: Failed to fetch' }, status: 0 });
+      expect((await requireAdminAuth()).error.code).toBe(SESSION_CHECK_UNAVAILABLE);
+      adminQuery.maybeSingle.mockResolvedValue({ data: null, error: { message: 'upstream' }, status: 503 });
+      expect((await requireAdminAuth()).error.code).toBe(SESSION_CHECK_UNAVAILABLE);
+      // a real answer from the server stays a refusal
+      adminQuery.maybeSingle.mockResolvedValue({ data: null, error: { message: 'permission denied' }, status: 403 });
+      expect((await requireAdminAuth()).error.code).toBe('NOT_ADMIN');
     });
 
     it('reports a refused sign out and keeps the caller informed', async () => {

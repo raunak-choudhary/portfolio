@@ -22,8 +22,11 @@ const useEntryCounts = () => {
     let cancelled = false;
     (async () => {
       const [projects, unread] = await Promise.all([
-        supabase.from('projects').select('id', { count: 'exact', head: true }).eq('status', 'active'),
-        supabase.from('contact_messages').select('id', { count: 'exact', head: true }).eq('status', 'unread'),
+        // GET with one row, not HEAD: browsers report body-less HEAD count
+        // responses as aborted in the network panel. Unread is counted the way
+        // the inbox and the Mission Control tile count it: not read, not spam.
+        supabase.from('projects').select('id', { count: 'exact' }).eq('status', 'active').limit(1),
+        supabase.from('contact_messages').select('id', { count: 'exact' }).neq('status', 'read').not('is_spam', 'is', true).limit(1),
       ]);
       if (cancelled) return;
       setCounts({
@@ -41,7 +44,11 @@ const AdminWelcome = ({ requireSecurityEnrollment = false }) => {
   const [entryDone, setEntryDone] = useState(false);
   const counts = useEntryCounts();
 
-  useEffect(() => { resetDashboardReady(); }, []);
+  // Cleared while this component first renders, before any child effect runs.
+  // As an effect it ran after the entry screen had subscribed (child effects
+  // run first) and wiped that subscription, so the entry never heard the
+  // dashboard report in and always waited out its full cap.
+  useState(() => { resetDashboardReady(); return null; });
 
   const facts = useMemo(() => ({
     secondFactorPassed: assurance?.currentLevel === 'aal2',

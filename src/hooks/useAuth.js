@@ -19,6 +19,14 @@ const noteSignInAt = (assurance) => {
   if (assurance?.currentLevel === 'aal2') void noteSecondFactorSignIn();
 };
 
+/** authService's code for a session check that got no answer (offline, server error). */
+const CHECK_UNAVAILABLE = 'SESSION_CHECK_UNAVAILABLE';
+
+/** Waits between re-checks after an unanswered one; the last value repeats. An `online` event re-checks at once. */
+export const RECHECK_DELAYS_MS = [2000, 5000, 15000, 30000];
+/** After this many unanswered re-checks in a row the hook stops asking until the next auth event or `online`. */
+export const RECHECK_LIMIT = 8;
+
 /**
  * Where the session stands in the two-step login. `checked` is false until
  * the first read completes, so protected routes can wait instead of guessing.
@@ -44,6 +52,29 @@ const initialAuthState = {
 export const useAuth = () => {
   const [authState, setAuthState] = useState(initialAuthState);
   const checkGeneration = useRef(0);
+  // The latest state for the async checks, and the pending re-check after an unanswered one.
+  const stateRef = useRef(initialAuthState);
+  stateRef.current = authState;
+  const recheck = useRef({ timer: null, attempts: 0 });
+  const refreshSessionRef = useRef(null);
+
+  const disposed = useRef(false);
+  const cancelRecheck = useCallback(() => {
+    if (recheck.current.timer) clearTimeout(recheck.current.timer);
+    recheck.current = { timer: null, attempts: 0 };
+  }, []);
+
+  /** Asks again later, with a growing wait, up to RECHECK_LIMIT times in a row. */
+  const scheduleRecheck = useCallback(() => {
+    const pending = recheck.current;
+    // A check still in flight when the hook unmounts resolves afterwards; it
+    // must not start a timer nothing is left to clear.
+    if (disposed.current) return;
+    if (pending.timer || pending.attempts >= RECHECK_LIMIT) return;
+    const wait = RECHECK_DELAYS_MS[Math.min(pending.attempts, RECHECK_DELAYS_MS.length - 1)];
+    pending.attempts += 1;
+    pending.timer = setTimeout(() => { recheck.current.timer = null; refreshSessionRef.current?.(); }, wait);
+  }, []);
   const [loadingStates, setLoadingStates] = useState({
     signIn: false,
     signOut: false,
@@ -70,7 +101,10 @@ export const useAuth = () => {
 
   /** Re-reads the factor and level state, for example after an enrolment or a code step. */
   const refreshAssurance = useCallback(async () => {
-    const assurance = await getAssuranceState();
+    const read = await getAssuranceState();
+    // An unreadable level says nothing new: keep the answer already held.
+    const held = stateRef.current.assurance;
+    const assurance = read.levelUnknown && held.checked && !held.levelUnknown ? held : read;
     setAuthState(prev => ({ ...prev, assurance }));
     noteSignInAt(assurance);
     return assurance;
@@ -88,13 +122,28 @@ export const useAuth = () => {
       if (isStale()) return;
 
       if (!admin.success) {
+        if (admin.error?.code === CHECK_UNAVAILABLE) {
+          // No answer is not a refusal. auth-js re-announces the session every
+          // time the tab becomes visible, so a laptop waking up offline ran
+          // this check, failed it, and threw a signed-in admin (and any
+          // unsaved edit) out to the login. Keep what was known and ask again.
+          scheduleRecheck();
+          if (stateRef.current.isAuthenticated) return;
+          setSignedOut(admin.error);
+          return;
+        }
+        cancelRecheck();
         // No session is the normal signed-out state, not an error to display.
         setSignedOut(admin.error?.code === 'NO_SESSION' ? null : admin.error);
         return;
       }
 
-      const assurance = await getAssuranceState();
+      const read = await getAssuranceState();
       if (isStale()) return;
+      const held = stateRef.current;
+      // Same rule for the factor state: an unreadable level keeps the held answer.
+      const assurance = read.levelUnknown && held.isAuthenticated && held.assurance.checked && !held.assurance.levelUnknown ? held.assurance : read;
+      if (read.unknown) scheduleRecheck(); else cancelRecheck();
       noteSignInAt(assurance);
       setAuthState({
         user: admin.data.user,
@@ -114,7 +163,8 @@ export const useAuth = () => {
     } finally {
       setOperationLoading('sessionVerification', false);
     }
-  }, [setOperationLoading, setSignedOut]);
+  }, [setOperationLoading, setSignedOut, scheduleRecheck, cancelRecheck]);
+  refreshSessionRef.current = refreshSession;
 
   const signIn = useCallback(async (email) => {
     try {
@@ -141,13 +191,21 @@ export const useAuth = () => {
     try {
       setOperationLoading('signOut', true);
       const result = await signOutAdmin();
+      if (!result.success) {
+        // The session is still stored on this device (it could not even be
+        // forgotten locally): saying "signed out" here would be untrue, and
+        // the next reload would walk straight back in.
+        setAuthState(prev => ({ ...prev, error: result.error }));
+        return result;
+      }
       checkGeneration.current += 1;
-      setSignedOut(result.success ? null : result.error);
+      cancelRecheck();
+      setSignedOut(null);
       return result;
     } finally {
       setOperationLoading('signOut', false);
     }
-  }, [setOperationLoading, setSignedOut]);
+  }, [setOperationLoading, setSignedOut, cancelRecheck]);
 
   const clearError = useCallback(() => {
     setAuthState(prev => ({ ...prev, error: null }));
@@ -158,6 +216,7 @@ export const useAuth = () => {
   }, []);
 
   useEffect(() => {
+    disposed.current = false;
     refreshSession();
 
     const {
@@ -166,16 +225,28 @@ export const useAuth = () => {
       if (event === 'SIGNED_OUT') {
         // Settle at once and retire any check still in flight.
         checkGeneration.current += 1;
+        cancelRecheck();
         setSignedOut(null);
         return;
       }
       refreshSession();
     });
 
+    // The connection coming back is the best moment to finish an unanswered check.
+    const onOnline = () => {
+      if (!recheck.current.timer && recheck.current.attempts === 0) return;
+      cancelRecheck();
+      refreshSession();
+    };
+    window.addEventListener('online', onOnline);
+
     return () => {
       subscription.unsubscribe();
+      window.removeEventListener('online', onOnline);
+      disposed.current = true;
+      cancelRecheck();
     };
-  }, [refreshSession, setSignedOut]);
+  }, [refreshSession, setSignedOut, cancelRecheck]);
 
   const hasAdminRole = authState.isAuthenticated;
 

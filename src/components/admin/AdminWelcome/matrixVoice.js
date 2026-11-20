@@ -8,7 +8,14 @@
 
 const SETTINGS = Object.freeze({ rate: 0.96, lowpassHz: 7000, echoSeconds: 0.09, echoFeedback: 0.08, gain: 0.9 });
 
+/** How long a suspended context may take to resume before the line is skipped. */
+export const RESUME_WAIT_MS = 400;
+
 export const clipUrlFor = (line) => `${process.env.PUBLIC_URL || ''}/admin/voice/line-${line}.m4a`;
+
+/** Whether a click or key has happened on this page, which is what browsers require before sound. */
+export const canStartAudio = (nav = typeof navigator !== 'undefined' ? navigator : undefined) =>
+  nav?.userActivation ? Boolean(nav.userActivation.hasBeenActive) : true;
 
 /**
  * Creates a player bound to one AudioContext. `isMuted` is read at play time
@@ -21,8 +28,19 @@ export const createVoicePlayer = ({ isMuted = () => false, fetchImpl = (...args)
   const ensureContext = async () => {
     const Ctor = window.AudioContext || window.webkitAudioContext;
     if (!Ctor) return null;
+    // Without a gesture on this page (a reload with a saved session) the
+    // browser refuses sound and logs a warning for the attempt, so none is
+    // made. Browsers without the activation API keep the old behaviour.
+    if (!context && !canStartAudio()) return null;
     context = context || new Ctor();
-    if (context.state === 'suspended') await context.resume();
+    // Waited for only briefly: a refused resume stays pending until the next
+    // click, and the greeting would then play late, out of nowhere.
+    if (context.state === 'suspended') {
+      await Promise.race([
+        Promise.resolve(context.resume()).catch(() => {}),
+        new Promise((resolve) => setTimeout(resolve, RESUME_WAIT_MS)),
+      ]);
+    }
     return context;
   };
 

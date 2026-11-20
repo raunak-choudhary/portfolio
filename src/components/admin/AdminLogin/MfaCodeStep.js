@@ -82,6 +82,11 @@ const checkPasskeyStatus = () => Promise.race([
   new Promise((resolve) => setTimeout(() => resolve(UNKNOWN_STATUS), PASSKEY_CHECK_TIMEOUT_MS))
 ]);
 
+/** How long step 03 waits for the level-2 session to be re-read before giving the screen back. */
+export const LAUNCH_REFRESH_TIMEOUT_MS = 6000;
+/** Shown when the second step was accepted but the session could not be re-read. */
+export const LAUNCH_STALLED_MESSAGE = 'The second step was accepted, but the session could not be confirmed. Check the connection; the dashboard opens as soon as it answers.';
+
 const MfaCodeStep = ({ now, onHoldChange = () => {}, autoPromptPasskey = AUTO_PROMPT_PASSKEY }) => {
   const { refreshAssurance, signOut, user } = useAuthContext();
   const words = useMemo(() => passkeyWording(), []);
@@ -91,6 +96,8 @@ const MfaCodeStep = ({ now, onHoldChange = () => {}, autoPromptPasskey = AUTO_PR
   const [codeError, setCodeError] = useState('');
   const [attempt, setAttempt] = useState(0);
   const [loadError, setLoadError] = useState('');
+  const [listFailed, setListFailed] = useState(false);
+  const [loadRound, setLoadRound] = useState(0);            // bumped by "Try again"
   const [isLoadingFactors, setIsLoadingFactors] = useState(true);
   const [isVerifying, setIsVerifying] = useState(false);
   const [launching, setLaunching] = useState(false);
@@ -121,6 +128,7 @@ const MfaCodeStep = ({ now, onHoldChange = () => {}, autoPromptPasskey = AUTO_PR
       if (cancelled) return;
       if (!listed.success) {
         setLoadError(listed.error.message);
+        setListFailed(true);
       } else {
         // Hide the bridge by the id the function reported; the list's own
         // split (by the reserved prefix) stands when the id is unknown.
@@ -133,10 +141,17 @@ const MfaCodeStep = ({ now, onHoldChange = () => {}, autoPromptPasskey = AUTO_PR
       setIsLoadingFactors(false);
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [loadRound]);
+
+  /** Reads the authenticators again after a failed read; without it the code field stayed disabled for good. */
+  const retryLoad = () => {
+    setLoadError(''); setListFailed(false); setPasskeyChecked(false); setIsLoadingFactors(true);
+    setLoadRound((round) => round + 1);
+  };
 
   // Leaving the step closes any prompt still open.
-  useEffect(() => () => passkeyAttempt.current?.abort(), []);
+  const aliveRef = useRef(true);
+  useEffect(() => { aliveRef.current = true; return () => { aliveRef.current = false; passkeyAttempt.current?.abort(); }; }, []);
 
   const ready = !isLoadingFactors && passkeyChecked;
   const codeMode = ready && (!passkeyOffered || mode === 'code');
@@ -146,7 +161,19 @@ const MfaCodeStep = ({ now, onHoldChange = () => {}, autoPromptPasskey = AUTO_PR
     setAcceptedBy(summary);
     setLaunching(true);
     await new Promise((resolve) => setTimeout(resolve, prefersReducedMotion() ? LAUNCH_HOLD_REDUCED_MS : LAUNCH_HOLD_MS));
-    await refreshAssurance();
+    // Bounded: an unanswered re-read used to leave this black screen up for good.
+    let timer = null;
+    const assurance = await Promise.race([
+      Promise.resolve(refreshAssurance()).catch(() => null),
+      new Promise((resolve) => { timer = setTimeout(() => resolve(null), LAUNCH_REFRESH_TIMEOUT_MS); }),
+    ]);
+    clearTimeout(timer);
+    if (assurance?.currentLevel !== 'aal2' && aliveRef.current) {
+      // The route still shows this step; give the screen back with the reason.
+      // The auth listener keeps checking and moves on by itself when it can.
+      setLaunching(false);
+      setLoadError(LAUNCH_STALLED_MESSAGE);
+    }
     onHoldChange(false);
   }, [onHoldChange, refreshAssurance]);
 
@@ -191,18 +218,23 @@ const MfaCodeStep = ({ now, onHoldChange = () => {}, autoPromptPasskey = AUTO_PR
   // Focus once everything has loaded: the unlock row when it leads (so a
   // phone keyboard does not cover it), otherwise the code. With the auto
   // prompt on, the prompt opens here, once.
+  // The prompt is reached through a ref so this effect runs only when the
+  // view really changes: as a dependency, a new handlePasskey identity re-ran
+  // it and pulled focus back from wherever the admin had tabbed to.
+  const handlePasskeyRef = useRef(handlePasskey);
+  handlePasskeyRef.current = handlePasskey;
   useEffect(() => {
     if (!ready) return;
     if (passkeyOffered && mode === 'passkey') {
       unlockRef.current?.focus();
       if (autoPromptPasskey && !autoPrompted.current) {
         autoPrompted.current = true;
-        handlePasskey({ auto: true });
+        handlePasskeyRef.current({ auto: true });
       }
     } else {
       inputRef.current?.focus();
     }
-  }, [ready, passkeyOffered, mode, autoPromptPasskey, handlePasskey]);
+  }, [ready, passkeyOffered, mode, autoPromptPasskey]);
 
   const verify = async (value) => {
     if (verifyingRef.current) return;
@@ -293,6 +325,11 @@ const MfaCodeStep = ({ now, onHoldChange = () => {}, autoPromptPasskey = AUTO_PR
   return (
     <PreflightShell current="second" now={now} summaries={{ identity }} footerAction={signOutButton}>
       {loadError && <ErrorLine>{loadError}</ErrorLine>}
+      {listFailed && ready && (
+        <button type="button" className="preflight-switch" onClick={retryLoad}>
+          <span>Try again</span>
+        </button>
+      )}
 
       {!ready && <p className="preflight-hint" role="status">Checking for a passkey on this device</p>}
 

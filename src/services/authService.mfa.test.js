@@ -250,11 +250,29 @@ describe('getAssuranceState', () => {
     expect(await getAssuranceState()).toMatchObject({ currentLevel: 'aal2', needsSecondFactor: false, needsEnrollment: false });
   });
 
-  it('falls back to the most restrictive state when a check fails or throws', async () => {
+  it('falls back to the most restrictive state, marked unknown, when the level cannot be read', async () => {
     supabase.auth.mfa.getAuthenticatorAssuranceLevel.mockResolvedValue({ data: null, error: apiError(500, 'x') });
     supabase.auth.mfa.listFactors.mockResolvedValue(factors([factor('f1', 'verified')]));
-    expect(await getAssuranceState()).toMatchObject({ needsEnrollment: true, hasVerifiedFactor: false });
+    expect(await getAssuranceState()).toMatchObject({ needsEnrollment: true, hasVerifiedFactor: false, unknown: true, levelUnknown: true });
     supabase.auth.mfa.getAuthenticatorAssuranceLevel.mockRejectedValue(new Error('offline'));
-    expect(await getAssuranceState()).toMatchObject({ needsEnrollment: true });
+    expect(await getAssuranceState()).toMatchObject({ needsEnrollment: true, unknown: true, levelUnknown: true });
+  });
+
+  it('answers from the token when only the factor list cannot be read', async () => {
+    const offline = { data: null, error: { message: 'Failed to fetch' } };
+    supabase.auth.mfa.listFactors.mockResolvedValue(offline);
+    // level 2 already: the dashboard stays open, it is not locked to the setup screen
+    supabase.auth.mfa.getAuthenticatorAssuranceLevel.mockResolvedValue(levels('aal2'));
+    expect(await getAssuranceState()).toMatchObject({ currentLevel: 'aal2', hasVerifiedFactor: true, needsEnrollment: false, needsSecondFactor: false, unknown: true });
+    // level 1 with a factor on the account: the code step still stands
+    supabase.auth.mfa.getAuthenticatorAssuranceLevel.mockResolvedValue(levels('aal1', 'aal2'));
+    expect(await getAssuranceState()).toMatchObject({ hasVerifiedFactor: true, needsSecondFactor: true, needsEnrollment: false, unknown: true });
+    expect((await getAssuranceState()).levelUnknown).toBeUndefined();
+  });
+
+  it('a complete read carries no unknown mark', async () => {
+    supabase.auth.mfa.getAuthenticatorAssuranceLevel.mockResolvedValue(levels('aal2'));
+    supabase.auth.mfa.listFactors.mockResolvedValue(factors([factor('f1', 'verified')]));
+    expect((await getAssuranceState()).unknown).toBeUndefined();
   });
 });

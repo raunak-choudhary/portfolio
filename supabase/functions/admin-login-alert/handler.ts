@@ -92,6 +92,26 @@ export function nextState(previous: AlertState | null, now: Date): { state: Aler
   };
 }
 
+/** How long to wait before trying to deliver again after a delivery failed. */
+export const RETRY_BACKOFF_MS = 2 * 60 * 1000;
+
+/**
+ * The state to store when an alert was due but could not be delivered: the
+ * attempt stays counted and the alert is not recorded as sent, so it is tried
+ * again soon. "Soon" is a short back-off, not the next request: while the
+ * mail provider is failing, leaving no mark at all made every later attempt
+ * "due", so a script hitting this endpoint could drive one provider call per
+ * request on the key the contact form and the reports share. The mark is
+ * placed so the alert falls due again RETRY_BACKOFF_MS from now.
+ */
+export function undeliveredState(previous: AlertState | null, now: Date): AlertState {
+  return {
+    attempts: (previous?.attempts ?? 0) + 1,
+    windowStartedAt: previous?.windowStartedAt ?? now.toISOString(),
+    lastAlertAt: new Date(now.getTime() - ALERT_INTERVAL_MS + RETRY_BACKOFF_MS).toISOString(),
+  };
+}
+
 export function renderAlert(masked: string, attempts: number, when: string): { subject: string; html: string; text: string } {
   const plural = attempts === 1 ? 'attempt' : 'attempts';
   const subject = `Admin login attempt with another address (${attempts} ${plural})`;
@@ -154,7 +174,11 @@ export async function handleRequest(request: Request, deps: HandlerDeps): Promis
   }
 
   const now = (deps.now ?? (() => new Date()))();
-  const decision = nextState(await deps.readState(), now);
+  const previous = await deps.readState();
+  const decision = nextState(previous, now);
+  // The throttle is stored before anything is sent, so a database outage can
+  // never turn this endpoint into an unthrottled mailer. A delivery that then
+  // fails takes the "sent" mark back (see undeliveredState).
   const stored = await deps.writeState(decision.state);
   if (stored.error) {
     console.error('admin-login-alert: could not store throttle state:', stored.error);
@@ -163,7 +187,14 @@ export async function handleRequest(request: Request, deps: HandlerDeps): Promis
   if (!decision.sendAlert) {
     return json(200, { success: true, data: { alerted: false, attempts: decision.attemptsToReport } }, cors);
   }
-  if (!deps.env.RESEND_API_KEY) return json(500, { success: false, error: 'Email service not configured' }, cors);
+  const takeBack = async () => {
+    const undone = await deps.writeState(undeliveredState(previous, now));
+    if (undone.error) console.error('admin-login-alert: could not restore throttle state:', undone.error);
+  };
+  if (!deps.env.RESEND_API_KEY) {
+    await takeBack();
+    return json(500, { success: false, error: 'Email service not configured' }, cors);
+  }
 
   const rendered = renderAlert(maskAddress(attempted), decision.attemptsToReport, whenLabel(now));
   const delivery = await deps.sendEmail({
@@ -173,6 +204,7 @@ export async function handleRequest(request: Request, deps: HandlerDeps): Promis
   });
   if ('error' in delivery) {
     console.error('admin-login-alert: delivery failed:', delivery.error);
+    await takeBack();
     return json(502, { success: false, error: 'Failed to send alert' }, cors);
   }
   return json(200, { success: true, data: { alerted: true, attempts: decision.attemptsToReport, emailId: delivery.id } }, cors);
