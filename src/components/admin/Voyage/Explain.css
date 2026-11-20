@@ -1,0 +1,100 @@
+/* src/components/admin/Voyage/Explain.css
+   The "i" explainer dialog (ExplainDialog.js) and the score guide's
+   pictures (ScoreGuide.js). Colours come from the voyage tokens only, so
+   both sky themes carry over. Blocks rise in one after another; bars fill
+   from the left. Reduced motion shows everything at once. */
+
+.explain-trigger { display: inline-flex; align-items: center; gap: 5px; justify-self: start; padding: 4px 0; background: none; border: 0; color: var(--voyage-accent); font: 600 13px system-ui, -apple-system, 'Segoe UI', sans-serif; cursor: pointer; }
+.explain-trigger:hover span { text-decoration: underline; text-underline-offset: 3px; }
+.explain-trigger:focus-visible { outline: 2px solid var(--voyage-accent); outline-offset: 2px; border-radius: 4px; }
+
+.explain-backdrop { padding: 12px; background: rgba(2, 4, 10, .72); }
+.explain {
+  box-sizing: border-box;   /* padding and border inside the cap, or a phone loses the edges */
+  width: min(100%, 720px);
+  max-height: calc(100vh - 24px);
+  max-height: calc(100dvh - 24px);
+  overflow-y: auto;
+  padding: 18px 16px 16px;
+  display: grid;
+  gap: 14px;
+  align-content: start;
+  border-radius: 16px;
+  border: 1px solid var(--voyage-line);
+  background: var(--voyage-glass-base);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, .5);
+  animation: explain-in .28s cubic-bezier(.2, .8, .2, 1) both;
+}
+.explain__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.explain h4 { margin: 0; font-family: var(--voyage-cond); font-size: 22px; font-weight: 600; letter-spacing: .02em; text-transform: uppercase; }
+.explain__lead { margin: 4px 0 0; font-size: 14px; color: var(--voyage-muted); }
+.explain__lead b { color: var(--voyage-fg); font-size: 16px; }
+.explain__foot { margin: 0; font-size: 12px; color: var(--voyage-muted); }
+
+.explain__steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.explain-step {
+  display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 10px;
+  padding: 12px; border-radius: 12px; border: 1px solid var(--voyage-line); background: var(--voyage-soft);
+  animation: explain-step-in .45s cubic-bezier(.2, .8, .2, 1) both;
+  animation-delay: calc(var(--i, 0) * 110ms + 80ms);
+}
+.explain-step__n { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--voyage-accent); color: var(--voyage-accent); font-family: var(--voyage-cond); font-weight: 700; font-size: 15px; }
+.explain-step__body { display: grid; gap: 8px; min-width: 0; }
+.explain-step h5 { margin: 3px 0 0; font-family: var(--voyage-cond); font-size: 16px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--voyage-fg); }
+.explain-step p { margin: 0; font-size: 13px; line-height: 1.45; color: var(--voyage-muted); }
+
+/* 1. the hundred points */
+.sg-bar { display: flex; gap: 2px; height: 16px; border-radius: 6px; overflow: hidden; }
+.sg-bar__seg { position: relative; flex: 0 1 0; min-width: 3px;   /* flex-grow is the weight, so the gaps come out of the share, not on top */
+  background: color-mix(in srgb, var(--voyage-muted) 22%, transparent); }
+.sg-bar__fill { position: absolute; inset: 0 auto 0 0; background: var(--voyage-accent); transform-origin: left; animation: explain-fill .8s cubic-bezier(.2, .8, .2, 1) both; animation-delay: .35s; }
+.sg-legend { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 14px; font-size: 12px; }
+.sg-legend li { display: flex; justify-content: space-between; gap: 8px; min-width: 0; color: var(--voyage-muted); }
+.sg-legend li { align-items: baseline; }
+.sg-legend li span { min-width: 0; overflow-wrap: anywhere; }
+.sg-legend b { color: var(--voyage-fg); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sg-legend small { color: var(--voyage-muted); font-weight: 400; }
+.sg-legend li.has-left b { color: var(--voyage-warn); }
+
+/* 2. seventy plus thirty */
+.sg-split { display: flex; gap: 2px; border-radius: 8px; overflow: hidden; font-size: 12px; }
+.sg-split span { padding: 7px 8px; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--voyage-fg); background: color-mix(in srgb, var(--voyage-accent) 30%, transparent); transform-origin: left; animation: explain-fill .7s cubic-bezier(.2, .8, .2, 1) both; animation-delay: .45s; }
+.sg-split span + span { background: color-mix(in srgb, var(--voyage-good) 30%, transparent); animation-delay: .6s; }
+.sg-split b { font-family: var(--voyage-cond); font-size: 15px; margin-right: 3px; }
+.sg-chip-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.sg-chip { display: inline-block; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--voyage-line); color: var(--voyage-fg); font-size: 12px; font-weight: 600; white-space: nowrap; }
+.sg-chip--gain { border-color: var(--voyage-good); color: var(--voyage-good); font-variant-numeric: tabular-nums; }
+
+/* 3. record targets */
+.sg-targets { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 12px; }
+.sg-targets li { display: grid; grid-template-columns: minmax(84px, auto) 1fr auto; align-items: center; gap: 10px; }
+.sg-targets__name { color: var(--voyage-fg); }
+.sg-targets small { color: var(--voyage-muted); }
+.sg-dots { display: flex; flex-wrap: wrap; gap: 4px; }
+.sg-dots i { width: 10px; height: 10px; border-radius: 50%; border: 1px solid var(--voyage-muted); animation: explain-pop .3s both; animation-delay: .5s; }
+.sg-dots i.is-on { background: var(--voyage-good); border-color: var(--voyage-good); }
+
+/* 4. the top gains */
+.sg-gains { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; font-size: 13px; }
+.sg-gains li { display: flex; align-items: baseline; gap: 8px; min-width: 0; color: var(--voyage-fg); }
+.sg-gains li span:last-child { min-width: 0; overflow-wrap: anywhere; }
+
+@media (min-width: 768px) {
+  .explain { padding: 22px 24px 20px; }
+  .explain__steps { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .explain-step:first-child, .explain-step:last-child:nth-child(even) { grid-column: 1 / -1; }
+  .sg-legend { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (min-width: 1280px) {
+  .explain { width: min(100%, 780px); }
+  .sg-legend { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+@keyframes explain-in { from { opacity: 0; transform: translateY(14px) scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes explain-step-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes explain-fill { from { transform: scaleX(0); } to { transform: none; } }
+@keyframes explain-pop { from { transform: scale(0); } to { transform: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .explain, .explain-step, .sg-bar__fill, .sg-split span, .sg-dots i { animation: none; }
+}

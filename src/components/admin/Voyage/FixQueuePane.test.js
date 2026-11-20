@@ -45,7 +45,34 @@ describe('FixQueuePane', () => {
     expect(first.textContent).toContain(`Field: ${groups[0].fieldLabel}`);
     expect(view.container.querySelector('.v5-head__sum').textContent).toContain(`${groups.length} things`);
     expect(view.container.querySelector('.fx-score__labels').textContent).toMatch(/Now \d+\.\dAfter every fix \d+\.\d/);
-    expect(view.container.querySelector('.fx-how').textContent).toContain('Projects 20');
+    view.unmount();
+  });
+
+  it('opens How the score works as a dialog of four blocks from the real numbers, and closes back to its button', () => {
+    const fixes = fixesFor();
+    const view = mount(<FixQueuePane fixes={fixes} onReview={jest.fn()} />);
+    const trigger = button(view.container, 'How the score works');
+    expect(document.querySelector('[role="dialog"]')).toBeNull();
+    trigger.focus();
+    click(trigger);
+    const dialog = document.querySelector('[role="dialog"]');
+    expect(dialog.getAttribute('aria-modal')).toBe('true');
+    expect(dialog.querySelectorAll('.explain-step')).toHaveLength(4);
+    expect(dialog.querySelector('.explain__lead').textContent).toContain(`Your score now: ${Math.round(fixes.model.preciseScore * 10) / 10}`);
+    // block 1: every section, Projects first with its weight
+    const legend = [...dialog.querySelectorAll('.sg-legend li')];
+    expect(legend).toHaveLength(11);
+    expect(legend[0].textContent).toMatch(/^Projects[\d.]+ \/ 20$/);
+    // block 3: nine projects fill the three dots, one skill lights one of eight
+    const targets = [...dialog.querySelectorAll('.sg-targets li')];
+    expect(targets[0].textContent).toContain('full points');
+    expect(targets[1].querySelectorAll('i.is-on')).toHaveLength(1);
+    expect(targets[1].textContent).toContain('1 of 8');
+    // block 4: the queue's top gains, biggest first
+    expect(dialog.querySelectorAll('.sg-gains li')[0].textContent).toContain(fixes.model.groups[0].title);
+    act(() => { dialog.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); });
+    expect(document.querySelector('[role="dialog"]')).toBeNull();
+    expect(document.activeElement).toBe(trigger);
     view.unmount();
   });
 
