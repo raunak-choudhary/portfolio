@@ -183,7 +183,6 @@ export const createContactAttachmentSignedUrl = async (filePath, expiresIn = 300
  * Trigger refresh event for public portfolio components
  */
 const triggerPublicRefresh = (table = 'all') => {
-  console.log(`📢 Triggering public portfolio refresh for table: ${table}`);
   
   // Custom event to notify public components
   window.dispatchEvent(new CustomEvent('adminDataChange', {
@@ -222,7 +221,6 @@ export const describeAdminWriteError = (error) => {
 
 export const saveAdminData = async (table, data, existingId = null) => {
   try {
-    console.log(`💾 Admin save operation starting for ${table}:`, data);
 
     let result;
     
@@ -252,7 +250,6 @@ export const saveAdminData = async (table, data, existingId = null) => {
       result = { success: true, data: newData };
     }
     
-    console.log(`✅ Admin save successful for ${table}:`, result);
     recordSave();
     
     // Trigger refresh for public components
@@ -261,7 +258,7 @@ export const saveAdminData = async (table, data, existingId = null) => {
     return result;
     
   } catch (error) {
-    console.error(`❌ Admin save failed for ${table}:`, error);
+    console.error(`Admin save failed for ${table}:`, error);
     // Managers show error.message and keep their form state, so the typed
     // sentence reaches the owner and nothing typed is lost.
     const described = describeAdminWriteError(error);
