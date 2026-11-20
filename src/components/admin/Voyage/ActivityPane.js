@@ -12,11 +12,13 @@
 // (skeleton rows), not set up yet (the table is missing), failed (one fixed
 // sentence and Try again), nothing yet, and the log itself with filters and
 // "Show earlier" paging. A quiet refresh (Mission Control coming back into
-// view, a new New York day) reloads without blanking what is on screen.
+// view, a new New York day, a save or delete raising the shared content
+// signal) reloads without blanking what is on screen.
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowUpDown, ChevronDown, FileX, Fingerprint, History, Inbox, Info, LogIn, LogOut, Pencil, Plus, RefreshCw, Smartphone, Trash2, UploadCloud } from 'lucide-react';
 import { ACTIVITY_NOT_SET_UP, listActivity, listDeletedRecords } from '../../../services/activityService';
+import { contentVersion } from './contentChanged';
 import {
   FILTERS, TILE_ROWS, activityFailure, canOpen, collapseBulk, describe, filterAnnouncement, goneRecords, groupByDay, isGone, isOutside,
   mergeRows, moreAnnouncement, msUntilNextNyDay, nyDayKey, nyTime, paneSummary, recordKey, recordsToCheck, subLine, toneFor,
@@ -56,6 +58,11 @@ export function useActivityFeed({ pageSize = PAGE_SIZE } = {}) {
   const request = useRef(0);
   const deleteRequest = useRef(0);
   const stateRef = useRef(state); stateRef.current = state;
+  // The quiet refresh in flight, if any. `fresh` is true until the task that
+  // started it ends, so triggers firing together share one read; `again`
+  // asks for one more read when the content changed after it set off.
+  const quietRun = useRef({ running: false, fresh: false, again: false });
+  const mounted = useRef(true);
 
   // Best effort: without an answer the loaded rows still strike what they can.
   const checkDeleted = useCallback(async (rows) => {
@@ -108,18 +115,44 @@ export function useActivityFeed({ pageSize = PAGE_SIZE } = {}) {
     }
   }, [pageSize, checkDeleted, refreshLatest]);
 
-  useEffect(() => { load('all'); return () => { request.current += 1; deleteRequest.current += 1; }; }, [load]);
+  useEffect(() => {
+    mounted.current = true;
+    load('all');
+    return () => { mounted.current = false; request.current += 1; deleteRequest.current += 1; };
+  }, [load]);
 
   const setFilter = useCallback((filter) => {
     if (filter !== stateRef.current.filter || stateRef.current.status === 'error') load(filter, { announce: true });
   }, [load]);
   const retry = useCallback(() => load(stateRef.current.filter), [load]);
-  /** Reloads quietly; skipped while a load or a page is already on its way. */
-  const refresh = useCallback(() => {
+  /** Starts a quiet reload of the current filter; skipped while a load or a page is already on its way. */
+  const startQuiet = useCallback(() => {
     const { status, more, filter } = stateRef.current;
-    if (status === 'loading' || more) return;
-    load(filter, { quiet: true });
+    if (status === 'loading' || more || !mounted.current) return;
+    const run = quietRun.current;
+    run.running = true; run.fresh = true; run.again = false;
+    Promise.resolve().then(() => { run.fresh = false; });
+    // load() settles every failure itself, so this always resolves
+    load(filter, { quiet: true }).then(() => {
+      run.running = false;
+      if (run.again) { run.again = false; startQuietRef.current(); }
+    });
   }, [load]);
+  const startQuietRef = useRef(startQuiet); startQuietRef.current = startQuiet;
+
+  /** Reloads quietly; skipped while a load, a page or another quiet reload is already on its way. */
+  const refresh = useCallback(() => {
+    if (!quietRun.current.running) startQuiet();
+  }, [startQuiet]);
+
+  // A save, delete or upload anywhere in the voyage (contentChanged.js) adds
+  // a row to the log. A quiet reload started in this same task already sees
+  // it; one started earlier may not, so it is followed by one more read.
+  useEffect(() => contentVersion.subscribe(() => {
+    const run = quietRun.current;
+    if (!run.running) startQuietRef.current();
+    else if (!run.fresh) run.again = true;
+  }), []);
 
   const loadMore = useCallback(async () => {
     const { rows, hasMore, more, filter, status } = stateRef.current;

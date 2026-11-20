@@ -1,5 +1,6 @@
 /* eslint-disable testing-library/no-container, testing-library/no-node-access */
 import ActivityPane, { ACTIVITY_PANE_ID, PAGE_SIZE, useActivityFeed } from './ActivityPane';
+import { noteContentChanged } from './contentChanged';
 import { React, act, click, mount } from '../SkyBackground/testUtils';
 
 jest.mock('../../../services/activityService', () => ({ ACTIVITY_NOT_SET_UP: 'ACTIVITY_NOT_SET_UP', listActivity: jest.fn(), listDeletedRecords: jest.fn(), recordHistory: jest.fn(), isActivityAvailable: jest.fn(), logSecurityEvent: jest.fn() }));
@@ -237,6 +238,72 @@ describe('ActivityPane', () => {
     await flush();
     expect(pane().querySelectorAll('.act-row')).toHaveLength(7);
     expect(pane().querySelector('[role="alert"]')).toBeNull();
+  });
+
+  describe('when the shared content signal moves', () => {
+    const pending = () => { let finish; service.listActivity.mockReturnValue(new Promise((resolve) => { finish = resolve; })); return (page) => act(async () => { finish(page); }); };
+    const SAVED = row(41, { at: '2026-11-19T18:58:00.000Z', recordTitle: 'Saved elsewhere' });
+
+    it('reloads quietly under the current filter, keeping the rows and the filter on screen', async () => {
+      render();
+      await flush();
+      service.listActivity.mockResolvedValue({ rows: ROWS, hasMore: true });
+      click(buttonNamed('Content'));
+      await flush();
+      service.listActivity.mockClear();
+      const finish = pending();
+      act(() => { noteContentChanged(); });
+      expect(service.listActivity).toHaveBeenCalledTimes(1);
+      expect(service.listActivity).toHaveBeenCalledWith({ limit: PAGE_SIZE, filter: 'content' });
+      expect(pane().querySelector('[data-testid="activity-loading"]')).toBeNull();
+      expect(pane().querySelectorAll('.act-row')).toHaveLength(6);
+      await finish({ rows: [SAVED, ...ROWS], hasMore: true });
+      await flush();
+      expect(pane().querySelector('.act-row b').textContent).toBe('Edited Saved elsewhere');
+      expect(buttonNamed('Content').getAttribute('aria-pressed')).toBe('true');
+    });
+
+    it('reads once when the signal and another refresh fire together', async () => {
+      render();
+      await flush();
+      service.listActivity.mockClear();
+      const finish = pending();
+      act(() => { noteContentChanged(); lastFeed.refresh(); });
+      act(() => { lastFeed.refresh(); noteContentChanged(); });
+      expect(service.listActivity).toHaveBeenCalledTimes(1);
+      await finish({ rows: ROWS, hasMore: true });
+      await flush();
+      expect(service.listActivity).toHaveBeenCalledTimes(1);
+    });
+
+    it('reads once more when the content changes after a quiet reload set off, and not for a plain refresh', async () => {
+      render();
+      await flush();
+      service.listActivity.mockClear();
+      let finish = pending();
+      act(() => { lastFeed.refresh(); });
+      await act(async () => { await Promise.resolve(); });   // a later task: that read may predate the save
+      act(() => { lastFeed.refresh(); });                     // already covered by the read in flight
+      act(() => { noteContentChanged(); noteContentChanged(); });
+      expect(service.listActivity).toHaveBeenCalledTimes(1);
+      const first = finish;
+      finish = pending();
+      await first({ rows: ROWS, hasMore: true });
+      expect(service.listActivity).toHaveBeenCalledTimes(2);
+      await finish({ rows: [SAVED, ...ROWS], hasMore: true });
+      await flush();
+      expect(service.listActivity).toHaveBeenCalledTimes(2);
+      expect(pane().querySelector('.act-row b').textContent).toBe('Edited Saved elsewhere');
+    });
+
+    it('stops listening once unmounted', async () => {
+      render();
+      await flush();
+      view.unmount(); view = null;
+      service.listActivity.mockClear();
+      act(() => { noteContentChanged(); });
+      expect(service.listActivity).not.toHaveBeenCalled();
+    });
   });
 
   it('moves focus into the list when Show earlier loads the last page, and announces what came in', async () => {
