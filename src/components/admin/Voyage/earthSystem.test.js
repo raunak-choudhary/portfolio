@@ -35,12 +35,42 @@ describe('createEarthSystem: the Moon', () => {
     return { scene, loadTexture, system, moon };
   };
 
-  it('is lit by the scene\'s one Sun and no other light: no lamps, no ambient fill', () => {
+  // A camera like the prologue's: above and in front of the system, looking at the Earth.
+  const cameraAt = (system, x, y, z) => {
+    const camera = new THREE.PerspectiveCamera(50, 1.6, 1, 20000);
+    camera.position.set(x, y, z);
+    camera.lookAt(new THREE.Vector3(...system.scene.centre));
+    camera.updateMatrixWorld();
+    return camera;
+  };
+
+  it('has no lamps and no ambient fill, and its own New York light instead of the scene\'s Sun', () => {
     const { scene, moon, system } = build();
     let lights = 0; scene.traverse((o) => { if (o.isLight) lights++; });
     expect(lights).toBe(0);
-    expect(moon.material.uniforms.uSun.value.toArray()).toEqual(system.scene.sunDir);
     expect(MOON_FRAGMENT).not.toMatch(/specular|pow\(max\(dot\(reflect/);
+    system.update(0);
+    system.beforeRender(null, cameraAt(system, 300, 900, 1500));
+    const light = moon.material.uniforms.uSun.value;
+    expect(light.length()).toBeCloseTo(1, 6);
+    // the angle between the light and the line of sight is tonight's phase angle (give or take the close-camera correction)
+    const toCamera = new THREE.Vector3(300, 900, 1500).sub(moon.position).normalize();
+    expect(Math.abs(light.angleTo(toCamera) / DEG - system.moonView.phaseAngle)).toBeLessThan(8);
+    // and it is not the Sun that lights the Earth
+    expect(light.angleTo(new THREE.Vector3(...system.scene.sunDir)) / DEG).toBeGreaterThan(5);
+  });
+
+  it('shows the same phase from another camera: the light follows the view, the date sets the phase', () => {
+    const { moon, system } = build();
+    system.update(0);
+    const litShare = (x, y, z) => {
+      system.beforeRender(null, cameraAt(system, x, y, z));
+      const toCamera = new THREE.Vector3(x, y, z).sub(moon.position).normalize();
+      return (1 + Math.cos(moon.material.uniforms.uSun.value.angleTo(toCamera))) / 2;
+    };
+    const a = litShare(300, 900, 1500), b = litShare(-1200, 400, 900);
+    expect(Math.abs(a - b)).toBeLessThan(0.03);
+    expect(Math.abs(a - system.moonView.fraction)).toBeLessThan(0.06);
   });
 
   it('asks for the 2048 px maps by default and the 1024 px maps on the small tier, under moon/', () => {
@@ -63,17 +93,20 @@ describe('createEarthSystem: the Moon', () => {
     expect(moon.material.uniforms.uRelief.value).toBe(relief);
   });
 
-  it('starts where tonight\'s Moon is and turns its near side, longitude 0 of the map, to the Earth', () => {
+  it('starts where tonight\'s Moon is and turns the face New York sees to the camera', () => {
     const { moon, system } = build();
     system.update(0);
     const toMoon = moonDirection(system.scene, 0);
     const centre = new THREE.Vector3(...system.scene.centre);
     expect(moon.position.clone().sub(centre).normalize().toArray().map((v, i) => v - toMoon[i]).every((e) => Math.abs(e) < 1e-6)).toBe(true);
+    system.beforeRender(null, cameraAt(system, 300, 900, 1500));
     const nearSide = new THREE.Vector3(1, 0, 0).applyQuaternion(moon.quaternion);   // the middle of the map
-    const toEarth = centre.clone().sub(moon.position).normalize();
-    expect(nearSide.angleTo(toEarth) / DEG).toBeLessThan(10);   // the librations, a few degrees
+    const toCamera = new THREE.Vector3(300, 900, 1500).sub(moon.position).normalize();
+    expect(nearSide.angleTo(toCamera) / DEG).toBeLessThan(10);   // the librations, a few degrees
+    // the mesh stays a rigid rotation: its three axes are still perpendicular unit vectors
     const north = new THREE.Vector3(0, 1, 0).applyQuaternion(moon.quaternion);
-    expect(north.toArray().map((v, i) => v - system.scene.moonPole[i]).every((e) => Math.abs(e) < 1e-6)).toBe(true);
+    expect(north.length()).toBeCloseTo(1, 6);
+    expect(Math.abs(north.dot(nearSide))).toBeLessThan(1e-6);
   });
 
   it('gets faint earthshine that fades toward full, and moves on with the orbit', () => {
