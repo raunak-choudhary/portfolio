@@ -128,7 +128,9 @@
 /* ---- mute and hint ---- */
 .exit-mute {
   position: absolute; top: 14px; right: 14px; z-index: 7; width: 40px; height: 40px; border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, .22); background: rgba(16, 22, 38, .55); color: #fff; font-size: 16px; cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, .22); background: rgba(16, 22, 38, .55); color: #fff; cursor: pointer;
+  /* the icon is an svg, so it is centred as a flex item rather than as a line of text */
+  display: inline-flex; align-items: center; justify-content: center; padding: 0;
   backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
 }
 .exit-hint { position: absolute; left: 0; right: 0; bottom: 12px; margin: 0; text-align: center; z-index: 7; font: 11px ui-monospace, Menlo, monospace; letter-spacing: .06em; color: rgba(255, 255, 255, .35); pointer-events: none; }

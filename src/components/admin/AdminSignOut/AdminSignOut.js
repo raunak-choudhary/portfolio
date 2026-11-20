@@ -15,6 +15,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Volume2, VolumeX } from 'lucide-react';
 import { getAssuranceState, signOutAdmin } from '../../../services/authService';
 import { SkySettingsProvider } from '../SkyBackground/SkySettingsContext';
 import { createExitAudio } from './exitAudio';
@@ -208,7 +209,7 @@ export default function AdminSignOut() {
 
       <div className="exit-flash" aria-hidden="true" />
       <button type="button" className="exit-mute" onClick={() => setMuted((m) => !m)} aria-pressed={muted} title={muted ? 'Sound off' : 'Sound on'}>
-        {muted ? '🔇' : '🔊'}
+        {muted ? <VolumeX size={16} aria-hidden="true" /> : <Volume2 size={16} aria-hidden="true" />}
       </button>
       <p className="exit-hint">click · skip to the card &nbsp; scroll · speed the credits &nbsp; esc · login</p>
     </div>

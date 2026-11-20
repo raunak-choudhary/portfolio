@@ -67,6 +67,21 @@ describe('AdminSignOut', () => {
     view.unmount();
   });
 
+  it('draws the mute toggle as a speaker line icon and swaps it when the sound is turned off', async () => {
+    const view = render();
+    await flush();
+    const mute = view.container.querySelector('.exit-mute');
+    expect(mute.getAttribute('title')).toBe('Sound on');
+    expect(mute.querySelector('svg').getAttribute('class')).toContain('lucide-volume2');
+    expect(mute.querySelector('svg').getAttribute('aria-hidden')).toBe('true');
+    expect(mute.textContent).toBe('');
+    act(() => { mute.dispatchEvent(new MouseEvent('click', { bubbles: true })); });
+    expect(mute.getAttribute('aria-pressed')).toBe('true');
+    expect(mute.getAttribute('title')).toBe('Sound off');
+    expect(mute.querySelector('svg').getAttribute('class')).toContain('lucide-volume-x');
+    view.unmount();
+  });
+
   it('moves through clapperboard, leader, credits and card, then returns to the login and forgets the session', async () => {
     const view = render();
     await flush();

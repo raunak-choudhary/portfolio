@@ -37,6 +37,20 @@ describe('SkyControls', () => {
     view.unmount();
   });
 
+  it('shows a moon line icon at night and a sun once the sky is day, hidden from assistive tech', () => {
+    const view = render();
+    const button = view.container.querySelector('.sky-controls__button');
+    const icon = () => button.querySelector('svg.sky-controls__icon');
+    // 05:00 UTC is midnight in New York, so the auto theme resolves to night.
+    expect(icon().getAttribute('class')).toContain('lucide-moon');
+    expect(icon().getAttribute('aria-hidden')).toBe('true');
+    expect(button.textContent).toBe('Sky');
+    click(button);
+    click([...panel().querySelectorAll('.sky-controls__segment')].find((b) => b.textContent === 'Day'));
+    expect(icon().getAttribute('class')).toContain('lucide-sun');
+    view.unmount();
+  });
+
   it('stays open for clicks inside the panel and closes for clicks elsewhere', () => {
     const view = render();
     click(view.container.querySelector('.sky-controls__button'));
