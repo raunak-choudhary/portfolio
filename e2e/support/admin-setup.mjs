@@ -15,19 +15,22 @@ const HEIGHTS = { 390: 844, 768: 1024, 1280: 800, 1440: 900 };
 
 /**
  * @param {import('@playwright/test').Browser} browser
- * @param {{ width?: number, session?: 'none'|'aal1'|'aal2', path?: string, tables?: Record<string, object[]> }} [options]
+ * @param {{ width?: number, session?: 'none'|'aal1'|'aal2', path?: string, tables?: Record<string, object[]>, motion?: boolean, before?: (context: import('@playwright/test').BrowserContext) => Promise<void> }} [options]
+ *   `motion: true` keeps full motion (the sign-out film plays whole); `before` runs after the
+ *   fixtures are installed and before the first navigation, to add routes or init scripts.
  */
-export async function openAdmin(browser, { width = 1440, session = 'aal2', path = '/admindashboard', tables } = {}) {
+export async function openAdmin(browser, { width = 1440, session = 'aal2', path = '/admindashboard', tables, motion = false, before } = {}) {
   const isMobile = width < 768;
   const context = await browser.newContext({
     viewport: { width, height: HEIGHTS[width] ?? 900 },
     deviceScaleFactor: 1,
     isMobile,
     hasTouch: isMobile,
-    reducedMotion: 'reduce',
+    reducedMotion: motion ? 'no-preference' : 'reduce',
     serviceWorkers: 'block',
   });
   const net = await installAdminFixtures(context, { session, tables });
+  if (before) await before(context);
   const page = await context.newPage();
   const errors = collectPageErrors(page);
   const dialogs = [];

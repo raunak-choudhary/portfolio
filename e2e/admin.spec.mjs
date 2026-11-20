@@ -557,3 +557,68 @@ test.describe('security', () => {
     }
   });
 });
+
+test.describe('sign out', () => {
+  /** Records every class change on the film's root, with the time since the page started. */
+  const recordPhases = (context) => context.addInitScript(() => {
+    window.__phases = [];
+    const seen = new WeakSet();
+    const watch = () => {
+      const root = document.querySelector('[data-testid="exit-sequence"]');
+      if (!root || seen.has(root)) return;
+      seen.add(root);
+      new MutationObserver(() => window.__phases.push({ t: Math.round(performance.now()), c: root.className })).observe(root, { attributes: true, attributeFilter: ['class'] });
+    };
+    new MutationObserver(watch).observe(document, { childList: true, subtree: true });
+  });
+
+  test('the film plays once, in order, ends the session and lands on the login', async ({ browser }) => {
+    test.setTimeout(60_000);
+    const { page, context, net, errors } = await openAdmin(browser, { path: '/adminsignout', motion: true, before: recordPhases });
+    try {
+      await expect(page.getByTestId('exit-sequence')).toBeVisible();
+      // long enough for the security level to have arrived and the clapperboard to have closed
+      await page.waitForTimeout(4000);
+      const phases = await page.evaluate(() => window.__phases);
+      const clapIns = phases.filter((p, i) => /\bclap-in\b/.test(p.c) && !/\bclap-in\b/.test(phases[i - 1]?.c ?? ''));
+      expect(clapIns, 'the clapperboard rises exactly once').toHaveLength(1);
+      const snaps = phases.filter((p, i) => /\bsnap\b/.test(p.c) && !/\bsnap\b/.test(phases[i - 1]?.c ?? ''));
+      expect(snaps, 'the stick snaps exactly once').toHaveLength(1);
+      // one clock: the snap follows the board within the film's own 1.7 s (the observer may attach a frame or two late)
+      expect(snaps[0].t - clapIns[0].t).toBeGreaterThan(900);
+      expect(snaps[0].t - clapIns[0].t).toBeLessThan(2100);
+      expect(phases.some((p) => /\bleader\b/.test(p.c)), 'the countdown follows').toBe(true);
+
+      // a click skips to the closing card; the login follows
+      await page.getByTestId('exit-sequence').click({ position: { x: 40, y: 40 } });
+      await page.waitForURL('**/adminlogin', { timeout: 15_000 });
+      const all = await page.evaluate(() => window.__phases ?? []);
+      expect(all.filter((p, i) => /\bclap-in\b/.test(p.c) && !/\bclap-in\b/.test(all[i - 1]?.c ?? '')).length, 'no second clapperboard after the skip').toBeLessThanOrEqual(1);
+      const stored = await page.evaluate(() => Object.keys(localStorage).filter((k) => /^sb-.*-auth-token$/.test(k)));
+      expect(stored, 'the session is gone from storage').toEqual([]);
+      await page.waitForTimeout(1500);
+      expect(new URL(page.url()).pathname, 'the login page stays').toBe('/adminlogin');
+      expect(errors).toEqual([]);
+      await expectOffline(net);
+    } finally {
+      await context.close();
+    }
+  });
+
+  test('a sign-out the server refuses still leaves the browser signed out', async ({ browser }) => {
+    test.setTimeout(60_000);
+    const refuse = (context) => context.route('**/auth/v1/logout**', (route) => route.fulfill({ status: 503, contentType: 'application/json', body: '{"message":"unavailable"}' }));
+    const { page, context, errors } = await openAdmin(browser, { path: '/adminsignout', before: refuse });
+    try {
+      await page.waitForURL('**/adminlogin', { timeout: 20_000 });
+      await page.waitForTimeout(1500);
+      expect(new URL(page.url()).pathname, 'not bounced back into the dashboard').toBe('/adminlogin');
+      const stored = await page.evaluate(() => Object.keys(localStorage).filter((k) => /^sb-.*-auth-token$/.test(k)));
+      expect(stored, 'the session is gone from storage').toEqual([]);
+      // the refused request itself is the only console entry allowed
+      expect(errors.filter((e) => !/503/.test(e))).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  });
+});
