@@ -162,17 +162,32 @@ export const scrollFractionFor = (i, count = CHAPTERS.length) => i / (count - 1)
 /**
  * The route coordinate from where the chapter stages actually sit on the
  * page. Stages are not all one screen tall (a deck of thirty cards is
- * several), so the camera follows the stage under the viewport: f runs from
- * i to i + 1 as the scroll position runs from stage i's top to stage i + 1's.
+ * several), so the camera follows the stage under the viewport.
+ *
+ * With the viewport height given, the camera holds on stage i's
+ * constellation (f stays at i) while the stage still fills the screen, and
+ * travels to i + 1 only over the last TRAVEL_SHARE of a screen before stage
+ * i + 1 reaches the top. A taller stage therefore holds longer, and its last
+ * rows stay live (isChapterLive) until they have nearly left the screen; a
+ * linear mapping faded the lower half of a long stage while it was still
+ * being read. Without a viewport height (or for a stage shorter than the
+ * travel) f runs linearly from i to i + 1 across the stage.
  * @param {number} scrollY
  * @param {number[]} tops document offsets of the stages, ascending.
+ * @param {number} [view] viewport height below the top bar, in px.
  */
-export function routeFromTops(scrollY, tops) {
+export const TRAVEL_SHARE = 0.6;
+export function routeFromTops(scrollY, tops, view = 0) {
   const n = tops.length;
   if (n === 0) return 0;
   if (n === 1 || scrollY <= tops[0]) return 0;
   for (let i = 0; i < n - 1; i++) {
-    if (scrollY < tops[i + 1]) { const span = Math.max(1, tops[i + 1] - tops[i]); return i + (scrollY - tops[i]) / span; }
+    if (scrollY < tops[i + 1]) {
+      const span = Math.max(1, tops[i + 1] - tops[i]);
+      const travel = view > 0 ? Math.min(span, Math.max(1, view * TRAVEL_SHARE)) : span;
+      const into = scrollY - tops[i] - (span - travel);
+      return into <= 0 ? i : i + into / travel;
+    }
   }
   return n - 1;
 }

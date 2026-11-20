@@ -191,7 +191,7 @@ function VoyageView({ requireSecurityEnrollment }) {
     const resizeObserver = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(invalidate) : null;
     stageRefs.current.forEach((el) => el && resizeObserver?.observe(el));
     window.addEventListener('resize', invalidate);
-    const scrollFraction = () => { if (!tops) measure(); return routeFromTops(window.scrollY, tops) / Math.max(1, CHAPTERS.length - 1); };
+    const scrollFraction = () => { if (!tops) measure(); return routeFromTops(window.scrollY, tops, window.innerHeight - TOP_BAR) / Math.max(1, CHAPTERS.length - 1); };
 
     // Adaptive resolution: a long run of slow frames lowers the pixel ratio a step, a longer run of fast ones raises it.
     let adapt = initialAdaptState(), adaptMode = modeRef.current;
