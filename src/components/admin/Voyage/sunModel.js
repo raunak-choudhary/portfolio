@@ -58,10 +58,12 @@ export const EARTH_SCENE_DIRECTION = Object.freeze(normalize([-0.86, 0, 0.5]));
 export const SUN_OFFSET = Object.freeze({ x: 440, y: -300, z: -900 });
 /**
  * Narrow-screen framing for the day prologue (see voyageModel.prologueFraming):
- * the orbit is wider than the night Earth, so a portrait phone backs away
- * further to keep the Sun's whole disc and most of the orbit on screen.
+ * the orbit is wider than the night Earth, so a portrait phone backs well away
+ * and drops below the system: the Sun's whole disc and the whole orbit (with
+ * the Earth on it) fit between the top bar and the greeting, with a margin at
+ * both sides. Tuned by projecting the scene at 390 by 844 (see the tests).
  */
-export const DAY_NARROW_FRAMING = Object.freeze({ wide: 1.25, narrow: 0.5, shiftX: 330, lift: -10, pullBack: 1500 });
+export const DAY_NARROW_FRAMING = Object.freeze({ wide: 1.25, narrow: 0.5, shiftX: 410, lift: -650, pullBack: 2700 });
 
 // ---- real constants ----
 /** Inclination of the Sun's equator to the ecliptic, degrees (Carrington). */
