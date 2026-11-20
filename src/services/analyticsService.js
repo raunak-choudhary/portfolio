@@ -281,7 +281,6 @@ export const calculateContentEngagement = async (contentType = null, days = 30) 
   try {
     const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
     
-    console.log('🔍 Calculating content engagement for days:', days);
 
     let query = supabase
       .from('content_performance')
@@ -296,7 +295,7 @@ export const calculateContentEngagement = async (contentType = null, days = 30) 
     const { data, error } = await query;
 
     if (error) {
-      console.error('❌ Error calculating content engagement:', error);
+      console.error('Error calculating content engagement:', error);
       return {
         totalViews: 0,
         avgEngagementScore: 0,
@@ -308,7 +307,6 @@ export const calculateContentEngagement = async (contentType = null, days = 30) 
     }
 
     if (!data || data.length === 0) {
-      console.log('⚠️ No engagement data found');
       return {
         totalViews: 0,
         avgEngagementScore: 0,
@@ -319,7 +317,6 @@ export const calculateContentEngagement = async (contentType = null, days = 30) 
       };
     }
 
-    console.log('✅ Found engagement data:', data.length, 'records');
 
     // Calculate real metrics from your data
     const totalViews = data.reduce((sum, item) => sum + (item.view_count || 0), 0);
@@ -347,11 +344,10 @@ export const calculateContentEngagement = async (contentType = null, days = 30) 
       engagementRateChange: 0
     };
 
-    console.log('✅ Calculated content engagement:', result);
     return result;
 
   } catch (error) {
-    console.error('❌ Error in calculateContentEngagement:', error);
+    console.error('Error in calculateContentEngagement:', error);
     return {
       totalViews: 0,
       avgEngagementScore: 0,
@@ -658,7 +654,6 @@ export const getSectionPerformance = async (dateRange = '30d') => {
     const days = parseDateRange(dateRange);
     const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
     
-    console.log('🔍 Getting section performance for date range:', dateRange, 'start date:', startDate);
     
     const { data: performanceData, error } = await supabase
       .from('content_performance')
@@ -666,16 +661,14 @@ export const getSectionPerformance = async (dateRange = '30d') => {
       .gte('performance_date', startDate);
     
     if (error) {
-      console.error('❌ Error getting section performance:', error);
+      console.error('Error getting section performance:', error);
       return [];
     }
 
     if (!performanceData || performanceData.length === 0) {
-      console.log('⚠️ No performance data found, returning empty array');
       return [];
     }
 
-    console.log('✅ Found performance data:', performanceData.length, 'records');
 
     // Process real data by section - fixed for your structure
     const sectionMap = {};
@@ -704,11 +697,10 @@ export const getSectionPerformance = async (dateRange = '30d') => {
       }))
       .sort((a, b) => b.views - a.views);
 
-    console.log('✅ Processed section performance:', result);
     return result;
 
   } catch (error) {
-    console.error('❌ Error in getSectionPerformance:', error);
+    console.error('Error in getSectionPerformance:', error);
     return [];
   }
 };
@@ -721,7 +713,6 @@ export const getTopPerformingContent = async (dateRange = '30d') => {
     const days = parseDateRange(dateRange);
     const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
     
-    console.log('🔍 Getting top performing content for date range:', dateRange);
     
     const { data: contentData, error } = await supabase
       .from('content_performance')
@@ -731,16 +722,14 @@ export const getTopPerformingContent = async (dateRange = '30d') => {
       .limit(10);
     
     if (error) {
-      console.error('❌ Error getting top performing content:', error);
+      console.error('Error getting top performing content:', error);
       return [];
     }
 
     if (!contentData || contentData.length === 0) {
-      console.log('⚠️ No content data found, returning empty array');
       return [];
     }
 
-    console.log('✅ Found top performing content:', contentData.length, 'records');
 
     const result = contentData.map(item => ({
       title: `${item.content_type} Section`,
@@ -750,11 +739,10 @@ export const getTopPerformingContent = async (dateRange = '30d') => {
       engagement: item.engagement_score || 0
     }));
 
-    console.log('✅ Processed top performing content:', result);
     return result;
 
   } catch (error) {
-    console.error('❌ Error getting top performing content:', error);
+    console.error('Error getting top performing content:', error);
     return [];
   }
 };
@@ -767,7 +755,6 @@ export const getContentEngagementHistory = async (dateRange = '30d') => {
     const days = parseDateRange(dateRange);
     const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
     
-    console.log('🔍 Getting content engagement history for date range:', dateRange);
     
     const { data: historyData, error } = await supabase
       .from('content_performance')
@@ -776,16 +763,14 @@ export const getContentEngagementHistory = async (dateRange = '30d') => {
       .order('performance_date', { ascending: true });
     
     if (error) {
-      console.error('❌ Error getting content engagement history:', error);
+      console.error('Error getting content engagement history:', error);
       return [];
     }
 
     if (!historyData || historyData.length === 0) {
-      console.log('⚠️ No history data found, returning empty array');
       return [];
     }
 
-    console.log('✅ Found engagement history:', historyData.length, 'records');
 
     // Group by date and calculate daily averages
     const dailyEngagement = {};
@@ -803,11 +788,10 @@ export const getContentEngagementHistory = async (dateRange = '30d') => {
       engagement: Math.round((data.total / data.count) * 10) / 10
     }));
 
-    console.log('✅ Processed engagement history:', result);
     return result;
 
   } catch (error) {
-    console.error('❌ Error getting content engagement history:', error);
+    console.error('Error getting content engagement history:', error);
     return [];
   }
 };
