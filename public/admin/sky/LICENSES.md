@@ -43,6 +43,19 @@ The Moon, NASA Lunar Reconnaissance Orbiter (LRO) imagery. Courtesy of NASA. Lic
 
 Credit line used on the dashboard: "Sun and Moon: NASA".
 
+## Moon maps for the 3D Moon and the Tonight tile (`moon/*.webp`)
+
+From NASA's Scientific Visualization Studio, [CGI Moon Kit](https://svs.gsfc.nasa.gov/4720) (fetched 2026-11-20). NASA imagery is in the public domain in the United States; NASA asks to be credited. Each file is a derived work in the kit's equirectangular layout (longitude -180 to 180 left to right, latitude 90 to -90 top to bottom), not cropped.
+
+| File | What it is | Made from |
+| --- | --- | --- |
+| `moon/moon-color-2048.webp` (2048 x 1024) | Colour map from Lunar Reconnaissance Orbiter Camera (LROC) mosaics | `lroc_color_2k.jpg`, encoded with `cwebp -q 84` |
+| `moon/moon-color-1024.webp` (1024 x 512) | The same, for phones and the tile | `lroc_color_2k.jpg`, resized with `sips`, `cwebp -q 86` |
+| `moon/moon-relief-2048.webp` (2048 x 1024) | Relief (normal) map: red is the east tilt and green the north tilt of the surface normal, each times 3, centred on 128 | `ldem_16_uint.tif`, the Lunar Orbiter Laser Altimeter (LOLA) elevation grid at 16 pixels per degree: area-averaged to the target size, slopes by central differences on the 1737.4 km sphere, `cwebp -q 72` |
+| `moon/moon-relief-1024.webp` (1024 x 512) | The same at half size | the same, `cwebp -q 80` |
+
+Credit: NASA's Scientific Visualization Studio; LRO LROC and LOLA teams. Licence: public domain. Credit line used on the dashboard: "Sun and Moon: NASA".
+
 ## Constellation figures (`figures.json`)
 
 `figures.json` is derived from two sources:
