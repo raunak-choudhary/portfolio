@@ -341,7 +341,6 @@ export class ViewportFixer {
    * Force reset all viewport settings
    */
   forceReset() {
-    console.log('Forcing viewport reset...');
     this.applyImmediateFixes();
     this.applyBrowserSpecificFixes();
     this.fixHighDPIScaling();

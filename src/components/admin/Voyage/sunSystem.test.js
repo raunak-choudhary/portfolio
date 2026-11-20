@@ -216,6 +216,33 @@ describe('the surface buffer', () => {
   });
 });
 
+describe('texture loader close, for a field disposed mid-load', () => {
+  it('frees a texture that arrives after the loader was closed instead of uploading it', () => {
+    const original = global.createImageBitmap;
+    global.createImageBitmap = undefined;
+    const pending = [];
+    const plain = jest.spyOn(THREE.TextureLoader.prototype, 'load').mockImplementation(function stub(url, onLoad) { pending.push(onLoad); });
+    try {
+      const gl = { initTexture: jest.fn() };
+      const onAnyLoad = jest.fn(), onLoad = jest.fn();
+      const load = createTextureLoader(gl, onAnyLoad);
+      load('/late.webp', onLoad);
+      load.close();
+      const late = new THREE.Texture();
+      const freed = jest.spyOn(late, 'dispose');
+      pending[0](late);
+      expect(freed).toHaveBeenCalled();
+      expect(onLoad).not.toHaveBeenCalled();
+      expect(onAnyLoad).not.toHaveBeenCalled();
+      expect(gl.initTexture).not.toHaveBeenCalled();
+      expect(load.loaded).toEqual([]);
+    } finally {
+      plain.mockRestore();
+      global.createImageBitmap = original;
+    }
+  });
+});
+
 describe('texture loader release, for a prologue swapped out mid-load', () => {
   it('drops a texture whose caller has gone and frees one on request', () => {
     const original = global.createImageBitmap;

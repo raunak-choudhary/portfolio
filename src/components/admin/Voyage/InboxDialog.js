@@ -171,7 +171,7 @@ export default function InboxDialog({ message, open, onClose, onAction, onDelete
               <Fact label="Name">{message.name}</Fact>
               <Fact label="Email">{replyAddress(message.email) ? <a className="record-view__link" href={`mailto:${replyAddress(message.email)}`}>{message.email}</a> : message.email}</Fact>
               <Fact label="Organization">{message.organization}</Fact>
-              <Fact label="Role">{message.role ? roleLabel(message.role) : null}</Fact>
+              <Fact label="Role">{message.role_position ? roleLabel(message.role_position) : null}</Fact>
               <Fact label="Inquiry">{message.inquiry_type ? inquiryLabel(message.inquiry_type) : null}</Fact>
               <Fact label="Received">{formatStamp(message.created_at)}</Fact>
               <Fact label="Read">{message.read_at ? formatStamp(message.read_at) : 'Not yet'}</Fact>

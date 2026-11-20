@@ -6,7 +6,7 @@ jest.mock('./supabaseClient', () => ({ supabase: { from: jest.fn() } }));
 /** A chainable query stub that resolves to the given result. */
 const chain = (result) => {
   const q = {};
-  for (const name of ['select', 'eq', 'gte', 'order', 'limit']) q[name] = jest.fn(() => q);
+  for (const name of ['select', 'eq', 'neq', 'not', 'gte', 'order', 'limit']) q[name] = jest.fn(() => q);
   q.then = (resolve, reject) => Promise.resolve(result).then(resolve, reject);
   return q;
 };
@@ -83,5 +83,35 @@ describe('unread messages and times', () => {
     expect(relativeTime('2026-11-12T13:00:00Z', now)).toBe('5 h ago');
     expect(relativeTime('2026-11-09T18:00:00Z', now)).toBe('3 d ago');
     expect(relativeTime('2026-09-01T18:00:00Z', now)).toMatch(/Sep/);
+  });
+});
+
+describe('database time and the unread definition (deep pass 2026-11-20)', () => {
+  it('buckets a late-evening New York view on its New York day, and reads zone-less stamps as UTC', () => {
+    const now = new Date('2026-11-12T03:30:00Z');            // 22:30 on 11 Nov in New York
+    const rows = [
+      { created_at: '2026-11-12T03:00:00', session_id: 'a' }, // no zone: UTC, so 22:00 on 11 Nov in New York
+      { created_at: '2026-11-11T12:00:00Z', session_id: 'b' },
+    ];
+    const out = summarizeVisitorEvents(rows, 7, now);
+    expect(out.days.at(-1)).toEqual({ date: '2026-11-11', views: 2, visitors: 2 });
+    // every counted session also has its view in the series (none falls on a missing day key)
+    expect(out.totalViews).toBe(2); expect(out.totalVisitors).toBe(2);
+  });
+
+  it('says how long ago from a stamp without a zone as UTC', () => {
+    const now = new Date('2026-11-12T18:00:00Z');
+    expect(relativeTime('2026-11-12T13:00:00', now)).toBe('5 h ago');
+    expect(relativeTime('2026-11-12 17:20:00.123456', now)).toBe('40 min ago');
+    expect(relativeTime('nonsense', now)).toBe('just now');
+  });
+
+  it('counts unread the way the inbox does: not read, and not spam', async () => {
+    const q = chain({ data: [], error: null, count: 0 });
+    supabase.from.mockReturnValueOnce(q);
+    await getUnreadMessages();
+    expect(q.neq).toHaveBeenCalledWith('status', 'read');
+    expect(q.not).toHaveBeenCalledWith('is_spam', 'is', true);
+    expect(q.eq).not.toHaveBeenCalled();
   });
 });

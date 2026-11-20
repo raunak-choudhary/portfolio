@@ -92,6 +92,8 @@ export default function MediaChapter({ notify }) {
   const totals = useMemo(() => summarize(items), [items]);
   const perBucket = useMemo(() => bucketCounts(items), [items]);
   const failed = (snapshot?.buckets || []).filter((b) => b.status === 'error');
+  // tables whose rows could not be read: their files read Unknown for that reason alone
+  const unread = Array.isArray(snapshot?.referenceErrors) ? snapshot.referenceErrors : [];
   const bucketsShown = (snapshot?.buckets?.length ? snapshot.buckets : MEDIA_LIBRARY_BUCKETS);
 
   return (
@@ -135,6 +137,10 @@ export default function MediaChapter({ notify }) {
       )}
       {failed.length > 0 && (
         <p className="media__warn" role="status">{failed.map((b) => b.label).join(', ')} could not be listed, so {failed.length === 1 ? 'its files are' : 'their files are'} missing here.</p>
+      )}
+
+      {unread.length > 0 && (
+        <p className="media__warn" role="status" data-testid="media-reference-warning">{unread.length === 1 ? 'One section' : `${unread.length} sections`} could not be read ({unread.join(', ')}), so {unread.length === 1 ? 'its' : 'their'} files show as Unknown until the library is loaded again.</p>
       )}
 
       {loading && <p className="deck__empty" role="status">Reading the buckets</p>}

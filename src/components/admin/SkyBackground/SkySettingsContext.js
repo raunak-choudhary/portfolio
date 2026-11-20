@@ -9,7 +9,7 @@
 // site-wide ThemeContext so every panel switches with the sky. "dark" and
 // "light" pin it. The check runs once a minute.
 
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { DEFAULT_SETTINGS, SETTINGS_STORAGE_KEY, mergeSettings, resolveTheme, sanitizeSettings } from './skyModel';
 
@@ -58,9 +58,14 @@ export function SkySettingsProvider({ children, storage, now = () => new Date() 
   }, [settings.themeMode, now]);
 
   // Push the sky's theme into the site theme so panels, text and the sky agree.
-  useEffect(() => {
+  // Not persisted: the sky keeps its own setting, and the public site's saved
+  // light or dark preference must not change because the admin followed the clock.
+  // A layout effect: the saved preference is what the first render carries, so
+  // as a passive effect the admin painted one frame in it before the sky's
+  // theme arrived.
+  useLayoutEffect(() => {
     if (resolvedTheme === theme) return;
-    if (resolvedTheme === 'dark') setDarkTheme(); else setLightTheme();
+    if (resolvedTheme === 'dark') setDarkTheme({ persist: false }); else setLightTheme({ persist: false });
   }, [resolvedTheme, theme, setDarkTheme, setLightTheme]);
 
   // Persist, and expose the glass values to CSS.

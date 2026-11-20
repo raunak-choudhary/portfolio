@@ -50,7 +50,7 @@ export default function MissionControl({ data, onGo, motion = true, fixQueue = n
 
   // Scrolls to the pane and puts focus on its heading, so keyboard and screen reader users land there too.
   const seeAllActivity = useCallback(() => {
-    document.getElementById(ACTIVITY_PANE_ID)?.scrollIntoView({ behavior: motion ? 'smooth' : 'auto', block: 'start' });
+    document.getElementById(ACTIVITY_PANE_ID)?.scrollIntoView({ behavior: motion ? 'smooth' : 'instant', block: 'start' });
     document.getElementById(ACTIVITY_TITLE_ID)?.focus({ preventScroll: true });
   }, [motion]);
 

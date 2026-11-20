@@ -40,6 +40,7 @@ import {
   summarizePortfolioHealth,
 } from '../../../services/healthRules';
 import { CHAPTERS } from './chapters';
+import { parseDbInstant } from './insightsTime';
 import { pickSingleton } from './managers/schemaModel';
 
 /** Tables the voyage edits as one row (SingletonChapter): only the row it shows can be walked. */
@@ -366,7 +367,7 @@ export const SEVERITY_LABEL = Object.freeze({ critical: 'Critical', warning: 'Wa
 export function staleSections(freshness, now = new Date(), days = STALE_DAYS) {
   return (Array.isArray(freshness) ? freshness : [])
     .filter((f) => f && f.at)
-    .map((f) => ({ ...f, days: Math.floor((now.getTime() - Date.parse(f.at)) / DAY_MS), chapterId: chapterForTable(f.table) }))
+    .map((f) => { const at = parseDbInstant(f.at); return { ...f, days: at === null ? NaN : Math.floor((now.getTime() - at) / DAY_MS), chapterId: chapterForTable(f.table) }; })
     .filter((f) => Number.isFinite(f.days) && f.days > days)
     .sort((a, b) => b.days - a.days);
 }

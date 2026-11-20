@@ -1,5 +1,8 @@
 // src/services/analyticsService.js - PRODUCTION VERSION - NO MOCK DATA
 import { supabase } from './supabaseClient';
+// Every failure below is returned to the caller; reportFailure keeps the console
+// clean unless diagnostics are switched on (utils/diagnostics.js).
+import { reportFailure } from '../utils/diagnostics';
 import {
   REQUIRED_SHARE,
   QUALITY_SHARE,
@@ -44,13 +47,13 @@ export const trackEvent = async (eventType, category, action, label = null, valu
       ]);
 
     if (error) {
-      console.error('Error tracking event:', error);
+      reportFailure('Error tracking event:', error);
       return { success: false, error };
     }
 
     return { success: true, data };
   } catch (error) {
-    console.error('Error in trackEvent:', error);
+    reportFailure('Error in trackEvent:', error);
     return { success: false, error: error.message };
   }
 };
@@ -84,7 +87,7 @@ export const trackContentView = async (contentType, contentId) => {
         })
         .eq('id', existing.id);
 
-      if (error) console.error('Error updating content performance:', error);
+      if (error) reportFailure('Error updating content performance:', error);
     } else {
       // Create new record
       const { error } = await supabase
@@ -100,12 +103,12 @@ export const trackContentView = async (contentType, contentId) => {
           }
         ]);
 
-      if (error) console.error('Error creating content performance record:', error);
+      if (error) reportFailure('Error creating content performance record:', error);
     }
 
     return { success: true };
   } catch (error) {
-    console.error('Error in trackContentView:', error);
+    reportFailure('Error in trackContentView:', error);
     return { success: false, error: error.message };
   }
 };
@@ -133,14 +136,14 @@ export const trackAdminSession = async (sessionStart, sessionEnd, sectionsVisite
       ]);
 
     if (error) {
-      console.error('Error tracking admin session:', error);
+      reportFailure('Error tracking admin session:', error);
       return { success: false, error };
     }
 
     await updateAdminActivityAnalytics(sessionStart, duration, sectionsVisited.length, actionsPerformed);
     return { success: true, data };
   } catch (error) {
-    console.error('Error in trackAdminSession:', error);
+    reportFailure('Error in trackAdminSession:', error);
     return { success: false, error: error.message };
   }
 };
@@ -175,12 +178,12 @@ export const trackContentUpdate = async (contentType, contentId, updateType, cha
           }
         ]);
 
-      if (error) console.error('Error updating content performance:', error);
+      if (error) reportFailure('Error updating content performance:', error);
     }
 
     return { success: true };
   } catch (error) {
-    console.error('Error in trackContentUpdate:', error);
+    reportFailure('Error in trackContentUpdate:', error);
     return { success: false, error: error.message };
   }
 };
@@ -244,7 +247,7 @@ export const getPortfolioHealth = async () => {
       dataSource: 'Supabase portfolio content tables'
     };
   } catch (error) {
-    console.error('Error getting portfolio health:', error);
+    reportFailure('Error getting portfolio health:', error);
     return {
       sections: [],
       summary: summarizePortfolioHealth([]),
@@ -263,13 +266,13 @@ export const calculatePortfolioCompleteness = async () => {
     const { data, error } = await supabase.rpc('calculate_portfolio_completeness');
     
     if (error) {
-      console.error('Error calculating portfolio completeness:', error);
+      reportFailure('Error calculating portfolio completeness:', error);
       return 0;
     }
 
     return data || 0;
   } catch (error) {
-    console.error('Error in calculatePortfolioCompleteness:', error);
+    reportFailure('Error in calculatePortfolioCompleteness:', error);
     return 0;
   }
 };
@@ -295,7 +298,7 @@ export const calculateContentEngagement = async (contentType = null, days = 30) 
     const { data, error } = await query;
 
     if (error) {
-      console.error('Error calculating content engagement:', error);
+      reportFailure('Error calculating content engagement:', error);
       return {
         totalViews: 0,
         avgEngagementScore: 0,
@@ -347,7 +350,7 @@ export const calculateContentEngagement = async (contentType = null, days = 30) 
     return result;
 
   } catch (error) {
-    console.error('Error in calculateContentEngagement:', error);
+    reportFailure('Error in calculateContentEngagement:', error);
     return {
       totalViews: 0,
       avgEngagementScore: 0,
@@ -372,7 +375,7 @@ export const calculateAdminProductivity = async (days = 30) => {
       .gte('start_time', startDate);
 
     if (sessionsError) {
-      console.error('Error calculating admin productivity:', sessionsError);
+      reportFailure('Error calculating admin productivity:', sessionsError);
       return {};
     }
 
@@ -417,7 +420,7 @@ export const calculateAdminProductivity = async (days = 30) => {
       productivityScore: Math.min(100, Math.round(actionsPerMinute * 10 + (totalSessions * 2)))
     };
   } catch (error) {
-    console.error('Error in calculateAdminProductivity:', error);
+    reportFailure('Error in calculateAdminProductivity:', error);
     return {};
   }
 };
@@ -435,7 +438,7 @@ export const calculateContactTrends = async (days = 30) => {
       .gte('created_at', startDate);
 
     if (error) {
-      console.error('Error calculating contact trends:', error);
+      reportFailure('Error calculating contact trends:', error);
       return {};
     }
 
@@ -485,7 +488,7 @@ export const calculateContactTrends = async (days = 30) => {
       dailyTrend: calculateDailyTrend(messages, days)
     };
   } catch (error) {
-    console.error('Error in calculateContactTrends:', error);
+    reportFailure('Error in calculateContactTrends:', error);
     return {};
   }
 };
@@ -512,13 +515,13 @@ export const getPortfolioMetrics = async (startDate = null, endDate = null) => {
     const { data, error } = await query;
 
     if (error) {
-      console.error('Error getting portfolio metrics:', error);
+      reportFailure('Error getting portfolio metrics:', error);
       return [];
     }
 
     return data || [];
   } catch (error) {
-    console.error('Error in getPortfolioMetrics:', error);
+    reportFailure('Error in getPortfolioMetrics:', error);
     return [];
   }
 };
@@ -544,13 +547,13 @@ export const getContentAnalytics = async (contentType = null, dateRange = '30d')
     const { data, error } = await query;
 
     if (error) {
-      console.error('Error getting content analytics:', error);
+      reportFailure('Error getting content analytics:', error);
       return [];
     }
 
     return data || [];
   } catch (error) {
-    console.error('Error in getContentAnalytics:', error);
+    reportFailure('Error in getContentAnalytics:', error);
     return [];
   }
 };
@@ -563,7 +566,7 @@ export const getContactAnalytics = async (dateRange = '30d') => {
     const days = parseDateRange(dateRange);
     return await calculateContactTrends(days);
   } catch (error) {
-    console.error('Error in getContactAnalytics:', error);
+    reportFailure('Error in getContactAnalytics:', error);
     return {};
   }
 };
@@ -576,7 +579,7 @@ export const getAdminActivityAnalytics = async (dateRange = '30d') => {
     const days = parseDateRange(dateRange);
     return await calculateAdminProductivity(days);
   } catch (error) {
-    console.error('Error in getAdminActivityAnalytics:', error);
+    reportFailure('Error in getAdminActivityAnalytics:', error);
     return {};
   }
 };
@@ -613,7 +616,7 @@ export const getTrendAnalysis = async (metricType, timeframe = '30d') => {
       .order(tableName === 'portfolio_metrics' ? 'metric_date' : 'analysis_date', { ascending: true });
 
     if (error) {
-      console.error('Error getting trend analysis:', error);
+      reportFailure('Error getting trend analysis:', error);
       return { trend: 'stable', data: [], change: 0 };
     }
 
@@ -639,7 +642,7 @@ export const getTrendAnalysis = async (metricType, timeframe = '30d') => {
       lastValue
     };
   } catch (error) {
-    console.error('Error in getTrendAnalysis:', error);
+    reportFailure('Error in getTrendAnalysis:', error);
     return { trend: 'stable', data: [], change: 0 };
   }
 };
@@ -661,7 +664,7 @@ export const getSectionPerformance = async (dateRange = '30d') => {
       .gte('performance_date', startDate);
     
     if (error) {
-      console.error('Error getting section performance:', error);
+      reportFailure('Error getting section performance:', error);
       return [];
     }
 
@@ -700,7 +703,7 @@ export const getSectionPerformance = async (dateRange = '30d') => {
     return result;
 
   } catch (error) {
-    console.error('Error in getSectionPerformance:', error);
+    reportFailure('Error in getSectionPerformance:', error);
     return [];
   }
 };
@@ -722,7 +725,7 @@ export const getTopPerformingContent = async (dateRange = '30d') => {
       .limit(10);
     
     if (error) {
-      console.error('Error getting top performing content:', error);
+      reportFailure('Error getting top performing content:', error);
       return [];
     }
 
@@ -742,7 +745,7 @@ export const getTopPerformingContent = async (dateRange = '30d') => {
     return result;
 
   } catch (error) {
-    console.error('Error getting top performing content:', error);
+    reportFailure('Error getting top performing content:', error);
     return [];
   }
 };
@@ -763,7 +766,7 @@ export const getContentEngagementHistory = async (dateRange = '30d') => {
       .order('performance_date', { ascending: true });
     
     if (error) {
-      console.error('Error getting content engagement history:', error);
+      reportFailure('Error getting content engagement history:', error);
       return [];
     }
 
@@ -791,7 +794,7 @@ export const getContentEngagementHistory = async (dateRange = '30d') => {
     return result;
 
   } catch (error) {
-    console.error('Error getting content engagement history:', error);
+    reportFailure('Error getting content engagement history:', error);
     return [];
   }
 };
@@ -804,7 +807,7 @@ export const getSectionCompleteness = async () => {
     const health = await getPortfolioHealth();
     return health.sections;
   } catch (error) {
-    console.error('Error getting section completeness:', error);
+    reportFailure('Error getting section completeness:', error);
     return [];
   }
 };
@@ -842,7 +845,7 @@ export const comparePerformancePeriods = async (period1Start, period1End, period
       }
     };
   } catch (error) {
-    console.error('Error comparing performance periods:', error);
+    reportFailure('Error comparing performance periods:', error);
     return null;
   }
 };
@@ -904,7 +907,7 @@ export const benchmarkMetrics = async (metricType = 'portfolio_completeness', da
       recommendation
     };
   } catch (error) {
-    console.error('Error benchmarking metrics:', error);
+    reportFailure('Error benchmarking metrics:', error);
     return { benchmark: 'error', percentile: 0, recommendation: 'Unable to calculate benchmark' };
   }
 };
@@ -956,7 +959,7 @@ export const identifyTrends = async (metricType, timeframe = '30d') => {
       insights: generateTrendInsights(patterns, trendData.trend, forecast)
     };
   } catch (error) {
-    console.error('Error identifying trends:', error);
+    reportFailure('Error identifying trends:', error);
     return { trend: 'error', patterns: [], forecast: null };
   }
 };
@@ -1037,7 +1040,7 @@ export const detectAnomalies = async (metricType, sensitivityLevel = 3) => {
      recommendations
    };
  } catch (error) {
-   console.error('Error detecting anomalies:', error);
+   reportFailure('Error detecting anomalies:', error);
    return { anomalies: [], status: 'error' };
  }
 };
@@ -1053,7 +1056,7 @@ export const generateDailyMetrics = async (date = new Date()) => {
 
    const { error: portfolioError } = await supabase.rpc('generate_daily_portfolio_metrics');
    if (portfolioError) {
-     console.error('Error generating portfolio metrics:', portfolioError);
+     reportFailure('Error generating portfolio metrics:', portfolioError);
    }
 
    await generateDailyContactAnalytics(dateStr);
@@ -1061,7 +1064,7 @@ export const generateDailyMetrics = async (date = new Date()) => {
 
    return { success: true };
  } catch (error) {
-   console.error('Error in generateDailyMetrics:', error);
+   reportFailure('Error in generateDailyMetrics:', error);
    return { success: false, error: error.message };
  }
 };
@@ -1100,7 +1103,7 @@ export const generateWeeklyReport = async () => {
      }
    };
  } catch (error) {
-   console.error('Error generating weekly report:', error);
+   reportFailure('Error generating weekly report:', error);
    return null;
  }
 };
@@ -1145,7 +1148,7 @@ export const generateMonthlyReport = async () => {
      }
    };
  } catch (error) {
-   console.error('Error generating monthly report:', error);
+   reportFailure('Error generating monthly report:', error);
    return null;
  }
 };
@@ -1199,7 +1202,7 @@ export const exportAnalyticsData = async (format = 'json', dateRange = '30d', se
        return { success: true, data: exportData, filename: `analytics_${dateRange}_${Date.now()}.json` };
    }
  } catch (error) {
-   console.error('Error exporting analytics data:', error);
+   reportFailure('Error exporting analytics data:', error);
    return { success: false, error: error.message };
  }
 };
@@ -1315,7 +1318,7 @@ const generateDailyContactAnalytics = async (dateStr) => {
        }
      ]);
  } catch (error) {
-   console.error('Error generating daily contact analytics:', error);
+   reportFailure('Error generating daily contact analytics:', error);
  }
 };
 
@@ -1365,7 +1368,7 @@ const generateDailyAdminAnalytics = async (dateStr) => {
        }
      ]);
  } catch (error) {
-   console.error('Error generating daily admin analytics:', error);
+   reportFailure('Error generating daily admin analytics:', error);
  }
 };
 
@@ -1419,7 +1422,7 @@ const updateAdminActivityAnalytics = async (sessionDate, duration, sectionsCount
        ]);
    }
  } catch (error) {
-   console.error('Error updating admin activity analytics:', error);
+   reportFailure('Error updating admin activity analytics:', error);
  }
 };
 

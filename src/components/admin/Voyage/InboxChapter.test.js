@@ -14,7 +14,7 @@ const records = jest.requireMock('../../../services/voyageRecords');
 const flush = () => act(async () => { await Promise.resolve(); await new Promise((r) => setTimeout(r, 0)); });
 const row = (id, extra = {}) => ({ id, message_number: Number(id.slice(1)), name: `Sender ${id}`, email: `${id}@example.com`, subject: `Subject ${id}`, message: 'Hello there.\n\nSecond paragraph.', status: 'read', priority: 'normal', is_starred: false, is_archived: false, is_spam: false, created_at: '2026-11-10T10:00:00Z', ...extra });
 const sample = () => [
-  row('m3', { status: 'unread', created_at: '2026-11-17T10:00:00Z', inquiry_type: 'full-time-opportunity', role: 'hiring-manager', organization: 'Example Labs', attachment_urls: ['contact-attachments/contact-1-0-cv.pdf', 'contact-attachments/contact-1-1-brief.png'], attachment_names: ['cv.pdf', 'brief.png'] }),
+  row('m3', { status: 'unread', created_at: '2026-11-17T10:00:00Z', inquiry_type: 'full-time-opportunity', role_position: 'hiring-manager', organization: 'Example Labs', attachment_urls: ['contact-attachments/contact-1-0-cv.pdf', 'contact-attachments/contact-1-1-brief.png'], attachment_names: ['cv.pdf', 'brief.png'] }),
   row('m2', { created_at: '2026-11-16T10:00:00Z', is_starred: true }),
   row('m1', { created_at: '2026-11-15T10:00:00Z' }),
   row('m9', { created_at: '2026-11-18T10:00:00Z', is_spam: true, subject: 'Buy now' }),

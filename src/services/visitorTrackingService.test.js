@@ -3,6 +3,7 @@ import {
   ENGAGED_AFTER_MS,
   deviceClassFor,
   initializeVisitorTracking,
+  isAdminPath,
   isAnalyticsEnabled,
   pageNameForPath,
   referrerHostFor,
@@ -520,5 +521,50 @@ describe('pageNameForPath', () => {
     ['', 'home'],
   ])('%p is %p', (path, name) => {
     expect(pageNameForPath(path)).toBe(name);
+  });
+});
+
+describe('admin routes are not visitor pages (deep pass 2026-11-20)', () => {
+  afterEach(() => { window.history.pushState(null, '', '/'); });
+
+  it('knows the admin routes', () => {
+    expect(['/adminlogin', '/admindashboard', '/admindashboard/voyage', '/adminsignout', '/AdminLogin'].every(isAdminPath)).toBe(true);
+    expect(['/', '/home', '/projects', '/about/admin', ''].some(isAdminPath)).toBe(false);
+  });
+
+  it.each(['/adminlogin', '/admindashboard', '/adminsignout'])('writes nothing and starts no clock on %s', (route) => {
+    process.env.REACT_APP_ANALYTICS_ENABLED = 'true';
+    jest.useFakeTimers();
+    try {
+      const insert = mockInsertResult();
+      window.history.pushState(null, '', route);
+      const stop = initializeVisitorTracking();
+      jest.advanceTimersByTime(ENGAGED_AFTER_MS * 2);
+      expect(insert).not.toHaveBeenCalled();
+      expect(supabase.from).not.toHaveBeenCalled();
+      expect(() => stop()).not.toThrow();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('does not write the engaged event when the visitor has moved to an admin route, and keeps it for later', () => {
+    process.env.REACT_APP_ANALYTICS_ENABLED = 'true';
+    jest.useFakeTimers();
+    try {
+      const insert = mockInsertResult();
+      window.history.pushState(null, '', '/projects');
+      startEngagementTimer();
+      window.history.pushState(null, '', '/adminlogin');
+      jest.advanceTimersByTime(ENGAGED_AFTER_MS);
+      expect(insert).not.toHaveBeenCalled();
+      // the session's one engaged event is still available on a public page
+      window.history.pushState(null, '', '/projects');
+      startEngagementTimer();
+      jest.advanceTimersByTime(ENGAGED_AFTER_MS);
+      expect(insert).toHaveBeenCalledTimes(1);
+    } finally {
+      jest.useRealTimers();
+    }
   });
 });

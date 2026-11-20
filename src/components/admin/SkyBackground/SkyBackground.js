@@ -9,6 +9,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createSkyRenderer } from './skyRenderer';
 import { useSkySettings } from './SkySettingsContext';
+import { watchPixelRatio } from './watchPixelRatio';
 import './SkyBackground.css';
 
 /** Where the sky assets live; CRA serves public/ at PUBLIC_URL. */
@@ -51,7 +52,8 @@ export default function SkyBackground({ assetBase = SKY_ASSET_BASE, liveSun = tr
     renderer.setTheme(resolvedTheme);
     renderer.setSettings({ drawings: settings.drawings, clouds: settings.clouds, motion: effectiveMotion });
     window.addEventListener('resize', resize);
-    return () => { window.removeEventListener('resize', resize); renderer.destroy(); rendererRef.current = null; };
+    const unwatchRatio = watchPixelRatio(resize);   // another screen's pixel density fires no resize
+    return () => { window.removeEventListener('resize', resize); unwatchRatio(); renderer.destroy(); rendererRef.current = null; };
     // Theme and settings have their own effects below; the renderer is rebuilt only when the data changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [figures, assetBase, liveSun]);

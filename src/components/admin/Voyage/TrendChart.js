@@ -11,7 +11,7 @@
 // from CSS classes (theme tokens), not from presentation attributes, because
 // var() is unreliable inside SVG attributes.
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Area, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 const n = (v) => Math.round(v).toLocaleString('en-US');
@@ -29,6 +29,28 @@ function Tip({ active, payload, curName, prevName }) {
   );
 }
 
+/** The width under which the chart is drawn shorter. */
+export const NARROW_QUERY = '(max-width: 599px)';
+
+/**
+ * True while the window is narrower than 600 px. Kept in state and updated
+ * by the media query, so turning a phone or resizing the window changes the
+ * chart's height; read once per render it stayed at its first value.
+ */
+function useNarrow() {
+  const query = () => (typeof window !== 'undefined' && typeof window.matchMedia === 'function' ? window.matchMedia(NARROW_QUERY) : null);
+  const [narrow, setNarrow] = useState(() => Boolean(query()?.matches));
+  useEffect(() => {
+    const media = query();
+    if (!media) return undefined;
+    const onChange = (e) => setNarrow(Boolean(e.matches));
+    setNarrow(Boolean(media.matches));
+    media.addEventListener?.('change', onChange);
+    return () => media.removeEventListener?.('change', onChange);
+  }, []);
+  return narrow;
+}
+
 /**
  * @param {object} props
  * @param {Array<{label: string, prevLabel?: string, cur: number|null, prev: number|null}>} props.points
@@ -39,7 +61,7 @@ function Tip({ active, payload, curName, prevName }) {
  * @param {boolean} [props.animate]
  */
 export default function TrendChart({ points, ticks, curName, prevName, summary, animate = true }) {
-  const narrow = typeof window !== 'undefined' && window.innerWidth < 600;
+  const narrow = useNarrow();
   return (
     <div className="orion-chart orion-trend" role="group" aria-label={summary}>
       <p className="sr-only">{summary} Focus the chart and use the arrow keys to read each point.</p>

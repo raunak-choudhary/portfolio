@@ -315,3 +315,16 @@ describe('walk intents', () => {
     expect(chapterForTable('missing')).toBeNull();
   });
 });
+
+describe('stale sections and zone-less stamps (deep pass 2026-11-20)', () => {
+  it('counts the days from a stamp without a zone as UTC, same as one with a zone', () => {
+    const now = new Date('2026-11-19T02:00:00Z');
+    const withZone = staleSections([{ table: 'leadership', section: 'Leadership', at: '2026-08-20T03:00:00Z' }], now);
+    const without = staleSections([{ table: 'leadership', section: 'Leadership', at: '2026-08-20T03:00:00' }], now);
+    // 90 days and 23 hours: stale by a day's floor of 90 means fresh; both forms must agree
+    expect(without.map((s) => s.days)).toEqual(withZone.map((s) => s.days));
+    const older = staleSections([{ table: 'leadership', section: 'Leadership', at: '2026-08-20T01:00:00' }], now);
+    expect(older.map((s) => s.days)).toEqual([91]);
+    expect(staleSections([{ table: 'leadership', section: 'Leadership', at: 'not a date' }], now)).toEqual([]);
+  });
+});

@@ -260,7 +260,10 @@ export default function SecurityChapter({ notify, onLeave }) {
   const sessionPane = (
     <Pane id="sec-session" title="This session">
       <dl className="sec-facts">
-        <div><dt>Second step</dt>{told.passed
+        {/* A session that could not be read is unknown, never "one step": saying level 1 to a level-2 session would be false. */}
+        <div><dt>Second step</dt>{!session
+          ? <dd data-testid="sec-session-unknown"><span className="sec-warn"><TriangleAlert size={16} aria-hidden="true" />Could not be read</span><small>The session's level is not known right now. Nothing was changed.</small><button type="button" className="voyage-bar__button voyage-bar__button--small" onClick={() => load({ quiet: true })}><RefreshCw size={14} aria-hidden="true" /><span>Check again</span></button></dd>
+          : told.passed
           ? <dd><span className="sec-ok"><ShieldCheck size={16} aria-hidden="true" />Both steps passed</span>{told.route && <span>{told.route}</span>}<small>Assurance level 2. Content changes are accepted.</small></dd>
           : <dd><span className="sec-warn"><TriangleAlert size={16} aria-hidden="true" />One step only</span><small>{levelOneNote(told.firstStep)} Content changes are refused at this level.</small></dd>}
         </div>

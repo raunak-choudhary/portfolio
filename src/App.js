@@ -10,6 +10,7 @@ import { viewportUtils } from './utils/viewportUtils';
 
 // 📊 VISITOR TRACKING: Import visitor tracking service
 import visitorTrackingService from './services/visitorTrackingService';
+import { reportFailure } from './utils/diagnostics';
 
 function App() {
   // Visitor tracking: records the landing page view and starts the engaged
@@ -20,14 +21,18 @@ function App() {
     try {
       stopTracking = visitorTrackingService.initializeVisitorTracking();
     } catch (error) {
-      console.error('Error initializing visitor tracking:', error);
+      // tracking is best effort and must never break the page
+      reportFailure('Error initializing visitor tracking', error);
     }
     return () => {
       if (typeof stopTracking === 'function') stopTracking();
     };
   }, []);
 
-  // Add viewport fixes
+  // Add viewport fixes. The reset 100 ms later applies, on every host, the
+  // same fixes production applies at window load, so localhost and the live
+  // site lay out alike (admin routes included; the voyage lifts the body
+  // transform itself where it needs to).
   useEffect(() => {
     viewportUtils.init();
     

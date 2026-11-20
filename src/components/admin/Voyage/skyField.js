@@ -76,8 +76,10 @@ const DEEP_FRAGMENT = `
  * @param {'dark'|'light'} input.theme
  * @param {boolean} [input.smallTextures] use the 512 px photographs and the 1024 px Moon maps.
  * @param {Date} [input.date] the moment the Earth scene is set for.
+ * @param {() => void} [input.onPictureChange] called when the picture changed outside the frame loop
+ *   (a texture landed, or the GPU context came back), so the page can retake its glass snapshot.
  */
-export function createSkyField({ canvas, figures, deepManifest, assetBase, quality, theme, smallTextures = false, date = new Date() }) {
+export function createSkyField({ canvas, figures, deepManifest, assetBase, quality, theme, smallTextures = false, date = new Date(), onPictureChange = () => {} }) {
   // No preserveDrawingBuffer: keeping the frame costs a copy on every swap. snapshot() reads
   // the canvas in the same task as its render, which works without it, and so do screenshots.
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance' });
@@ -85,7 +87,7 @@ export function createSkyField({ canvas, figures, deepManifest, assetBase, quali
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(60, 1, 1, 9000);
   let dirty = true;   // set when something outside the frame loop changed the picture (a texture, the size, the theme)
-  const loadTexture = createTextureLoader(renderer, () => { dirty = true; });
+  const loadTexture = createTextureLoader(renderer, () => { dirty = true; onPictureChange(); });
   const byId = Object.fromEntries(figures.map((f) => [f.id, f]));
   let palette = paletteForTheme(theme), fly = quality.fly;
   const disposables = [];
@@ -200,6 +202,11 @@ export function createSkyField({ canvas, figures, deepManifest, assetBase, quali
   hiddenArt.forEach((g) => { g.art.visible = true; });
   try { renderer.compile(scene, camera); compilePrologue(); } catch { /* a lost context compiles on first use instead */ }
   hiddenArt.forEach((g) => { g.art.visible = false; });
+
+  // After a GPU reset the browser hands the context back and three rebuilds its state, but
+  // nothing asks for a frame: a resting sky would stay black until the next scroll.
+  const onContextRestored = () => { if (disposed) return; dirty = true; onPictureChange(); };
+  canvas.addEventListener?.('webglcontextrestored', onContextRestored);
 
   /** Draw now and note when. */
   const draw = () => { prologue.system.beforeRender?.(renderer, camera); renderer.render(scene, camera); };
@@ -331,6 +338,8 @@ export function createSkyField({ canvas, figures, deepManifest, assetBase, quali
     dispose() {
       if (disposed) return;
       disposed = true;
+      canvas.removeEventListener?.('webglcontextrestored', onContextRestored);
+      loadTexture.close();   // a texture still in flight is freed on arrival instead of uploaded to the lost context
       prologue.release();
       for (const d of disposables) d.dispose?.();
       for (const t of loadTexture.loaded) { t.dispose(); t.image?.close?.(); }   // ImageBitmaps hold decoded pixels until closed
@@ -348,13 +357,16 @@ export const EARTH_VISIBLE_UNTIL = 1.2;
  * time because WebGL ignores UNPACK_FLIP_Y for bitmaps) and uploads each texture to the GPU
  * as it lands, so neither the decode nor the upload happens inside a frame. Falls back to
  * the plain TextureLoader where ImageBitmap is missing or refuses the options.
- * @returns {((url: string, onLoad: (t: THREE.Texture) => void) => void) & {loaded: THREE.Texture[]}}
+ * `close()` ends the loader: textures that arrive afterwards are freed, never uploaded.
+ * @returns {((url: string, onLoad: (t: THREE.Texture) => void) => void) & {loaded: THREE.Texture[], release: (t: THREE.Texture) => void, close: () => void}}
  */
 export function createTextureLoader(renderer, onAnyLoad = () => {}) {
   const loaded = [];
+  let closed = false;
   const bitmaps = typeof createImageBitmap === 'function' ? new THREE.ImageBitmapLoader().setOptions({ imageOrientation: 'flipY', premultiplyAlpha: 'none' }) : null;
   const plain = new THREE.TextureLoader();
   const finish = (t, onLoad) => {
+    if (closed) { t.dispose(); t.image?.close?.(); return; }   // the field is gone; its context is lost
     t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
     // a caller that no longer wants the texture (its scene was swapped out meanwhile) answers false
     if (onLoad(t) === false) { t.dispose(); t.image?.close?.(); return; }
@@ -375,6 +387,7 @@ export function createTextureLoader(renderer, onAnyLoad = () => {}) {
   load.loaded = loaded;
   /** Frees one texture now (GPU copy and decoded pixels) and forgets it. */
   load.release = (t) => { t.dispose(); t.image?.close?.(); const i = loaded.indexOf(t); if (i >= 0) loaded.splice(i, 1); };
+  load.close = () => { closed = true; };
   return load;
 }
 

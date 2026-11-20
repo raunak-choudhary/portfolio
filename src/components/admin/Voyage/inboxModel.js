@@ -10,6 +10,8 @@
 // starred and archived counts never include it), and un-spam always clears
 // marked_spam_at (the classic single action left the old timestamp behind).
 
+import { parseDbInstant } from './insightsTime';
+
 /** Filters in the order the toolbar shows them. "All" is everything except spam. */
 export const FILTERS = Object.freeze([
   { id: 'all', label: 'All' },
@@ -220,10 +222,15 @@ export function attachmentsOf(message = {}) {
 /** "No. 0042": the telegram number the inbox files a message under. */
 export const telegramNumber = (m) => (Number.isFinite(Number(m?.message_number)) && m?.message_number !== null ? `No. ${String(m.message_number).padStart(4, '0')}` : 'No number');
 
-/** "18 Nov 2026, 14:08" in the viewer's time zone, or an empty string. */
+/**
+ * "18 Nov 2026, 14:08" in the viewer's time zone, or an empty string. The
+ * database sends some stamps without a zone; those are UTC, so they go
+ * through parseDbInstant (Date.parse would read them as local time and show
+ * them hours off).
+ */
 export function formatStamp(iso) {
-  const t = Date.parse(iso);
-  if (!Number.isFinite(t)) return '';
+  const t = parseDbInstant(iso);
+  if (t === null) return '';
   const d = new Date(t);
   return `${d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}, ${d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
 }
@@ -252,7 +259,9 @@ export function stampsFor(m) {
 /** A plain address for a mailto link, or null when the stored email is not one (never trust a row to build a URL). */
 export const replyAddress = (email) => {
   const value = String(email ?? '').trim();
-  return /^[^\s@?&#/:<>"]+@[^\s@?&#/:<>"]+\.[^\s@?&#/:<>"]+$/.test(value) ? value : null;
+  // "%" and "," are refused as well: a mail client decodes %2C, and a comma separates
+  // recipients, so either could add a second address to the reply.
+  return /^[^\s@?&#/:<>"%,;]+@[^\s@?&#/:<>"%,;]+\.[^\s@?&#/:<>"%,;]+$/.test(value) ? value : null;
 };
 
 /** mailto: link with "Re: <subject>", or null when there is no usable address. */
@@ -260,5 +269,5 @@ export function replyHref(m) {
   const to = replyAddress(m?.email);
   if (!to) return null;
   const subject = String(m.subject || '').trim();
-  return `mailto:${to}?subject=${encodeURIComponent(subject ? `Re: ${subject}` : 'Re: your message')}`;
+  return `mailto:${encodeURIComponent(to).replace(/%40/g, '@')}?subject=${encodeURIComponent(subject ? `Re: ${subject}` : 'Re: your message')}`;
 }
