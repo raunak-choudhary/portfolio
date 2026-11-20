@@ -119,11 +119,16 @@ export function createSkyField({ canvas, figures, deepManifest, assetBase, quali
   const makePrologue = (t) => {
     const load = scopedLoader();
     const system = prologueKind(t) === 'sun'
-      ? createSunSystem({ scene, loadTexture: load, assetBase, pixelRatio: renderer.getPixelRatio(), detail: quality.stars < 5000 ? 'low' : 'high', date })
+      ? createSunSystem({ scene, loadTexture: load, assetBase, pixelRatio: renderer.getPixelRatio(), detail: quality.stars < 5000 ? 'low' : 'high', mode: skyMode, date })
       : createEarthSystem({ scene, loadTexture: load, assetBase, pixelRatio: renderer.getPixelRatio(), satellites: quality.stars < 5000 ? 6 : 9, date });
+    system.setQuality?.({ level: qualityLevel });
     return { kind: prologueKind(t), system, release: () => { system.dispose(); load.release(); } };
   };
+  // The sky mode and adaptive step, for the day Sun's surface buffer (setQuality keeps them current).
+  let skyMode = quality.frameInterval ? 'working' : 'showcase', qualityLevel = 0;
   let prologue = makePrologue(theme);
+  /** Compile the prologue's own off-screen scene too (the day Sun's surface), so its first frame does not stall. */
+  const compilePrologue = () => { for (const extra of [prologue.system.surface?.scene, prologue.system.corona?.scene, prologue.system.glow?.scene]) if (extra) renderer.compile(extra, camera); };
   const glareDir = new THREE.Vector3();
 
   // ---- one constellation per chapter ----
@@ -193,11 +198,12 @@ export function createSkyField({ canvas, figures, deepManifest, assetBase, quali
   // compiles on the first frame that shows it, a 50 ms hitch measured mid-scroll.
   const hiddenArt = groups.filter((g) => g.art && !g.art.visible);
   hiddenArt.forEach((g) => { g.art.visible = true; });
-  try { renderer.compile(scene, camera); } catch { /* a lost context compiles on first use instead */ }
+  try { renderer.compile(scene, camera); compilePrologue(); } catch { /* a lost context compiles on first use instead */ }
   hiddenArt.forEach((g) => { g.art.visible = false; });
 
   /** Draw now and note when. */
-  const render = (now) => { renderer.render(scene, camera); lastRenderAt = now; dirty = false; };
+  const draw = () => { prologue.system.beforeRender?.(renderer, camera); renderer.render(scene, camera); };
+  const render = (now) => { draw(); lastRenderAt = now; dirty = false; };
 
   return {
     resize(width, height) { renderer.setSize(width, height, false); aspect = width / Math.max(1, height); camera.aspect = aspect; camera.updateProjectionMatrix(); dirty = true; },
@@ -207,7 +213,7 @@ export function createSkyField({ canvas, figures, deepManifest, assetBase, quali
         prologue.release();
         prologue = makePrologue(next);
         if (startedAt !== null) prologue.system.update(fly ? lastElapsed : 0);
-        try { renderer.compile(scene, camera); } catch { /* compiled on first use instead */ }
+        try { renderer.compile(scene, camera); compilePrologue(); } catch { /* compiled on first use instead */ }
         readoutAt = -Infinity;
       }
       dirty = true;
@@ -215,15 +221,20 @@ export function createSkyField({ canvas, figures, deepManifest, assetBase, quali
     setFly(next) { fly = !!next; dirty = true; },
     /**
      * Change the resolution and the shortest gap between renders without rebuilding the scene.
-     * @param {{pixelRatio?: number, frameInterval?: number}} next
+     * `mode` and `level` (the sky mode and the adaptive step) are passed on to the prologue,
+     * which sizes the day Sun's surface buffer from them.
+     * @param {{pixelRatio?: number, frameInterval?: number, mode?: 'working'|'showcase', level?: number}} next
      */
-    setQuality({ pixelRatio, frameInterval: interval } = {}) {
+    setQuality({ pixelRatio, frameInterval: interval, mode, level } = {}) {
       if (Number.isFinite(pixelRatio) && pixelRatio > 0 && pixelRatio !== renderer.getPixelRatio()) {
         renderer.setPixelRatio(pixelRatio);
         for (const u of pixelRatioUniforms) u.value = pixelRatio;
-        prologue.system.setPixelRatio(pixelRatio);
         dirty = true;
       }
+      if (mode === 'working' || mode === 'showcase') { if (mode !== skyMode) dirty = true; skyMode = mode; }
+      if (Number.isFinite(level)) qualityLevel = level;
+      if (prologue.system.setQuality) prologue.system.setQuality({ pixelRatio: renderer.getPixelRatio(), mode: skyMode, level: qualityLevel });
+      else prologue.system.setPixelRatio(renderer.getPixelRatio());
       if (Number.isFinite(interval) && interval >= 0) frameInterval = interval;
     },
     /** The canvas resolution in use, for the measurement script and tests. */
@@ -250,7 +261,8 @@ export function createSkyField({ canvas, figures, deepManifest, assetBase, quali
       const ease = fly && !snap ? 1 - Math.pow(1 - 0.08, steps) : 1;
       // Moving while the eased camera is still more than a tenth of a unit from its pose (the route spans thousands).
       const settled = cameraPosition.distanceToSquared(wantPosition) < 0.01 && cameraLook.distanceToSquared(wantLook) < 0.01;
-      const earthLive = fly && route.f < EARTH_VISIBLE_UNTIL;   // the Earth turns and the satellites move only while it is in view
+      // the prologue animates only while it is in view: the night Earth until the camera has passed it, the day Sun until it has faded
+      const earthLive = fly && route.f < (prologue.system.visibleUntil ?? EARTH_VISIBLE_UNTIL);
       if (!snap && !renderDue({ now, lastRenderAt, frameInterval, active: !settled || earthLive || dirty })) {
         if (now - readoutAt > 1000 && route.f < EARTH_VISIBLE_UNTIL) { readoutAt = now; over = prologue.system.readout(fly && startedAt !== null ? now - startedAt : 0, cameraPosition); }
         return { index: route.index, f: route.f, over, rendered: false, settled };
@@ -307,7 +319,7 @@ export function createSkyField({ canvas, figures, deepManifest, assetBase, quali
       const out = document.createElement('canvas'); out.width = width; out.height = height;
       const ctx = out.getContext('2d');
       if (!ctx) return Promise.resolve(null);
-      renderer.render(scene, camera);
+      draw();
       ctx.fillStyle = palette.background; ctx.fillRect(0, 0, width, height);
       // Overscan by the blur radius so the blur does not pull the dark fill in at the edges.
       if (blurPx > 0 && 'filter' in ctx) ctx.filter = `blur(${blurPx}px)`;
