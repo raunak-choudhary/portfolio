@@ -34,8 +34,9 @@
 }
 
 .sky-controls__icon {
-  font-size: 1rem;
-  line-height: 1;
+  /* An svg sized by its width and height attributes, so font-size no longer
+     applies; it only must not shrink when the header runs short of room. */
+  flex-shrink: 0;
 }
 
 [data-theme="light"] .sky-controls__button {

@@ -7,6 +7,7 @@
 
 import React, { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { Moon, Sun } from 'lucide-react';
 import { BLUR_RANGE, GLASS_RANGE, moonPhase } from './skyModel';
 import { useSkySettings } from './SkySettingsContext';
 import './SkyControls.css';
@@ -71,7 +72,10 @@ export default function SkyControls() {
         title="Sky and glass settings"
         onClick={toggle}
       >
-        <span className="sky-controls__icon" aria-hidden="true">{resolvedTheme === 'light' ? '☀' : '☾'}</span>
+        {/* 16px line icons, the same size the other voyage bar buttons use; the label and title name the button. */}
+        {resolvedTheme === 'light'
+          ? <Sun className="sky-controls__icon" size={16} aria-hidden="true" />
+          : <Moon className="sky-controls__icon" size={16} aria-hidden="true" />}
         <span className="sky-controls__label">Sky</span>
       </button>
 
