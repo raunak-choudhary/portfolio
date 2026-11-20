@@ -31,6 +31,7 @@
     "build:e2e": "INLINE_RUNTIME_CHUNK=false REACT_APP_ANALYTICS_ENABLED=false react-scripts build",
     "test:tools": "node --test \"scripts/**/*.test.mjs\" \"e2e/**/*.test.mjs\"",
     "e2e": "playwright test e2e/contract.spec.mjs",
+    "e2e:admin": "playwright test e2e/admin.spec.mjs",
     "capture": "node scripts/capture-site.mjs",
     "compare": "node scripts/compare-captures.mjs",
     "fixtures:record": "node --env-file=.env.development.local scripts/record-fixtures.mjs",
