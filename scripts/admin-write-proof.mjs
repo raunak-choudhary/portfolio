@@ -659,11 +659,16 @@ async function main(argv) {
           return 'changed and restored through the UI, row identical apart from updated_at';
         } finally {
           guard.singleton = null;
-          // if the restoring save did not land, put the one column back directly so live content never keeps the marker
+          // A full form save rewrites every column, so any column that differs from the
+          // snapshot (the marker, or a value the form normalised on the way back) is put
+          // back directly: live content always ends exactly as it started.
           const now = await port.getRow(single.table, row.id).catch(() => null);
-          if (now && now[single.column] !== original) {
-            await port.restoreColumn(single.table, row.id, { [single.column]: original });
-            step(single.label, 'restored directly', 'fail', `${single.column} put back outside the UI`);
+          const drifted = now ? rowDiff(row, now) : [];
+          if (drifted.length) {
+            await port.restoreColumn(single.table, row.id, Object.fromEntries(drifted.map((key) => [key, row[key]])));
+            const back = await port.getRow(single.table, row.id).catch(() => null);
+            const still = back ? rowDiff(row, back) : drifted;
+            step(single.label, 'restored directly', 'fail', `${drifted.join(', ')} put back outside the UI${still.length ? `; STILL DIFFERENT: ${still.join(', ')}` : ''}`);
           }
         }
       });
