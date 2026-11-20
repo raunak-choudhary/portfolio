@@ -14,14 +14,26 @@
 //     node Meeus calls K (chapter 29), so seen from the scene's Earth it has
 //     today's B0 (tilt toward us) and P (position angle from celestial north);
 //   - differential rotation: the equator turns faster than the poles in the
-//     ratio of the Snodgrass rates (14.71, 2.40 and 1.79 degrees a day).
+//     ratio of the Snodgrass rates (14.71, 2.40 and 1.79 degrees a day);
+//   - the Moon's place around the Earth: its geocentric ecliptic longitude
+//     and latitude (Meeus chapter 47, moonModel.js) and the plane of its
+//     orbit, so its angle from the Sun, and with it the phase, is tonight's.
+//     It is lit by this scene's Sun, so the phase is the true one for its
+//     place on the orbit, seen from the camera rather than from New York (the
+//     night scene's New York light would point its bright side away from the
+//     Sun on screen).
 //
 // Stylised (so it fits one screen and moves while you watch):
-//   - sizes: the Sun's radius is 360 world units, the Earth's 46 (true ratio
-//     109 to 1, here about 8 to 1, or the Earth would be a single pixel);
-//   - distance: the orbit radius is 2.3 Sun radii (truly 215);
+//   - sizes: the Sun's radius is 360 world units, the Earth's 64 (true ratio
+//     109 to 1, here about 5.6 to 1, or the Earth would be a single pixel);
+//     the Moon keeps its true size against the Earth (0.2727);
+//   - distance: the orbit radius is 2.3 Sun radii (truly 215); the Moon's is
+//     2 Earth radii (truly 60);
 //   - tempo: one solar turn in six minutes at the equator (truly 25.4 days),
-//     one Earth year in ten minutes, one Earth day in thirty seconds;
+//     one Earth year in five minutes, one Earth day in thirty seconds, one
+//     sidereal month in seventy-five seconds (four a year, so the order of the
+//     real rates holds: the Earth turns fastest, the Moon circles next, the
+//     year is slowest; the phases come round every hundred seconds);
 //   - the camera looks down on the ecliptic from 21 degrees above it, so the
 //     orbit reads as an ellipse and the Earth can pass in front of the Sun.
 //     Only the view is stylised: the whole system (Sun axis, orbit, Earth
@@ -34,16 +46,22 @@
 
 import { julianDay } from '../SkyBackground/skyModel';
 import { DEG, EARTH_AXIS_ECLIPTIC, add, cross, dot, eclipticDirection, normalize, rotateAbout, rotateX, rotateY, scale, sunCoordinates } from './earthModel';
+import { julianEphemerisDay, moonEcliptic } from './moonModel';
 import { ANCHORS, cameraTarget } from './voyageModel';
 
 // ---- sizes and tempos (stylised; see the header) ----
 export const SUN_RADIUS = 360;
-export const DAY_EARTH_RADIUS = 46;
+export const DAY_EARTH_RADIUS = 64;
 export const EARTH_ORBIT_RADIUS = SUN_RADIUS * 2.3;
+/** The day Moon: the true size against the Earth, on a close orbit so the pair reads as one body. */
+export const DAY_MOON_RADIUS = DAY_EARTH_RADIUS * 0.2727;
+export const DAY_MOON_ORBIT_RADIUS = DAY_EARTH_RADIUS * 2;
 /** Sun's equatorial rotation period on screen, ms. */
 export const SUN_SPIN_MS = 360000;
 /** One Earth orbit on screen, ms: the Earth visibly travels while the page is open. */
-export const EARTH_YEAR_MS = 600000;
+export const EARTH_YEAR_MS = 300000;
+/** One sidereal month on screen, ms: four per stylised year (truly 13.4). */
+export const DAY_MOON_MONTH_MS = 75000;
 /** One Earth day on screen, ms: twenty of them per stylised year. */
 export const DAY_EARTH_SPIN_MS = 30000;
 /** How far above the ecliptic the camera looks down, degrees. */
@@ -189,7 +207,10 @@ export function sunScene(date = new Date(), anchor = ANCHORS[0]) {
   // Surface features are placed in this frame (longitude 0 faces us, +-90 is the limb) and turn with it.
   const bodyZ = normalize(add(viewer, scale(sunPole, -dot(viewer, sunPole))));
   const bodyX = cross(sunPole, bodyZ);
+  const moon = dayMoonAtLoad(date, toWorld);
   return {
+    moonAtLoad: moon.direction,
+    moonNormal: moon.normal,
     centre,
     sunPole, bodyX, bodyZ,
     orbitNormal: normalize(toWorld([0, 1, 0])),
@@ -201,6 +222,26 @@ export function sunScene(date = new Date(), anchor = ANCHORS[0]) {
     declination: sun.declination,
   };
 }
+
+/**
+ * Tonight's Moon in the day scene's world space: the unit direction from the
+ * Earth's centre (geocentric ecliptic longitude and latitude), and the normal
+ * of its orbit, taken from where it is now and two hours on, so a positive
+ * turn about the normal carries it forward (prograde).
+ * @returns {{direction: number[], normal: number[]}}
+ */
+export function dayMoonAtLoad(date, toWorld) {
+  const jde = julianEphemerisDay(date);
+  const now = moonEcliptic(jde), later = moonEcliptic(jde + 2 / 24);
+  const a = eclipticVector(now.longitude, now.latitude), b = eclipticVector(later.longitude, later.latitude);
+  return { direction: normalize(toWorld(a)), normal: normalize(toWorld(cross(a, b))) };
+}
+
+/** Unit direction from the Earth to the day Moon `elapsed` ms after load: one sidereal turn per DAY_MOON_MONTH_MS. */
+export const dayMoonDirection = (scene, elapsed, period = DAY_MOON_MONTH_MS) => rotateAbout(scene.moonAtLoad, scene.moonNormal, (2 * Math.PI * elapsed) / period);
+
+/** The day Moon's phase seen from the Earth, 0 new to 1 full: half of one minus the cosine of its angle from the Sun. */
+export const dayMoonFraction = (sunFromEarth, moonDir) => (1 - dot(sunFromEarth, moonDir)) / 2;
 
 /** The Earth's heliocentric longitude at `elapsed` ms after load: prograde, one orbit per EARTH_YEAR_MS. */
 export const earthLongitude = (scene, elapsed, period = EARTH_YEAR_MS) => norm360(scene.earthLongitudeAtLoad + (360 * elapsed) / period);
