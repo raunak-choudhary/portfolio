@@ -38,6 +38,31 @@
   line-height: 1;
 }
 
+[data-theme="light"] .sky-controls__button {
+  border-color: rgba(255, 255, 255, 0.55);
+}
+
+/* Phones: the button shows its icon alone so the header keeps room for the
+   other actions. These rules used to live in the 2025 dashboard stylesheet,
+   which shared a bundle with the voyage and so styled its Sky button too. */
+@media (max-width: 767px) {
+  .sky-controls {
+    margin-right: 0;
+  }
+
+  .sky-controls__label {
+    display: none;
+  }
+
+  .sky-controls__button {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 10px;
+  }
+}
+
 /* The panel lives in <body> (a portal), so it uses plain values, not the dashboard's variables.
    Phones: a sheet under the header. From 768px: a 300px card hung under the Sky button. */
 .sky-controls__panel {
