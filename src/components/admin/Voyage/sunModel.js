@@ -172,7 +172,7 @@ export const seedFor = (date) => date.getUTCFullYear() * 10000 + (date.getUTCMon
 
 /**
  * Everything the day scene needs for a moment, in world space.
- * @returns {{centre: number[], sunPole: number[], orbitNormal: number[], earthAxis: number[], earthLongitudeAtLoad: number,
+ * @returns {{centre: number[], sunPole: number[], bodyX: number[], bodyZ: number[], orbitNormal: number[], earthAxis: number[], earthLongitudeAtLoad: number,
  *   viewer: number[], seed: number, toWorld: (v: number[]) => number[], declination: number, subsolarLongitude: number}}
  */
 export function sunScene(date = new Date(), anchor = ANCHORS[0]) {
@@ -181,13 +181,19 @@ export function sunScene(date = new Date(), anchor = ANCHORS[0]) {
   const toWorld = daySceneFrame(earthLongitudeAtLoad);
   const centre = [anchor.x + SUN_OFFSET.x, anchor.y + SUN_OFFSET.y, anchor.z + SUN_OFFSET.z];
   const rest = cameraTarget({ index: 0, frac: 0 }).position;
+  const sunPole = normalize(toWorld(solarPoleEcliptic(date)));
+  const viewer = normalize([rest.x - centre[0], rest.y - centre[1], rest.z - centre[2]]);
+  // The Sun's body frame: y the pole, z the meridian that faces the camera at load, x = y cross z.
+  // Surface features are placed in this frame (longitude 0 faces us, +-90 is the limb) and turn with it.
+  const bodyZ = normalize(add(viewer, scale(sunPole, -dot(viewer, sunPole))));
+  const bodyX = cross(sunPole, bodyZ);
   return {
     centre,
-    sunPole: normalize(toWorld(solarPoleEcliptic(date))),
+    sunPole, bodyX, bodyZ,
     orbitNormal: normalize(toWorld([0, 1, 0])),
     earthAxis: normalize(toWorld(EARTH_AXIS_ECLIPTIC)),
     earthLongitudeAtLoad,
-    viewer: normalize([rest.x - centre[0], rest.y - centre[1], rest.z - centre[2]]),
+    viewer,
     seed: seedFor(date),
     toWorld,
     declination: sun.declination,
@@ -209,9 +215,87 @@ export const differentialRate = (sinLat) => 1 - DIFFERENTIAL.b * sinLat * sinLat
 /** Angle (radians) the Sun's equator has turned `elapsed` ms after load. */
 export const sunSpin = (elapsed, period = SUN_SPIN_MS) => (2 * Math.PI * elapsed) / period;
 
-// ---- prominences, loops and eruptions ----
+// ---- the surface frame: active regions and long-lived prominences ----
 
-/** How many loop slots run at once, by quality. */
+/** A unit vector in the Sun's body frame from heliographic latitude and longitude (degrees; longitude 0 faces the camera at load). */
+export const bodyVector = (lat, lon) => [Math.cos(lat * DEG) * Math.sin(lon * DEG), Math.sin(lat * DEG), Math.cos(lat * DEG) * Math.cos(lon * DEG)];
+
+/**
+ * A body-frame vector in world space `elapsed` ms after load: turned about the
+ * pole at its own latitude's rate (differential rotation, as the surface
+ * shader turns each latitude), then carried by the body frame.
+ */
+export function bodyToWorld(scene, v, elapsed) {
+  const turned = rotateY(v, sunSpin(elapsed) * differentialRate(v[1]));
+  return add(add(scale(scene.bodyX, turned[0]), scale(scene.sunPole, turned[1])), scale(scene.bodyZ, turned[2]));
+}
+
+/** Two footpoints either side of `centre` along a surface direction `orient` (radians from north toward east), `spread` radians apart. */
+function feetAround(centre, orient, spread) {
+  const north = normalize(add([0, 1, 0], scale(centre, -centre[1])));
+  const east = cross(north, centre);
+  const axis = add(scale(north, Math.cos(orient)), scale(east, Math.sin(orient)));
+  const h = spread / 2;
+  return [normalize(add(scale(centre, Math.cos(h)), scale(axis, Math.sin(h)))), normalize(add(scale(centre, Math.cos(h)), scale(axis, -Math.sin(h))))];
+}
+
+/** How many active regions a day's Sun carries. */
+export const ACTIVE_REGION_COUNT = 5;
+
+/**
+ * The day's active regions, in the body frame. They sit in the two royal zones
+ * (8 to 28 degrees either side of the equator, where sunspots form) and are
+ * spread round the Sun 72 degrees apart (give or take 8), two of them well on
+ * the near side at load, so two or three are on the disc at any moment as it turns.
+ * @returns {{centre: number[], lat: number, lon: number, size: number, strength: number}[]} size is an angular radius in radians.
+ */
+export function activeRegions(seed) {
+  const offsets = [-40, 32, 104, 176, 248];
+  return offsets.map((base, k) => {
+    const r = (f) => hash01(seed, 900 + k, f);
+    const lat = (r(0) < 0.5 ? -1 : 1) * (8 + 20 * r(1));
+    const lon = base + (r(2) - 0.5) * 16;
+    return { centre: bodyVector(lat, lon), lat, lon, size: 0.15 + 0.09 * r(3), strength: 0.75 + 0.25 * r(4) };
+  });
+}
+
+/** How many long-lived prominences (filaments when seen on the disc) a day's Sun carries. */
+export const PROMINENCE_COUNT = 7;
+
+/**
+ * Long-lived prominences: sheets of cooler gas held above the surface by the
+ * magnetic field for days. Seen against space at the limb they glow; seen on
+ * the disc they are the same objects as dark filaments, so they are placed on
+ * the surface and turn with it. Sizes follow a steep spread: one large (a third
+ * of a solar radius tall), two medium, the rest small. The first three sit at
+ * or near the limb at load so the still frame shows them standing.
+ * @returns {{feet: number[][], centre: number[], height: number, kind: 'arch'|'hedge', lean: number, flow: number, strands: number}[]}
+ */
+export function prominences(seed) {
+  const heights = [0.36, 0.22, 0.15, 0.11, 0.08, 0.07, 0.06];
+  const lons = [92, -84, 70, -28, 150, 205, 32];
+  return heights.map((base, k) => {
+    const r = (f) => hash01(seed, 700 + k, f);
+    const lat = (r(0) < 0.5 ? -1 : 1) * (10 + 45 * r(1));
+    const lon = lons[k] + (r(2) - 0.5) * (k < 3 ? 14 : 40);
+    const centre = bodyVector(lat, lon);
+    // near-meridional sheets show their long side at the east and west limbs
+    const orient = (r(3) - 0.5) * 1.2;
+    const spread = 0.12 + base * 1.1 + 0.12 * r(4);
+    return {
+      feet: feetAround(centre, orient, spread), centre,
+      height: base * (0.85 + 0.3 * r(5)),
+      kind: r(6) < (k === 0 ? 0.6 : 0.45) ? 'hedge' : 'arch',
+      lean: (r(7) - 0.5) * 1.1,
+      flow: r(8) < 0.5 ? -1 : 1,
+      strands: 3 + Math.floor(r(9) * 4),
+    };
+  });
+}
+
+// ---- short-lived loops and eruptions ----
+
+/** How many short-lived loop slots run at once. */
 export const LOOP_SLOTS = 12;
 
 /** A stateless 0..1 hash of a few integers (seed, slot, cycle, field). */
@@ -224,17 +308,24 @@ export function hash01(...parts) {
   return (h >>> 0) / 4294967296;
 }
 
+/** Eruption phases, as fractions of the event: the arch swells until the break, then splits and its cloud is thrown out. */
+export const ERUPTION_BREAK = 0.42;
+
 /**
  * One loop slot at `elapsed` ms. Each slot repeats on its own period (11 to
  * 19 s, so slots drift against each other) and every cycle draws new numbers
  * from the hash, so the Sun never shows the same loop twice in a sitting.
  *
- * Kinds: a quiescent loop rises, hangs and drains back (most cycles), a
- * hedgerow prominence stands taller and longer, and an eruption (about one
- * cycle in seven) lifts slowly, then lets go and leaves the limb.
- * @returns {{slot: number, cycle: number, active: boolean, kind: 'loop'|'hedge'|'eruption', progress: number,
- *   limbAngle: number, depth: number, spread: number, height: number, brightness: number, born: number, lift: number}}
- *   progress runs 0..1 through the event; lift is 0..1 for the height envelope; brightness 0..1.
+ * Kinds: a loop rises, hangs and drains back (most cycles), a hedgerow stands
+ * as a ragged curtain along the limb, and an eruption (about one cycle in
+ * seven) swells, breaks and throws a widening cloud out from the limb. About a
+ * third of the plain loops are rooted in an active region instead of the limb,
+ * so the bright regions on the disc carry their own arcades. Heights follow a
+ * steep spread (many small, few large, up to 0.4 of the radius).
+ * @returns {{slot: number, cycle: number, active: boolean, kind: 'loop'|'hedge'|'eruption', anchor: 'limb'|'region', region: number,
+ *   progress: number, limbAngle: number, depth: number, spread: number, height: number, brightness: number, born: number, lift: number,
+ *   fling: number, lean: number, flow: number, orient: number}}
+ *   progress runs 0..1 through the event; lift is 0..1 for the height envelope; brightness 0..1; fling 0..1 after an eruption breaks.
  */
 export function loopEvent(seed, slot, elapsed) {
   const period = 11000 + 8000 * hash01(seed, slot, -1);
@@ -244,30 +335,44 @@ export function loopEvent(seed, slot, elapsed) {
   const r = (k) => hash01(seed, slot, cycle, k);
   const roll = r(0);
   const kind = roll < 0.14 ? 'eruption' : roll < 0.34 ? 'hedge' : 'loop';
+  const anchor = kind === 'loop' && r(6) < 0.35 ? 'region' : 'limb';
   const share = kind === 'eruption' ? 0.92 : 0.7 + 0.25 * r(1);   // the part of the cycle the event lives in
   const progress = Math.min(1, u / share);
   const active = u < share;
   const born = (cycle * period - offset);
   // rise over the first 30%, hang, drain back over the last 25%; an eruption keeps rising
   const smooth = (x) => { const c = Math.min(1, Math.max(0, x)); return c * c * (3 - 2 * c); };
-  const lift = kind === 'eruption' ? smooth(progress / 0.45) : smooth(progress / 0.3) * (1 - smooth((progress - 0.75) / 0.25));
-  const brightness = active ? smooth(progress / 0.12) * (1 - smooth((progress - (kind === 'eruption' ? 0.55 : 0.85)) / (kind === 'eruption' ? 0.45 : 0.15))) : 0;
+  const lift = kind === 'eruption' ? smooth(progress / ERUPTION_BREAK) : smooth(progress / 0.3) * (1 - smooth((progress - 0.75) / 0.25));
+  const brightness = active ? smooth(progress / 0.12) * (kind === 'eruption' ? 1 : 1 - smooth((progress - 0.85) / 0.15)) : 0;
+  const fling = kind === 'eruption' && active ? smooth((progress - ERUPTION_BREAK) / (1 - ERUPTION_BREAK)) : 0;
+  const size = r(5) ** 2.2;   // most small, a few large
+  const height = anchor === 'region' ? 0.04 + 0.08 * r(5)
+    : kind === 'hedge' ? 0.08 + 0.22 * size : kind === 'eruption' ? 0.12 + 0.12 * r(5) : 0.05 + 0.35 * size;
   return {
-    slot, cycle, active, kind, progress, born, lift, brightness,
+    slot, cycle, active, kind, anchor, progress, born, lift, brightness, fling,
+    region: Math.floor(r(7) * ACTIVE_REGION_COUNT),
     limbAngle: r(2) * 2 * Math.PI,
     depth: (r(3) - 0.5) * 0.5,   // radians in front of (+) or behind (-) the limb plane
-    spread: kind === 'hedge' ? 0.08 + 0.10 * r(4) : 0.10 + 0.22 * r(4),
-    height: kind === 'hedge' ? 0.20 + 0.14 * r(5) : kind === 'eruption' ? 0.14 + 0.10 * r(5) : 0.07 + 0.17 * r(5),
+    spread: anchor === 'region' ? 0.05 + 0.07 * r(4) : kind === 'hedge' ? 0.12 + 0.20 * r(4) : 0.08 + 0.10 * r(4) + 0.5 * height,
+    height,
+    lean: (r(8) - 0.5) * 1.2,
+    flow: r(9) < 0.5 ? -1 : 1,
+    orient: r(10) * Math.PI,
   };
 }
 
 /**
  * Where a loop's two footpoints are, as unit vectors from the Sun's centre in
- * world space. They are set at birth on the limb as the prologue camera sees
- * it (most loops then show against space, as prominences do in 304 angstrom
- * pictures) and then turn with the Sun at their own latitude's rate.
+ * world space. A limb loop is set at birth on the limb as the prologue camera
+ * sees it (so it shows against space, as prominences do in 304 angstrom
+ * pictures) and then turns with the Sun at its own latitude's rate. A region
+ * loop is rooted in its active region and turns with the surface from load.
  */
 export function loopFootpoints(event, scene, elapsed) {
+  if (event.anchor === 'region') {
+    const region = activeRegions(scene.seed)[event.region];
+    return feetAround(region.centre, event.orient, event.spread).map((v) => bodyToWorld(scene, v, elapsed));
+  }
   const v = scene.viewer;
   const u1 = normalize(cross(scene.sunPole, v)), u2 = cross(v, u1);
   const limb = add(scale(u1, Math.cos(event.limbAngle)), scale(u2, Math.sin(event.limbAngle)));
