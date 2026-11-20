@@ -57,10 +57,11 @@
 
 import * as THREE from 'three';
 import { earthSpin, eclipticDirection, spinForSubsolar, subsolarLongitude } from './earthModel';
-import { EARTH_FRAGMENT, EARTH_VERTEX, HALO_FRAGMENT } from './earthSystem';
+import { EARTH_FRAGMENT, EARTH_VERTEX, HALO_FRAGMENT, MOON_FRAGMENT } from './earthSystem';
+import { EARTHSHINE, moonExposure } from './moonShading';
 import {
-  ACTIVE_REGION_COUNT, DAY_EARTH_RADIUS, DAY_EARTH_SPIN_MS, DAY_NARROW_FRAMING, DIFFERENTIAL, EARTH_ORBIT_RADIUS, ERUPTION_BREAK, LOOP_SLOTS, PROMINENCE_COUNT, SUN_RADIUS,
-  activeRegions, bodyToWorldInto, createLoopTracker, distanceReadout, earthDirection, earthDirectionInto, earthLongitude, eclipticBasis, prominences, sunScene, sunSpin,
+  ACTIVE_REGION_COUNT, DAY_EARTH_RADIUS, DAY_EARTH_SPIN_MS, DAY_MOON_ORBIT_RADIUS, DAY_MOON_RADIUS, DAY_NARROW_FRAMING, DIFFERENTIAL, EARTH_ORBIT_RADIUS, ERUPTION_BREAK, LOOP_SLOTS, PROMINENCE_COUNT, SUN_RADIUS,
+  DAY_MOON_MONTH_MS, activeRegions, bodyToWorldInto, createLoopTracker, dayMoonFraction, rotateAboutInto, distanceReadout, earthDirection, earthDirectionInto, earthLongitude, eclipticBasis, prominences, sunScene, sunSpin,
 } from './sunModel';
 import { sunSurfaceScale, sunTierFor } from './renderBudget';
 
@@ -609,7 +610,28 @@ export function createSunSystem({ scene, loadTexture, assetBase, pixelRatio, det
   const sunFromEarth0 = earthDirection(model, 0).map((v) => -v);
   const spinAtLoad = spinForSubsolar(model.earthAxis, sunFromEarth0, model.declination, subsolarLongitude(date));
 
-  disposables.push(sunGeometry, surfaceMaterial, surfaceTarget, sunMaterial, occluderMaterial, coronaTarget, coronaQuad.geometry, coronaQuad.material, glowTarget, glow.geometry, glow.material, corona.geometry, coronaMaterial, loopGeometry, loopMaterial, orbitGeometry, orbitMaterial, earth.geometry, earthMaterial, halo.geometry, haloMaterial, black, clear);
+  // ---- the Moon, at tonight's place around the Earth, lit by this Sun ----
+  // The night scene's material (LROC colour, LOLA relief, Lunar-Lambert), with the real Sun
+  // as its light: the phase on screen is the true one for its place on the orbit, seen from
+  // the camera (sunModel.js header). Its disc is a few dozen pixels, so the 1024 px maps do.
+  const grey = new THREE.DataTexture(new Uint8Array([128, 128, 128, 255]), 1, 1); grey.colorSpace = THREE.SRGBColorSpace; grey.needsUpdate = true;
+  const flat = new THREE.DataTexture(new Uint8Array([128, 128, 128, 255]), 1, 1); flat.needsUpdate = true;
+  const moonMaterial = new THREE.ShaderMaterial({
+    uniforms: { uAlbedo: { value: grey }, uRelief: { value: flat }, uSun: { value: new THREE.Vector3(0, 0, 1) }, uPole: { value: new THREE.Vector3(...model.moonNormal) }, uEarth: { value: new THREE.Vector3(0, 0, 1) }, uEarthshine: { value: 0 }, uExposure: { value: 1 } },
+    vertexShader: EARTH_VERTEX, fragmentShader: MOON_FRAGMENT,
+  });
+  loadTexture(`${assetBase}moon/moon-color-1024.webp`, (t) => { moonMaterial.uniforms.uAlbedo.value = t; });
+  loadTexture(`${assetBase}moon/moon-relief-1024.webp`, (t) => { t.colorSpace = THREE.NoColorSpace; moonMaterial.uniforms.uRelief.value = t; });
+  const moon = new THREE.Mesh(new THREE.SphereGeometry(DAY_MOON_RADIUS, 32, 24), moonMaterial);
+  moon.renderOrder = 1;
+  scene.add(moon);
+  const moonOccluder = new THREE.Mesh(moon.geometry, occluderMaterial);
+  moonOccluder.matrixAutoUpdate = false;
+  glowScene.add(moonOccluder);
+  const moonPole = new THREE.Vector3(...model.moonNormal);
+  const moonX = new THREE.Vector3(), moonZ = new THREE.Vector3(), moonFrame = new THREE.Matrix4(), moonDir = new Float64Array(3);
+
+  disposables.push(sunGeometry, surfaceMaterial, surfaceTarget, sunMaterial, occluderMaterial, coronaTarget, coronaQuad.geometry, coronaQuad.material, glowTarget, glow.geometry, glow.material, corona.geometry, coronaMaterial, loopGeometry, loopMaterial, orbitGeometry, orbitMaterial, earth.geometry, earthMaterial, halo.geometry, haloMaterial, black, clear, moon.geometry, moonMaterial, grey, flat);
   const readout = distanceReadout(date);
 
   // ---- the frame loop's working state, made once so update() allocates nothing ----
@@ -691,6 +713,19 @@ export function createSunSystem({ scene, loadTexture, assetBase, pixelRatio, det
       earth.quaternion.copy(align).multiply(spinQuaternion);
       earthMaterial.uniforms.uCloudShift.value = (t / 240000) % 1;
       orbitMaterial.uniforms.uEarthLon.value = (lon * Math.PI) / 180;
+      // the Moon: tidally locked (its near side, map longitude 0, faces the Earth), lit from the Sun's centre
+      const m = rotateAboutInto(moonDir, model.moonAtLoad, model.moonNormal, (2 * Math.PI * t) / DAY_MOON_MONTH_MS);
+      moon.position.set(earth.position.x + m[0] * DAY_MOON_ORBIT_RADIUS, earth.position.y + m[1] * DAY_MOON_ORBIT_RADIUS, earth.position.z + m[2] * DAY_MOON_ORBIT_RADIUS);
+      moonX.set(-m[0], -m[1], -m[2]).addScaledVector(moonPole, (m[0] * moonPole.x + m[1] * moonPole.y + m[2] * moonPole.z)).normalize();
+      moonZ.crossVectors(moonX, moonPole);
+      moon.quaternion.setFromRotationMatrix(moonFrame.makeBasis(moonX, moonPole, moonZ));
+      moonMaterial.uniforms.uSun.value.set(centre.x - moon.position.x, centre.y - moon.position.y, centre.z - moon.position.z).normalize();
+      moonMaterial.uniforms.uEarth.value.set(-m[0], -m[1], -m[2]);
+      // earthshine is strongest near new Moon, when the Earth seen from the Moon is nearly full
+      const fraction = dayMoonFraction(toSun.toArray(scratch), moonDir);
+      moonMaterial.uniforms.uEarthshine.value = EARTHSHINE * (1 - fraction);
+      // the phase angle (Sun-Moon-Earth) from the lit fraction, k = (1 + cos i) / 2: the night Moon's exposure rule
+      moonMaterial.uniforms.uExposure.value = moonExposure(Math.acos(Math.max(-1, Math.min(1, 2 * fraction - 1))) * (180 / Math.PI));
     },
     /**
      * Draw the surface buffer for the coming render. The field calls this just before
@@ -729,6 +764,9 @@ export function createSunSystem({ scene, loadTexture, assetBase, pixelRatio, det
         earth.updateMatrixWorld();
         earthOccluder.matrix.copy(earth.matrixWorld); earthOccluder.matrixWorldNeedsUpdate = true;
         earthOccluder.visible = earth.visible;
+        moon.updateMatrixWorld();
+        moonOccluder.matrix.copy(moon.matrixWorld); moonOccluder.matrixWorldNeedsUpdate = true;
+        moonOccluder.visible = moon.visible;
         renderer.setRenderTarget(glowTarget);
         renderer.render(glowScene, camera);
       }
@@ -750,12 +788,13 @@ export function createSunSystem({ scene, loadTexture, assetBase, pixelRatio, det
       [sunMaterial, coronaMaterial, loopMaterial, orbitMaterial].forEach((m) => { m.uniforms.uFade.value = p; });
       root.visible = p > 0.005;
       earth.visible = p > 0.5;   // the small Earth sits near the camera path and simply leaves with the Sun
+      moon.visible = earth.visible;
     },
     /** Takes everything out of the scene and frees it (textures belong to the loader that made them). */
     dispose() {
-      scene.remove(root, earth);
+      scene.remove(root, earth, moon);
       surfaceScene.remove(surfaceMesh);
-      glowScene.remove(glowRoot, earthOccluder);
+      glowScene.remove(glowRoot, earthOccluder, moonOccluder);
       coronaScene.remove(coronaRoot);
       for (const d of disposables) d.dispose?.();
     },
