@@ -8,8 +8,8 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { DndContext, PointerSensor, KeyboardSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, arrayMove, rectSortingStrategy, sortableKeyboardCoordinates, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Activity, Inbox, ListChecks, Moon, ShieldCheck, Sparkles, TrendingUp, Wrench } from 'lucide-react';
-import { moonPhase } from '../SkyBackground/skyModel';
+import { Activity, Inbox, ListChecks, ShieldCheck, Sparkles, TrendingUp, Wrench } from 'lucide-react';
+import TonightTile from './TonightTile';
 import { relativeTime } from '../../../services/voyageData';
 import { describe as describeActivity, sentenceText, tileWhen } from './activityModel';
 import { gainText, scoreSummary } from './fixQueueModel';
@@ -76,10 +76,8 @@ function TileBody({ id, data, onGo, onSeeActivity, now }) {
       return <RecentActivity data={data} onSeeActivity={onSeeActivity} now={now} />;
     case 'pages':
       return <><h5><Sparkles size={14} /> Top pages · 30 days</h5>{data.pages?.length ? <Bars rows={data.pages.map((p) => ({ label: p.page, value: (p.views / data.pages[0].views) * 100, text: p.views }))} /> : <p className="tile__empty">No page views yet.</p>}</>;
-    case 'tonight': {
-      const { lit, waxing } = moonPhase(new Date());
-      return <><h5><Moon size={14} /> Tonight</h5><div className="tile__row"><img src={`${data.assetBase}moon.webp`} alt="" className="tile__moon" /><div><div className="tile__big">{Math.round(lit * 100)}%</div><div className="tile__muted">{waxing ? 'waxing' : 'waning'} · {lit > 0.97 ? 'full moon' : lit < 0.03 ? 'new moon' : waxing ? 'filling out' : 'thinning'}</div></div></div></>;
-    }
+    case 'tonight':
+      return <TonightTile assetBase={data.assetBase} />;
     default: return null;
   }
 }
