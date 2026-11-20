@@ -1,23 +1,42 @@
 import * as THREE from 'three';
 import { CHAPTERS, chapterPlace } from './chapters';
 import { createTextureLoader } from './skyField';
-import { CORONA_EXTENT, createSunSystem } from './sunSystem';
+import { CORONA_EXTENT, SUN_TIERS, SUN_VISIBLE_UNTIL, createSunSystem } from './sunSystem';
+import { SUN_SURFACE } from './renderBudget';
 import { DAY_NARROW_FRAMING, LOOP_SLOTS, SUN_RADIUS, sunScene } from './sunModel';
 
 // The day scene builds its geometry and shaders without a GPU, so the wiring can be
 // checked here: what goes into the scene, what moves on update, and what is freed.
 // The pictures themselves are checked by eye on the dev server.
 const DATE = new Date('2026-11-19T15:00:00Z');
-const build = (detail = 'high') => {
+const build = (detail = 'high', mode = 'showcase') => {
   const scene = new THREE.Scene();
   const loadTexture = jest.fn();
-  const system = createSunSystem({ scene, loadTexture, assetBase: '/admin/sky/', pixelRatio: 2, detail, date: DATE });
+  const system = createSunSystem({ scene, loadTexture, assetBase: '/admin/sky/', pixelRatio: 2, detail, mode, date: DATE });
   return { scene, loadTexture, system };
 };
-const shaderMaterials = (scene) => {
+/** Shader materials in the given scenes (the main one, and the Sun's own surface scene). */
+const shaderMaterials = (...scenes) => {
   const found = new Set();
-  scene.traverse((o) => { if (o.material instanceof THREE.ShaderMaterial) found.add(o.material); });
+  scenes.forEach((scene) => scene.traverse((o) => { if (o.material instanceof THREE.ShaderMaterial) found.add(o.material); }));
   return [...found];
+};
+const surfaceOf = (system) => system.surface.material;
+/** A stand-in renderer that records what beforeRender asks of it. */
+const recordingGl = (width = 1440, height = 900) => ({
+  calls: [],
+  getDrawingBufferSize(v) { return v.set(width, height); },
+  getRenderTarget() { return null; },
+  getClearColor(c) { return c.set(0x101010); },
+  getClearAlpha() { return 1; },
+  setRenderTarget(t) { this.calls.push(['target', t]); },
+  setClearColor(c, a) { this.calls.push(['clear', a]); },
+  render(scene) { this.calls.push(['render', scene]); },
+});
+const cameraOn = (target, from) => {
+  const camera = new THREE.PerspectiveCamera(60, 1440 / 900, 1, 9000);
+  camera.position.copy(from); camera.lookAt(target); camera.updateMatrixWorld();
+  return camera;
 };
 
 describe('createSunSystem', () => {
@@ -38,7 +57,7 @@ describe('createSunSystem', () => {
 
   it('turns the Sun, moves the Earth and lights loop footpoints on update', () => {
     const { scene, system } = build();
-    const [sunMaterial] = shaderMaterials(scene).filter((m) => m.uniforms.uSpin);
+    const sunMaterial = surfaceOf(system);
     const earth = scene.children[1];
     system.update(0);
     const spin0 = sunMaterial.uniforms.uSpin.value, earth0 = earth.position.clone();
@@ -51,8 +70,8 @@ describe('createSunSystem', () => {
   });
 
   it('holds a still frame for a constant clock (reduced motion)', () => {
-    const { scene, system } = build();
-    const [sunMaterial] = shaderMaterials(scene).filter((m) => m.uniforms.uSpin);
+    const { system } = build();
+    const sunMaterial = surfaceOf(system);
     system.update(0);
     const first = sunMaterial.uniforms.uFeet.value.map((v) => v.toArray());
     system.update(0);
@@ -63,7 +82,7 @@ describe('createSunSystem', () => {
     const { scene, system } = build();
     const [root, earth] = scene.children;
     system.setPresence(0.4);
-    shaderMaterials(scene).filter((m) => m.uniforms.uFade).forEach((m) => expect(m.uniforms.uFade.value).toBeCloseTo(0.4));
+    shaderMaterials(scene, system.corona.scene, system.glow.scene).filter((m) => m.uniforms.uFade).forEach((m) => expect(m.uniforms.uFade.value).toBeCloseTo(0.4));
     expect(root.visible).toBe(true);
     expect(earth.visible).toBe(false);
     system.setPresence(0);
@@ -79,27 +98,94 @@ describe('createSunSystem', () => {
   it('writes shaders free of GLSL ES 3.0 reserved words used as names', () => {
     // "active" once slipped in as a variable and failed to compile on the GPU only
     const reserved = /\b(?:float|vec[234]|int)\s+(active|input|output|filter|sample|common|partition|resource)\b/;
-    ['high', 'low'].forEach((detail) => shaderMaterials(build(detail).scene).forEach((m) => {
+    ['high', 'low'].forEach((detail) => { const { scene, system } = build(detail); shaderMaterials(scene, system.surface.scene, system.corona.scene, system.glow.scene).forEach((m) => {
       expect(m.fragmentShader).not.toMatch(reserved);
       expect(m.vertexShader).not.toMatch(reserved);
-    }));
+    }); });
   });
 
   it('builds a lighter tier for phones', () => {
-    const count = (detail) => build(detail).scene.children[0].children.find((o) => o.isPoints).geometry.getAttribute('aLoop').count;
+    const count = (detail) => { let n = 0; build(detail).system.glow.scene.traverse((o) => { if (o.isPoints) n = o.geometry.getAttribute('aLoop').count; }); return n; };
     expect(count('low')).toBeLessThan(count('high') / 2);
-    expect(shaderMaterials(build('low').scene).find((m) => m.uniforms.uSpin).fragmentShader).not.toMatch('#define WORLEY');
+    expect(surfaceOf(build('low').system).fragmentShader).not.toMatch('#define WORLEY');
+    expect(surfaceOf(build('high').system).fragmentShader).toMatch('#define WORLEY');
   });
 
   it('takes everything out of the scene and frees what it made', () => {
     const { scene, system } = build();
     const geometries = [];
-    scene.traverse((o) => { if (o.geometry) geometries.push(jest.spyOn(o.geometry, 'dispose')); });
-    const materials = shaderMaterials(scene).map((m) => jest.spyOn(m, 'dispose'));
+    const scenes = [scene, system.surface.scene, system.corona.scene, system.glow.scene];
+    scenes.forEach((s) => s.traverse((o) => { if (o.geometry) geometries.push(jest.spyOn(o.geometry, 'dispose')); }));
+    const materials = shaderMaterials(...scenes).map((m) => jest.spyOn(m, 'dispose'));
+    const targets = [system.surface.target, system.corona.target, system.glow.target].map((t) => jest.spyOn(t, 'dispose'));
     system.dispose();
-    expect(scene.children).toHaveLength(0);
+    scenes.forEach((s) => expect(s.children).toHaveLength(0));
+    targets.forEach((spy) => expect(spy).toHaveBeenCalled());
     geometries.forEach((spy) => expect(spy).toHaveBeenCalled());
     materials.forEach((spy) => expect(spy).toHaveBeenCalled());
+  });
+});
+
+describe('the surface buffer', () => {
+  it('draws the surface and the glow into their own buffers, sized by the mode, and puts the renderer back as it was', () => {
+    const { system } = build('high', 'working');
+    system.setQuality({ pixelRatio: 1 });
+    const gl = recordingGl();
+    const camera = cameraOn(system.centre, system.centre.clone().add(new THREE.Vector3(0, 300, 1500)));
+    expect(system.beforeRender(gl, camera)).toBe(true);
+    expect(gl.calls.map(([k]) => k)).toEqual(['clear', 'target', 'render', 'target', 'render', 'target', 'render', 'target', 'clear']);
+    expect(gl.calls.filter(([k]) => k === 'target').map(([, t]) => t)).toEqual([system.surface.target, system.corona.target, system.glow.target, null]);
+    expect(gl.calls.filter(([k]) => k === 'render').map(([, t]) => t)).toEqual([system.surface.scene, system.corona.scene, system.glow.scene]);
+    expect(system.glow.target.width).toBe(system.surface.target.width);
+    expect([system.surface.target.width, system.surface.target.height]).toEqual([Math.round(1440 * SUN_SURFACE.working), Math.round(900 * SUN_SURFACE.working)]);
+    system.setQuality({ mode: 'showcase', pixelRatio: 2 });
+    system.beforeRender(recordingGl(2880, 1800), camera);
+    expect(system.surface.target.width).toBe(1440);   // one buffer pixel per CSS pixel
+  });
+
+  it('shrinks with the adaptive step', () => {
+    const { system } = build('high', 'showcase');
+    system.setQuality({ pixelRatio: 1 });
+    const before = system.surface.scale;
+    system.setQuality({ level: 2 });
+    expect(system.surface.scale).toBeLessThan(before);
+  });
+
+  it('costs nothing while the Sun is out of view or faded out', () => {
+    const { system } = build();
+    const away = cameraOn(system.centre.clone().add(new THREE.Vector3(0, 0, 9000)), system.centre.clone().add(new THREE.Vector3(0, 0, 4000)));
+    const gl = recordingGl();
+    expect(system.beforeRender(gl, away)).toBe(false);
+    system.setPresence(0);
+    const towards = cameraOn(system.centre, system.centre.clone().add(new THREE.Vector3(0, 0, 1500)));
+    expect(system.beforeRender(gl, towards)).toBe(false);
+    expect(gl.calls).toHaveLength(0);
+    // and update() leaves everything where it was
+    const spin = surfaceOf(system).uniforms.uSpin.value;
+    system.update(90000);
+    expect(surfaceOf(system).uniforms.uSpin.value).toBe(spin);
+    expect(SUN_VISIBLE_UNTIL).toBeLessThanOrEqual(0.8);
+    expect(system.visibleUntil).toBe(SUN_VISIBLE_UNTIL);
+  });
+
+  it('moves between the high and medium octaves with the mode, and keeps the low tier low', () => {
+    const octaves = (m) => [m.uniforms.uWarpOctaves.value, m.uniforms.uNetOctaves.value, m.uniforms.uMottOctaves.value];
+    const { system } = build('high', 'working');
+    const knobs = (t) => [t.warpOctaves, t.netOctaves, t.mottOctaves];
+    expect(octaves(surfaceOf(system))).toEqual(knobs(SUN_TIERS.medium));
+    system.setQuality({ mode: 'showcase' });
+    expect(octaves(surfaceOf(system))).toEqual(knobs(SUN_TIERS.high));
+    const low = build('low', 'showcase').system;
+    expect(octaves(surfaceOf(low))).toEqual(knobs(SUN_TIERS.low));
+  });
+
+  it('writes heat as two 8-bit channels and shades the limb in the scene sphere', () => {
+    const { scene, system } = build();
+    expect(surfaceOf(system).fragmentShader).toMatch('floor(e) / 255.0, fract(e)');
+    expect(surfaceOf(system).fragmentShader).not.toMatch('pow(1.0 - mu, 6.0)');
+    const composite = shaderMaterials(scene).find((m) => m.uniforms.uHeat);
+    expect(composite.uniforms.uHeat.value).toBe(system.surface.target.texture);
+    expect(composite.fragmentShader).toMatch('pow(1.0 - mu, 6.0)');
   });
 });
 

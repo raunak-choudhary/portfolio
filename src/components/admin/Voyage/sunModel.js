@@ -492,12 +492,19 @@ function limbFeetAtBirth(event, scene) {
  * loopEvent and loopFootpoints, but each cycle's fixed part is worked out once
  * when the cycle starts (every 11 to 19 s per slot) and every frame after that
  * only writes numbers into objects the tracker owns, so it allocates nothing.
- * The returned slot state is reused: read it before the next call.
- * @returns {{at(slot: number, elapsed: number): {event: object, feet: number[][]}}}
+ * The returned slot state is reused: read it before the next call. `event` holds the
+ * cycle's fixed part (as loopEvent gives it) and `phase` the moving part.
+ * @returns {{at(slot: number, elapsed: number): {event: object, phase: object, feet: Float64Array[]}}}
  */
 export function createLoopTracker(scene, slots = LOOP_SLOTS) {
   const regions = activeRegions(scene.seed);
-  const state = Array.from({ length: slots }, (_, slot) => ({ timing: loopTiming(scene.seed, slot), cycle: NaN, share: 1, event: null, base: null, rate: 1, feet: [[0, 0, 0], [0, 0, 0]] }));
+  // the moving numbers live in objects made once with fractional values and in typed arrays, so writing a
+  // new frame's value replaces a number in place instead of boxing a fresh one on the heap
+  const state = Array.from({ length: slots }, (_, slot) => ({
+    timing: loopTiming(scene.seed, slot), cycle: NaN, share: 1, event: null, base: null, rate: 1,
+    phase: { kind: 'loop', progress: 0.5, active: false, lift: 0.5, brightness: 0.5, fling: 0.5 },
+    feet: [new Float64Array(3), new Float64Array(3)],
+  }));
   return {
     at(slot, elapsed) {
       const s = state[slot];
@@ -505,11 +512,11 @@ export function createLoopTracker(scene, slots = LOOP_SLOTS) {
       const cycle = Math.floor(x);
       if (cycle !== s.cycle) {
         const { share, ...event } = loopCycle(scene.seed, slot, cycle, s.timing);
-        s.cycle = cycle; s.share = share; s.event = event;
+        s.cycle = cycle; s.share = share; s.event = event; s.phase.kind = event.kind;
         if (event.anchor === 'region') { s.base = feetAround(regions[event.region].centre, event.orient, event.spread); s.rate = 0; }
         else { const birth = limbFeetAtBirth(event, scene); s.base = birth.feet; s.rate = birth.rate; }
       }
-      loopPhaseInto(s.event, s.share, x - cycle);
+      loopPhaseInto(s.phase, s.share, x - cycle);
       if (s.event.anchor === 'region') {
         bodyToWorldInto(s.feet[0], scene, s.base[0], elapsed); bodyToWorldInto(s.feet[1], scene, s.base[1], elapsed);
       } else {

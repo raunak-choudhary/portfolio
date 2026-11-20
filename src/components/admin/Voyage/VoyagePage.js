@@ -223,10 +223,10 @@ function VoyageView({ requireSecurityEnrollment }) {
       if (field) {
         if (adaptMode !== modeRef.current) {   // a mode switch starts again from the mode's own full quality
           adaptMode = modeRef.current; adapt = initialAdaptState();
-          field.setQuality({ pixelRatio: ratioFor(0), frameInterval: MODES[adaptMode].frameInterval });
+          field.setQuality({ pixelRatio: ratioFor(0), frameInterval: MODES[adaptMode].frameInterval, mode: adaptMode, level: 0 });
         } else if (lastFrameAt !== null) {
           adapt = adaptQuality(adapt, now - lastFrameAt);
-          if (adapt.changed) field.setQuality({ pixelRatio: ratioFor(adapt.level) });
+          if (adapt.changed) field.setQuality({ pixelRatio: ratioFor(adapt.level), level: adapt.level });   // the day Sun's surface buffer steps down with the canvas
         }
         stillSince = route.settled ? (stillSince ?? now) : null;
         if (modeRef.current === 'working' && !taking && snapshotDue({ hasSnapshot: snapshotUrl !== null, stillForMs: stillSince === null ? 0 : now - stillSince, f: route.f, snapshotF, stale: snapshotStale.current })) takeSnapshot(field, route.f);

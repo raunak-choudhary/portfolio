@@ -328,18 +328,21 @@ describe('the frame loop helpers that allocate nothing', () => {
       for (let s = 0; s < LOOP_SLOTS; s++) {
         const want = loopEvent(scene.seed, s, t);
         const got = tracker.at(s, t);
-        expect(got.event).toEqual(want);
+        const { kind, ...phase } = got.phase;
+        expect(kind).toBe(want.kind);
+        expect({ ...got.event, ...phase }).toEqual(want);
         const feet = loopFootpoints(want, scene, t);
-        near(got.feet[0], feet[0]); near(got.feet[1], feet[1]);
+        near([...got.feet[0]], feet[0]); near([...got.feet[1]], feet[1]);
       }
     }
   });
 
   it('reuse the same objects from frame to frame within a cycle', () => {
     const tracker = createLoopTracker(scene);
-    const a = tracker.at(0, 1000), event = a.event, feet = a.feet[0];
+    const a = tracker.at(0, 1000), { event, phase } = a, feet = a.feet[0];
     const b = tracker.at(0, 1016);
     expect(b.event).toBe(event);
+    expect(b.phase).toBe(phase);
     expect(b.feet[0]).toBe(feet);
   });
 });
