@@ -82,3 +82,18 @@ describe('the second hero button', () => {
     expect(secondButton().textContent).toBe('Contact Me');
   });
 });
+
+describe('when the hero is turned off in the admin', () => {
+  it('shows nothing: the database returned no row and no error', () => {
+    useSupabase.mockReturnValue({ data: null, loading: false, error: null });
+    view = mount(page());
+    expect(view.container.querySelector('.hero-section')).toBeNull();
+    expect(view.container.textContent).toBe('');
+  });
+
+  it('still shows the built-in hero when the read failed, so a network problem never blanks the page', () => {
+    useSupabase.mockReturnValue({ data: null, loading: false, error: 'Network error' });
+    view = mount(page());
+    expect(view.container.querySelector('.hero-title')).not.toBeNull();
+  });
+});

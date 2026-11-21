@@ -56,7 +56,8 @@ const About = () => {
   // Fetch about data with real-time updates
   const { 
     data: aboutData, 
-    loading
+    loading,
+    error: loadError
   } = useSupabase('about_content', {}, { 
     orderBy: { column: 'created_at', ascending: false },
     limit: 1,
@@ -124,6 +125,12 @@ const About = () => {
       </section>
     );
   }
+
+  // Turned off in the admin ("Show the about section to visitors"): the database
+  // returns no row to visitors, so the about section stays hidden. Only a failed
+  // read falls back to the built-in text, so the page is never left blank
+  // by a network problem.
+  if (!aboutData && !loadError) return null;
 
   return (
     <section id="about" className="about-section section">

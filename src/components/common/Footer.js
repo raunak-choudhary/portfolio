@@ -3,6 +3,7 @@
 import React from 'react';
 import visitorTracking from '../../services/visitorTrackingService';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { goToHomeSection } from '../../utils/homeSection';
 import './Footer.css';
 
 // Import the PNG icons
@@ -16,11 +17,11 @@ const Footer = () => {
   const navigate = useNavigate();
 
   const quickLinks = [
-    { name: 'Home', path: '/', section: 'hero' },
+    { name: 'Home', path: '/home', section: 'hero' },
     { name: 'Projects', path: '/projects' },
     { name: 'Experience', path: '/work-experience' },
     { name: 'Skills', path: '/skills' },
-    { name: 'Contact', path: '/#contact', section: 'contact' }
+    { name: 'Contact', path: '/home#contact', section: 'contact' }
   ];
 
   const portfolioSections = [
@@ -67,45 +68,16 @@ const Footer = () => {
     visitorTracking.trackReachOut('email', 'footer');
   };
 
+  // Home and Contact are places on the home page (/home); the helper scrolls
+  // there in place or navigates first, and waits for the section to exist.
   const handleQuickLinkClick = (link) => {
     handleFooterLinkClick(link.name, link.path);
-    
-    if (link.path === '/') {
-      // Navigate to home and scroll to top
-      navigate('/');
-      setTimeout(() => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }, 100);
-    } else if (link.path.includes('#')) {
-      const sectionId = link.section;
-      
-      if (location.pathname === '/') {
-        // Already on landing page, just scroll to section
-        const element = document.getElementById(sectionId);
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth' });
-          window.history.pushState(null, '', `/#${sectionId}`);
-        }
-      } else {
-        // Navigate to landing page then scroll to section
-        navigate('/');
-        setTimeout(() => {
-          const element = document.getElementById(sectionId);
-          if (element) {
-            element.scrollIntoView({ behavior: 'smooth' });
-            window.history.pushState(null, '', `/#${sectionId}`);
-          }
-        }, 300);
-      }
-    }
+    goToHomeSection(link.section, { pathname: location.pathname, navigate });
   };
 
   const handleBrandClick = () => {
-    visitorTracking.trackClick('footer_brand', 'logo_click', '/');
-    navigate('/');
-    setTimeout(() => {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }, 100);
+    visitorTracking.trackClick('footer_brand', 'logo_click', '/home');
+    goToHomeSection('hero', { pathname: location.pathname, navigate });
   };
 
   return (
@@ -165,7 +137,7 @@ const Footer = () => {
             <ul className="footer-link-list">
               {quickLinks.map((link) => (
                 <li key={link.name}>
-                  {link.path.includes('#') || link.path === '/' ? (
+                  {link.section ? (
                     <button
                       onClick={() => handleQuickLinkClick(link)}
                       className="footer-link"
