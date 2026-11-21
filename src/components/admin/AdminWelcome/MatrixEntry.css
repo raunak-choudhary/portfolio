@@ -51,7 +51,8 @@
   transition: transform 160ms, border-color 160ms, box-shadow 160ms;
 }
 .matrix-entry__pill:hover, .matrix-entry__pill:focus-visible {
-  transform: translateY(-2px); border-color: rgba(255, 255, 255, 0.35); outline: none;
+  /* !important: globals.css pins every button to `transform: scale(1) !important` (an iOS zoom guard for the public site) */
+  transform: translateY(-2px) !important; border-color: rgba(255, 255, 255, 0.35); outline: none;
   box-shadow: 0 14px 34px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 .matrix-entry__capsule {
