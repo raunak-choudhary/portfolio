@@ -7,6 +7,7 @@ import { portfolioData } from '../../../data/portfolioData';
 import { useSupabase } from '../../../hooks/useSupabase';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { safeResumeUrl } from '../../../utils/resumeLink';
+import { goToHomeSection } from '../../../utils/homeSection';
 import './Hero.css';
 
 const Hero = () => {
@@ -31,7 +32,8 @@ const Hero = () => {
   // Fetch hero data with real-time updates
   const { 
     data: heroData, 
-    loading
+    loading,
+    error: loadError
   } = useSupabase('hero_content', {}, { 
     orderBy: { column: 'created_at', ascending: false },
     limit: 1,
@@ -56,23 +58,8 @@ const Hero = () => {
   // second button stays Contact Me, so the hero never shows a dead link.
   const resumeUrl = safeResumeUrl(heroData?.resume_url);
 
-  const handleNavClick = (sectionId) => {
-    if (location.pathname === '/') {
-      const element = document.getElementById(sectionId);
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth' });
-        window.history.pushState(null, '', `/#${sectionId}`);
-      }
-    } else {
-      navigate(`/#${sectionId}`);
-      setTimeout(() => {
-        const element = document.getElementById(sectionId);
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth' });
-        }
-      }, 300);
-    }
-  };
+  // Scrolls on the home page, or goes to /home#section from another page.
+  const handleNavClick = (sectionId) => goToHomeSection(sectionId, { pathname: location.pathname, navigate });
 
   const handleCTAClick = () => {
     if (displayData.cta_link) {
@@ -99,6 +86,12 @@ const Hero = () => {
       </section>
     );
   }
+
+  // Turned off in the admin ("Show the hero to visitors"): the database
+  // returns no row to visitors, so the hero stays hidden. Only a failed
+  // read falls back to the built-in text, so the page is never left blank
+  // by a network problem.
+  if (!heroData && !loadError) return null;
 
   return (
     <section className="hero-section">

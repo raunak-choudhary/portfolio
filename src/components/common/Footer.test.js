@@ -7,10 +7,12 @@ import visitorTracking from '../../services/visitorTrackingService';
 import { React, click, mount } from '../admin/SkyBackground/testUtils';
 
 // react-router 7 ships package exports this Jest cannot resolve; the footer needs only these.
+const mockNavigate = jest.fn();
+const mockLocation = { pathname: '/' };
 jest.mock('react-router-dom', () => ({
   Link: ({ to, children, ...rest }) => <a href={to} {...rest}>{children}</a>,
-  useLocation: () => ({ pathname: '/' }),
-  useNavigate: () => jest.fn()
+  useLocation: () => mockLocation,
+  useNavigate: () => mockNavigate
 }));
 
 jest.mock('../../services/visitorTrackingService', () => ({
@@ -62,5 +64,28 @@ describe('Footer tracking', () => {
 
     expect(visitorTracking.trackClick).toHaveBeenCalledWith('social_media', name.toLowerCase(), expect.any(String));
     expect(visitorTracking.trackReachOut).not.toHaveBeenCalled();
+  });
+});
+
+describe('Home and Contact quick links', () => {
+  const quickLink = (name) => [...view.container.querySelectorAll('.footer-link')].find((el) => el.textContent === name);
+
+  it('Contact from another page goes to /home#contact, never to "/", whose redirect dropped the section', () => {
+    view.unmount();
+    mockLocation.pathname = '/projects';
+    view = mount(<Footer />);
+    click(quickLink('Contact'));
+    expect(mockNavigate).toHaveBeenCalledWith('/home#contact');
+    expect(mockNavigate).not.toHaveBeenCalledWith('/');
+    mockLocation.pathname = '/';
+  });
+
+  it('Home goes to /home', () => {
+    view.unmount();
+    mockLocation.pathname = '/skills';
+    view = mount(<Footer />);
+    click(quickLink('Home'));
+    expect(mockNavigate).toHaveBeenCalledWith('/home');
+    mockLocation.pathname = '/';
   });
 });
