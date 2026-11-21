@@ -1,0 +1,14 @@
+[
+  {
+    "name": "badges/badge-1.png",
+    "size": 96000,
+    "mimetype": "image/png",
+    "updated_at": "2026-06-05T15:00:00Z"
+  },
+  {
+    "name": "certificates/cert-2.pdf",
+    "size": 860000,
+    "mimetype": "application/pdf",
+    "updated_at": "2026-06-05T15:00:00Z"
+  }
+]

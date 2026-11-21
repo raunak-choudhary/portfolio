@@ -8,7 +8,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
-import { STORAGE_PLACEHOLDER, classifyUrl, expandFixtureText } from './admin-fixtures.mjs';
+import { STORAGE_PLACEHOLDER, classifyUrl, expandFixtureText, listStorageLevel } from './admin-fixtures.mjs';
 
 const ORIGIN = 'https://abcdefghijklmnop.supabase.co';
 
@@ -31,6 +31,23 @@ test('expandFixtureText points the placeholder at the public storage path', () =
     expandFixtureText(`"${STORAGE_PLACEHOLDER}/fixtures/a.png"`, ORIGIN),
     `"${ORIGIN}/storage/v1/object/public/fixtures/a.png"`,
   );
+});
+
+test('listStorageLevel answers one folder level the way storage does, paged', () => {
+  const objects = [
+    { name: 'b.png', size: 2, mimetype: 'image/png', updated_at: 't' },
+    { name: 'alpha/cover.png', size: 1, mimetype: 'image/png', updated_at: 't' },
+    { name: 'alpha/deep/x.png', size: 1, mimetype: 'image/png', updated_at: 't' },
+    { name: 'a.png', size: 3, mimetype: 'image/png', updated_at: 't' },
+  ];
+  const top = listStorageLevel(objects, { prefix: '' });
+  assert.deepEqual(top.map((e) => e.name), ['a.png', 'alpha', 'b.png']);
+  assert.deepEqual(top[1], { id: null, name: 'alpha', metadata: null });   // a folder: no id, no metadata
+  assert.deepEqual(top[0].metadata, { size: 3, mimetype: 'image/png' });
+  assert.deepEqual(listStorageLevel(objects, { prefix: 'alpha' }).map((e) => e.name), ['cover.png', 'deep']);
+  assert.deepEqual(listStorageLevel(objects, { prefix: 'alpha/deep/' }).map((e) => e.name), ['x.png']);
+  assert.deepEqual(listStorageLevel(objects, { prefix: '', limit: 2, offset: 2 }).map((e) => e.name), ['b.png']);
+  assert.deepEqual(listStorageLevel([], {}), []);
 });
 
 const FIXTURE_ROOT = path.resolve('e2e/fixtures/admin');

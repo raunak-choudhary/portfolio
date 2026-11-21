@@ -3,7 +3,7 @@
     "id": "TEST-education-1",
     "degree": "TEST- Master of Science",
     "institution": "TEST- Example University",
-    "institution_logo_url": "{{storage}}/fixtures/university.png",
+    "institution_logo_url": "{{storage}}/organization-logos/education/university.png",
     "college": "TEST- School of Testing",
     "description": "TEST- A synthetic education description long enough for the rules.",
     "education_level": "Masters",

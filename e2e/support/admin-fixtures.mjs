@@ -10,6 +10,9 @@
 //   Supabase /functions/v1/<fn>           -> e2e/fixtures/admin/functions/<fn>.json
 //   Supabase /auth/v1/user                -> the fake user (fake-session.mjs)
 //   Supabase /storage/v1/object/public    -> a 1x1 placeholder image
+//   Supabase /storage/v1/object/list      -> e2e/fixtures/admin/storage/<bucket>.json, one folder level per call
+//   Supabase /storage/v1/object/sign      -> a fixture signed link (served as the placeholder image)
+//   Supabase DELETE /storage/v1/object/<bucket> -> removed from an in-memory copy, recorded in `writes`
 //   Supabase /realtime/v1/websocket       -> a mock that acknowledges joins
 //   fonts, jsdelivr icons, NASA Sun image -> local stand-ins
 //   anything else                         -> recorded in `unexpected`, aborted
@@ -94,7 +97,7 @@ export function classifyUrl(url, supabaseOrigin) {
  * @param {import('@playwright/test').BrowserContext} context
  * @param {{ session?: 'none'|'aal1'|'aal2', tables?: Record<string, object[]> }} options
  */
-export async function installAdminFixtures(context, { session = 'aal2', tables: overrides = {} } = {}) {
+export async function installAdminFixtures(context, { session = 'aal2', tables: overrides = {}, storage: storageOverrides = {} } = {}) {
   const supabaseUrl = discoverSupabaseUrl();
   const supabaseOrigin = new URL(supabaseUrl).origin;
   const unexpected = [];
@@ -105,6 +108,13 @@ export async function installAdminFixtures(context, { session = 'aal2', tables: 
   const seen = [];
   const handled = new Set();
   const tables = new Map();
+  const buckets = new Map();
+
+  // A bucket's objects, each { name: full path, size, mimetype, updated_at }; a bucket without a fixture is empty.
+  const bucketObjects = (bucketId) => {
+    if (!buckets.has(bucketId)) buckets.set(bucketId, structuredClone(storageOverrides[bucketId] ?? readFixture('storage', bucketId, supabaseOrigin) ?? []));
+    return buckets.get(bucketId);
+  };
 
   const tableRows = (name) => {
     if (!tables.has(name)) {
@@ -164,9 +174,34 @@ export async function installAdminFixtures(context, { session = 'aal2', tables: 
       return route.fulfill({ status: 200, contentType: 'image/png', body: PLACEHOLDER_PNG });
     }
 
-    // Listing a bucket is a read (the media chapter and the media snapshot): every bucket is empty offline.
-    if (/^\/storage\/v1\/object\/list\/[a-z0-9_-]+$/.test(pathname) && method === 'POST') {
-      return json(route, 200, []);
+    // Listing a bucket is a read (the Files pop-up): one folder level, the way storage answers,
+    // a folder as an entry with neither id nor metadata, and paged by limit and offset.
+    const listed = /^\/storage\/v1\/object\/list\/([a-z0-9_-]+)$/.exec(pathname);
+    if (listed && method === 'POST') {
+      const body = safeJson(request) || {};
+      return json(route, 200, listStorageLevel(bucketObjects(listed[1]), body));
+    }
+
+    // A signed link to one private object: storage answers with a path relative to /storage/v1.
+    const signed = /^\/storage\/v1\/object\/sign\/([a-z0-9_-]+)\/(.+)$/.exec(pathname);
+    if (signed && method === 'POST') {
+      return json(route, 200, { signedURL: `/object/sign/${signed[1]}/${signed[2]}?token=fixture` });
+    }
+    if (signed && method === 'GET') {
+      return route.fulfill({ status: 200, contentType: 'image/png', body: PLACEHOLDER_PNG });
+    }
+
+    // Deleting objects is a write: recorded, applied to this context's copy, answered with the removed objects.
+    const removed = /^\/storage\/v1\/object\/([a-z0-9_-]+)$/.exec(pathname);
+    if (removed && method === 'DELETE') {
+      const body = safeJson(request) || {};
+      const bucketId = removed[1];
+      writes.push({ seq: seq += 1, table: `storage:${bucketId}`, method, query: '', body });
+      const wanted = new Set(body.prefixes || []);
+      const objects = bucketObjects(bucketId);
+      const gone = objects.filter((object) => wanted.has(object.name));
+      buckets.set(bucketId, objects.filter((object) => !wanted.has(object.name)));
+      return json(route, 200, gone.map((object) => ({ name: object.name, bucket_id: bucketId, id: `fixture-${object.name}` })));
     }
 
     const rpc = /^\/rest\/v1\/rpc\/([a-z0-9_]+)$/.exec(pathname);
@@ -241,6 +276,11 @@ export async function installAdminFixtures(context, { session = 'aal2', tables: 
     reads,
     /** RPC and Edge Function calls, in order. */
     calls,
+    /**
+     * Counts a request a test answered with its own route as handled, so a
+     * deliberate failure still keeps the zero-escape check meaningful.
+     */
+    markHandled: (request) => handled.add(request),
     /** Non-local requests no intercept handled: must be empty. */
     escaped: () => seen.filter((request) => !handled.has(request)).map((request) => `${request.method()} ${new URL(request.url()).origin}`),
     /** The current in-memory rows of a table (after any writes). */
@@ -248,6 +288,30 @@ export async function installAdminFixtures(context, { session = 'aal2', tables: 
     /** Total non-local requests seen, for the zero-escape assertion's context. */
     seenCount: () => seen.length,
   };
+}
+
+/**
+ * One folder level of a bucket, as storage's list endpoint answers it: the
+ * files directly under `prefix` and one entry per sub-folder, sorted by
+ * name, then sliced by offset and limit. Pure; exported for tests.
+ */
+export function listStorageLevel(objects, { prefix = '', limit = 100, offset = 0 } = {}) {
+  const base = prefix ? `${prefix.replace(/\/+$/, '')}/` : '';
+  const files = [];
+  const folders = new Set();
+  objects.forEach((object) => {
+    if (!object.name.startsWith(base)) return;
+    const rest = object.name.slice(base.length);
+    const slash = rest.indexOf('/');
+    if (slash === -1) {
+      files.push({ id: `fixture-${object.name}`, name: rest, updated_at: object.updated_at, created_at: object.updated_at, metadata: { size: object.size, mimetype: object.mimetype } });
+    } else {
+      folders.add(rest.slice(0, slash));
+    }
+  });
+  const entries = [...[...folders].map((name) => ({ id: null, name, metadata: null })), ...files]
+    .sort((a, b) => a.name.localeCompare(b.name));
+  return entries.slice(offset, offset + limit);
 }
 
 function safeJson(request) {
