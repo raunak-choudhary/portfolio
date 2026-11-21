@@ -59,6 +59,28 @@ test.describe('fixture integration', () => {
     }
   });
 
+  // A shared link or the admin's View on site opens /home#section in a new
+  // tab. The browser's own jump happens before the sections load their
+  // content, so the page used to stay at the top.
+  for (const section of ['about', 'contact']) {
+    for (const width of [375, 1440]) {
+      test(`opening /home#${section} lands on that section at ${width}px`, async ({ browser }) => {
+        const { page, context, errors } = await openPage(browser, { path: `/home#${section}`, width, theme: 'dark' });
+        try {
+          await expect.poll(
+            // Distance from the section's top to the viewport's, within a pixel
+            // (sub-pixel layout can leave -0.4, which rounds to -0).
+            () => page.evaluate((id) => Math.abs(document.getElementById(id).getBoundingClientRect().top), section),
+            { timeout: 8000 },
+          ).toBeLessThanOrEqual(1);
+          expect(errors).toEqual([]);
+        } finally {
+          await context.close();
+        }
+      });
+    }
+  }
+
   test('visiting the home page writes no analytics events', async ({ browser }) => {
     const { page, context, unexpected } = await openPage(browser, { path: '/home', width: 1440, theme: 'dark' });
     try {
