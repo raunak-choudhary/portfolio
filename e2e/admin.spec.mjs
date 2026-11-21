@@ -61,7 +61,8 @@ test.describe('signed in at level 2', () => {
     try {
       await waitForDashboard(page);
       const health = page.locator('h5', { hasText: 'Health' }).locator('..');
-      await expect(health.locator('.tile__big')).toHaveText('99/100');
+      // 97, not 99: the fixture hero has no resume uploaded, and Resume is a Hero quality check
+      await expect(health.locator('.tile__big')).toHaveText('97/100');
       await expect(health).toContainText('11 strong · 0 need attention');
       const queue = page.getByTestId('fix-queue');
       await expect(queue.getByText('1 project has no picture')).toBeVisible();
