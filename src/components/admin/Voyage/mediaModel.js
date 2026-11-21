@@ -265,9 +265,11 @@ export const totalBytes = (files = []) => files.reduce((sum, f) => sum + (Number
  * @returns {{blocked: boolean, failedSections: string[], toDelete: object[], kept: Array<{file: object, entries: object[]}>}}
  */
 export function planDeletion(chosen = [], fresh = {}) {
-  const failedTables = Array.isArray(fresh?.failedTables) ? fresh.failedTables : ['unknown'];
-  if (failedTables.length || !Array.isArray(fresh?.references)) {
-    const failedSections = fresh?.failedSections?.length ? fresh.failedSections : failedTables;
+  const failedTables = Array.isArray(fresh?.failedTables) ? fresh.failedTables : null;
+  if (!failedTables || failedTables.length || !Array.isArray(fresh?.references)) {
+    // Names only the sections the check reported; an empty list makes the
+    // message say "every section", which is true when the check itself failed.
+    const failedSections = fresh?.failedSections?.length ? fresh.failedSections : (failedTables || []);
     return { blocked: true, failedSections, toDelete: [], kept: chosen.map((file) => ({ file, entries: [] })) };
   }
   const byId = usersById(fresh.references);

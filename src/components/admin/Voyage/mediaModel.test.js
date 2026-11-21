@@ -149,7 +149,7 @@ describe('planDeletion: the check right before deleting', () => {
   });
 
   it('deletes nothing when the check did not come back at all', () => {
-    expect(planDeletion([a], null)).toMatchObject({ blocked: true, toDelete: [] });
+    expect(planDeletion([a], null)).toMatchObject({ blocked: true, failedSections: [], toDelete: [] });
     expect(planDeletion([a], {})).toMatchObject({ blocked: true, toDelete: [] });
     expect(planDeletion([a], { failedTables: [] })).toMatchObject({ blocked: true, toDelete: [] });
   });
