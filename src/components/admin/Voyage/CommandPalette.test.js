@@ -37,7 +37,7 @@ describe('CommandPalette', () => {
     expect(palette(view).getAttribute('aria-modal')).toBe('true');
     expect(document.activeElement === view.container.querySelector('.voyage-palette__input')).toBe(true);
     click([...view.container.querySelectorAll('.voyage-palette__item')].find((b) => b.textContent.startsWith('Inbox')));
-    expect(onJump).toHaveBeenCalledWith(15);
+    expect(onJump).toHaveBeenCalledWith(14);   // Inbox is fourteenth since Media left the route
     expect(palette(view)).toBeNull();
     view.unmount();
   });

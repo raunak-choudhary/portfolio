@@ -40,7 +40,7 @@ jest.mock('../../../services/voyageRecords', () => ({ listRecords: jest.fn(), sa
 // the inbox reads through its own service, which also needs the Supabase client
 jest.mock('../../../services/inboxService', () => ({ listMessages: jest.fn(), updateMessages: jest.fn(), deleteMessages: jest.fn(), signedAttachmentUrl: jest.fn(), SIGNED_URL_SECONDS: 300 }));
 const inboxService = jest.requireMock('../../../services/inboxService');
-jest.mock('../../../services/mediaLibraryService', () => ({ getMediaLibrarySnapshot: jest.fn(), createMediaSignedUrl: jest.fn(), MEDIA_LIBRARY_BUCKETS: [] }));
+jest.mock('../../../services/mediaLibraryService', () => ({ getMediaLibrarySnapshot: jest.fn(), createMediaSignedUrl: jest.fn(), readReferences: jest.fn(), deleteMediaFiles: jest.fn(), MEDIA_LIBRARY_BUCKETS: [], REFERENCE_TABLES: [] }));
 const mediaLibrary = jest.requireMock('../../../services/mediaLibraryService');
 // the Security chapter has its own tests; here only its place on the page and the sign-out hand-over are checked
 jest.mock('./SecurityChapter', () => {
@@ -92,7 +92,15 @@ describe('VoyagePage (2D fallback)', () => {
     voyageData.getRecentEdits.mockResolvedValue([{ section: 'Projects', label: 'Tallyproof', at: new Date().toISOString() }]);
     voyageData.getTopPages.mockResolvedValue([{ page: '/home', views: 94 }, { page: '/projects', views: 20 }]);
     voyageRecords.listRecords.mockResolvedValue([{ id: 'p1', title: 'Tallyproof', order_index: 30, technologies: ['React'] }]);
-    mediaLibrary.getMediaLibrarySnapshot.mockResolvedValue({ buckets: [], items: [{ id: 'project-images:a.png', bucketId: 'project-images', bucketLabel: 'Project Images', path: 'a.png', name: 'a.png', kind: 'image', status: 'referenced', previewUrl: null }], summary: {}, generatedAt: '' });
+    mediaLibrary.getMediaLibrarySnapshot.mockResolvedValue({
+      buckets: [{ id: 'project-images', label: 'Project images', status: 'available', complete: true }],
+      items: [{ id: 'project-images:a.png', bucketId: 'project-images', bucketLabel: 'Project images', path: 'a.png', name: 'a.png', kind: 'image', size: 2048, status: 'referenced', previewUrl: null }],
+      references: [
+        { keys: ['project-images:a.png'], bucketId: 'project-images', path: 'a.png', table: 'projects', section: 'Projects', rowId: 'p1', title: 'Tallyproof', field: 'image_urls', fieldLabel: 'Images', position: 1, count: 1, explicit: true },
+        { keys: ['project-images:gone.png'], bucketId: 'project-images', path: 'gone.png', table: 'projects', section: 'Projects', rowId: 'p1', title: 'Tallyproof', field: 'image_urls', fieldLabel: 'Images', position: 2, count: 2, explicit: true },
+      ],
+      referenceErrors: [], referenceErrorSections: [], summary: {}, generatedAt: '',
+    });
     inboxService.listMessages.mockResolvedValue([{ id: 'm1', name: 'Test Sender', email: 'sender@example.com', subject: 'Hello', message: 'Hi', status: 'unread', created_at: new Date().toISOString() }]);
     insightsService.loadInsights.mockResolvedValue({ current: [{ id: 'e1', session_id: 's1', created_at: new Date().toISOString(), event_type: 'page_view', event_action: 'view_page', event_label: 'home' }], before: [], projects: [], firstEngaged: null, firstProjectOpen: null, freshness: [], truncated: false });
   });
@@ -111,7 +119,7 @@ describe('VoyagePage (2D fallback)', () => {
     expect(document.body.style.getPropertyValue('transform')).toBe('none');
     expect(isDashboardReady()).toBe(true);
     const titles = [...view.container.querySelectorAll('.voyage-chapter__title')].map((h) => h.textContent);
-    expect(titles[0]).toMatch(/^Good (morning|afternoon|evening|night), Raunak$/); expect(titles[1]).toBe('Mission control'); expect(titles[4]).toBe('Projects'); expect(titles[16]).toBe('Security');
+    expect(titles[0]).toMatch(/^Good (morning|afternoon|evening|night), Raunak$/); expect(titles[1]).toBe('Mission control'); expect(titles[4]).toBe('Projects'); expect(titles[15]).toBe('Security');
     expect(view.container.querySelector('#chapter-earth .voyage-placeholder')).toBeNull();
     // each chapter with a public page carries a View on site link in its heading; admin-only chapters do not
     const viewLinks = [...view.container.querySelectorAll('.voyage-chapter__head .voyage-chapter__view')];
@@ -178,8 +186,9 @@ describe('VoyagePage (2D fallback)', () => {
     ['education', 'work', 'internships', 'certifications', 'achievements', 'leadership', 'recommendations'].forEach((id) => {
       expect([id, view.container.querySelector(`#chapter-${id} [data-testid="deck"]`) !== null]).toEqual([id, true]);   // V3b: the seven list sections
     });
-    expect(view.container.querySelector('#chapter-media [data-testid="media"]').textContent).toContain('a.png');   // V4a: storage is its source
-    expect(view.container.querySelector('#chapter-media .voyage-placeholder')).toBeNull();
+    // files are a pop-up now, not a chapter: nothing reads storage until the owner asks
+    expect(view.container.querySelector('#chapter-media')).toBeNull();
+    expect(mediaLibrary.getMediaLibrarySnapshot).not.toHaveBeenCalled();
     expect(view.container.querySelector('#chapter-analytics .voyage-placeholder')).toBeNull();   // V4b: the four questions
     expect(view.container.querySelector('#chapter-analytics [data-testid="analytics-chapter"]').textContent).toContain('Is it working?');
     expect(view.container.querySelector('#chapter-analytics .voyage-chapter__sub').textContent).toBe('Who visits, what they look at, and whether they reach out.');
@@ -192,7 +201,7 @@ describe('VoyagePage (2D fallback)', () => {
     const view = render();
     await flush();
     const dots = view.container.querySelectorAll('.voyage-rail__dot');
-    expect(dots).toHaveLength(17);
+    expect(dots).toHaveLength(16);
     expect(dots[0].textContent).toBe('⊕');
     click(dots[4]);
     expect(window.scrollTo).toHaveBeenCalled();
@@ -207,6 +216,46 @@ describe('VoyagePage (2D fallback)', () => {
     click(items.find((i) => i.textContent.startsWith('Projects')));
     expect(window.scrollTo).toHaveBeenCalled();
     expect(document.querySelector('.voyage-palette')).toBeNull();
+    view.unmount();
+  });
+
+  it('opens Files from the top bar and from the palette, and Open that entry leaves for the record', async () => {
+    const view = render();
+    await flush();
+    const button = view.container.querySelector('.voyage-bar__button[aria-label="Files"]');
+    expect(button).not.toBeNull();
+    click(button);
+    await flush();
+    let dialog = document.querySelector('[data-testid="media-library"]');
+    expect(dialog).not.toBeNull();
+    expect(mediaLibrary.getMediaLibrarySnapshot).toHaveBeenCalledTimes(1);
+    expect(dialog.querySelector('[role="tab"][aria-selected="true"]').textContent).toContain('In use');
+    expect(dialog.textContent).toContain('a.png');
+    expect(dialog.textContent).toContain('Used by Projects · Tallyproof');
+    click(dialog.querySelector('[aria-label="Close files"]'));
+    expect(document.querySelector('[data-testid="media-library"]')).toBeNull();
+
+    // Cmd+K, "Files: broken links": straight onto that tab
+    act(() => { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true })); });
+    const items = [...document.querySelectorAll('.voyage-palette [data-cmdk-item]')];
+    expect(items.some((i) => i.textContent === 'Files')).toBe(true);
+    click(items.find((i) => i.textContent === 'Files: broken links'));
+    await flush();
+    dialog = document.querySelector('[data-testid="media-library"]');
+    expect(dialog.querySelector('[role="tab"][aria-selected="true"]').textContent).toContain('Broken links');
+    expect(dialog.textContent).toContain('project-images/gone.png');
+
+    // the pop-up closes and the record intent carries the page to the entry
+    window.scrollTo.mockClear();
+    click([...dialog.querySelectorAll('button')].find((b) => b.textContent === 'Open that entry'));
+    await flush();
+    expect(document.querySelector('[data-testid="media-library"]')).toBeNull();
+    expect(window.scrollTo).toHaveBeenCalled();
+    // the Projects deck took the intent and opened that record's dialog
+    expect(recordIntent.get()).toBeNull();
+    const record = document.querySelector('.record-backdrop [role="dialog"]');
+    expect(record).not.toBeNull();
+    expect(record.textContent).toContain('Tallyproof');
     view.unmount();
   });
 
@@ -303,6 +352,8 @@ describe('VoyagePage (2D fallback)', () => {
     expect(inboxService.listMessages).not.toHaveBeenCalled();
     expect(mediaLibrary.getMediaLibrarySnapshot).not.toHaveBeenCalled();
     expect(voyageRecords.listRecords).not.toHaveBeenCalled();
+    // Files wait behind the same lock as the chapters: no button, no palette action
+    expect(view.container.querySelector('.voyage-bar__button[aria-label="Files"]')).toBeNull();
     // the request leads straight to Security
     window.scrollTo.mockClear();
     click(view.container.querySelector('#chapter-projects .voyage-notice button'));

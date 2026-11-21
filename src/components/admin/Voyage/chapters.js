@@ -1,11 +1,18 @@
 // src/components/admin/Voyage/chapters.js
 //
-// The voyage's chapter registry: a prologue in low Earth orbit and sixteen
+// The voyage's chapter registry: a prologue in low Earth orbit and fifteen
 // stops along the route, one constellation each, in a fixed order the owner
-// can learn. The twelve content managers sit on the twelve zodiac signs in
-// calendar order; the famous figures hold the other four. Everything else in
-// the voyage (stages, the star rail, the palette, the 3D field) is built from
-// this list.
+// can learn. The eleven content managers sit on the zodiac signs from Aries
+// to Aquarius in calendar order; the famous figures hold the other four.
+// Everything else in the voyage (stages, the star rail, the palette, the 3D
+// field) is built from this list.
+//
+// Pisces is unused on purpose. It held the Media library chapter until that
+// chapter left the scroll for the Files pop-up (MediaLibraryDialog, opened
+// from the top bar and Cmd+K): files are a tool reached from anywhere, not a
+// place on the route. The managers keep their signs, so the route the owner
+// has learned does not shift, and the Orion Nebula photograph that hung near
+// Media now hangs near Security.
 
 /** @typedef {'prologue'|'bento'|'deck'|'charts'|'inbox'|'security'} ChapterKind */
 
@@ -30,7 +37,6 @@ export const CHAPTERS = Object.freeze([
   { id: 'recommendations', name: 'Recommendations', constellation: 'Sgr', kind: 'deck', table: 'recommendations', sub: 'What others say about you.' },
   { id: 'achievements', name: 'Achievements', constellation: 'Cap', kind: 'deck', table: 'achievements', sub: 'Awards and recognitions.' },
   { id: 'leadership', name: 'Leadership', constellation: 'Aqr', kind: 'deck', table: 'leadership', sub: 'Teams you led and roles you held.' },
-  { id: 'media', name: 'Media library', constellation: 'Psc', kind: 'deck', table: null, sub: 'Images and files behind the sections.' },
   { id: 'analytics', name: 'Analytics', constellation: 'Ori', kind: 'charts', sub: 'Who visits, what they look at, and whether they reach out.' },
   { id: 'inbox', name: 'Inbox', constellation: 'Cyg', kind: 'inbox', table: 'contact_messages', sub: 'Messages from the contact form.' },
   { id: 'security', name: 'Security', constellation: 'Cas', kind: 'security', sub: 'Authenticator apps, passkeys and this session.' },
@@ -67,7 +73,7 @@ export const DEEP_SKY_PLACEMENTS = Object.freeze([
   { slug: 'pillars', near: 'projects', side: 'left', scale: 1.4, depth: -2000 },
   { slug: 'cosmic-cliffs', near: 'work', side: 'right', scale: 1.6, depth: -2300 },
   { slug: 'crab', near: 'leadership', side: 'left', scale: 1.0, depth: -1700 },
-  { slug: 'orion', near: 'media', side: 'right', scale: 1.4, depth: -2100 },
   { slug: 'pinwheel', near: 'analytics', side: 'left', scale: 1.1, depth: -1900 },
   { slug: 'ring', near: 'inbox', side: 'right', scale: 0.8, depth: -1600 },
+  { slug: 'orion', near: 'security', side: 'left', scale: 1.4, depth: -2100 },
 ]);
