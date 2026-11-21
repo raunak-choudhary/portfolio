@@ -70,9 +70,40 @@ describe('adaptQuality', () => {
     expect(s.level).toBe(1);
   });
 
-  it('never goes past the last step', () => {
-    const { s } = feed(initialAdaptState(), 80, 2000);
-    expect(s.level).toBe(QUALITY_STEPS.length - 1);
+  // A screen that draws `workMs` of fill at full quality, on a 60 Hz display: the work shrinks with
+  // the pixel count (the square of the step) and each frame waits for the next vsync.
+  const fillBound = (workMs) => (level) => Math.max(1, Math.ceil((workMs * QUALITY_STEPS[level] ** 2) / 16.7)) * 16.7;
+  const run = (gapAt, n, state = initialAdaptState()) => { let s = state; const levels = new Set(); for (let i = 0; i < n; i++) { s = adaptQuality(s, gapAt(s.level)); levels.add(s.level); } return { s, levels }; };
+
+  it('keeps a lower level when fewer pixels shorten the frames, and never goes past the last step', () => {
+    const light = run(fillBound(20), 2000);     // 33 ms at full quality, 16.7 ms one step down
+    expect(light.s.level).toBe(1);
+    expect(light.s.held).toBeNull();
+    const heavy = run(fillBound(120), 4000);    // too much for any level, but every step helps
+    expect(heavy.s.level).toBe(QUALITY_STEPS.length - 1);
+    expect(heavy.s.held).toBeNull();
+  });
+
+  it('gives the pixels back when the lowest level changes nothing (a browser capped at 30 frames a second)', () => {
+    const capped = () => 33.3;
+    const { s, levels } = run(capped, 2000);
+    expect([...levels]).toEqual(expect.arrayContaining([1, 2, 3]));   // it tried
+    expect(s.level).toBe(0);
+    expect(s.held).toBeCloseTo(33.3, 1);
+    // and stays there: no second trip down while the cap lasts
+    const later = run(capped, 5000, s);
+    expect([...later.levels]).toEqual([0]);
+  });
+
+  it('ends the hold when frames get clearly worse, and when they get fast again', () => {
+    const held = run(() => 33.3, 2000).s;
+    const worse = run(fillBound(60), 3000, held);   // 66 ms at full quality now: a real load on top of the cap
+    expect(worse.s.held).toBeNull();
+    expect(worse.s.level).toBeGreaterThan(0);
+    const lifted = run(() => 16.7, ADAPT.fastFrames + 80, held);
+    expect(lifted.s.held).toBeNull();
+    expect(lifted.s.level).toBe(0);
+    expect(run(fillBound(20), 2000, lifted.s).s.level).toBe(1);   // the steps work as before afterwards
   });
 
   it('steps back up only after a long run of fast frames', () => {
