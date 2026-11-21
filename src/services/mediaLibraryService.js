@@ -1,43 +1,65 @@
 import { supabase } from './supabaseClient';
 
 export const MEDIA_LIBRARY_BUCKETS = [
-  { id: 'project-images', label: 'Project Images', isPublic: true },
-  { id: 'profile-images', label: 'Profile Images', isPublic: true },
-  { id: 'organization-logos', label: 'Organization Logos', isPublic: true },
-  { id: 'certification-badges', label: 'Certification Files', isPublic: true },
-  { id: 'achievement-images', label: 'Achievement Files', isPublic: true },
-  { id: 'skill-icons', label: 'Skill Icons', isPublic: true },
+  { id: 'project-images', label: 'Project images', isPublic: true },
+  { id: 'profile-images', label: 'Profile images', isPublic: true },
+  { id: 'organization-logos', label: 'Organization logos', isPublic: true },
+  { id: 'certification-badges', label: 'Certification files', isPublic: true },
+  { id: 'achievement-images', label: 'Achievement files', isPublic: true },
+  { id: 'skill-icons', label: 'Skill icons', isPublic: true },
   { id: 'documents', label: 'Documents', isPublic: true },
-  { id: 'contact-attachments', label: 'Contact Attachments', isPublic: false }
+  { id: 'contact-attachments', label: 'Contact attachments', isPublic: false }
 ];
 
 // Every column named here must exist: PostgREST refuses the whole select
-// (400) for one unknown column, and that table's files then all read as
-// Unknown. projects.image_url, internships.certificate_url and the three
-// leadership columns never existed, which hid every project image and
-// internship file as Unknown. A test checks this list against the recorded
-// fixtures' columns.
+// (400) for one unknown column, and that table's files then cannot be
+// checked. projects.image_url, internships.certificate_url and the three
+// leadership columns never existed, which once hid every project image and
+// internship file. A test checks this list (file columns and title columns)
+// against the recorded fixtures' columns.
+//
+// Each table also says how the library names an entry that uses a file:
+// `section` is the chapter's name, `titleFields` are joined with " · " into
+// the entry's title, and `fieldLabels` name each file column in plain words
+// ("Company logo points at a missing file"). The two single-row sections
+// (hero, about) have no title of their own, so the field label stands in
+// (`singleton`). The order is the voyage's chapter order, which is also the
+// order the Files pop-up groups its sections in.
 export const REFERENCE_TABLES = [
   {
     table: 'hero_content',
+    section: 'Hero',
+    singleton: true,
+    titleFields: [],
+    fieldLabels: { resume_url: 'Resume' },
     bucketFields: {
       documents: ['resume_url']
     }
   },
   {
     table: 'about_content',
+    section: 'About',
+    singleton: true,
+    titleFields: [],
+    fieldLabels: { profile_image_about: 'About picture', profile_image_info: 'Info picture', profile_image_url: 'Profile picture' },
     bucketFields: {
       'profile-images': ['profile_image_about', 'profile_image_info', 'profile_image_url']
     }
   },
   {
     table: 'projects',
+    section: 'Projects',
+    titleFields: ['title'],
+    fieldLabels: { image_urls: 'Images' },
     bucketFields: {
       'project-images': ['image_urls']
     }
   },
   {
     table: 'internships',
+    section: 'Internships',
+    titleFields: ['title', 'company'],
+    fieldLabels: { company_logo_url: 'Company logo', certificate_urls: 'Certificates' },
     bucketFields: {
       'organization-logos': ['company_logo_url'],
       documents: ['certificate_urls']
@@ -45,43 +67,64 @@ export const REFERENCE_TABLES = [
   },
   {
     table: 'education',
+    section: 'Education',
+    titleFields: ['degree', 'institution'],
+    fieldLabels: { institution_logo_url: 'Institution logo' },
     bucketFields: {
       'organization-logos': ['institution_logo_url']
     }
   },
   {
     table: 'work_experience',
+    section: 'Work experience',
+    titleFields: ['title', 'company'],
+    fieldLabels: { company_logo_url: 'Company logo' },
     bucketFields: {
       'organization-logos': ['company_logo_url']
     }
   },
   {
-    table: 'recommendations',
-    bucketFields: {
-      'profile-images': ['profile_image_url'],
-      documents: ['profile_image_url']
-    }
-  },
-  {
     table: 'skills',
+    section: 'Skills',
+    titleFields: ['skill_name'],
+    fieldLabels: { icon_url: 'Icon', certifications: 'Certificates' },
     bucketFields: {
       'skill-icons': ['icon_url', 'certifications']
     }
   },
   {
     table: 'certifications',
+    section: 'Certifications',
+    titleFields: ['title'],
+    fieldLabels: { issuer_logo_url: 'Issuer logo', badge_image_url: 'Badge', certificate_pdf_url: 'Certificate' },
     bucketFields: {
       'certification-badges': ['issuer_logo_url', 'badge_image_url', 'certificate_pdf_url']
     }
   },
   {
+    table: 'recommendations',
+    section: 'Recommendations',
+    titleFields: ['recommender_name', 'organization'],
+    fieldLabels: { profile_image_url: 'Profile picture' },
+    bucketFields: {
+      'profile-images': ['profile_image_url'],
+      documents: ['profile_image_url']
+    }
+  },
+  {
     table: 'achievements',
+    section: 'Achievements',
+    titleFields: ['title'],
+    fieldLabels: { certificate_url: 'Certificate' },
     bucketFields: {
       'achievement-images': ['certificate_url']
     }
   },
   {
     table: 'contact_messages',
+    section: 'Inbox',
+    titleFields: ['subject'],
+    fieldLabels: { attachment_urls: 'Attachments', attachment_url: 'Attachment' },
     bucketFields: {
       'contact-attachments': ['attachment_urls', 'attachment_url']
     }
@@ -134,37 +177,93 @@ export const extractStoragePathFromPublicUrl = (value, bucketId) => {
   return null;
 };
 
-export const collectReferencedMediaPaths = (rowsByTable = {}, referenceTables = REFERENCE_TABLES) => {
-  const referencedPaths = new Set();
+const storageMarkers = (bucketId) => [
+  `/storage/v1/object/public/${bucketId}/`,
+  `/storage/v1/object/sign/${bucketId}/`
+];
 
-  referenceTables.forEach(({ table, bucketFields }) => {
+/** The entry's name in the library: its title columns joined, or the field label for hero and about. */
+const entryTitle = (row, { singleton, titleFields = [] }, fieldLabel) => {
+  if (singleton) return fieldLabel;
+  const parts = titleFields
+    .map((field) => row?.[field])
+    .filter((value) => typeof value === 'string' && value.trim())
+    .map((value) => value.trim());
+  return parts.length ? parts.join(' · ') : 'Untitled entry';
+};
+
+/**
+ * Every place an entry points at a stored file, one reference per value:
+ *
+ *   { keys, bucketId, path, table, section, rowId, title, field, fieldLabel,
+ *     position, count, explicit }
+ *
+ * `keys` are the `bucket:path` ids the value may name. A relative value that
+ * starts with the bucket's name is ambiguous: the contact form stores
+ * `contact-attachments/contact-...` as the object key INSIDE the bucket of
+ * that name, so the prefix is part of the real path. Both readings are
+ * recorded and the listing then matches whichever object actually exists;
+ * a file matched by either reading counts as in use (the current rule).
+ *
+ * `explicit` is true only when the value is certainly a file in this bucket
+ * (a storage URL naming the bucket, or a path starting with the bucket's
+ * name). Only explicit references can be called broken: a bare relative
+ * string may be plain text in a JSON column, and must never be reported as
+ * a missing file. `position` and `count` place the value among the field's
+ * file values ("file 3 of 4").
+ */
+export const collectReferences = (rowsByTable = {}, referenceTables = REFERENCE_TABLES) => {
+  const references = [];
+
+  referenceTables.forEach((spec) => {
+    const { table, bucketFields, section = table, fieldLabels = {} } = spec;
     const rows = rowsByTable[table] || [];
 
     rows.forEach(row => {
       Object.entries(bucketFields).forEach(([bucketId, fields]) => {
         fields.forEach(field => {
-          flattenValues(row?.[field]).forEach(value => {
-            const raw = String(value).trim();
-            const filePath = extractStoragePathFromPublicUrl(raw, bucketId);
-            if (filePath) {
-              referencedPaths.add(`${bucketId}:${filePath}`);
-            }
-            // A relative value that starts with the bucket's name is ambiguous:
-            // the contact form stores `contact-attachments/contact-...` as the
-            // object key INSIDE the bucket of that name, so the prefix is part
-            // of the real path. Both readings are recorded; the listing then
-            // matches whichever object actually exists.
-            if (raw.startsWith(`${bucketId}/`) && !raw.includes('://')) {
-              referencedPaths.add(`${bucketId}:${raw}`);
-            }
+          const fileValues = flattenValues(row?.[field])
+            .map((value) => String(value).trim())
+            .map((raw) => {
+              const keys = [];
+              const filePath = extractStoragePathFromPublicUrl(raw, bucketId);
+              if (filePath) keys.push(`${bucketId}:${filePath}`);
+              const prefixed = raw.startsWith(`${bucketId}/`) && !raw.includes('://');
+              if (prefixed) keys.push(`${bucketId}:${raw}`);
+              const explicit = prefixed || storageMarkers(bucketId).some((marker) => raw.includes(marker));
+              return { raw, keys: Array.from(new Set(keys)), filePath, explicit };
+            })
+            .filter((value) => value.keys.length > 0);
+
+          const fieldLabel = fieldLabels[field] || field;
+          fileValues.forEach((value, index) => {
+            references.push({
+              keys: value.keys,
+              bucketId,
+              path: value.filePath || value.raw,
+              table,
+              section,
+              rowId: row?.id ?? null,
+              title: entryTitle(row, spec, fieldLabel),
+              field,
+              fieldLabel,
+              position: index + 1,
+              count: fileValues.length,
+              explicit: value.explicit
+            });
           });
         });
       });
     });
   });
 
-  return referencedPaths;
+  return references;
 };
+
+/** The `bucket:path` ids any entry points at (every reading of every value). */
+export const collectReferencedMediaPaths = (rowsByTable = {}, referenceTables = REFERENCE_TABLES) => (
+  new Set(collectReferences(rowsByTable, referenceTables).flatMap((reference) => reference.keys))
+);
 
 export const getMediaFileKind = (file = {}) => {
   const mimeType = String(file.metadata?.mimetype || file.metadata?.mime_type || '').toLowerCase();
@@ -273,13 +372,24 @@ const isFolderEntry = (entry = {}) => !entry.id && !entry.metadata;
 export const LIST_PAGE_SIZE = 100;
 /** A stop for a listing that never comes back short (50 pages is 5,000 entries per folder). */
 const LIST_MAX_PAGES = 50;
+/** How deep the listing walks into folders; the portfolio's own paths are at most three deep. */
+export const LIST_MAX_DEPTH = 6;
 
-const listBucketFiles = async ({ bucket, prefix = '', depth = 0, maxDepth = 3 }) => {
+/**
+ * Lists every file in a bucket. `state.complete` turns false when the walk
+ * had to stop early (a folder deeper than LIST_MAX_DEPTH, or a folder with
+ * more than LIST_MAX_PAGES pages): the files it did list are still right,
+ * but a file missing from the list may only be unlisted, so the library
+ * never calls a link into that bucket broken. A folder is never returned as
+ * a file.
+ */
+const listBucketFiles = async ({ bucket, prefix = '', depth = 0, maxDepth = LIST_MAX_DEPTH, state = { complete: true } }) => {
   const storage = supabase.storage.from(bucket.id);
   // Read the folder page by page until a page comes back short: one request
   // returns at most LIST_PAGE_SIZE entries, and the rest would be dropped
   // without a word. Sorted by name so the pages are stable between requests.
   const entries = [];
+  let short = false;
   for (let page = 0; page < LIST_MAX_PAGES; page += 1) {
     const { data, error } = await storage.list(prefix, {
       limit: LIST_PAGE_SIZE,
@@ -292,22 +402,28 @@ const listBucketFiles = async ({ bucket, prefix = '', depth = 0, maxDepth = 3 })
     }
 
     entries.push(...(data || []));
-    if ((data || []).length < LIST_PAGE_SIZE) break;
+    if ((data || []).length < LIST_PAGE_SIZE) { short = true; break; }
   }
+  if (!short) state.complete = false;
 
   const files = [];
 
   for (const entry of entries) {
     const entryPath = prefix ? `${prefix}/${entry.name}` : entry.name;
 
-    if (isFolderEntry(entry) && depth < maxDepth) {
-      const nestedFiles = await listBucketFiles({
-        bucket,
-        prefix: entryPath,
-        depth: depth + 1,
-        maxDepth
-      });
-      files.push(...nestedFiles);
+    if (isFolderEntry(entry)) {
+      if (depth < maxDepth) {
+        const nestedFiles = await listBucketFiles({
+          bucket,
+          prefix: entryPath,
+          depth: depth + 1,
+          maxDepth,
+          state
+        });
+        files.push(...nestedFiles);
+      } else {
+        state.complete = false;
+      }
     } else {
       files.push({
         ...entry,
@@ -328,10 +444,11 @@ const getReferenceRows = async (referenceTables = REFERENCE_TABLES) => {
   const rowsByTable = {};
   const failedTables = [];
 
-  await Promise.all(referenceTables.map(async ({ table, bucketFields }) => {
+  await Promise.all(referenceTables.map(async ({ table, bucketFields, titleFields = [] }) => {
     const columns = Array.from(new Set(
       Object.values(bucketFields)
         .flat()
+        .concat(titleFields)
         .concat(['id'])
     )).join(',');
 
@@ -346,6 +463,84 @@ const getReferenceRows = async (referenceTables = REFERENCE_TABLES) => {
   return { rowsByTable, failedTables: failedTables.sort() };
 };
 
+/** The section names ("Skills") of failed tables, in the library's order. */
+const sectionsFor = (tables, referenceTables) => referenceTables
+  .filter((spec) => tables.includes(spec.table))
+  .map((spec) => spec.section || spec.table);
+
+/**
+ * Reads every reference again, for the check made immediately before a
+ * deletion. `failedTables` non-empty means the check is incomplete and the
+ * caller must not delete anything.
+ */
+export const readReferences = async (referenceTables = REFERENCE_TABLES) => {
+  const { rowsByTable, failedTables } = await getReferenceRows(referenceTables);
+  return {
+    references: collectReferences(rowsByTable, referenceTables),
+    failedTables,
+    failedSections: sectionsFor(failedTables, referenceTables)
+  };
+};
+
+/**
+ * True for an object key the library may hand to storage: relative, no
+ * empty, "." or ".." segment, no backslash or control character. Paths come
+ * from the bucket listing, never from typed text; this is the second guard.
+ */
+export const isSafeStoragePath = (value) => {
+  if (typeof value !== 'string' || !value || value.length > 1024) return false;
+  if (value.startsWith('/') || value.includes('\\')) return false;
+  // eslint-disable-next-line no-control-regex
+  if (/[\u0000-\u001f\u007f]/.test(value)) return false;
+  return value.split('/').every((segment) => segment && segment !== '.' && segment !== '..');
+};
+
+/**
+ * Deletes files from storage under the admin's session (storage policies
+ * allow it only at the second factor). A file is sent only when its bucket
+ * is one of the library's buckets, its path is safe, its id matches its
+ * bucket and path, and its id is in `listedIds`, the ids of the listing the
+ * owner is looking at; anything else is returned in `failed` untouched.
+ *
+ * Storage answers a refused removal with an empty list and no error, so a
+ * file counts as deleted only when storage names it in its answer.
+ *
+ * @param {Array<{id: string, bucketId: string, path: string}>} files
+ * @param {{listedIds: Set<string>, buckets?: Array<{id: string}>}} options
+ * @returns {Promise<{deleted: object[], failed: object[]}>}
+ */
+export const deleteMediaFiles = async (files = [], { listedIds, buckets = MEDIA_LIBRARY_BUCKETS } = {}) => {
+  const known = new Set(buckets.map((bucket) => bucket.id));
+  const deleted = [];
+  const failed = [];
+  const byBucket = new Map();
+
+  files.forEach((file) => {
+    const valid = file
+      && listedIds instanceof Set
+      && known.has(file.bucketId)
+      && isSafeStoragePath(file.path)
+      && file.id === `${file.bucketId}:${file.path}`
+      && listedIds.has(file.id);
+    if (!valid) { failed.push(file); return; }
+    if (!byBucket.has(file.bucketId)) byBucket.set(file.bucketId, []);
+    byBucket.get(file.bucketId).push(file);
+  });
+
+  for (const [bucketId, bucketFiles] of byBucket) {
+    try {
+      const { data, error } = await supabase.storage.from(bucketId).remove(bucketFiles.map((file) => file.path));
+      if (error) throw error;
+      const gone = new Set((data || []).map((object) => object?.name));
+      bucketFiles.forEach((file) => (gone.has(file.path) ? deleted : failed).push(file));
+    } catch {
+      failed.push(...bucketFiles);
+    }
+  }
+
+  return { deleted, failed };
+};
+
 /**
  * How long a private file's thumbnail link lasts. An hour, so plates shown
  * later by "Show more" still load; opening a file always signs a fresh,
@@ -358,13 +553,15 @@ export const getMediaLibrarySnapshot = async ({
   referenceTables = REFERENCE_TABLES
 } = {}) => {
   const { rowsByTable, failedTables } = await getReferenceRows(referenceTables);
-  const referencedPaths = collectReferencedMediaPaths(rowsByTable, referenceTables);
+  const references = collectReferences(rowsByTable, referenceTables);
+  const referencedPaths = new Set(references.flatMap((reference) => reference.keys));
   const bucketSummaries = [];
   const items = [];
 
   for (const bucket of buckets) {
     try {
-      const files = await listBucketFiles({ bucket });
+      const listing = { complete: true };
+      const files = await listBucketFiles({ bucket, state: listing });
       const storage = supabase.storage.from(bucket.id);
       const bucketItems = await Promise.all(files.map(file => createMediaLibraryItem({
         bucket,
@@ -388,6 +585,7 @@ export const getMediaLibrarySnapshot = async ({
         label: bucket.label,
         isPublic: bucket.isPublic,
         status: 'available',
+        complete: listing.complete,
         fileCount: bucketItems.length,
         referencedCount: bucketItems.filter(item => item.isReferenced).length,
         unknownCount: bucketItems.filter(item => !item.isReferenced).length
@@ -398,6 +596,7 @@ export const getMediaLibrarySnapshot = async ({
         label: bucket.label,
         isPublic: bucket.isPublic,
         status: 'error',
+        complete: false,
         fileCount: 0,
         referencedCount: 0,
         unknownCount: 0,
@@ -416,8 +615,11 @@ export const getMediaLibrarySnapshot = async ({
       privateFiles: items.filter(item => item.isPrivate).length,
       publicFiles: items.filter(item => !item.isPrivate).length
     },
-    // tables whose rows could not be read; their files show as Unknown for that reason alone
+    // every place an entry points at a file (collectReferences)
+    references,
+    // tables whose rows could not be read: while any is listed, nothing may be deleted
     referenceErrors: failedTables,
+    referenceErrorSections: sectionsFor(failedTables, referenceTables),
     generatedAt: new Date().toISOString()
   };
 };
@@ -437,7 +639,10 @@ export const createMediaSignedUrl = async (bucketId, filePath, expiresIn = 300) 
 
 const mediaLibraryService = {
   MEDIA_LIBRARY_BUCKETS,
+  collectReferences,
   collectReferencedMediaPaths,
+  deleteMediaFiles,
+  readReferences,
   createMediaLibraryItem,
   extractStoragePathFromPublicUrl,
   formatFileSize,
