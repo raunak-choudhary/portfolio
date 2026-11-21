@@ -36,6 +36,36 @@ describe('whenElementExists', () => {
     expect(frames).toHaveLength(0);
   });
 
+  it('with stableFrames, waits until the element stops moving', () => {
+    document.body.innerHTML = '<div id="contact"></div>';
+    const element = document.getElementById('contact');
+    let top = 100;
+    element.getBoundingClientRect = () => ({ top });
+    const frames = [];
+    const found = jest.fn();
+    whenElementExists('contact', found, { stableFrames: 2, raf: (fn) => frames.push(fn) });
+    top = 400; frames.shift()();          // a section above loaded: moved
+    top = 700; frames.shift()();          // moved again
+    frames.shift()();                     // still for one frame
+    expect(found).not.toHaveBeenCalled();
+    frames.shift()();                     // still for two frames
+    expect(found).toHaveBeenCalledWith(element);
+  });
+
+  it('with stableFrames, still goes to the element when the page never settles', () => {
+    document.body.innerHTML = '<div id="contact"></div>';
+    const element = document.getElementById('contact');
+    let top = 0;
+    element.getBoundingClientRect = () => ({ top: (top += 50) });
+    let clock = 0;
+    const frames = [];
+    const found = jest.fn();
+    whenElementExists('contact', found, { stableFrames: 5, timeoutMs: 100, raf: (fn) => frames.push(fn), now: () => clock });
+    clock = 150;
+    frames.shift()();
+    expect(found).toHaveBeenCalledWith(element);
+  });
+
   it('stops when told to', () => {
     const frames = [];
     const found = jest.fn();
@@ -71,6 +101,19 @@ describe('goToHomeSection', () => {
     expect(navigate).toHaveBeenCalledWith('/home#contact');
   });
 
+  // A smooth scroll that starts while sections above are still loading stops
+  // short, so from another page it waits for a steady layout and jumps.
+  it('from another page, jumps to the section once it has stopped moving', () => {
+    jest.useFakeTimers();                 // also fakes requestAnimationFrame, about 16 ms a frame
+    document.body.innerHTML = '<div id="contact"></div>';
+    goToHomeSection('contact', { pathname: '/projects', navigate: jest.fn() });
+    expect(scrolled).not.toHaveBeenCalled();
+    jest.advanceTimersByTime(1000);
+    expect(scrolled).toHaveBeenCalledTimes(1);
+    expect(scrolled).toHaveBeenCalledWith({ behavior: 'auto' });
+    jest.useRealTimers();
+  });
+
   it('does not push the same address twice', () => {
     window.history.replaceState(null, '', '/home#contact');
     document.body.innerHTML = '<div id="contact"></div>';
@@ -80,12 +123,25 @@ describe('goToHomeSection', () => {
     expect(scrolled).toHaveBeenCalled();
   });
 
-  it('for the hero, goes to /home and scrolls to the top', () => {
+  // From another page the old page is still on screen when the scroll starts;
+  // a smooth scroll was cut short when the home page replaced it, so it jumps.
+  it('for the hero from another page, goes to /home and jumps to the top', () => {
     const navigate = jest.fn();
     const scrollTo = jest.spyOn(window, 'scrollTo').mockImplementation(() => {});
     const raf = jest.spyOn(window, 'requestAnimationFrame').mockImplementation((fn) => { fn(); return 1; });
     goToHomeSection('hero', { pathname: '/skills', navigate });
     expect(navigate).toHaveBeenCalledWith('/home');
+    expect(scrollTo).toHaveBeenCalledWith({ top: 0, behavior: 'auto' });
+    scrollTo.mockRestore(); raf.mockRestore();
+  });
+
+  it('for the hero on the home page, glides to the top without a new address', () => {
+    window.history.replaceState(null, '', '/home');
+    const navigate = jest.fn();
+    const scrollTo = jest.spyOn(window, 'scrollTo').mockImplementation(() => {});
+    const raf = jest.spyOn(window, 'requestAnimationFrame').mockImplementation((fn) => { fn(); return 1; });
+    goToHomeSection('hero', { pathname: '/home', navigate });
+    expect(navigate).not.toHaveBeenCalled();
     expect(scrollTo).toHaveBeenCalledWith({ top: 0, behavior: 'smooth' });
     scrollTo.mockRestore(); raf.mockRestore();
   });

@@ -15,16 +15,28 @@ export const isHomePath = (pathname = '') => ['/', '/home', '/home/'].includes(p
 
 /**
  * Calls `found(element)` once the element with `id` exists, checking each
- * frame for up to `timeoutMs`. Returns a function that stops waiting.
+ * frame for up to `timeoutMs`. With `stableFrames`, it also waits until the
+ * element's place on the page has not moved for that many frames in a row
+ * (sections above it still loading push it down). On timeout it calls
+ * `found` with whatever it has, so a slow page still ends at the section.
+ * Returns a function that stops waiting.
  */
-export function whenElementExists(id, found, { timeoutMs = 4000, doc = document, raf = window.requestAnimationFrame.bind(window), now = () => Date.now() } = {}) {
+export function whenElementExists(id, found, { timeoutMs = 4000, stableFrames = 0, doc = document, raf = window.requestAnimationFrame.bind(window), now = () => Date.now() } = {}) {
   const started = now();
   let stopped = false;
+  let lastTop = null;
+  let still = 0;
   const check = () => {
     if (stopped) return;
     const element = doc.getElementById(id);
-    if (element) { found(element); return; }
-    if (now() - started < timeoutMs) raf(check);
+    const timedOut = now() - started >= timeoutMs;
+    if (element) {
+      const top = element.getBoundingClientRect().top + (doc.defaultView?.scrollY || 0);
+      still = top === lastTop ? still + 1 : 0;
+      lastTop = top;
+      if (still >= stableFrames || timedOut) { found(element); return; }
+    }
+    if (!timedOut) raf(check);
   };
   check();
   return () => { stopped = true; };
@@ -40,11 +52,22 @@ export function whenElementExists(id, found, { timeoutMs = 4000, doc = document,
  */
 export function goToHomeSection(sectionId, { pathname, navigate }) {
   const target = sectionId === 'hero' ? HOME_PATH : `${HOME_PATH}#${sectionId}`;
-  if (!isHomePath(pathname) || `${window.location.pathname}${window.location.hash}` !== target) navigate(target);
+  const fromAnotherPage = !isHomePath(pathname);
+  if (fromAnotherPage || `${window.location.pathname}${window.location.hash}` !== target) navigate(target);
   if (sectionId === 'hero') {
-    window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
+    // From another page, a smooth scroll starts on the old page and stops
+    // partway when the home page replaces it (seen at 768px: 304px short of
+    // the top), so jump there instead. On the home page, glide.
+    const behavior = fromAnotherPage ? 'auto' : 'smooth';
+    window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior }));
     return () => {};
   }
-  // after a navigation the section may still be loading, so wait for it
-  return whenElementExists(sectionId, (element) => element.scrollIntoView({ behavior: 'smooth' }));
+  // On the home page the section is already laid out: glide to it. From
+  // another page the sections above it are still loading and push it down
+  // while a smooth scroll runs, which then stops short (Contact ended 735 px
+  // down the screen at 375 px). So wait until it stops moving, then jump.
+  if (!fromAnotherPage) {
+    return whenElementExists(sectionId, (element) => element.scrollIntoView({ behavior: 'smooth' }));
+  }
+  return whenElementExists(sectionId, (element) => element.scrollIntoView({ behavior: 'auto' }), { stableFrames: 12 });
 }
