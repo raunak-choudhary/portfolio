@@ -1,6 +1,7 @@
 /* eslint-disable testing-library/no-container, testing-library/render-result-naming-convention */
 import { ThemeProvider } from '../../../contexts/ThemeContext';
 import { CHAPTERS } from './chapters';
+import { publicPathFor } from './publicPages';
 import { VOYAGE_POSITION_KEY } from '../../../services/voyagePosition';
 import VoyagePage, { ENROLMENT_LOCK_TEXT, VOYAGE_ROOT_CLASS, releaseContext } from './VoyagePage';
 import { React, act, click, mount, stubCanvas } from '../SkyBackground/testUtils';
@@ -112,6 +113,11 @@ describe('VoyagePage (2D fallback)', () => {
     const titles = [...view.container.querySelectorAll('.voyage-chapter__title')].map((h) => h.textContent);
     expect(titles[0]).toMatch(/^Good (morning|afternoon|evening|night), Raunak$/); expect(titles[1]).toBe('Mission control'); expect(titles[4]).toBe('Projects'); expect(titles[16]).toBe('Security');
     expect(view.container.querySelector('#chapter-earth .voyage-placeholder')).toBeNull();
+    // each chapter with a public page carries a View on site link in its heading; admin-only chapters do not
+    const viewLinks = [...view.container.querySelectorAll('.voyage-chapter__head .voyage-chapter__view')];
+    expect(viewLinks.map((a) => a.closest('.voyage-chapter').id)).toEqual(CHAPTERS.filter((c) => publicPathFor(c.id)).map((c) => `chapter-${c.id}`));
+    expect(view.container.querySelector('#chapter-projects .voyage-chapter__view').getAttribute('href')).toBe('/projects');
+    ['earth', 'overview', 'media', 'analytics', 'inbox', 'security'].forEach((id) => expect(view.container.querySelector(`#chapter-${id} .voyage-chapter__view`)).toBeNull());
     // the public gradient scrollbars are overridden only while the voyage is mounted
     expect(document.documentElement.classList.contains(VOYAGE_ROOT_CLASS)).toBe(true);
     view.unmount();
@@ -293,6 +299,7 @@ describe('VoyagePage (2D fallback)', () => {
     expect(view.container.querySelector('#chapter-analytics .voyage-placeholder')).toBeNull();   // placeholders are locked too
     expect(view.container.querySelector('[data-testid="bento"]')).toBeNull();
     expect(view.container.querySelector('[data-testid="inbox"]')).toBeNull();
+    expect(view.container.querySelector('.voyage-chapter__view')).toBeNull();   // the public links wait for the lock too
     expect(inboxService.listMessages).not.toHaveBeenCalled();
     expect(mediaLibrary.getMediaLibrarySnapshot).not.toHaveBeenCalled();
     expect(voyageRecords.listRecords).not.toHaveBeenCalled();

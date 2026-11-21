@@ -142,13 +142,34 @@
   box-sizing: border-box;
 }
 
-.voyage-chapter__head { align-self: end; display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
+.voyage-chapter__head { align-self: end; display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px 16px; margin-bottom: 14px; }
 .voyage-chapter__kicker { font-family: var(--voyage-cond); letter-spacing: .34em; font-size: 11px; color: var(--voyage-accent); text-transform: uppercase; }
 .voyage-chapter__title { margin: 2px 0 0; font-family: var(--voyage-cond); font-weight: 600; font-size: clamp(34px, 5vw, 64px); line-height: 1; letter-spacing: .02em; text-transform: uppercase; opacity: 0; transform: translateY(14px); transition: opacity .5s, transform .6s; }
 .voyage-chapter.is-live .voyage-chapter__title { opacity: 1; transform: none; }
 .voyage-chapter__sub { margin: 6px 0 0; color: var(--voyage-muted); font-size: 14px; }
 .voyage-chapter__over { margin: 10px 0 0; font-family: var(--voyage-cond); font-size: 13px; letter-spacing: .18em; text-transform: uppercase; color: var(--voyage-accent); opacity: 0; transition: opacity .6s; }
 .voyage-chapter.is-live .voyage-chapter__over { opacity: .9; }
+/* "View on site": a quiet pill beside the chapter title that opens the public page in a new tab.
+   It wraps under the titles on a narrow screen, and its colours come from the theme tokens. */
+.voyage-chapter__view {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  box-sizing: border-box;
+  padding: 6px 12px;
+  border: 1px solid var(--voyage-line);
+  border-radius: 999px;
+  background: var(--voyage-panel);
+  color: var(--voyage-muted);
+  font: 600 12px system-ui, sans-serif;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color .2s, border-color .2s;
+}
+.voyage-chapter__view:hover { color: var(--voyage-fg); border-color: var(--voyage-accent); }
+.voyage-chapter__view:focus-visible { outline: 2px solid var(--voyage-accent); outline-offset: 2px; color: var(--voyage-fg); }
 
 .voyage-pane {
   position: relative;
@@ -290,7 +311,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .voyage-chapter__title, .voyage-bento, .voyage-placeholder, .voyage-notice, .voyage-progress, .voyage-page, .voyage-rail { transition: none; }
+  .voyage-chapter__title, .voyage-chapter__view, .voyage-bento, .voyage-placeholder, .voyage-notice, .voyage-progress, .voyage-page, .voyage-rail { transition: none; }
 }
 
 /* ---- showcase: the Sky menu's Panels switch off ----
