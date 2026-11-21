@@ -45,7 +45,8 @@
 .media-search:focus-within { border-color: var(--voyage-accent); }
 .media-search input { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--voyage-fg); font: 16px system-ui, -apple-system, 'Segoe UI', sans-serif; outline: 0; padding: 8px 0; }
 .media-search input::placeholder { color: var(--voyage-muted); }
-.media-selects { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 8px; }
+/* bucket names are longer than sort names, so the bucket select gets the wider share */
+.media-selects { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 8px; }
 .media-select { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--voyage-muted); font-size: 14px; }
 .media-select span { flex: none; }
 .media-select select { flex: 1; min-width: 0; min-height: 44px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--voyage-line); background: var(--voyage-soft); color: var(--voyage-fg); font: 16px system-ui, -apple-system, 'Segoe UI', sans-serif; cursor: pointer; }
