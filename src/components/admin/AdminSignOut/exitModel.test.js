@@ -1,4 +1,5 @@
 import {
+  MAX_FRAME_STEP, createFilmClock,
   FAREWELLS, REDUCED_TIMELINE, TIMELINE, buildScript, creditFacts, leaderNumber, phaseClasses, planeState, sceneLine, takeLine, wheelBoost,
 } from './exitModel';
 
@@ -92,5 +93,28 @@ describe('credits script and planes', () => {
 
   it('caps how far one scroll event pushes the credits', () => {
     expect(wheelBoost(10)).toBe(60); expect(wheelBoost(500)).toBe(300); expect(wheelBoost(-500)).toBe(-300);
+  });
+});
+
+describe('film clock', () => {
+  it('starts at zero on the first frame, whenever that frame arrives', () => {
+    const clock = createFilmClock();
+    expect(clock(52000)).toBe(0);
+    expect(clock(52016)).toBe(16);
+  });
+
+  it('moves a late frame on by at most one step, so a stall pauses the film instead of skipping it', () => {
+    const clock = createFilmClock();
+    clock(1000);
+    expect(clock(2500)).toBe(MAX_FRAME_STEP);
+    expect(clock(2516)).toBe(MAX_FRAME_STEP + 16);
+  });
+
+  it('never runs backwards when a frame time repeats or goes back', () => {
+    const clock = createFilmClock(100);
+    clock(1000);
+    expect(clock(1000)).toBe(0);
+    expect(clock(990)).toBe(0);
+    expect(clock(1040)).toBe(50);
   });
 });

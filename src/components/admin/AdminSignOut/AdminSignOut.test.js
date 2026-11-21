@@ -29,12 +29,28 @@ const { createSkyField } = jest.requireMock('../Voyage/skyField');
 /** Lets the mount effects settle: the assurance lookup, the state update it causes, and the sign-out call. */
 const flush = () => act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); await Promise.resolve(); });
 
-/** Drives the animation loop by hand: every requestAnimationFrame callback is kept and fired with a chosen time. */
-function manualFrames() {
+/**
+ * Drives the animation loop by hand, like a browser painting every 50 ms:
+ * run(time) fires the queued requestAnimationFrame callbacks at each step
+ * from the last time up to `time`. The film's clock starts on its first
+ * frame (at the mount time, 10000) and moves at most 250 ms per frame, so a
+ * single jump would not move it; jump() fires one frame at `time` to test
+ * exactly that.
+ */
+function manualFrames(start = 10000, step = 50) {
   const queue = [];
+  let now = null;
   const raf = jest.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => { queue.push(cb); return queue.length; });
   const caf = jest.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => {});
-  return { run: (time) => act(() => { const cbs = queue.splice(0); cbs.forEach((cb) => cb(time)); }), restore: () => { raf.mockRestore(); caf.mockRestore(); } };
+  const fire = (time) => { now = time; const cbs = queue.splice(0); cbs.forEach((cb) => cb(time)); };
+  return {
+    run: (time) => act(() => {
+      if (now === null) fire(start);
+      while (now < time) fire(Math.min(time, now + step));
+    }),
+    jump: (time) => act(() => { fire(time); }),
+    restore: () => { raf.mockRestore(); caf.mockRestore(); },
+  };
 }
 
 const render = () => mount(
@@ -90,6 +106,24 @@ describe('AdminSignOut', () => {
     expect(mute.getAttribute('aria-pressed')).toBe('true');
     expect(mute.getAttribute('title')).toBe('Sound off');
     expect(mute.querySelector('svg').getAttribute('class')).toContain('lucide-volume-x');
+    view.unmount();
+  });
+
+  // A busy main thread (the 3D sky loading behind the film, a slow phone)
+  // delays the first frames. The clock used to start at mount, so by the
+  // first frame the board had already snapped or been skipped.
+  it('still raises the board and snaps it 1.7 s later when the first frames arrive late', async () => {
+    const view = render();
+    await flush();
+    const el = root(view.container);
+    frames.jump(10000 + 2500);                       // first frame 2.5 s after mount
+    expect(el.className).not.toContain('snap');
+    frames.jump(10000 + 4000);                       // another 1.5 s stall: one step at most (250 ms)
+    expect(el.className).not.toContain('clap-in');
+    frames.run(10000 + 4000 + 100); expect(el.className).toContain('clap-in');
+    expect(el.className).not.toContain('snap');
+    frames.run(10000 + 4000 + 1800); expect(el.className).toContain('snap');
+    expect(mockSound.log.filter((s) => s === 'clap')).toHaveLength(1);
     view.unmount();
   });
 
@@ -175,7 +209,6 @@ describe('AdminSignOut', () => {
     expect(view.container.querySelector('.exit-mute')).toBeNull();   // no sound under reduced motion, so no switch
     frames.run(10000 + REDUCED_TIMELINE.login);
     expect(mockNavigate).toHaveBeenCalledWith('/adminlogin', { replace: true });
-    expect(performanceNow).toHaveBeenCalled();
     view.unmount();
   });
 
