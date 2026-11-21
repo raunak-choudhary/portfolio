@@ -170,7 +170,10 @@ describe('MediaLibraryDialog', () => {
     click(buttonByText('Delete 1 file', $('[role="alertdialog"]')));
     await flush();
     expect(service.deleteMediaFiles).not.toHaveBeenCalled();
-    expect($('[data-testid="media-report"]').textContent).toContain('Nothing was deleted');
+    const report = $('[data-testid="media-report"]').textContent;
+    expect(report).toContain('Nothing was deleted');
+    expect(report).toContain('could not read every section');
+    expect(report).not.toContain('unknown');
   });
 
   it('turns delete off everywhere while a section could not be read, and Try again reloads', async () => {
