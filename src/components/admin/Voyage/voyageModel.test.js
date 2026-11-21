@@ -4,16 +4,18 @@ import {
 } from './voyageModel';
 
 describe('chapter registry', () => {
-  it('has a prologue and sixteen chapters, the twelve managers on the zodiac in order', () => {
-    expect(CHAPTERS).toHaveLength(17);
+  it('has a prologue and fifteen chapters, the eleven managers on the zodiac from Aries to Aquarius', () => {
+    expect(CHAPTERS).toHaveLength(16);
     expect(CHAPTERS[0]).toMatchObject({ id: 'earth', kind: 'prologue', constellation: null, place: 'Low Earth orbit' });
-    const zodiac = ['Ari', 'Tau', 'Gem', 'Cnc', 'Leo', 'Vir', 'Lib', 'Sco', 'Sgr', 'Cap', 'Aqr', 'Psc'];
+    // Pisces is unused since the Media library chapter became the Files pop-up
+    const zodiac = ['Ari', 'Tau', 'Gem', 'Cnc', 'Leo', 'Vir', 'Lib', 'Sco', 'Sgr', 'Cap', 'Aqr'];
     expect(CHAPTERS.filter((c) => c.kind === 'deck').map((c) => c.constellation)).toEqual(zodiac);
     expect(chapterById('overview').constellation).toBe('UMa');
     expect(chapterById('analytics').constellation).toBe('Ori');
     expect(chapterById('inbox').constellation).toBe('Cyg');
     expect(chapterById('security').constellation).toBe('Cas');
-    expect(new Set(CHAPTER_IDS).size).toBe(17);
+    expect(new Set(CHAPTER_IDS).size).toBe(16);
+    expect(chapterIndex('media')).toBe(-1);
     expect(chapterIndex('projects')).toBe(4);
     expect(chapterIndex('nope')).toBe(-1);
   });
@@ -27,12 +29,12 @@ describe('chapter registry', () => {
 describe('route and camera', () => {
   it('maps the scroll fraction onto the chapters', () => {
     expect(routePosition(0)).toEqual({ f: 0, index: 0, frac: 0 });
-    expect(routePosition(1)).toMatchObject({ index: 16, frac: 0 });
-    const mid = routePosition(0.25);
-    expect(mid.f).toBeCloseTo(4); expect(mid.index).toBe(4); expect(mid.frac).toBeCloseTo(0);
-    const between = routePosition(0.5 / 16);
+    expect(routePosition(1)).toMatchObject({ index: 15, frac: 0 });
+    const mid = routePosition(0.2);
+    expect(mid.f).toBeCloseTo(3); expect(mid.index).toBe(3); expect(mid.frac).toBeCloseTo(0);
+    const between = routePosition(0.5 / 15);
     expect(between.index).toBe(0); expect(between.frac).toBeCloseTo(0.5);
-    expect(routePosition(-1).f).toBe(0); expect(routePosition(2).f).toBe(16);
+    expect(routePosition(-1).f).toBe(0); expect(routePosition(2).f).toBe(15);
   });
 
   it('spaces the anchors evenly in depth and keeps them near the axis, the prologue lower and to the right', () => {
@@ -50,7 +52,7 @@ describe('route and camera', () => {
     expect(between.look.z).toBeCloseTo((ANCHORS[2].z + ANCHORS[3].z) / 2);
     const cut = cameraTarget({ index: 2, frac: 0.5 }, false);
     expect(cut.position).toEqual({ x: 0, y: -LOOK_DROP * 0.35, z: ANCHORS[2].z + 520 });
-    expect(cameraTarget({ index: 16, frac: 0.9 }).look.z).toEqual(ANCHORS[16].z);
+    expect(cameraTarget({ index: 15, frac: 0.9 }).look.z).toEqual(ANCHORS[15].z);
   });
 });
 
@@ -106,7 +108,7 @@ describe('quality', () => {
     // the working sky (panels on) caps the resolution at 1 and the frame rate at 30; the star count stays
     expect(qualityFor({ width: 1440, devicePixelRatio: 2, sky: 'working' })).toEqual({ mode: 'webgl', stars: 9000, pixelRatio: 1, fly: true, frameInterval: 1000 / 30 });
     expect(qualityFor({ width: 1440, devicePixelRatio: 2, sky: 'showcase' }).pixelRatio).toBe(2);
-    expect(scrollFractionFor(0)).toBe(0); expect(scrollFractionFor(16)).toBe(1);
+    expect(scrollFractionFor(0)).toBe(0); expect(scrollFractionFor(15)).toBe(1);
   });
 });
 

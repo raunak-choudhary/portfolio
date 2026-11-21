@@ -3,7 +3,9 @@
 // The admin as one sky. The document scrolls natively; a fixed canvas behind
 // it shows the 3D field, and one animation loop turns the scroll fraction into
 // camera travel and constellation drawing. Sixteen chapter stages come from
-// the registry. Without WebGL, or with reduced motion, the 2D zodiac sky stands
+// the registry. Files are not a chapter: the Files button in the top bar and
+// Cmd+K open them in a pop-up over whatever chapter is on screen
+// (MediaLibraryDialog). Without WebGL, or with reduced motion, the 2D zodiac sky stands
 // behind the same page and the camera cuts instead of flying.
 //
 // Two sky modes follow the Sky menu's Panels switch (renderBudget.js): with
@@ -15,7 +17,7 @@
 // bar and the Earth readout through signals, never through page state.
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Command as CommandIcon, Lock, LogOut } from 'lucide-react';
+import { Command as CommandIcon, Images, Lock, LogOut } from 'lucide-react';
 import { getPortfolioStats } from '../../../services/dataService';
 import analyticsService from '../../../services/analyticsService';
 import { getRecentEdits, getTopPages, getUnreadMessages, getVisitorSeries } from '../../../services/voyageData';
@@ -30,7 +32,7 @@ import { CHAPTERS, chapterIndex, chapterPlace } from './chapters';
 import DeckChapter from './DeckChapter';
 import InboxChapter from './InboxChapter';
 import AnalyticsChapter from './AnalyticsChapter';
-import MediaChapter from './MediaChapter';
+import MediaLibraryDialog from './MediaLibraryDialog';
 import SecurityChapter from './SecurityChapter';
 import SingletonChapter from './SingletonChapter';
 import Toast, { useToast } from './Toast';
@@ -38,7 +40,7 @@ import { schemaForTable } from './managers';
 import MissionControl from './MissionControl';
 import FixQueuePane, { FIX_QUEUE_ID, useFixQueue } from './FixQueuePane';
 import { chapterForTable } from './fixQueueModel';
-import { clearIntent, fixesChanged, queueRequests, recordIntent, resetRecordIntent } from './recordIntent';
+import { clearIntent, fixesChanged, openRecord, queueRequests, recordIntent, resetRecordIntent } from './recordIntent';
 import CommandPalette from './CommandPalette';
 import StarRail from './StarRail';
 import { createSkyField, webglAvailable } from './skyField';
@@ -70,8 +72,6 @@ export function releaseContext(canvas) {
 /** Names of the constellations, from figures.json, for the rail and the palette. */
 // chapter kinds with their own component; the rest show the placeholder until their unit
 const BUILT_KINDS = new Set(['prologue', 'bento', 'inbox', 'charts', 'security']);
-// the media library is a deck with no table of its own: storage is its source
-const MEDIA_CHAPTER = 'media';
 const namesFrom =(figures) => Object.fromEntries((figures || []).map((f) => [f.id, f.name]));
 
 /** Set on <html> while the voyage is mounted, so its scrollbars can be styled apart from the public site's. */
@@ -337,9 +337,28 @@ function VoyageView({ requireSecurityEnrollment }) {
     // could bring it back from the back-forward cache with the records still on screen
     window.location.replace('/adminsignout');
   }, [resolvedTheme]);
+  // ---- the Files pop-up ----
+  // `files` is the tab it opens on, or null while it is closed. It is held
+  // back, like every chapter, until the first authenticator app is confirmed.
+  const [files, setFiles] = useState(null);
+  const openFiles = useCallback((tab = 'in-use') => setFiles(tab), []);
+  const closeFiles = useCallback(() => setFiles(null), []);
+  // "Open that entry": the pop-up closes and the entry opens where it lives.
+  // A record opens in its chapter's dialog through a record intent (the intent
+  // effect above travels there); a contact message has no dialog to open from
+  // an intent, so the page travels to the Inbox instead.
+  const openEntry = useCallback(({ table, rowId }) => {
+    setFiles(null);
+    if (table === 'contact_messages') { go('inbox'); return; }
+    if (chapterForTable(table)) openRecord(table, rowId);
+  }, [go]);
   const actions = useMemo(() => [
+    ...(requireSecurityEnrollment ? [] : [
+      { id: 'files', label: 'Files', run: () => openFiles('in-use') },
+      { id: 'files-broken', label: 'Files: broken links', run: () => openFiles('broken') },
+    ]),
     { id: 'signout', label: 'Sign out', hint: 'the film plays', run: signOut },
-  ], [signOut]);
+  ], [signOut, openFiles, requireSecurityEnrollment]);
 
   const greeting = useMemo(() => greetingFor(), []);
   // First-time enrolment: every chapter but the Earth and Security shows only the request.
@@ -354,6 +373,9 @@ function VoyageView({ requireSecurityEnrollment }) {
         <span className="voyage-bar__hint">scroll to travel · <kbd>⌘K</kbd> jump anywhere</span>
         <div className="voyage-bar__actions">
           <SkyControls />
+          {!requireSecurityEnrollment && (
+            <button type="button" className="voyage-bar__button" onClick={() => openFiles('in-use')} aria-label="Files" aria-haspopup="dialog"><Images size={16} aria-hidden="true" /><span>Files</span></button>
+          )}
           <button type="button" className="voyage-bar__button" onClick={() => setPaletteOpen(true)} aria-label="Open the command palette"><CommandIcon size={16} /><span>Jump</span></button>
           <button type="button" className="voyage-bar__button voyage-bar__button--quiet" onClick={signOut} aria-label="Sign out"><LogOut size={16} /><span>Sign out</span></button>
         </div>
@@ -378,9 +400,8 @@ function VoyageView({ requireSecurityEnrollment }) {
                 : <DeckChapter schema={schemaForTable(chapter.table)} notify={notify} />)}
               {chapter.kind === 'inbox' && <InboxChapter notify={notify} />}
               {chapter.kind === 'charts' && <AnalyticsChapter notify={notify} motion={effectiveMotion} />}
-              {chapter.id === MEDIA_CHAPTER && <MediaChapter notify={notify} />}
               {chapter.kind === 'security' && <SecurityChapter notify={notify} onLeave={signOut} />}
-              {!BUILT_KINDS.has(chapter.kind) && chapter.id !== MEDIA_CHAPTER && !(chapter.kind === 'deck' && schemaForTable(chapter.table)) && (
+              {!BUILT_KINDS.has(chapter.kind) && !(chapter.kind === 'deck' && schemaForTable(chapter.table)) && (
                 <div className="voyage-pane voyage-placeholder">
                   <p>{countFor(chapter) !== null ? <><b>{countFor(chapter)}</b> {countFor(chapter) === 1 ? 'item' : 'items'} in this section.</> : 'This chapter is on its way.'}</p>
                 </div>
@@ -392,6 +413,7 @@ function VoyageView({ requireSecurityEnrollment }) {
 
       <LiveRail signal={activeSignal} onJump={jump} names={names} theme={resolvedTheme} />
       <Toast toast={toast} />
+      {!requireSecurityEnrollment && <MediaLibraryDialog open={files !== null} initialTab={files || 'in-use'} onClose={closeFiles} onOpenEntry={openEntry} />}
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} onJump={jump} actions={actions} names={names} theme={resolvedTheme} />
     </div>
   );
