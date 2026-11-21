@@ -150,6 +150,178 @@ async function openProject(page, title) {
   return dialog;
 }
 
+// The Files pop-up reads the storage fixtures in e2e/fixtures/admin/storage/:
+// eleven files, seven used by fixture records, four not connected (two of
+// them likely copies), and one achievement pointing at a file that is gone.
+const filesButton = (page) => page.locator('.voyage-bar').getByRole('button', { name: 'Files', exact: true });
+
+async function openFiles(page) {
+  await filesButton(page).click();
+  const files = page.getByTestId('media-library');
+  await expect(files.getByText('11 files')).toBeVisible();
+  return files;
+}
+
+test.describe('files', () => {
+  test('the Files button opens the pop-up; a file in use cannot be deleted and Open that entry opens its record', async ({ browser }) => {
+    const { page, context, net, errors } = await openAdmin(browser);
+    try {
+      await waitForDashboard(page);
+      await expect(page.locator('#chapter-media'), 'Media is no longer a chapter').toHaveCount(0);
+      const rail = page.getByRole('navigation', { name: 'Chapters' });
+      await expect(rail.locator('[aria-label^="Inbox"]')).toHaveCount(1);
+      await expect(rail.locator('[aria-label^="Media"], [aria-label*="Pisces"]'), 'nor a star on the rail').toHaveCount(0);
+      const files = await openFiles(page);
+      await expect(files).toContainText('4 not connected');
+      await expect(page.getByRole('button', { name: 'Close files' })).toBeFocused();
+      await expect(files.getByRole('tab', { name: /In use/ })).toHaveAttribute('aria-selected', 'true');
+      const cover = files.locator('[data-file="project-images:alpha/cover.png"]');
+      await expect(cover).toContainText('Used by Projects · TEST- Alpha Tracker');
+
+      await cover.getByRole('button', { name: /^Delete cover\.png/ }).click();
+      const blocked = page.getByRole('alertdialog', { name: 'This file is in use' });
+      await expect(blocked).toContainText('This file is used by Projects · TEST- Alpha Tracker. Detach it there first');
+      await blocked.getByRole('button', { name: 'Open that entry' }).click();
+      await expect(files).toHaveCount(0);
+      const record = page.getByTestId('record-dialog');
+      await expect(record.getByRole('heading', { name: 'TEST- Alpha Tracker' })).toBeVisible();
+      expect(net.writes, 'nothing was written').toEqual([]);
+      expect(errors).toEqual([]);
+      await expectOffline(net);
+    } finally {
+      await context.close();
+    }
+  });
+
+  test('deleting not-connected files checks again first, keeps one attached meanwhile, and deletes the rest', async ({ browser }) => {
+    const { page, context, net, errors } = await openAdmin(browser);
+    try {
+      await waitForDashboard(page);
+      const files = await openFiles(page);
+      await files.getByRole('tab', { name: /Not connected/ }).click();
+      await expect(files.locator('[data-file="documents:internships/certificate-copy.pdf"]')).toContainText('Possible duplicate of certificate.pdf, which is in use');
+      await files.getByRole('checkbox', { name: 'Select draft-shot.png' }).check();
+      await files.getByRole('checkbox', { name: 'Select resume-2025.pdf' }).check();
+      await expect(files).toContainText('2 selected');
+
+      // while the owner decides, the Beta project starts using the draft shot
+      net.rows('projects').find((row) => row.id === 'TEST-project-beta').image_urls = ['project-images/old/draft-shot.png'];
+
+      await files.getByRole('button', { name: 'Delete 2 files' }).click();
+      const confirm = page.getByRole('alertdialog', { name: 'Delete 2 files?' });
+      await expect(confirm).toContainText('draft-shot.png');
+      await expect(confirm).toContainText('resume-2025.pdf');
+      await expect(confirm.getByRole('button', { name: 'Cancel' })).toBeFocused();
+      await confirm.getByRole('button', { name: 'Delete 2 files' }).click();
+
+      const report = files.getByTestId('media-report');
+      await expect(report).toContainText('1 file deleted, 1 kept');
+      await expect(report).toContainText('draft-shot.png');
+      await expect(report).toContainText('Projects · TEST- Beta Planner');
+      const storageWrites = net.writes.filter((write) => write.table.startsWith('storage:'));
+      expect(storageWrites).toHaveLength(1);
+      expect(storageWrites[0]).toMatchObject({ table: 'storage:documents', method: 'DELETE', body: { prefixes: ['resume-2025.pdf'] } });
+      expect(net.writes, 'no table was written').toHaveLength(1);
+      await expect(files.getByText('10 files')).toBeVisible();   // the list reloaded
+      expect(errors).toEqual([]);
+      await expectOffline(net);
+    } finally {
+      await context.close();
+    }
+  });
+
+  test('a section that cannot be read turns delete off everywhere until Try again succeeds', async ({ browser }) => {
+    // the pop-up's narrow read of skills fails; the Skills deck's own read is untouched
+    const narrowSkills = (url) => url.pathname === '/rest/v1/skills' && /icon_url/.test(url.searchParams.get('select') || '') && !/\*/.test(url.searchParams.get('select') || '');
+    let failed = 0;
+    let markHandled = () => {};
+    const { page, context, net } = await openAdmin(browser, {
+      before: (ctx) => ctx.route(narrowSkills, (route) => {
+        failed += 1;
+        markHandled(route.request());
+        return route.fulfill({ status: 503, contentType: 'application/json', body: '{"message":"offline"}' });
+      }),
+    });
+    markHandled = net.markHandled;
+    try {
+      await waitForDashboard(page);
+      const files = await openFiles(page);
+      const banner = files.getByTestId('media-refs-failed');
+      await expect(banner).toContainText('Nothing can be deleted right now');
+      await expect(banner).toContainText('Skills could not be checked');
+      await files.getByRole('tab', { name: /Not connected/ }).click();
+      await expect(files.getByRole('checkbox', { name: 'Select resume-2025.pdf' })).toBeDisabled();
+      await expect(files.getByRole('button', { name: 'Delete resume-2025.pdf', exact: true })).toBeDisabled();
+      await expect(files.locator('.media-dialog__foot').getByRole('button', { name: 'Delete', exact: true })).toBeDisabled();
+      await expect(files.locator('.media-dialog__foot')).toContainText('Delete is off');
+
+      expect(failed).toBeGreaterThan(0);
+      await context.unroute(narrowSkills);
+      await banner.getByRole('button', { name: 'Try again' }).click();
+      await expect(banner).toHaveCount(0);
+      await expect(files.getByRole('checkbox', { name: 'Select resume-2025.pdf' })).toBeEnabled();
+      expect(net.writes).toEqual([]);
+      await expectOffline(net);
+    } finally {
+      await context.close();
+    }
+  });
+
+  test('Cmd+K "Files: broken links" opens that tab; Escape closes the pop-up and focus comes back', async ({ browser }) => {
+    const { page, context, net, errors } = await openAdmin(browser);
+    try {
+      await waitForDashboard(page);
+      await page.keyboard.press('ControlOrMeta+k');
+      const input = page.getByPlaceholder('Jump to a chapter or run an action…');
+      await input.fill('broken links');
+      await page.keyboard.press('Enter');
+      const files = page.getByTestId('media-library');
+      await expect(files.getByRole('tab', { name: /Broken links/ })).toHaveAttribute('aria-selected', 'true');
+      const row = files.locator('.media-row--broken');
+      await expect(row).toContainText('TEST- Hackathon Finalist');
+      await expect(row).toContainText('Certificate points at a missing file');
+      await expect(row).toContainText('achievement-images/hackathon.pdf');
+      await page.keyboard.press('Escape');
+      await expect(files).toHaveCount(0);
+
+      const button = filesButton(page);
+      await button.click();
+      await expect(page.getByTestId('media-library')).toBeVisible();
+      await page.keyboard.press('Escape');
+      await expect(page.getByTestId('media-library')).toHaveCount(0);
+      await expect(button).toBeFocused();
+      expect(errors).toEqual([]);
+      await expectOffline(net);
+    } finally {
+      await context.close();
+    }
+  });
+
+  for (const width of [375, 768, 1280, 1440]) {
+    test(`the Files pop-up fits at ${width}px`, async ({ browser }) => {
+      const { page, context, net, errors } = await openAdmin(browser, { width });
+      try {
+        await waitForDashboard(page);
+        const files = await openFiles(page);
+        expect(await hasHorizontalOverflow(page), 'in use').toBe(false);
+        const box = await files.boundingBox();
+        expect(box.x).toBeGreaterThanOrEqual(0);
+        expect(box.x + box.width).toBeLessThanOrEqual(width + 0.5);
+        await files.getByRole('tab', { name: /Not connected/ }).click();
+        expect(await hasHorizontalOverflow(page), 'not connected').toBe(false);
+        await files.locator('[data-file="project-images:old/draft-shot.png"] .media-row__main').click();
+        if (width >= 1100) await expect(files.locator('.media-pane')).toContainText('draft-shot.png');
+        else await expect(page.getByRole('dialog', { name: 'draft-shot.png' })).toBeVisible();
+        expect(await hasHorizontalOverflow(page), 'preview').toBe(false);
+        expect(errors).toEqual([]);
+        await expectOffline(net);
+      } finally {
+        await context.close();
+      }
+    });
+  }
+});
+
 test.describe('a record', () => {
   test('read view, edit form, and a required field emptied blocks the save', async ({ browser }) => {
     const { page, context, net, errors } = await openAdmin(browser);
