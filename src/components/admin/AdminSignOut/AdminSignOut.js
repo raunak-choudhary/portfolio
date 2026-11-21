@@ -23,7 +23,7 @@ import { skyCovered } from './exitBackdrop';
 import ExitVoyageSky from './ExitVoyageSky';
 import { drawCreditBackground, drawLeader, makeArcs } from './exitCanvas';
 import {
-  DIRECTOR, FAREWELLS, REDUCED_TIMELINE, TIMELINE, buildScript, creditFacts, phaseClasses, planeState, sceneLine, takeLine, wheelBoost,
+  DIRECTOR, FAREWELLS, REDUCED_TIMELINE, TIMELINE, buildScript, createFilmClock, creditFacts, phaseClasses, planeState, sceneLine, takeLine, wheelBoost,
 } from './exitModel';
 import { clearSession, readSessionFacts } from '../../../services/adminSessionFacts';
 import { clearVoyagePosition, readVoyagePosition } from '../../../services/voyagePosition';
@@ -131,7 +131,8 @@ export default function AdminSignOut() {
     const audio = createExitAudio({ enabled: !muted && !reduced, eager: arrivedFromSignOutClick(Boolean(facts || skyPosition)) });
     audioRef.current = audio;
     const arcs = makeArcs();
-    let start = performance.now(), boost = 0, jumpTo = null, lastClasses = '', lastNum = null, frame = 0, finished = false;
+    const clock = createFilmClock();
+    let filmTime = 0, boost = 0, jumpTo = null, lastClasses = '', lastNum = null, frame = 0, finished = false;
     let view = { W: window.innerWidth, H: window.innerHeight, dpr: Math.min(window.devicePixelRatio || 1, 2), font: CONDENSED };
     const size = () => {
       view = { ...view, W: window.innerWidth, H: window.innerHeight, dpr: Math.min(window.devicePixelRatio || 1, 2) };
@@ -167,8 +168,9 @@ export default function AdminSignOut() {
     };
     const tick = (nowMs) => {
       if (finished) return;
-      let t = nowMs - start + boost;
+      let t = clock(nowMs) + boost;
       if (jumpTo !== null) { boost += jumpTo - t; t = jumpTo; jumpTo = null; }
+      filmTime = t;
       const classes = phaseClasses(t, T);
       const key = classes.join(' ');
       if (key !== lastClasses) {
@@ -206,7 +208,7 @@ export default function AdminSignOut() {
     const onTouchStart = (e) => { touchY = e.touches[0]?.clientY ?? null; };
     const onTouchMove = (e) => { if (touchY === null || !lastClasses.includes('credits')) return; const y = e.touches[0].clientY; boost += (touchY - y) * 8; touchY = y; };
     // Any click or key on this page is a gesture the browser accepts for sound (a reload has none until then).
-    const onClick = (e) => { audio.unlock(); if (e.target.closest('.exit-mute')) return; const t = performance.now() - start + boost; if (t < T.card) jumpTo = T.card; };
+    const onClick = (e) => { audio.unlock(); if (e.target.closest('.exit-mute')) return; if (filmTime < T.card) jumpTo = T.card; };
     const onKey = (e) => { audio.unlock(); if (e.key === 'Escape') jumpTo = T.login; };
     window.addEventListener('resize', size);
     window.addEventListener('wheel', onWheel, { passive: true });

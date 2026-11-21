@@ -560,15 +560,24 @@ test.describe('security', () => {
 });
 
 test.describe('sign out', () => {
-  /** Records every class change on the film's root, with the time since the page started. */
+  /**
+   * Records every class change on the film's root, with the time since the
+   * page started, and every painted frame's time, so a test can tell the
+   * film's own clock from wall time on a busy machine.
+   */
   const recordPhases = (context) => context.addInitScript(() => {
     window.__phases = [];
+    window.__frames = [];
+    // registered before the film's loop, so in each frame it runs first and
+    // a phase change can be tied to the frame that made it
+    const paint = (t) => { window.__frames.push(t); requestAnimationFrame(paint); };
+    requestAnimationFrame(paint);
     const seen = new WeakSet();
     const watch = () => {
       const root = document.querySelector('[data-testid="exit-sequence"]');
       if (!root || seen.has(root)) return;
       seen.add(root);
-      new MutationObserver(() => window.__phases.push({ t: Math.round(performance.now()), c: root.className })).observe(root, { attributes: true, attributeFilter: ['class'] });
+      new MutationObserver(() => window.__phases.push({ t: Math.round(performance.now()), f: window.__frames.at(-1), c: root.className })).observe(root, { attributes: true, attributeFilter: ['class'] });
     };
     new MutationObserver(watch).observe(document, { childList: true, subtree: true });
   });
@@ -585,9 +594,18 @@ test.describe('sign out', () => {
       expect(clapIns, 'the clapperboard rises exactly once').toHaveLength(1);
       const snaps = phases.filter((p, i) => /\bsnap\b/.test(p.c) && !/\bsnap\b/.test(phases[i - 1]?.c ?? ''));
       expect(snaps, 'the stick snaps exactly once').toHaveLength(1);
-      // one clock: the snap follows the board within the film's own 1.7 s (the observer may attach a frame or two late)
-      expect(snaps[0].t - clapIns[0].t).toBeGreaterThan(900);
-      expect(snaps[0].t - clapIns[0].t).toBeLessThan(2100);
+      // one clock: the snap follows the board by the film's own 1.7 s. The
+      // film counts each frame's gap up to 250 ms, so a stall on a busy
+      // machine holds it; the same sum over the frames between the two
+      // changes gives the film time that passed (snap is due 1700 ms after
+      // the board rises, plus at most one frame of lateness).
+      const frames = await page.evaluate(() => window.__frames);
+      let filmGap = 0;
+      for (let i = 1; i < frames.length; i += 1) {
+        if (frames[i] > clapIns[0].f && frames[i] <= snaps[0].f) filmGap += Math.min(250, frames[i] - frames[i - 1]);
+      }
+      expect(filmGap).toBeGreaterThanOrEqual(1700 - 250);
+      expect(filmGap).toBeLessThan(1700 + 250);
       expect(phases.some((p) => /\bleader\b/.test(p.c)), 'the countdown follows').toBe(true);
 
       // a click skips to the closing card; the login follows

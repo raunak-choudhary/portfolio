@@ -161,4 +161,34 @@ export function planeState(plane, creditTime, scale, squeeze = 1) {
 }
 
 /** How much scrolling moves the credits: pixels of wheel delta to milliseconds, capped per event. */
+/**
+ * The most a single frame may move the film forward, in milliseconds. A
+ * steady 4 frames a second or better still plays in real time; only a stall
+ * longer than this (a long task, a chunk loading) holds the film. 100 ms was
+ * tried first and slowed the whole film on a heavily loaded machine.
+ */
+export const MAX_FRAME_STEP = 250;
+
+/**
+ * The film's clock. It starts at zero on the first painted frame, not when
+ * the page mounts, and a frame that arrives late moves it on by at most
+ * `maxStep`. Without both, a busy main thread (the 3D sky loading behind the
+ * film, a slow phone) let the clock run on unseen: the clapperboard rose and
+ * snapped within 300 ms, or was skipped altogether. A stall now pauses the
+ * film instead of cutting it.
+ *
+ * @param {number} [maxStep] longest step one frame may take.
+ * @returns {(nowMs: number) => number} call once per frame with the frame
+ *   time; returns the film time in milliseconds.
+ */
+export function createFilmClock(maxStep = MAX_FRAME_STEP) {
+  let last = null;
+  let elapsed = 0;
+  return (nowMs) => {
+    if (last !== null) elapsed += Math.min(Math.max(0, nowMs - last), maxStep);
+    last = nowMs;
+    return elapsed;
+  };
+}
+
 export const wheelBoost = (deltaY) => Math.max(-300, Math.min(300, deltaY * 6));
