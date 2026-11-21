@@ -4,12 +4,27 @@ import React, { useState } from 'react';
 import visitorTracking from '../../services/visitorTrackingService';
 import { useLocation, useNavigate } from 'react-router-dom';
 import ThemeToggle from './ThemeToggle';
+import { useSupabase } from '../../hooks/useSupabase';
+import { safeResumeUrl } from '../../utils/resumeLink';
 import './Header.css';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+
+  // The resume uploaded in the admin's Hero chapter, on every page. Only the
+  // one column, read once; the link is shown only when it is the portfolio's
+  // own PDF (safeResumeUrl), so a missing resume leaves the menu as it was.
+  const { data: resumeRow } = useSupabase('hero_content', {}, {
+    select: 'resume_url',
+    orderBy: { column: 'created_at', ascending: false },
+    limit: 1,
+    single: true,
+    realtime: false,
+    cacheKey: 'header-resume-link'
+  });
+  const resumeUrl = safeResumeUrl(resumeRow?.resume_url);
 
   // UPDATED: Changed all paths from '/' to '/home'
   const navItems = [
@@ -110,6 +125,24 @@ const Header = () => {
     handleNavClick(navItems[0]);
   };
 
+  // Opens the PDF in a new tab; counted as a reach-out, like the hero button.
+  const resumeItem = (isMobile) => resumeUrl && (
+    <li className="nav-item">
+      <a
+        href={resumeUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="nav-link nav-link-resume"
+        onClick={() => {
+          visitorTracking.trackReachOut('resume', isMobile ? 'mobile_navigation' : 'header_navigation');
+          closeMenu();
+        }}
+      >
+        Resume
+      </a>
+    </li>
+  );
+
   return (
     <header className="header glass-header">
       <div className="header-container container">
@@ -142,6 +175,7 @@ const Header = () => {
                 </button>
               </li>
             ))}
+            {resumeItem(false)}
           </ul>
         </nav>
 
@@ -174,6 +208,7 @@ const Header = () => {
                 </button>
               </li>
             ))}
+            {resumeItem(true)}
           </ul>
         </nav>
 

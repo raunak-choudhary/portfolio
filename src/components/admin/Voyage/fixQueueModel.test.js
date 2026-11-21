@@ -157,8 +157,9 @@ describe('severity and copy', () => {
 });
 
 describe('scores', () => {
+  // 95 since 2026-11-21: the recorded hero has no resume, which the hero now checks.
   it('reports the same integer score as the existing health summary', () => {
-    expect(buildFixQueue({ rowsByTable: allFixtures() }).score).toBe(97);
+    expect(buildFixQueue({ rowsByTable: allFixtures() }).score).toBe(95);
   });
 
   it('keeps the precise score within rounding of the integer score', () => {

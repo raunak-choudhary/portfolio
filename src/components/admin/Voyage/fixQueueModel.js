@@ -97,6 +97,7 @@ const QUALITY_COPY = Object.freeze({
   'achievements:proof': { has: ['has no certificate or proof link', 'have no certificate or proof link'], task: 'add a certificate or proof link' },
   'about_content:profile-image': { has: ['has no profile picture', 'have no profile picture'], task: 'add a profile picture' },
   'hero_content:cta': { has: ['has no call-to-action link', 'have no call-to-action link'], task: 'add a call-to-action link' },
+  'hero_content:resume': { has: ['has no resume', 'have no resume'], task: 'upload your resume' },
   'skills:category': { has: ['has no category', 'have no category'], task: 'choose a category' },
 });
 
@@ -115,6 +116,7 @@ export const WHY = Object.freeze({
   'achievements:description': 'Say what you did and what it beat: the field, the number of teams, the result.',
   'about_content:profile-image': 'A face makes the About section personal; without one the page reads like a form.',
   'hero_content:cta': 'The first screen should give a recruiter something to do next: open the work or get in touch.',
+  'hero_content:resume': 'A recruiter\'s first ask is the resume. Without one the Resume buttons stay hidden and the analytics can never count a resume open.',
   'skills:category': 'Uncategorised skills fall to the bottom of the Skills page, under every group.',
 });
 const WHY_MISSING = 'Visitors see an empty space where this should be, which reads as unfinished.';
