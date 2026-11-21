@@ -11,7 +11,7 @@
     "participants_count": 40,
     "achievement_number": 1,
     "date_achieved": "2025-04-01",
-    "certificate_url": "{{storage}}/fixtures/hackathon.pdf",
+    "certificate_url": "{{storage}}/achievement-images/hackathon.pdf",
     "verification_url": null,
     "is_featured": true,
     "order_index": null,

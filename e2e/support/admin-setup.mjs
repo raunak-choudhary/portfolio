@@ -19,7 +19,7 @@ const HEIGHTS = { 390: 844, 768: 1024, 1280: 800, 1440: 900 };
  *   `motion: true` keeps full motion (the sign-out film plays whole); `before` runs after the
  *   fixtures are installed and before the first navigation, to add routes or init scripts.
  */
-export async function openAdmin(browser, { width = 1440, session = 'aal2', path = '/admindashboard', tables, motion = false, before } = {}) {
+export async function openAdmin(browser, { width = 1440, session = 'aal2', path = '/admindashboard', tables, storage, motion = false, before } = {}) {
   const isMobile = width < 768;
   const context = await browser.newContext({
     viewport: { width, height: HEIGHTS[width] ?? 900 },
@@ -29,7 +29,7 @@ export async function openAdmin(browser, { width = 1440, session = 'aal2', path 
     reducedMotion: motion ? 'no-preference' : 'reduce',
     serviceWorkers: 'block',
   });
-  const net = await installAdminFixtures(context, { session, tables });
+  const net = await installAdminFixtures(context, { session, tables, storage });
   if (before) await before(context);
   const page = await context.newPage();
   const errors = collectPageErrors(page);
