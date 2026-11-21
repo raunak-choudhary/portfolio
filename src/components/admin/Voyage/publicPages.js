@@ -31,10 +31,11 @@ export const PUBLIC_PATHS = Object.freeze({
 
 /**
  * Chapters that only exist inside the admin: the prologue, mission control,
- * the media library, analytics, the inbox and security. They get no link.
+ * analytics, the inbox and security. They get no link. (Files is a pop-up,
+ * not a chapter, so it is not listed.)
  * @type {ReadonlySet<string>}
  */
-export const NO_PUBLIC_PAGE = Object.freeze(new Set(['earth', 'overview', 'media', 'analytics', 'inbox', 'security']));
+export const NO_PUBLIC_PAGE = Object.freeze(new Set(['earth', 'overview', 'analytics', 'inbox', 'security']));
 
 /** The public path for a chapter id, or null when the chapter has no public page. */
 export const publicPathFor = (id) => (Object.prototype.hasOwnProperty.call(PUBLIC_PATHS, id) ? PUBLIC_PATHS[id] : null);
