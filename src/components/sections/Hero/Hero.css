@@ -168,6 +168,14 @@
   flex-wrap: wrap;
 }
 
+/* The Resume button is a link (it opens the PDF), dressed as the button it replaced. */
+.hero-actions a.hero-resume-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
 /* FIXED: Primary Button Hover Text Visibility */
 .neon-button.primary {
   background: var(--gradient-primary);

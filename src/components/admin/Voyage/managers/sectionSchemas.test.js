@@ -14,7 +14,7 @@ describe('hero schema', () => {
   const live = { id: 'h1', title: 'Hi, I am Raunak', subtitle: 'Engineer', description: 'Builds things.', highlights: ['One', 'Two', 'Three', 'Four'], cta_text: 'Explore', cta_link: '#navigation', is_active: true };
   it('is a singleton over every hero column', () => {
     expect(heroSchema.mode).toBe('singleton');
-    expect(keys(heroSchema)).toEqual(['title', 'subtitle', 'description', 'highlights', 'cta_text', 'cta_link', 'is_active']);
+    expect(keys(heroSchema)).toEqual(['title', 'subtitle', 'description', 'highlights', 'cta_text', 'cta_link', 'resume_url', 'is_active']);
     expect(canDrag(heroSchema)).toBe(false);
   });
   it('accepts the live row unchanged and keeps the anchor link', () => {

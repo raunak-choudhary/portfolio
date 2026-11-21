@@ -12,9 +12,10 @@ import { React, mount } from '../../admin/SkyBackground/testUtils';
 jest.mock('react-router-dom', () => ({ useNavigate: () => () => {}, useLocation: () => ({ pathname: '/home' }) }));
 jest.mock('../../../hooks/useSupabase', () => ({ useSupabase: jest.fn() }));
 jest.mock('./Cube3D', () => function Cube3DStub() { return null; });
+const mockReachOut = jest.fn();
 jest.mock('../../../services/visitorTrackingService', () => {
   const tracking = { startTracking: () => {}, stopTracking: () => {} };
-  return { __esModule: true, default: { useTimeTracking: () => tracking, trackSectionView: () => {} } };
+  return { __esModule: true, default: { useTimeTracking: () => tracking, trackSectionView: () => {}, trackReachOut: (...args) => mockReachOut(...args) } };
 });
 
 const HERO_ROW = { title: 'Title', subtitle: 'Subtitle', description: 'Description', highlights: ['One'] };
@@ -41,4 +42,43 @@ it('mounts the light rays as a new element instead of reusing the spinner wrappe
   expect(rays).not.toBe(loadingWrapper);
   expect(loadingWrapper.isConnected).toBe(false);
   expect(view.container.querySelector('.hero-title').textContent).toBe('Title');
+});
+
+describe('the second hero button', () => {
+  const PROJECT = 'https://abcproject.supabase.co';
+  const RESUME = `${PROJECT}/storage/v1/object/public/documents/resume/raunak-choudhary-resume-1.pdf`;
+  const saved = process.env.REACT_APP_SUPABASE_URL;
+  beforeEach(() => { process.env.REACT_APP_SUPABASE_URL = PROJECT; mockReachOut.mockClear(); });
+  afterAll(() => { if (saved === undefined) delete process.env.REACT_APP_SUPABASE_URL; else process.env.REACT_APP_SUPABASE_URL = saved; });
+
+  const secondButton = () => view.container.querySelector('.hero-actions').children[1];
+
+  it('is Resume, opening the uploaded PDF in a new tab, when there is one', () => {
+    useSupabase.mockReturnValue({ data: { ...HERO_ROW, resume_url: RESUME }, loading: false });
+    view = mount(page());
+    const link = secondButton();
+    expect(link.tagName).toBe('A');
+    expect(link.textContent).toBe('Resume');
+    expect(link.getAttribute('href')).toBe(RESUME);
+    expect(link.getAttribute('target')).toBe('_blank');
+    expect(link.getAttribute('rel')).toBe('noopener noreferrer');
+  });
+
+  it('counts a resume open as a reach-out from the hero', () => {
+    useSupabase.mockReturnValue({ data: { ...HERO_ROW, resume_url: RESUME }, loading: false });
+    view = mount(page());
+    secondButton().addEventListener('click', (e) => e.preventDefault());   // jsdom cannot open tabs
+    secondButton().click();
+    expect(mockReachOut).toHaveBeenCalledWith('resume', 'hero');
+  });
+
+  it.each([
+    ['no resume uploaded', null],
+    ['a link that is not the portfolio\'s own PDF', 'https://example.com/cv.pdf'],
+  ])('stays Contact Me with %s', (_label, resumeUrl) => {
+    useSupabase.mockReturnValue({ data: { ...HERO_ROW, resume_url: resumeUrl }, loading: false });
+    view = mount(page());
+    expect(secondButton().tagName).toBe('BUTTON');
+    expect(secondButton().textContent).toBe('Contact Me');
+  });
 });

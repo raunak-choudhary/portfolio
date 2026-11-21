@@ -19,6 +19,12 @@ export const MEDIA_LIBRARY_BUCKETS = [
 // fixtures' columns.
 export const REFERENCE_TABLES = [
   {
+    table: 'hero_content',
+    bucketFields: {
+      documents: ['resume_url']
+    }
+  },
+  {
     table: 'about_content',
     bucketFields: {
       'profile-images': ['profile_image_about', 'profile_image_info', 'profile_image_url']

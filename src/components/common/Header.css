@@ -112,6 +112,17 @@
   white-space: normal;
 }
 
+/* Resume opens the PDF, so it is a link; it sits in the row like the buttons.
+   A global rule renders the menu buttons at 1rem with normal line height,
+   which a link does not inherit, so the two are set here to match them. */
+.header a.nav-link-resume,
+.header .mobile-nav a.nav-link-resume {
+  display: block;
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: normal;
+}
+
 .nav-link::before {
   content: '';
   position: absolute;

@@ -6,6 +6,7 @@ import Cube3D from './Cube3D';
 import { portfolioData } from '../../../data/portfolioData';
 import { useSupabase } from '../../../hooks/useSupabase';
 import LoadingSpinner from '../../common/LoadingSpinner';
+import { safeResumeUrl } from '../../../utils/resumeLink';
 import './Hero.css';
 
 const Hero = () => {
@@ -50,6 +51,10 @@ const Hero = () => {
     cta_text: heroData.cta_text || 'View My Work',
     cta_link: heroData.cta_link || '#navigation'
   } : portfolioData.hero;
+
+  // The resume uploaded in the admin's Hero chapter. Until there is one, the
+  // second button stays Contact Me, so the hero never shows a dead link.
+  const resumeUrl = safeResumeUrl(heroData?.resume_url);
 
   const handleNavClick = (sectionId) => {
     if (location.pathname === '/') {
@@ -146,12 +151,24 @@ const Hero = () => {
             >
               {displayData.cta_text || 'View My Work'}
             </button>
-            <button 
-              className="neon-button secondary"
-              onClick={() => handleNavClick('contact')}
-            >
-              Contact Me
-            </button>
+            {resumeUrl ? (
+              <a
+                className="neon-button secondary hero-resume-link"
+                href={resumeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => visitorTracking.trackReachOut('resume', 'hero')}
+              >
+                Resume
+              </a>
+            ) : (
+              <button
+                className="neon-button secondary"
+                onClick={() => handleNavClick('contact')}
+              >
+                Contact Me
+              </button>
+            )}
           </div>
         </div>
 

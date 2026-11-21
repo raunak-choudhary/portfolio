@@ -22,7 +22,8 @@ export const SECTION_HEALTH_RULES = [
     requiredFields: ['title', 'description'],
     descriptionFields: ['description'],
     qualityGroups: [
-      { name: 'cta', label: 'CTA link', fields: ['cta_link'], issueType: 'missing_proof_link' }
+      { name: 'cta', label: 'CTA link', fields: ['cta_link'], issueType: 'missing_proof_link' },
+      { name: 'resume', label: 'Resume', fields: ['resume_url'], issueType: 'missing_proof_link' }
     ]
   },
   {
