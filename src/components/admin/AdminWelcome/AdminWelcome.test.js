@@ -57,4 +57,14 @@ describe('AdminWelcome', () => {
     expect(late).not.toHaveBeenCalled();
     view.unmount();
   });
+
+  it('marks this browser as the owner\'s, so its public visits are never counted', async () => {
+    window.localStorage.clear();
+    const view = mount(<AdminWelcome />);
+    await flush();
+    expect(window.localStorage.getItem('rc-owner-device')).toBe('1');
+    view.unmount();
+    // sign-out does not clear it
+    expect(window.localStorage.getItem('rc-owner-device')).toBe('1');
+  });
 });

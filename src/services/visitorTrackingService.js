@@ -22,6 +22,108 @@ import { supabase } from './supabaseClient';
 export const isAnalyticsEnabled = () => process.env.REACT_APP_ANALYTICS_ENABLED === 'true';
 
 // =====================================================
+// HONEST NUMBERS: WHO IS A VISITOR
+// =====================================================
+//
+// The owner's rule (2026-11-19): the analytics show real numbers only, even
+// when they are zero. A visit counts when it is a person, other than the
+// owner, looking at the live site. So an event is written only when all of
+// these hold:
+//
+//   - analytics is switched on for this build (isAnalyticsEnabled);
+//   - the page is served from the live domain, never localhost, a LAN
+//     address, a tunnel or a preview host;
+//   - the page is not one of the admin's own routes;
+//   - the browser does not look automated (a crawler, a monitor, a test);
+//   - this is not the owner's browser.
+//
+// The database repeats the host and crawler checks on the request itself
+// (migration 20261121120000), so a page that skipped this gate would still be
+// refused there. This gate keeps the request from being sent at all.
+
+/** The only hosts whose visits are counted. */
+export const PRODUCTION_HOSTS = Object.freeze(['www.raunakchoudhary.com', 'raunakchoudhary.com']);
+
+/** True for the live site's hostname, in any letter case. */
+export const isProductionHost = (hostname) => PRODUCTION_HOSTS.includes(String(hostname ?? '').toLowerCase());
+
+/** User-agent fragments of crawlers, monitors, link previews and scripted clients. Kept in step with the migration's pattern. */
+const AUTOMATED_AGENT = /bot|crawl|spider|slurp|headless|lighthouse|pagespeed|preview|monitor|uptime|pingdom|curl|wget|python|scrapy|phantom|externalhit|hostinger/i;
+
+/**
+ * True when the browser says it is driven by automation (`navigator.webdriver`)
+ * or names itself as a crawler, monitor or scripted client. Obvious cases
+ * only: a client that hides what it is cannot be told apart here.
+ * @param {{ webdriver?: boolean, userAgent?: string }} [nav]
+ */
+export const looksAutomated = (nav) => Boolean(nav?.webdriver) || AUTOMATED_AGENT.test(String(nav?.userAgent ?? ''));
+
+/** Set once the admin dashboard has been opened in this browser; never cleared by sign-out. */
+export const OWNER_DEVICE_KEY = 'rc-owner-device';
+
+/** A Supabase session key, e.g. `sb-<project ref>-auth-token`: only the owner can hold one (sign-ups are closed). */
+const SESSION_KEY = /^sb-.+-auth-token$/;
+
+/**
+ * True when this browser is the owner's: the dashboard has been opened in it
+ * before, or it holds an admin session now. Storage that cannot be read
+ * (blocked site data) answers false, like any visitor's.
+ * @param {Storage} [storage]
+ */
+export const isOwnerBrowser = (storage) => {
+  try {
+    if (!storage) return false;
+    if (storage.getItem(OWNER_DEVICE_KEY) === '1') return true;
+    for (let i = 0; i < storage.length; i += 1) {
+      if (SESSION_KEY.test(String(storage.key(i)))) return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * What the gate reads from the browser, gathered in one place so tests can
+ * stand in a hostname, a navigator or a storage (jsdom's host is localhost).
+ */
+export const trackingEnvironment = {
+  hostname: () => window.location.hostname,
+  pathname: () => window.location.pathname,
+  navigator: () => window.navigator,
+  storage: () => window.localStorage,
+};
+
+/** Remembers this browser as the owner's. Called when the admin dashboard opens. Never throws. */
+export const markOwnerBrowser = () => {
+  try {
+    trackingEnvironment.storage().setItem(OWNER_DEVICE_KEY, '1');
+  } catch {
+    /* storage blocked: the session-key check still covers a signed-in owner */
+  }
+};
+
+/**
+ * The one gate every tracker passes before it writes: see the rule above.
+ * Any failure to read the browser answers false, so a doubt never becomes a
+ * counted visit.
+ * @returns {boolean}
+ */
+export const shouldTrackVisit = () => {
+  if (!isAnalyticsEnabled()) return false;
+  try {
+    if (!isProductionHost(trackingEnvironment.hostname())) return false;
+    if (isAdminPath(trackingEnvironment.pathname())) return false;
+    if (looksAutomated(trackingEnvironment.navigator())) return false;
+    let storage = null;
+    try { storage = trackingEnvironment.storage(); } catch { storage = null; }
+    return !isOwnerBrowser(storage);
+  } catch {
+    return false;
+  }
+};
+
+// =====================================================
 // REAL VISITOR TRACKING SERVICE
 // Tracks actual visitors to your live portfolio
 // =====================================================
@@ -90,7 +192,7 @@ const getVisitorInfo = () => ({
 
 // Track page view
 export const trackPageView = async (page, title = '') => {
-  if (!isAnalyticsEnabled()) return;
+  if (!shouldTrackVisit()) return;
   try {
     // Create unique session key
     const sessionKey = getSessionKey('page', page);
@@ -139,7 +241,7 @@ export const trackPageView = async (page, title = '') => {
 
 // Track section view (when user scrolls to or clicks on a section)
 export const trackSectionView = async (sectionType, sectionId = 'main', timeSpent = 0) => {
-  if (!isAnalyticsEnabled()) return;
+  if (!shouldTrackVisit()) return;
   try {
     // Create unique session key
     const sessionKey = getSessionKey('section', `${sectionType}_${sectionId}`);
@@ -189,7 +291,7 @@ export const trackSectionView = async (sectionType, sectionId = 'main', timeSpen
 
 // Track contact form submission
 export const trackContactSubmission = async (contactType, subject) => {
-  if (!isAnalyticsEnabled()) return;
+  if (!shouldTrackVisit()) return;
   try {
     const sessionId = generateVisitorSessionId();
 
@@ -223,7 +325,7 @@ export const trackContactSubmission = async (contactType, subject) => {
 
 // Track click events (portfolio navigation, external links, etc.)
 export const trackClick = async (elementType, elementId, targetUrl = '') => {
-  if (!isAnalyticsEnabled()) return;
+  if (!shouldTrackVisit()) return;
   try {
     const sessionId = generateVisitorSessionId();
 
@@ -398,7 +500,7 @@ const insertEngagementEvent = async (action, label, details) => {
  * @param {'card'|'page'} [surface]
  */
 export const trackProjectOpen = async (project, surface = 'card') => {
-  if (!isAnalyticsEnabled() || !project?.id) return;
+  if (!shouldTrackVisit() || !project?.id) return;
   if (!markOncePerSession(`project:${project.id}`)) return;
   await insertEngagementEvent('project_open', project.id, {
     title: project.title || '',
@@ -414,7 +516,7 @@ export const trackProjectOpen = async (project, surface = 'card') => {
  * @param {string} url the address the link opens
  */
 export const trackProjectLink = async (project, kind, url) => {
-  if (!isAnalyticsEnabled() || !project?.id || !PROJECT_LINK_KINDS.has(kind)) return;
+  if (!shouldTrackVisit() || !project?.id || !PROJECT_LINK_KINDS.has(kind)) return;
   await insertEngagementEvent('project_link', project.id, {
     title: project.title || '',
     kind,
@@ -430,7 +532,7 @@ export const trackProjectLink = async (project, kind, url) => {
  * @param {string} from the surface it happened on, e.g. 'footer' or 'contact'
  */
 export const trackReachOut = async (channel, from) => {
-  if (!isAnalyticsEnabled() || !REACH_OUT_CHANNELS.has(channel)) return;
+  if (!shouldTrackVisit() || !REACH_OUT_CHANNELS.has(channel)) return;
   await insertEngagementEvent('reach_out', channel, { from: from || 'unknown' });
 };
 
@@ -468,7 +570,7 @@ let engagementTimer = null;
  *   analytics is off or the session is already engaged.
  */
 export const startEngagementTimer = () => {
-  if (!isAnalyticsEnabled()) return () => {};
+  if (!shouldTrackVisit()) return () => {};
   if (engagementTimer) return engagementTimer.stop;
   try {
     if (sessionStorage.getItem(ENGAGED_KEY) === 'true') return () => {};
@@ -534,14 +636,13 @@ export const resetEngagementTrackingForTests = () => {
 
 /**
  * Starts tracking for this page load: records the landing page view and
- * starts the engaged clock. Nothing happens unless analytics is enabled.
+ * starts the engaged clock. Nothing happens unless the visit counts (shouldTrackVisit).
  *
  * @returns {() => void} cleanup that stops the engaged clock.
  */
 export const initializeVisitorTracking = () => {
-  if (!isAnalyticsEnabled()) return () => {};
-  // The admin is not a visitor page (see isAdminPath): no page view, no engaged clock.
-  if (isAdminPath(window.location.pathname)) return () => {};
+  // Covers the admin's own routes too (see isAdminPath): no page view, no engaged clock.
+  if (!shouldTrackVisit()) return () => {};
   trackPageView(pageNameForPath(window.location.pathname), document.title);
   return startEngagementTimer();
 };
@@ -549,6 +650,8 @@ export const initializeVisitorTracking = () => {
 // Create the service object
 const visitorTrackingService = {
   isAnalyticsEnabled,
+  shouldTrackVisit,
+  markOwnerBrowser,
   trackPageView,
   trackSectionView,
   trackContactSubmission,
