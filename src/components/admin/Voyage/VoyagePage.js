@@ -33,6 +33,7 @@ import AnalyticsChapter from './AnalyticsChapter';
 import MediaChapter from './MediaChapter';
 import SecurityChapter from './SecurityChapter';
 import SingletonChapter from './SingletonChapter';
+import ViewOnSiteLink from './ViewOnSiteLink';
 import Toast, { useToast } from './Toast';
 import { schemaForTable } from './managers';
 import MissionControl from './MissionControl';
@@ -370,6 +371,8 @@ function VoyageView({ requireSecurityEnrollment }) {
                 <p className="voyage-chapter__sub">{chapter.sub}</p>
                 {chapter.kind === 'prologue' && <OverReadout signal={overSignal} />}
               </div>
+              {/* a locked chapter shows only the enrolment request, so its public link waits too */}
+              {!locked(chapter) && <ViewOnSiteLink chapter={chapter} />}
             </div>
             {locked(chapter) ? <EnrolmentLock onGo={() => go('security')} /> : <>
               {chapter.kind === 'bento' && <MissionControl data={bentoData} onGo={go} motion={effectiveMotion} fixQueue={<FixQueuePane fixes={fixes} onReview={go} notify={notify} />} />}
