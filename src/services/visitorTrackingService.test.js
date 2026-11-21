@@ -1,13 +1,20 @@
 import { supabase } from './supabaseClient';
 import {
   ENGAGED_AFTER_MS,
+  OWNER_DEVICE_KEY,
+  PRODUCTION_HOSTS,
   deviceClassFor,
   initializeVisitorTracking,
   isAdminPath,
   isAnalyticsEnabled,
+  isOwnerBrowser,
+  isProductionHost,
+  looksAutomated,
+  markOwnerBrowser,
   pageNameForPath,
   referrerHostFor,
   resetEngagementTrackingForTests,
+  shouldTrackVisit,
   startEngagementTimer,
   trackClick,
   trackContactSubmission,
@@ -16,6 +23,7 @@ import {
   trackProjectOpen,
   trackReachOut,
   trackSectionView,
+  trackingEnvironment,
 } from './visitorTrackingService';
 
 jest.mock('./supabaseClient', () => ({
@@ -40,6 +48,9 @@ beforeEach(() => {
   resetEngagementTrackingForTests();
   jest.spyOn(console, 'log').mockImplementation(() => {});
   jest.spyOn(console, 'error').mockImplementation(() => {});
+  // jsdom serves the page from localhost, which is never counted; the tests of
+  // the trackers themselves stand on the live host. The gate has its own tests below.
+  jest.spyOn(trackingEnvironment, 'hostname').mockReturnValue('www.raunakchoudhary.com');
 });
 
 afterEach(() => {
@@ -566,5 +577,117 @@ describe('admin routes are not visitor pages (deep pass 2026-11-20)', () => {
     } finally {
       jest.useRealTimers();
     }
+  });
+});
+
+describe('who counts as a visitor (honest numbers, 2026-11-21)', () => {
+  const CHROME = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36';
+  const asNavigator = (nav) => jest.spyOn(trackingEnvironment, 'navigator').mockReturnValue(nav);
+  const onHost = (host) => trackingEnvironment.hostname.mockReturnValue(host);
+
+  beforeEach(() => {
+    process.env.REACT_APP_ANALYTICS_ENABLED = 'true';
+    asNavigator({ webdriver: false, userAgent: CHROME });
+  });
+  afterEach(() => { window.history.pushState(null, '', '/'); });
+
+  it('counts a person on the live site, with or without www', () => {
+    expect(PRODUCTION_HOSTS).toEqual(['www.raunakchoudhary.com', 'raunakchoudhary.com']);
+    expect(shouldTrackVisit()).toBe(true);
+    onHost('raunakchoudhary.com');
+    expect(shouldTrackVisit()).toBe(true);
+    onHost('WWW.RaunakChoudhary.com');
+    expect(shouldTrackVisit()).toBe(true);
+  });
+
+  it.each([
+    'localhost', '127.0.0.1', '192.168.1.20', 'portfolio-git-main.vercel.app', 'abc.trycloudflare.com',
+    'raunakchoudhary.com.evil.example', 'staging.raunakchoudhary.com', '',
+  ])('never counts a visit served from %p', async (host) => {
+    onHost(host);
+    expect(isProductionHost(host)).toBe(false);
+    expect(shouldTrackVisit()).toBe(false);
+    const insert = mockInsertResult();
+    await trackPageView('home', 'Home');
+    await trackClick('nav', 'projects');
+    await trackContactSubmission('general', 'Hello');
+    await trackSectionView('projects', 'main', 5);
+    await trackProjectOpen({ id: 'p1' });
+    await trackProjectLink({ id: 'p1' }, 'repo', 'https://github.com/x/y');
+    await trackReachOut('email', 'footer');
+    expect(initializeVisitorTracking()()).toBeUndefined();
+    expect(insert).not.toHaveBeenCalled();
+    expect(supabase.from).not.toHaveBeenCalled();
+    expect(window.localStorage.getItem('portfolio_visited')).toBeNull();
+  });
+
+  it('never counts the admin routes', () => {
+    window.history.pushState(null, '', '/admindashboard');
+    expect(shouldTrackVisit()).toBe(false);
+  });
+
+  it('never counts an automated browser', () => {
+    asNavigator({ webdriver: true, userAgent: CHROME });
+    expect(shouldTrackVisit()).toBe(false);
+  });
+
+  it.each([
+    'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/130.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Linux; Android 11) Chrome/130 Mobile Safari/537.36 Chrome-Lighthouse',
+    'facebookexternalhit/1.1', 'Slackbot-LinkExpanding 1.0', 'UptimeRobot/2.0', 'curl/8.4.0', 'python-requests/2.31',
+    'Hostinger Operations monitoring',
+  ])('never counts the agent %p', (userAgent) => {
+    expect(looksAutomated({ userAgent })).toBe(true);
+    asNavigator({ webdriver: false, userAgent });
+    expect(shouldTrackVisit()).toBe(false);
+  });
+
+  it('takes ordinary browsers for people', () => {
+    expect(looksAutomated({ userAgent: CHROME })).toBe(false);
+    expect(looksAutomated({ userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1' })).toBe(false);
+    expect(looksAutomated(undefined)).toBe(false);
+  });
+
+  it('never counts the owner: a browser that has opened the dashboard, even after sign-out', () => {
+    markOwnerBrowser();
+    expect(window.localStorage.getItem(OWNER_DEVICE_KEY)).toBe('1');
+    expect(isOwnerBrowser(window.localStorage)).toBe(true);
+    expect(shouldTrackVisit()).toBe(false);
+  });
+
+  it('never counts a browser that holds an admin session', () => {
+    window.localStorage.setItem('sb-abcdefghijklmnop-auth-token', '{"access_token":"x"}');
+    expect(isOwnerBrowser(window.localStorage)).toBe(true);
+    expect(shouldTrackVisit()).toBe(false);
+  });
+
+  it('does not take other stored keys for a session', () => {
+    window.localStorage.setItem('portfolio-theme', 'dark');
+    window.localStorage.setItem('sb-auth-token-note', 'x');
+    expect(isOwnerBrowser(window.localStorage)).toBe(false);
+    expect(shouldTrackVisit()).toBe(true);
+  });
+
+  it('counts nothing with the flag off', () => {
+    process.env.REACT_APP_ANALYTICS_ENABLED = 'false';
+    expect(shouldTrackVisit()).toBe(false);
+  });
+
+  it('treats storage that cannot be read as a visitor\'s, and marking the owner there does not throw', () => {
+    const blocked = { get length() { throw new DOMException('denied', 'SecurityError'); }, getItem() { throw new DOMException('denied', 'SecurityError'); }, setItem() { throw new DOMException('denied', 'SecurityError'); }, key() { return null; } };
+    expect(isOwnerBrowser(blocked)).toBe(false);
+    expect(isOwnerBrowser(null)).toBe(false);
+    jest.spyOn(trackingEnvironment, 'storage').mockReturnValue(blocked);
+    expect(() => markOwnerBrowser()).not.toThrow();
+    expect(shouldTrackVisit()).toBe(true);
+    trackingEnvironment.storage.mockImplementation(() => { throw new DOMException('denied', 'SecurityError'); });
+    expect(() => markOwnerBrowser()).not.toThrow();
+    expect(shouldTrackVisit()).toBe(true);
+  });
+
+  it('counts nothing when the browser itself cannot be read', () => {
+    trackingEnvironment.hostname.mockImplementation(() => { throw new Error('no window'); });
+    expect(shouldTrackVisit()).toBe(false);
   });
 });

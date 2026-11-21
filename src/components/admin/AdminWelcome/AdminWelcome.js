@@ -14,6 +14,7 @@ import MatrixEntry from './MatrixEntry';
 import { useAuthContext } from '../../../contexts/AuthContext';
 import { supabase } from '../../../services/supabaseClient';
 import { resetDashboardReady } from './adminReadiness';
+import { markOwnerBrowser } from '../../../services/visitorTrackingService';
 
 /** Counts shown on the entry; each is null until known and stays null on failure. */
 const useEntryCounts = () => {
@@ -49,6 +50,10 @@ const AdminWelcome = ({ requireSecurityEnrollment = false }) => {
   // run first) and wiped that subscription, so the entry never heard the
   // dashboard report in and always waited out its full cap.
   useState(() => { resetDashboardReady(); return null; });
+
+  // This browser is the owner's from now on: its visits to the public site are
+  // never counted as a visitor's, signed in or not (honest numbers rule).
+  useEffect(() => { markOwnerBrowser(); }, []);
 
   const facts = useMemo(() => ({
     secondFactorPassed: assurance?.currentLevel === 'aal2',
