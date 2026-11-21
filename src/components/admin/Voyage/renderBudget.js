@@ -91,7 +91,21 @@ export function renderDue({ now, lastRenderAt, frameInterval, active }) {
   return gap >= frameInterval - VSYNC_SLACK_MS;
 }
 
-/** Adaptive resolution: a rolling average of frame gaps steps the level up when frames run long and back down when there is room. */
+/**
+ * Adaptive resolution: a rolling average of frame gaps steps the level up when
+ * frames run long and back down when there is room.
+ *
+ * Long gaps are not always this page's doing. A browser in a power-saving mode
+ * hands out animation frames at 30 a second however little is drawn, and a
+ * page held up by something other than fill (script, layout) gains nothing
+ * from fewer pixels. A frame gap alone cannot tell those from a slow GPU, so
+ * the rule tests it: quality steps down as before, and if the lowest level
+ * still shows the gap it started with, resolution was never the cause. The
+ * level goes back to full and is held there. (Drawing under a third of the
+ * pixels always moves a fill-bound GPU into a shorter vsync interval, so a
+ * GPU that really is the limit shows an improvement and keeps its lower level.)
+ * The hold ends when frames get clearly worse than the held gap, or fast again.
+ */
 export const ADAPT = Object.freeze({
   slowMs: 24,          // average gap above this (under about 42 fps) is slow
   fastMs: 18,          // average gap under this (about 55 fps or better) has room
@@ -99,26 +113,50 @@ export const ADAPT = Object.freeze({
   fastFrames: 300,     // about five seconds of fast frames before stepping back up
   smoothing: 0.1,      // weight of the newest gap in the rolling average
   maxGapMs: 100,       // longer gaps (a tab switch, a debugger pause) are clamped so one outlier cannot decide
+  improvedBy: 0.85,    // at the lowest level, an average above this share of the starting gap means lowering did not help
+  worseBy: 1.35,       // while held at full quality, an average above this multiple of the held gap ends the hold
 });
 
-export const initialAdaptState = () => ({ level: 0, average: null, slow: 0, fast: 0 });
+export const initialAdaptState = () => ({ level: 0, average: null, slow: 0, fast: 0, baseline: null, held: null });
 
 /**
  * Feed one frame gap (ms between animation frames) into the adaptive state.
  * Only frames the page wanted at full rate should be fed: in working mode the
  * gap is measured between rAF callbacks, which still arrive every vsync.
- * @returns {{level: number, average: number, slow: number, fast: number, changed: boolean}}
+ * `baseline` is the average when quality first left the full level; `held` is
+ * the gap at which lowering was found not to help (null when not holding).
+ * @returns {{level: number, average: number, slow: number, fast: number, baseline: number|null, held: number|null, changed: boolean}}
  */
 export function adaptQuality(state, gapMs, limits = ADAPT) {
   const gap = Math.min(Math.max(gapMs, 0), limits.maxGapMs);
   const average = state.average === null ? gap : state.average + (gap - state.average) * limits.smoothing;
+  const last = QUALITY_STEPS.length - 1;
   let { level } = state;
+  let baseline = state.baseline ?? null, held = state.held ?? null;
   let slow = average > limits.slowMs ? state.slow + 1 : 0;
   let fast = average < limits.fastMs ? state.fast + 1 : 0;
   let changed = false;
-  if (slow >= limits.slowFrames && level < QUALITY_STEPS.length - 1) { level += 1; slow = 0; fast = 0; changed = true; }
-  else if (fast >= limits.fastFrames && level > 0) { level -= 1; slow = 0; fast = 0; changed = true; }
-  return { level, average, slow, fast, changed };
+
+  if (held !== null) {
+    // Full quality is being held: only a clearly longer gap, or a return to fast frames, lets the steps run again.
+    if (average > held * limits.worseBy || fast >= limits.fastFrames) { held = null; slow = 0; fast = 0; }
+    return { level, average, slow, fast, baseline, held, changed };
+  }
+  if (slow >= limits.slowFrames) {
+    if (level < last) {
+      if (level === 0) baseline = average;
+      level += 1; slow = 0; fast = 0; changed = true;
+    } else if (baseline !== null && average > baseline * limits.improvedBy) {
+      // The lowest level changed nothing: give the pixels back and stop stepping.
+      held = average; level = 0; baseline = null; slow = 0; fast = 0; changed = true;
+    } else {
+      slow = 0;
+    }
+  } else if (fast >= limits.fastFrames && level > 0) {
+    level -= 1; slow = 0; fast = 0; changed = true;
+    if (level === 0) baseline = null;
+  }
+  return { level, average, slow, fast, baseline, held, changed };
 }
 
 /** The glass snapshot is retaken once the camera has rested this long after travelling at least SNAPSHOT_TRAVEL chapters. */
