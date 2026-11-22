@@ -13,7 +13,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { AlertCircle, Check, ExternalLink, FileText, RefreshCw } from 'lucide-react';
 import ConfirmDialog from './ConfirmDialog';
 import ReportDialog from './ReportDialog';
-import { longDay, nyDate, nyParts, quarterOf, nextReportAt, shortDate } from './insightsTime';
+import { longDay, nyDate, quarterOf, nextReportAt, shortDate, stampOf } from './insightsTime';
 import { REPORT_MESSAGES, generateReport, listReports } from '../../../services/reportsService';
 import { reportsTableMissing } from '../../../services/reportsTableProbe';
 
@@ -26,14 +26,8 @@ export const LIST_FAILURE = {
 };
 const EMAIL_NOTE = { sent: 'saved below and emailed to you', failed: 'saved below, but the email did not send', skipped: 'saved below; no email was sent' };
 
-/** "1 Oct 2026, 9:00 AM" in New York time. */
-export function stampOf(iso) {
-  const ms = Date.parse(iso);
-  if (!Number.isFinite(ms)) return '';
-  const p = nyParts(ms);
-  const h = p.h % 12 || 12;
-  return `${shortDate(nyDate(ms))}, ${h}:${String(p.mi).padStart(2, '0')} ${p.h < 12 ? 'AM' : 'PM'}`;
-}
+// stampOf lives in insightsTime so the report dialog can use it without importing this panel.
+export { stampOf };
 
 /** The archive row's second line: quarter, how it was made, when, and a failed email. */
 export function reportLine(r) {
