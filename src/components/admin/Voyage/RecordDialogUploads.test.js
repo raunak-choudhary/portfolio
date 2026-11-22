@@ -125,6 +125,81 @@ describe('RecordDialog uploads', () => {
     view.unmount();
   });
 
+  // A file action writes its column at once and leaves the form clean, so the footer has to say
+  // the file was saved; "No changes yet" there made an uploaded file look lost.
+  const footer = () => document.querySelector('.record-dialog__status');
+  const saveButton = () => button(document.querySelector('[data-testid="record-dialog"]'), 'Save');
+
+  it('says the icon was saved in the footer after an upload on a saved skill', async () => {
+    records.uploadFieldFiles.mockResolvedValue({ urls: [`${STORE}icons/new.png`], failed: [] });
+    records.saveRecord.mockImplementation(async (_s, payload) => ({ ...skill, ...payload }));
+    const view = openEdit();
+    expect(footer().textContent).toBe('No changes yet');
+    choose(fieldFor('icon_url').querySelector('input[type="file"]'), [{ name: 'new.png', size: 10, type: 'image/png' }]);
+    await flush();
+    expect(footer().textContent).toBe('Icon saved');
+    expect(footer().getAttribute('aria-live')).toBe('polite');
+    // nothing is left to save: the upload already wrote the column
+    expect(saveButton().disabled).toBe(true);
+    view.unmount();
+  });
+
+  it('does not claim a failed upload was saved', async () => {
+    records.uploadFieldFiles.mockResolvedValue({ urls: [`${STORE}icons/new.png`], failed: [] });
+    records.saveRecord.mockRejectedValue(new Error('refused'));
+    const view = openEdit();
+    choose(fieldFor('icon_url').querySelector('input[type="file"]'), [{ name: 'new.png', size: 10, type: 'image/png' }]);
+    await flush();
+    expect(footer().textContent).not.toContain('saved');
+    expect(footer().textContent).toBe('No changes yet');
+    view.unmount();
+  });
+
+  it('drops the saved wording when a later upload is refused or fails', async () => {
+    records.uploadFieldFiles.mockResolvedValueOnce({ urls: [`${STORE}icons/new.png`], failed: [] }).mockRejectedValueOnce(new Error('network'));
+    records.saveRecord.mockImplementation(async (_s, payload) => ({ ...skill, ...payload }));
+    const view = openEdit();
+    const picker = () => fieldFor('icon_url').querySelector('input[type="file"]');
+    choose(picker(), [{ name: 'new.png', size: 10, type: 'image/png' }]);
+    await flush();
+    expect(footer().textContent).toBe('Icon saved');
+    choose(picker(), [{ name: 'huge.png', size: 500, type: 'image/png' }]);
+    await flush();
+    expect(footer().textContent).toBe('No changes yet');
+    choose(picker(), [{ name: 'again.png', size: 10, type: 'image/png' }]);
+    await flush();
+    expect(footer().textContent).toBe('No changes yet');
+    view.unmount();
+  });
+
+  it('shows Unsaved changes once a text field is edited after the upload', async () => {
+    records.uploadFieldFiles.mockResolvedValue({ urls: [`${STORE}icons/new.png`], failed: [] });
+    records.saveRecord.mockImplementation(async (_s, payload) => ({ ...skill, ...payload }));
+    const view = openEdit();
+    choose(fieldFor('icon_url').querySelector('input[type="file"]'), [{ name: 'new.png', size: 10, type: 'image/png' }]);
+    await flush();
+    expect(footer().textContent).toBe('Icon saved');
+    setInputValue(fieldFor('skill_name').querySelector('input'), 'Rust 2024');
+    expect(footer().textContent).toBe('Unsaved changes');
+    expect(saveButton().disabled).toBe(false);
+    view.unmount();
+  });
+
+  it('says the icon was removed after a removal, and the list was saved after a file leaves a list', async () => {
+    const withFile = { ...skill, certifications: ['AWS SAA', `${STORE}certifications/a.pdf`] };
+    let stored = withFile;
+    records.saveRecord.mockImplementation(async (_s, payload) => { stored = { ...stored, ...payload }; return stored; });
+    const view = openEdit(withFile);
+    click(button(fieldFor('icon_url'), 'Remove'));
+    await flush();
+    expect(footer().textContent).toBe('Icon removed');
+    click(button(fieldFor('certifications'), 'Remove a.pdf'));
+    await flush();
+    expect(records.saveRecord).toHaveBeenLastCalledWith(skillsSchema, { certifications: ['AWS SAA'] }, 7);
+    expect(footer().textContent).toBe('Certifications saved');
+    view.unmount();
+  });
+
   it('lets a typed web address be removed like any typed entry, also before the first save', () => {
     const view = mount(<RecordDialog schema={skillsSchema} record={null} open {...props} />);
     const box = fieldFor('certifications').querySelector('.chips__add input');
@@ -170,6 +245,23 @@ describe('RecordDialog in form-only mode', () => {
     expect(records.saveRecord).toHaveBeenCalledWith(heroSchema, { title: 'Hello again' }, 'h1');
     expect(props.onSaved).toHaveBeenCalled();
     expect(props.onClose).toHaveBeenCalled();
+    view.unmount();
+  });
+
+  it('says the resume was saved after an upload in the form-only hero dialog', async () => {
+    const STORED = 'https://x.supabase.co/storage/v1/object/public/resumes/resume.pdf';
+    records.fileProblems.mockImplementation((files) => ({ accepted: files, problems: [] }));
+    records.uploadFieldFiles.mockResolvedValue({ urls: [STORED], failed: [] });
+    records.removeStoredFiles.mockResolvedValue();
+    records.saveRecord.mockImplementation(async (_s, payload, id) => ({ ...hero, ...payload, id }));
+    const view = mount(<RecordDialog schema={heroSchema} record={hero} open editOnly {...props} />);
+    choose(fieldFor('resume_url').querySelector('input[type="file"]'), [{ name: 'resume.pdf', size: 10, type: 'application/pdf' }]);
+    await flush();
+    expect(records.saveRecord).toHaveBeenCalledWith(heroSchema, { resume_url: STORED }, 'h1');
+    const status = document.querySelector('.record-dialog__status');
+    expect(status.textContent).toBe('Resume saved');
+    expect(status.textContent).not.toBe('No changes yet');
+    expect(props.onClose).not.toHaveBeenCalled();
     view.unmount();
   });
 
