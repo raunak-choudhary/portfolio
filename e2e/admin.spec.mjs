@@ -759,7 +759,11 @@ test.describe('reports', () => {
       expect(deletes).toHaveLength(1);
       expect(deletes[0].method).toBe('DELETE');
       expect(new URLSearchParams(deletes[0].query).get('id')).toBe(`eq.${NEWER}`);
-      expect(errors).toEqual([]);
+      // The report body sits in an iframe with an empty sandbox, so nothing may run in it. Playwright
+      // still injects this suite's init scripts into every frame; the browser refuses them there and
+      // logs the refusal. Those two messages show the sandbox working and are the only ones allowed.
+      const sandboxRefusals = [/about:srcdoc.*sandboxed.*'allow-scripts'/, /'serviceWorker'.*context is sandboxed/];
+      expect(errors.filter((line) => !sandboxRefusals.some((known) => known.test(line)))).toEqual([]);
       await expectOffline(net);
     } finally {
       await context.close();
