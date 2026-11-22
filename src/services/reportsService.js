@@ -2,8 +2,8 @@
 //
 // The admin's side of the quarterly report: the archive (table
 // analytics_reports, readable only by an admin at aal2 through row level
-// security) and "Generate now", which calls the quarterly-report Edge
-// Function. supabase-js attaches the session's access token to the call; the
+// security), "Generate now", which calls the quarterly-report Edge
+// Function, and deleting one stored report. supabase-js attaches the session's access token to the call; the
 // function itself checks admin and aal2 again.
 //
 // Every failure comes back as { success: false, error: { code, message } }
@@ -24,6 +24,8 @@ export const REPORT_MESSAGES = {
   NOT_CONFIGURED: 'The report is not set up yet.',
   NETWORK: 'The report service could not be reached. Check the connection and try again.',
   LOAD_FAILED: 'The reports could not be loaded. Try again later.',
+  DELETE_FAILED: 'The report could not be deleted. Try again later.',
+  DELETE_NOT_ALLOWED: 'The report was kept: deleting reports is not set up in the database yet.',
   UNKNOWN: 'The report could not be made. Try again later.'
 };
 
@@ -88,5 +90,40 @@ export async function generateReport() {
     return { success: true, data: data.data };
   } catch {
     return failure('NETWORK');
+  }
+}
+
+/** Report ids are Postgres uuids; anything else is refused before a request is made. */
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** A refused delete: a missing grant (42501) or a 403 from the gateway. */
+const isPermissionError = (error) => {
+  const status = Number(error?.status ?? error?.statusCode ?? 0);
+  const text = `${error?.message ?? ''} ${error?.code ?? ''}`.toLowerCase();
+  return status === 403 || text.includes('42501') || text.includes('permission denied');
+};
+
+/**
+ * Deletes one stored report. On success `data` is { id } (in lower case).
+ *
+ * The delete asks for the deleted ids back. Row level security does not
+ * raise an error for rows a policy hides; it deletes nothing and answers
+ * 200 with an empty list. Without the returned ids, a database that has no
+ * delete policy yet (migration 20261122120000 not run) or a session below
+ * the second factor would look like a successful delete. Zero rows, or a
+ * refused grant, therefore come back as DELETE_NOT_ALLOWED.
+ * @param {string} id
+ */
+export async function deleteReport(id) {
+  if (typeof id !== 'string' || !UUID_PATTERN.test(id)) return failure('DELETE_FAILED');
+  // Postgres prints uuids in lower case, so the returned id is compared in that form.
+  const target = id.toLowerCase();
+  try {
+    const { data, error } = await supabase.from('analytics_reports').delete().eq('id', target).select('id');
+    if (error) return failure(isPermissionError(error) ? 'DELETE_NOT_ALLOWED' : 'DELETE_FAILED');
+    if (!Array.isArray(data) || !data.some((row) => String(row?.id ?? '').toLowerCase() === target)) return failure('DELETE_NOT_ALLOWED');
+    return { success: true, data: { id: target } };
+  } catch {
+    return failure('DELETE_FAILED');
   }
 }
