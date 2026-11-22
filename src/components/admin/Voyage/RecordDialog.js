@@ -137,6 +137,10 @@ export default function RecordDialog({ schema, record, open, onClose, onSaved, o
   const [busyField, setBusyField] = useState(null);           // the upload field mid-request
   const [focusTick, setFocusTick] = useState(0);
   const [fixResult, setFixResult] = useState(null);         // after a save in fix mode: { passes, state, before, after }
+  // The footer's word for a file action that has already been written ("Resume saved", "Icon removed").
+  // A file action saves its column at once and leaves the form clean, so without this the footer
+  // said "No changes yet" right after an upload. Cleared by the next edit, file action, save or view change.
+  const [fileNote, setFileNote] = useState(null);
   const panelRef = useRef(null), openerRef = useRef(null), recordRef = useRef(record);
   recordRef.current = record;
   // One request at a time (see the header). A ref, not state: two handlers fired in the
@@ -164,7 +168,7 @@ export default function RecordDialog({ schema, record, open, onClose, onSaved, o
     if (!open) return;
     const row = recordRef.current;
     setBase(row); setForm(buildForm(schema, row)); setMode(row?.id && !opensInForm ? 'read' : 'edit');
-    setTouched(new Set()); setSubmitted(false); setConfirm(null); setFailure(null); setConflict(false); setImageIssues([]); setUploadIssues({}); setFixResult(null);
+    setTouched(new Set()); setSubmitted(false); setConfirm(null); setFailure(null); setConflict(false); setImageIssues([]); setUploadIssues({}); setFixResult(null); setFileNote(null);
     lock.current = false; edited.current = new Set();
   }, [open, recordId, schema, opensInForm]);
 
@@ -178,7 +182,7 @@ export default function RecordDialog({ schema, record, open, onClose, onSaved, o
   }, [open, recordId, recordStamp]);
 
   const backToRead = useCallback(() => {
-    setForm(buildForm(schema, base)); setMode('read'); setTouched(new Set()); setSubmitted(false); setFailure(null); setConflict(false); setImageIssues([]); setUploadIssues({});
+    setForm(buildForm(schema, base)); setMode('read'); setTouched(new Set()); setSubmitted(false); setFailure(null); setConflict(false); setImageIssues([]); setUploadIssues({}); setFileNote(null);
     edited.current = new Set();
   }, [schema, base]);
 
@@ -272,7 +276,7 @@ export default function RecordDialog({ schema, record, open, onClose, onSaved, o
     (field?.querySelector('[aria-invalid="true"]') || field?.querySelector(FOCUSABLE))?.focus();
   }, [focusTick]);
 
-  const set = (key) => (value) => { edited.current.add(key); setForm((f) => applyChange(schema, f, key, value)); };
+  const set = (key) => (value) => { edited.current.add(key); setFileNote(null); setForm((f) => applyChange(schema, f, key, value)); };
   const leave = (key) => () => setTouched((t) => (t.has(key) ? t : new Set(t).add(key)));
 
   const fail = (err, action) => setFailure({ kind: failureKind(err), action, message: err?.message || '' });
@@ -317,7 +321,7 @@ export default function RecordDialog({ schema, record, open, onClose, onSaved, o
       }
       const row = await saveRecord(schema, payload, base?.id || null);
       setBase(row); setForm(buildForm(schema, row)); setMode(editOnly && !fix ? 'edit' : 'read'); setTouched(new Set()); setSubmitted(false);
-      edited.current = new Set();
+      edited.current = new Set(); setFileNote(null);
       onSaved(row, isNew);
       noteContentChanged();
       notify(isNew ? `${capital(schema.singular)} added.` : 'Saved.');
@@ -335,7 +339,7 @@ export default function RecordDialog({ schema, record, open, onClose, onSaved, o
     try {
       const row = await getRecord(schema, base.id);
       setBase(row); setForm(buildForm(schema, row)); setConflict(false); setMode(editOnly ? 'edit' : 'read'); setTouched(new Set()); setSubmitted(false);
-      edited.current = new Set();
+      edited.current = new Set(); setFileNote(null);
       onSaved(row, false);
       notify('Showing the latest saved version.');
     } catch (err) { fail(err, 'reload'); } finally { lock.current = false; setSaving(false); }
@@ -395,7 +399,7 @@ export default function RecordDialog({ schema, record, open, onClose, onSaved, o
     onUpload: async (files) => {
       if (lock.current) return;
       const { accepted, problems } = imageProblems(files, { existing: form[imageField.key].length, max: schema.images?.max || imageField.max || 10 });
-      setImageIssues(problems);
+      setImageIssues(problems); setFileNote(null);
       if (!accepted.length) return;
       lock.current = true;
       setBusyImages(true);
@@ -404,7 +408,7 @@ export default function RecordDialog({ schema, record, open, onClose, onSaved, o
         if (!(await stillCurrent())) { setImageIssues([...problems, CONFLICT_ISSUE]); return; }
         const { urls, failed } = await uploadImages(schema, base.id, accepted);
         unlisted = urls;
-        if (urls.length) { await persistImages((list) => [...list, ...urls], () => { unlisted = []; }); notify(urls.length === 1 ? 'Image added.' : `${urls.length} images added.`); }
+        if (urls.length) { await persistImages((list) => [...list, ...urls], () => { unlisted = []; }); notify(urls.length === 1 ? 'Image added.' : `${urls.length} images added.`); setFileNote(`${imageField.label || 'Images'} saved`); }
         setImageIssues([...problems, ...failed]);
       } catch (err) {
         // files the row did not take leave storage again instead of staying as orphans
@@ -415,10 +419,10 @@ export default function RecordDialog({ schema, record, open, onClose, onSaved, o
     onRemove: async (url) => {
       if (lock.current) return;
       lock.current = true;
-      setBusyImages(true); setImageIssues([]);
+      setBusyImages(true); setImageIssues([]); setFileNote(null);
       try {
         if (!(await stillCurrent())) { setImageIssues([CONFLICT_ISSUE]); return; }
-        await persistImages((list) => list.filter((u) => u !== url)); await removeImage(schema, url); notify('Image removed.');
+        await persistImages((list) => list.filter((u) => u !== url)); await removeImage(schema, url); notify('Image removed.'); setFileNote(`${imageField.label || 'Images'} saved`);
       } catch (err) { setImageIssues([{ name: null, message: `The image could not be removed. ${failureCopy(failureKind(err), 'save', err?.message).title}` }]); } finally { lock.current = false; setBusyImages(false); }
     },
   } : undefined;
@@ -445,6 +449,7 @@ export default function RecordDialog({ schema, record, open, onClose, onSaved, o
     const issues = uploadIssues[field.key] || [];
     const setIssues = (list) => setUploadIssues((m) => ({ ...m, [field.key]: list }));
     const many = field.kind === 'files';
+    const label = field.label || (field.kind === 'image' ? 'Image' : 'File');   // the footer's name for this field
     const failed = (what, err) => [{ name: null, message: `The ${what} could not be ${what === 'file' || what === 'image' ? 'changed' : 'updated'}. ${failureCopy(failureKind(err), 'save', err?.message).title}` }];
     return {
       singular: schema.singular, accept: rule.accept, busy: busyField === field.key, canUpload: !isNew && online, problems: issues,
@@ -456,7 +461,7 @@ export default function RecordDialog({ schema, record, open, onClose, onSaved, o
         if (lock.current) return;
         const current = form[field.key];
         const { accepted, problems } = fileProblems(files, rule, { existing: many ? current.length : 0 });
-        setIssues(problems);
+        setIssues(problems); setFileNote(null);
         if (!accepted.length) return;
         lock.current = true;
         setBusyField(field.key);
@@ -474,6 +479,7 @@ export default function RecordDialog({ schema, record, open, onClose, onSaved, o
               if (replaced && replaced !== urls[0] && rule.removeReplaced) await removeStoredFiles(rule.bucket, [replaced]);
             }
             notify(many ? (urls.length === 1 ? 'File added.' : `${urls.length} files added.`) : field.kind === 'image' ? 'Image saved.' : 'File saved.');
+            setFileNote(`${label} saved`);
           }
           setIssues([...problems, ...lost]);
         } catch (err) {
@@ -486,12 +492,14 @@ export default function RecordDialog({ schema, record, open, onClose, onSaved, o
       onRemove: async (url) => {
         if (lock.current) return;
         lock.current = true;
-        setBusyField(field.key); setIssues([]);
+        setBusyField(field.key); setIssues([]); setFileNote(null);
         try {
           if (!(await stillCurrent())) { setIssues([CONFLICT_ISSUE]); return; }
           await persistField(field.key, many, many ? (list) => list.filter((u) => u !== url) : () => null);
           if (rule.removeReplaced) await removeStoredFiles(rule.bucket, [url]);
           notify(field.kind === 'image' ? 'Image removed.' : 'File removed.');
+          // a list keeps its other files, so the list was saved; a single file is gone
+          setFileNote(many ? `${label} saved` : `${label} removed`);
         } catch (err) { setIssues(failed(field.kind === 'image' ? 'image' : 'file', err)); } finally { lock.current = false; setBusyField(null); }
       },
     };
@@ -504,7 +512,7 @@ export default function RecordDialog({ schema, record, open, onClose, onSaved, o
   const ownsFiles = Boolean(imageField) || cleanupTargets(schema, base || {}).length > 0;
   const copy = failure ? failureCopy(failure.kind, failure.action, failure.message) : null;
   const retry = failure?.action === 'delete' ? () => setConfirm('delete') : failure?.action === 'reload' ? reloadLatest : () => save();
-  const status = mode !== 'edit' ? '' : submitted && errorCount ? attentionText(errorCount) : saving ? 'Saving' : dirty ? 'Unsaved changes' : isNew ? '' : 'No changes yet';
+  const status = mode !== 'edit' ? '' : submitted && errorCount ? attentionText(errorCount) : saving ? 'Saving' : dirty ? 'Unsaved changes' : fileNote || (isNew ? '' : 'No changes yet');
 
   return createPortal(
     <div className="record-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) requestClose(); }}>
@@ -519,7 +527,7 @@ export default function RecordDialog({ schema, record, open, onClose, onSaved, o
         </header>
 
         <div className="record-dialog__banners">
-          {fix && <FixBanner fix={fix} result={fixResult} busy={busy} onSkip={() => (mode === 'edit' && dirty ? setConfirm('skip') : fix.onSkip())} onStop={() => (mode === 'edit' && dirty ? setConfirm('stop') : fix.onStop())} onEditAgain={() => { setFixResult(null); setMode('edit'); }}
+          {fix && <FixBanner fix={fix} result={fixResult} busy={busy} onSkip={() => (mode === 'edit' && dirty ? setConfirm('skip') : fix.onSkip())} onStop={() => (mode === 'edit' && dirty ? setConfirm('stop') : fix.onStop())} onEditAgain={() => { setFixResult(null); setFileNote(null); setMode('edit'); }}
             onNext={() => (mode === 'edit' && dirty ? setConfirm('next') : fix.onNext(fixResult?.passes ? fix.gain : 0))}
             onQueue={() => (mode === 'edit' && dirty ? setConfirm('queue') : fix.onQueue())} />}
           {!online && (
@@ -587,7 +595,7 @@ export default function RecordDialog({ schema, record, open, onClose, onSaved, o
                 {schema.mode === 'singleton' ? <span /> : <button type="button" className="voyage-bar__button voyage-bar__button--quiet" onClick={() => setConfirm('delete')} disabled={busy || !online}><Trash2 size={15} /><span>Delete</span></button>}
                 <div className="record-dialog__actions">
                   <button type="button" className="voyage-bar__button voyage-bar__button--plain" onClick={requestClose} disabled={busy}><span>Close</span></button>
-                  <button type="button" data-action="edit" className="voyage-bar__button voyage-bar__button--primary" onClick={() => { setFailure(null); setMode('edit'); }} disabled={busy}><Pencil size={14} /><span>Edit</span></button>
+                  <button type="button" data-action="edit" className="voyage-bar__button voyage-bar__button--primary" onClick={() => { setFailure(null); setFileNote(null); setMode('edit'); }} disabled={busy}><Pencil size={14} /><span>Edit</span></button>
                 </div>
               </>
             )
