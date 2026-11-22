@@ -15,7 +15,7 @@ import useModalFocus from './useModalFocus';
  * @param {string} [props.className] extra class on the panel (wider variants).
  * @param {React.ComponentType} [props.confirmIcon] an icon before the confirm label.
  * @param {boolean} [props.trapFocus] own the keyboard (standalone use).
- * @param {'confirm'|'cancel'} [props.initialFocus] which button takes focus on opening.
+ * @param {'confirm'|'cancel'} [props.initialFocus] which button takes focus on opening, in both modes.
  * @param {() => HTMLElement|null} [props.returnTo] where focus goes if the opener is gone.
  */
 export default function ConfirmDialog({ open, title, body, more, confirmLabel, tone = 'default', onConfirm, onCancel, className = '', confirmIcon: ConfirmIcon, trapFocus = false, initialFocus = 'confirm', returnTo, busy = false }) {
@@ -23,7 +23,7 @@ export default function ConfirmDialog({ open, title, body, more, confirmLabel, t
   const pick = () => (initialFocus === 'cancel' ? cancelRef.current : confirmRef.current);
   // Standalone: the full modal contract. Inside the record dialog only the first focus, as before.
   useModalFocus(open && trapFocus, panelRef, { onEscape: () => { if (!busy) onCancel(); }, initialFocus: pick, returnTo, lockScroll: false });
-  useEffect(() => { if (open && !trapFocus) confirmRef.current?.focus(); }, [open, trapFocus]);
+  useEffect(() => { if (open && !trapFocus) pick()?.focus(); }, [open, trapFocus]);   // eslint-disable-line react-hooks/exhaustive-deps
   if (!open) return null;
   return (
     <div className="dialog-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget && !busy) onCancel(); }}>
