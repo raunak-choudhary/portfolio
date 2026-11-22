@@ -39,7 +39,7 @@ export const heroSchema = Object.freeze({
     { key: 'highlights', label: 'Key highlights', kind: 'tags', max: 6, itemMax: 100, editable: true, help: 'Each line can be edited in place.' },
     { key: 'cta_text', label: 'Button text', kind: 'text', max: 50, placeholder: 'e.g. Explore my work' },
     { key: 'cta_link', label: 'Button link', kind: 'link', max: 500, placeholder: 'https://, /projects or #section', help: 'A web address, a page path or an anchor on the page.' },
-    { key: 'resume_url', label: 'Resume', kind: 'file', upload: resumeUpload, help: 'PDF, up to 5 MB. Shown as the Resume button on the home screen and in the menu; a new upload replaces the old file.' },
+    { key: 'resume_url', label: 'Resume', kind: 'file', upload: resumeUpload, help: 'PDF, up to 5 MB. Shown as the Resume button on the home screen; a new upload replaces the old file.' },
     { key: 'is_active', label: 'Show the hero to visitors', kind: 'toggle', default: true },
   ],
   groups: [
