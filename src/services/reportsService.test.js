@@ -1,8 +1,8 @@
-// Unit tests for the reports service: the archive read and "Generate now",
-// and the mapping of every failure to a fixed sentence. Supabase is faked;
+// Unit tests for the reports service: the archive read, "Generate now",
+// deleting a report, and the mapping of every failure to a fixed sentence. Supabase is faked;
 // no request leaves the test.
 
-import { REPORT_FUNCTION, REPORT_MESSAGES, generateReport, listReports } from './reportsService';
+import { REPORT_FUNCTION, REPORT_MESSAGES, deleteReport, generateReport, listReports } from './reportsService';
 import { supabase } from './supabaseClient';
 
 jest.mock('./supabaseClient', () => ({
@@ -98,6 +98,78 @@ describe('generateReport', () => {
     supabase.functions.invoke.mockResolvedValue({ data: null, error: httpError(500, { code: 'x', error: 'secret detail' }) });
     const result = await generateReport();
     expect(result.error.message).not.toContain('secret detail');
+  });
+});
+
+describe('deleteReport', () => {
+  const ID = '3f2b8c1e-9a4d-4e6f-8b7a-1c2d3e4f5a6b';
+
+  /** A builder for delete().eq().select() whose select() resolves to the given result. */
+  const deletion = (result) => {
+    const builder = { delete: jest.fn(() => builder), eq: jest.fn(() => builder), select: jest.fn(() => Promise.resolve(result)) };
+    return builder;
+  };
+
+  it.each([undefined, null, 42, '', 'r1', `${ID} or 1=1`, `${ID}x`])('refuses the id %p without calling Supabase', async (id) => {
+    await expect(deleteReport(id)).resolves.toEqual({ success: false, error: { code: 'DELETE_FAILED', message: REPORT_MESSAGES.DELETE_FAILED } });
+    expect(supabase.from).not.toHaveBeenCalled();
+  });
+
+  it('deletes the one row and asks for its id back', async () => {
+    const builder = deletion({ data: [{ id: ID }], error: null });
+    supabase.from.mockReturnValue(builder);
+
+    await expect(deleteReport(ID)).resolves.toEqual({ success: true, data: { id: ID } });
+    expect(supabase.from).toHaveBeenCalledWith('analytics_reports');
+    expect(builder.delete).toHaveBeenCalledTimes(1);
+    expect(builder.eq).toHaveBeenCalledWith('id', ID);
+    expect(builder.select).toHaveBeenCalledWith('id');
+  });
+
+  it('accepts an id in upper case and matches the lower-case id Postgres returns', async () => {
+    const builder = deletion({ data: [{ id: ID }], error: null });
+    supabase.from.mockReturnValue(builder);
+    await expect(deleteReport(ID.toUpperCase())).resolves.toEqual({ success: true, data: { id: ID } });
+    expect(builder.eq).toHaveBeenCalledWith('id', ID);
+  });
+
+  it('does not count a different row coming back as this delete', async () => {
+    supabase.from.mockReturnValue(deletion({ data: [{ id: '00000000-0000-4000-8000-000000000000' }], error: null }));
+    const result = await deleteReport(ID);
+    expect(result.error.code).toBe('DELETE_NOT_ALLOWED');
+  });
+
+  it.each([[[]], [null]])('treats %p rows back (row level security filtered the delete) as not set up', async (data) => {
+    supabase.from.mockReturnValue(deletion({ data, error: null }));
+    await expect(deleteReport(ID)).resolves.toEqual({ success: false, error: { code: 'DELETE_NOT_ALLOWED', message: REPORT_MESSAGES.DELETE_NOT_ALLOWED } });
+  });
+
+  it.each([
+    [{ code: '42501', message: 'permission denied for table analytics_reports' }],
+    [{ status: 403, message: 'Forbidden' }]
+  ])('words a refused grant %p as not set up', async (error) => {
+    supabase.from.mockReturnValue(deletion({ data: null, error }));
+    const result = await deleteReport(ID);
+    expect(result).toEqual({ success: false, error: { code: 'DELETE_NOT_ALLOWED', message: REPORT_MESSAGES.DELETE_NOT_ALLOWED } });
+  });
+
+  it('gives the fixed sentence for any other returned error, never the server text', async () => {
+    supabase.from.mockReturnValue(deletion({ data: null, error: { code: 'XX000', message: 'secret detail' } }));
+    const result = await deleteReport(ID);
+    expect(result).toEqual({ success: false, error: { code: 'DELETE_FAILED', message: REPORT_MESSAGES.DELETE_FAILED } });
+    expect(JSON.stringify(result)).not.toContain('secret detail');
+  });
+
+  it('gives the fixed sentence when the call throws', async () => {
+    supabase.from.mockImplementation(() => { throw new Error('offline'); });
+    await expect(deleteReport(ID)).resolves.toEqual({ success: false, error: { code: 'DELETE_FAILED', message: REPORT_MESSAGES.DELETE_FAILED } });
+  });
+
+  it('gives the fixed sentence when the request rejects', async () => {
+    const builder = deletion(null);
+    builder.select.mockImplementation(() => Promise.reject(new Error('offline')));
+    supabase.from.mockReturnValue(builder);
+    await expect(deleteReport(ID)).resolves.toEqual({ success: false, error: { code: 'DELETE_FAILED', message: REPORT_MESSAGES.DELETE_FAILED } });
   });
 });
 
