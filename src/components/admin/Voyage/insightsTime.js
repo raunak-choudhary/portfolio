@@ -166,6 +166,15 @@ export function nextReportAt(now) {
   return null;   // unreachable: the next quarter's start is always later than now
 }
 
+/** "1 Oct 2026, 9:00 AM" in New York time; '' for a value that is not a date. Shared by the report archive and the report dialog. */
+export function stampOf(iso) {
+  const ms = Date.parse(iso);
+  if (!Number.isFinite(ms)) return '';
+  const p = nyParts(ms);
+  const h = p.h % 12 || 12;
+  return `${shortDate(nyDate(ms))}, ${h}:${String(p.mi).padStart(2, '0')} ${p.h < 12 ? 'AM' : 'PM'}`;
+}
+
 /**
  * An instant from the database in ms. PostgREST may return a timestamp
  * without a zone; the column is stored in UTC, so a missing zone means UTC
