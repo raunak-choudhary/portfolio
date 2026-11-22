@@ -713,6 +713,60 @@ test.describe('inbox', () => {
   });
 });
 
+test.describe('reports', () => {
+  // Two stored reports, newest first in the archive. The ids are uuids because the service refuses anything else.
+  const stored = (id, label, quarter, created) => ({
+    id, period_label: label, quarter, period_start: '2026-07-01', period_end: '2026-09-30', partial: false, trigger: 'schedule',
+    email_status: 'sent', created_at: created, summary: {}, body_html: `<!doctype html><p>${label} body</p>`, body_text: `${label} body`,
+  });
+  const NEWER = '7d0f5b1e-3c2a-4e8f-9b6d-2a1c3e5f7a90';
+  const reports = [
+    stored(NEWER, 'TEST- July to September 2026', 'Q3 2026', '2026-10-01T13:00:05Z'),
+    stored('1b2c3d4e-5f60-4718-8a9b-0c1d2e3f4a5b', 'TEST- April to June 2026', 'Q2 2026', '2026-07-01T13:00:04Z'),
+  ];
+
+  test('Delete asks first, sends one delete, and the archive drops the row without a reload', async ({ browser }) => {
+    const { page, context, net, errors } = await openAdmin(browser, { tables: { analytics_reports: reports } });
+    try {
+      await waitForDashboard(page);
+      await goToChapter(page, 'analytics');
+      const chapter = page.getByTestId('analytics-chapter');
+      await chapter.getByRole('tab', { name: 'Reports' }).click();
+      const archive = chapter.locator('.ins-reports li');
+      await expect(archive).toHaveCount(2);
+
+      await chapter.getByRole('button', { name: 'Open the report for TEST- July to September 2026' }).click();
+      const dialog = page.getByTestId('report-dialog');
+      await dialog.getByRole('button', { name: 'Delete', exact: true }).click();
+      const confirm = page.getByRole('alertdialog');
+      await expect(confirm).toContainText('The report for TEST- July to September 2026, made 1 Oct 2026, 9:00 AM');
+      await expect(confirm.getByRole('button', { name: 'Cancel' })).toBeFocused();
+
+      // Escape backs out of the confirmation only.
+      await page.keyboard.press('Escape');
+      await expect(confirm).toHaveCount(0);
+      await expect(dialog).toBeVisible();
+      expect(writesTo(net, 'analytics_reports'), 'nothing deleted yet').toEqual([]);
+
+      await dialog.getByRole('button', { name: 'Delete', exact: true }).click();
+      await page.getByRole('alertdialog').getByRole('button', { name: 'Delete', exact: true }).click();
+      await expect(dialog).toHaveCount(0);
+      await expect(archive).toHaveCount(1);
+      await expect(archive.first()).toContainText('TEST- April to June 2026');
+      await expect(page.locator('#ins-archive-h')).toBeFocused();
+
+      const deletes = writesTo(net, 'analytics_reports');
+      expect(deletes).toHaveLength(1);
+      expect(deletes[0].method).toBe('DELETE');
+      expect(new URLSearchParams(deletes[0].query).get('id')).toBe(`eq.${NEWER}`);
+      expect(errors).toEqual([]);
+      await expectOffline(net);
+    } finally {
+      await context.close();
+    }
+  });
+});
+
 test.describe('security', () => {
   test('the chapter loads its overview from the fixtures', async ({ browser }) => {
     const { page, context, net, errors } = await openAdmin(browser);
