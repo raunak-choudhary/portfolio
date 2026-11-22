@@ -3,14 +3,15 @@
 // The services are mocked; no request leaves the test.
 
 import ReportsPanel, { LIST_FAILURE, reportLine, stampOf } from './ReportsPanel';
-import { generateReport, listReports } from '../../../services/reportsService';
+import { deleteReport, generateReport, listReports } from '../../../services/reportsService';
 import { reportsTableMissing } from '../../../services/reportsTableProbe';
 import { React, act, click, mount } from '../SkyBackground/testUtils';
 
 jest.mock('../../../services/reportsService', () => ({
-  REPORT_MESSAGES: { UNKNOWN: 'The report could not be made. Try again later.' },
+  REPORT_MESSAGES: { UNKNOWN: 'The report could not be made. Try again later.', DELETE_FAILED: 'The report could not be deleted. Try again later.' },
   listReports: jest.fn(),
   generateReport: jest.fn(),
+  deleteReport: jest.fn(),
 }));
 jest.mock('../../../services/reportsTableProbe', () => ({ reportsTableMissing: jest.fn() }));
 
@@ -171,5 +172,154 @@ describe('Generate now', () => {
     expect(text()).toContain('Not set up yet');
     expect(document.querySelector('.ins-status').textContent).toBe('The report is not set up yet.');
     expect(button('Generate now').disabled).toBe(true);
+  });
+});
+
+describe('Delete a report', () => {
+  const NOT_ALLOWED = 'The report was kept: deleting reports is not set up in the database yet.';
+  const older = () => report({ id: 'r0', period_label: 'April to June 2026', quarter: 'Q2 2026', created_at: '2026-07-01T13:00:04Z' });
+  const escape = () => act(() => { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); });
+  const dialog = () => document.querySelector('[role="dialog"]');
+  const confirmBox = () => document.querySelector('[role="alertdialog"]');
+
+  /** Opens the July to September report from its row and asks to delete it. */
+  const askToDelete = async () => {
+    listReports.mockResolvedValue({ success: true, data: [report(), older()] });
+    await renderPanel();
+    const open = button('Open the report for July to September 2026');
+    open.focus();   // a real click focuses the button it lands on
+    click(open);
+    click(button('Delete', dialog()));
+    return confirmBox();
+  };
+
+  it('asks first, naming the report and when it was made, with Cancel focused', async () => {
+    const confirm = await askToDelete();
+    expect(confirm.querySelector('#dialog-title').textContent).toBe('Delete this report?');
+    expect(confirm.textContent).toContain('The report for July to September 2026, made 1 Oct 2026, 9:00 AM, is removed from the archive for good.');
+    expect(document.activeElement).toBe(button('Cancel', confirm));
+    expect(dialog().contains(confirm)).toBe(true);
+    expect(deleteReport).not.toHaveBeenCalled();
+  });
+
+  it('names a partial report as partial', async () => {
+    listReports.mockResolvedValue({ success: true, data: [report({ partial: true, trigger: 'manual' })] });
+    await renderPanel();
+    click(button('Open the latest report'));
+    click(button('Delete', dialog()));
+    expect(confirmBox().textContent).toContain('The report for July to September 2026 (partial), made');
+  });
+
+  it('Cancel deletes nothing, keeps the report open and puts focus back on Delete', async () => {
+    const confirm = await askToDelete();
+    click(button('Cancel', confirm));
+    expect(confirmBox()).toBeNull();
+    expect(dialog()).not.toBeNull();
+    expect(document.activeElement).toBe(button('Delete', dialog()));
+    expect(deleteReport).not.toHaveBeenCalled();
+  });
+
+  it('Escape closes only the confirmation, and a second Escape closes the report', async () => {
+    await askToDelete();
+    escape();
+    expect(confirmBox()).toBeNull();
+    expect(dialog()).not.toBeNull();
+    expect(document.activeElement).toBe(button('Delete', dialog()));
+    escape();
+    expect(dialog()).toBeNull();
+    expect(deleteReport).not.toHaveBeenCalled();
+  });
+
+  it('keeps Tab inside the confirmation while it is open', async () => {
+    const confirm = await askToDelete();
+    const del = button('Delete', confirm);
+    del.focus();
+    act(() => { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true })); });
+    expect(document.activeElement).toBe(button('Cancel', confirm));
+  });
+
+  it('deletes once, closes the dialog, refreshes the list and moves focus to the archive heading', async () => {
+    const confirm = await askToDelete();
+    deleteReport.mockResolvedValue({ success: true, data: { id: 'r1' } });
+    listReports.mockResolvedValue({ success: true, data: [older()] });
+    click(button('Delete', confirm));
+    await flush();
+    expect(deleteReport).toHaveBeenCalledTimes(1);
+    expect(deleteReport).toHaveBeenCalledWith('r1');
+    expect(dialog()).toBeNull();
+    expect(listReports).toHaveBeenCalledTimes(2);
+    const rows = [...view.container.querySelectorAll('.ins-reports li')];
+    expect(rows).toHaveLength(1);
+    expect(rows[0].textContent).toContain('April to June 2026');
+    expect(notify).toHaveBeenCalledWith('Report for July to September 2026 deleted.');
+    expect(document.activeElement).toBe(document.getElementById('ins-archive-h'));
+  });
+
+  it('returns focus to "Open the latest report" when that opened the dialog and is still there', async () => {
+    listReports.mockResolvedValue({ success: true, data: [report(), older()] });
+    await renderPanel();
+    const latest = button('Open the latest report');
+    latest.focus();
+    click(latest);
+    click(button('Delete', dialog()));
+    deleteReport.mockResolvedValue({ success: true, data: { id: 'r1' } });
+    listReports.mockResolvedValue({ success: true, data: [older()] });
+    click(button('Delete', confirmBox()));
+    await flush();
+    expect(dialog()).toBeNull();
+    expect(document.activeElement).toBe(button('Open the latest report'));
+  });
+
+  it('shows the busy state while the delete runs and ignores Escape and a second click', async () => {
+    let finish;
+    deleteReport.mockReturnValue(new Promise((resolve) => { finish = resolve; }));
+    const confirm = await askToDelete();
+    click(button('Delete', confirm));
+    const busy = button('Deleting', confirmBox());
+    expect(busy.disabled).toBe(true);
+    expect(button('Cancel', confirmBox()).disabled).toBe(true);
+    expect(button('Close', dialog()).disabled).toBe(true);
+    escape();
+    expect(confirmBox()).not.toBeNull();
+    click(busy);
+    expect(deleteReport).toHaveBeenCalledTimes(1);
+    await act(async () => { finish({ success: false, error: { code: 'DELETE_FAILED', message: 'The report could not be deleted. Try again later.' } }); });
+    await flush();
+  });
+
+  it('on failure keeps the report open with a banner in the service sentence and focus on Delete', async () => {
+    const confirm = await askToDelete();
+    deleteReport.mockResolvedValue({ success: false, error: { code: 'DELETE_NOT_ALLOWED', message: NOT_ALLOWED } });
+    click(button('Delete', confirm));
+    await flush();
+    expect(confirmBox()).toBeNull();
+    expect(dialog()).not.toBeNull();
+    const banner = dialog().querySelector('.record-banner--bad[role="alert"]');
+    expect(banner.textContent).toContain(NOT_ALLOWED);
+    expect(document.activeElement).toBe(button('Delete', dialog()));
+    expect(listReports).toHaveBeenCalledTimes(1);
+    expect(notify).not.toHaveBeenCalled();
+    expect(view.container.querySelectorAll('.ins-reports li')).toHaveLength(2);
+  });
+
+  it('falls back to the fixed sentence when a failure carries no message, and Dismiss clears the banner', async () => {
+    const confirm = await askToDelete();
+    deleteReport.mockResolvedValue({ success: false, error: { code: 'DELETE_FAILED' } });
+    click(button('Delete', confirm));
+    await flush();
+    expect(dialog().querySelector('[role="alert"]').textContent).toContain('The report could not be deleted. Try again later.');
+    click(button('Dismiss', dialog()));
+    expect(dialog().querySelector('[role="alert"]')).toBeNull();
+    expect(document.activeElement).toBe(button('Delete', dialog()));
+  });
+
+  it('opens the next report without the last one\'s banner', async () => {
+    const confirm = await askToDelete();
+    deleteReport.mockResolvedValue({ success: false, error: { code: 'DELETE_FAILED', message: 'The report could not be deleted. Try again later.' } });
+    click(button('Delete', confirm));
+    await flush();
+    escape();
+    click(button('Open the report for April to June 2026'));
+    expect(dialog().querySelector('[role="alert"]')).toBeNull();
   });
 });

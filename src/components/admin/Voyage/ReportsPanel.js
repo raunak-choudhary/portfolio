@@ -8,6 +8,9 @@
 // Until the table exists the archive says so and Generate now stays off: a
 // LOAD_FAILED from the archive read is followed by one narrow probe, and only
 // a server answer of "no such table" counts as not set up.
+// A report is deleted from its dialog (ReportDialog); the panel then drops
+// the row at once and reads the archive again, so the list shows the
+// server's truth without a page reload.
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { AlertCircle, Check, ExternalLink, FileText, RefreshCw } from 'lucide-react';
@@ -84,6 +87,16 @@ export default function ReportsPanel({ now, notify }) {
     setBusy(false);
   };
 
+  // The server confirmed the delete: close the dialog, drop the row now, then re-read the archive.
+  const deleted = (r) => {
+    setViewing(null);
+    setList((l) => ({ ...l, reports: l.reports.filter((x) => x.id !== r.id) }));
+    notify?.(`Report for ${r.period_label}${r.partial ? ' (partial)' : ''} deleted.`);
+    load();
+  };
+  // the deleted row's Open button is gone, so focus lands on the archive heading instead
+  const archiveHeading = () => document.getElementById('ins-archive-h');
+
   const latest = list.reports[0] || null;
   const canGenerate = list.status === 'ready' && !list.missing && !busy;
 
@@ -113,7 +126,7 @@ export default function ReportsPanel({ now, notify }) {
       </section>
 
       <section className="voyage-pane orion-pane" aria-labelledby="ins-archive-h">
-        <div className="orion-pane__head"><h3 id="ins-archive-h">Archive</h3></div>
+        <div className="orion-pane__head"><h3 id="ins-archive-h" tabIndex={-1}>Archive</h3></div>
         {list.status === 'loading' && <div className="ins-skel-list" role="status" aria-label="Loading the archive">{[0, 1, 2].map((i) => <div key={i} className="orion-skel" />)}</div>}
         {list.status === 'error' && (
           <div className="deck__error" role="alert">
@@ -160,7 +173,7 @@ export default function ReportsPanel({ now, notify }) {
         onConfirm={generate}
         onCancel={() => setConfirming(false)}
       />
-      <ReportDialog report={viewing} onClose={() => setViewing(null)} />
+      <ReportDialog report={viewing} onClose={() => setViewing(null)} onDeleted={deleted} returnTo={archiveHeading} />
     </div>
   );
 }
