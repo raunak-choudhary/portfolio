@@ -13,6 +13,9 @@
 //   inline-script      executable inline <script> in index.html (blocked by
 //                      the Content Security Policy once script-src is 'self')
 //   analytics-flag     production build did not compile analytics as enabled
+//   source-map         a .map file, or a script or stylesheet that points at one
+//                      or carries one inline; a source map hands out the
+//                      original source with its file names and comments
 
 const JWT_PATTERN = /eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/g;
 const SECRET_KEY_PATTERN = /sb_secret_[A-Za-z0-9_-]{8,}/g;
@@ -63,6 +66,25 @@ export function findInlineScripts(html) {
   return scripts;
 }
 
+/** A sourceMappingURL comment as bundlers write it: a line or block comment that opens with a hash. */
+const SOURCE_MAP_COMMENT = /\/[/*]# sourceMappingURL=(\S+)/;
+
+/**
+ * Finds source maps in a build: map files by name, and scripts or stylesheets
+ * that link to a map or embed one as a data URL.
+ * @param {string[]} files every file in the build, relative to its root.
+ * @param {{ name: string, text: string }[]} sources scripts and stylesheets.
+ * @returns {{ file: string, detail: string }[]}
+ */
+export function findSourceMaps(files, sources) {
+  const found = files.filter((name) => name.endsWith('.map')).map((file) => ({ file, detail: 'source map file' }));
+  for (const { name, text } of sources) {
+    const target = SOURCE_MAP_COMMENT.exec(text)?.[1];
+    if (target) found.push({ file: name, detail: target.startsWith('data:') ? 'inline source map' : `links to ${target.replace(/\*\/$/, '')}` });
+  }
+  return found;
+}
+
 /** Reads the analytics value stamped into index.html by public/index.html. */
 export function readAnalyticsStamp(html) {
   return /<meta\s+name="portfolio-analytics"\s+content="([^"]*)"/i.exec(String(html))?.[1] ?? null;
@@ -71,12 +93,13 @@ export function readAnalyticsStamp(html) {
 /**
  * Scans a build.
  *
- * @param {{ html: string, scripts: { name: string, text: string }[] }} build
- *   index.html contents and every JavaScript file in the build.
- * @param {{ rejectAnyJwt?: boolean, rejectInlineScripts?: boolean, requireAnalytics?: boolean }} [policy]
+ * @param {{ html: string, scripts: { name: string, text: string }[], styles?: { name: string, text: string }[], files?: string[] }} build
+ *   index.html contents, every JavaScript file in the build and, for the
+ *   source map check, every stylesheet and the name of every file.
+ * @param {{ rejectAnyJwt?: boolean, rejectInlineScripts?: boolean, requireAnalytics?: boolean, rejectSourceMaps?: boolean }} [policy]
  * @returns {{ check: string, file: string, detail: string }[]} problems found.
  */
-export function scanBuild({ html, scripts }, policy = {}) {
+export function scanBuild({ html, scripts, styles = [], files = [] }, policy = {}) {
   const problems = [];
 
   for (const { name, text } of scripts) {
@@ -105,6 +128,12 @@ export function scanBuild({ html, scripts }, policy = {}) {
   if (policy.rejectInlineScripts) {
     for (const snippet of findInlineScripts(html)) {
       problems.push({ check: 'inline-script', file: 'index.html', detail: snippet });
+    }
+  }
+
+  if (policy.rejectSourceMaps) {
+    for (const { file, detail } of findSourceMaps(files, [...scripts, ...styles])) {
+      problems.push({ check: 'source-map', file, detail });
     }
   }
 
