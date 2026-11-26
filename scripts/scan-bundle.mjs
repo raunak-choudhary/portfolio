@@ -7,8 +7,9 @@
 // Usage:
 //   node scripts/scan-bundle.mjs [--root build] [--production] [--reject-any-jwt] [--reject-inline-scripts]
 //
-//   --production             also require analytics compiled as enabled; run on
-//                            the exact folder about to be uploaded
+//   --production             also require analytics compiled as enabled and no
+//                            source maps anywhere in the folder; run on the
+//                            exact folder about to be uploaded
 //   --reject-any-jwt         after the key cutover: no JWT keys at all
 //   --reject-inline-scripts  once the security policy forbids inline scripts
 
@@ -16,25 +17,30 @@ import { readFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
 import { scanBuild } from './lib/bundle-scan.mjs';
 
-async function listJavaScript(directory) {
+/** Every file under the directory, as a path. */
+async function listFiles(directory) {
   const entries = await readdir(directory, { withFileTypes: true, recursive: true });
   return entries
-    .filter((entry) => entry.isFile() && entry.name.endsWith('.js'))
+    .filter((entry) => entry.isFile())
     .map((entry) => path.join(entry.parentPath ?? entry.path, entry.name));
 }
+
+const readAll = (root, files) =>
+  Promise.all(files.map(async (file) => ({ name: path.relative(root, file), text: await readFile(file, 'utf8') })));
 
 async function main(argv) {
   const rootIndex = argv.indexOf('--root');
   const root = rootIndex >= 0 ? argv[rootIndex + 1] : 'build';
 
   const html = await readFile(path.join(root, 'index.html'), 'utf8');
-  const files = await listJavaScript(root);
-  const scripts = await Promise.all(
-    files.map(async (file) => ({ name: path.relative(root, file), text: await readFile(file, 'utf8') })),
-  );
+  const all = await listFiles(root);
+  const scripts = await readAll(root, all.filter((file) => file.endsWith('.js')));
+  const styles = await readAll(root, all.filter((file) => file.endsWith('.css')));
+  const files = all.map((file) => path.relative(root, file));
 
-  const problems = scanBuild({ html, scripts }, {
+  const problems = scanBuild({ html, scripts, styles, files }, {
     requireAnalytics: argv.includes('--production'),
+    rejectSourceMaps: argv.includes('--production'),
     rejectAnyJwt: argv.includes('--reject-any-jwt'),
     rejectInlineScripts: argv.includes('--reject-inline-scripts'),
   });

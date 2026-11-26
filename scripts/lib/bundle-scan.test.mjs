@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { FORBIDDEN_STRINGS, decodeJwtPayload, findInlineScripts, readAnalyticsStamp, scanBuild } from './bundle-scan.mjs';
+import { FORBIDDEN_STRINGS, decodeJwtPayload, findInlineScripts, findSourceMaps, readAnalyticsStamp, scanBuild } from './bundle-scan.mjs';
 
 /** Builds an unsigned JWT-shaped token with the given claims (signature is filler). */
 const jwt = (claims) =>
@@ -74,6 +74,44 @@ describe('scanBuild', () => {
     assert.deepEqual(checks(scanBuild({ html: off, scripts: [] }, { requireAnalytics: true })), ['analytics-flag']);
     const missing = '<html></html>';
     assert.match(scanBuild({ html: missing, scripts: [] }, { requireAnalytics: true })[0].detail, /null/);
+  });
+});
+
+describe('source maps', () => {
+  const clean = { html: HTML, scripts: [{ name: 'static/js/main.js', text: 'var a=1;' }], styles: [{ name: 'static/css/main.css', text: 'a{color:red}' }], files: ['index.html', 'static/js/main.js', 'static/css/main.css', 'admin/sky/deep/manifest.json'] };
+
+  it('passes a build with no map files and no map comments', () => {
+    assert.deepEqual(scanBuild(clean, { rejectSourceMaps: true }), []);
+  });
+
+  it('fails on a map file anywhere in the folder and names it', () => {
+    const problems = scanBuild({ ...clean, files: [...clean.files, 'static/js/main.js.map', 'static/css/main.css.map'] }, { rejectSourceMaps: true });
+    assert.deepEqual(problems, [
+      { check: 'source-map', file: 'static/js/main.js.map', detail: 'source map file' },
+      { check: 'source-map', file: 'static/css/main.css.map', detail: 'source map file' },
+    ]);
+  });
+
+  it('fails on a script or stylesheet that links to a map, even when the map file is absent', () => {
+    const scripts = [{ name: 'static/js/main.js', text: 'var a=1;\n//# sourceMappingURL=main.js.map' }];
+    const styles = [{ name: 'static/css/main.css', text: 'a{color:red}\n/*# sourceMappingURL=main.css.map*/' }];
+    assert.deepEqual(scanBuild({ ...clean, scripts, styles }, { rejectSourceMaps: true }), [
+      { check: 'source-map', file: 'static/js/main.js', detail: 'links to main.js.map' },
+      { check: 'source-map', file: 'static/css/main.css', detail: 'links to main.css.map' },
+    ]);
+  });
+
+  it('fails on a map embedded as a data URL', () => {
+    const scripts = [{ name: 'static/js/main.js', text: 'var a=1;\n//# sourceMappingURL=data:application/json;base64,e30=' }];
+    assert.deepEqual(findSourceMaps([], scripts), [{ file: 'static/js/main.js', detail: 'inline source map' }]);
+  });
+
+  it('does not mistake other files or plain text for a map', () => {
+    assert.deepEqual(findSourceMaps(['sitemap.xml', 'static/media/map.png', 'roadmap.json'], [{ name: 'a.js', text: 'var note="sourceMappingURL is a comment bundlers add";' }]), []);
+  });
+
+  it('stays quiet unless the policy asks, so local and test builds can keep their maps', () => {
+    assert.deepEqual(scanBuild({ ...clean, files: ['static/js/main.js.map'] }), []);
   });
 });
 
