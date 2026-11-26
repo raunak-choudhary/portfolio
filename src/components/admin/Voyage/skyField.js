@@ -75,11 +75,12 @@ const DEEP_FRAGMENT = `
  * @param {{stars: number, pixelRatio: number, fly: boolean, frameInterval?: number}} input.quality from qualityFor.
  * @param {'dark'|'light'} input.theme
  * @param {boolean} [input.smallTextures] use the 512 px photographs and the 1024 px Moon maps.
+ * @param {boolean} [input.drawings] show the atlas drawings behind the star patterns (the Sky menu's switch).
  * @param {Date} [input.date] the moment the Earth scene is set for.
  * @param {() => void} [input.onPictureChange] called when the picture changed outside the frame loop
  *   (a texture landed, or the GPU context came back), so the page can retake its glass snapshot.
  */
-export function createSkyField({ canvas, figures, deepManifest, assetBase, quality, theme, smallTextures = false, date = new Date(), onPictureChange = () => {} }) {
+export function createSkyField({ canvas, figures, deepManifest, assetBase, quality, theme, smallTextures = false, drawings = true, date = new Date(), onPictureChange = () => {} }) {
   // No preserveDrawingBuffer: keeping the frame costs a copy on every swap. snapshot() reads
   // the canvas in the same task as its render, which works without it, and so do screenshots.
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance' });
@@ -89,7 +90,7 @@ export function createSkyField({ canvas, figures, deepManifest, assetBase, quali
   let dirty = true;   // set when something outside the frame loop changed the picture (a texture, the size, the theme)
   const loadTexture = createTextureLoader(renderer, () => { dirty = true; onPictureChange(); });
   const byId = Object.fromEntries(figures.map((f) => [f.id, f]));
-  let palette = paletteForTheme(theme), fly = quality.fly;
+  let palette = paletteForTheme(theme), fly = quality.fly, showDrawings = drawings !== false;
   const disposables = [];
 
   // ---- star field ----
@@ -155,7 +156,7 @@ export function createSkyField({ canvas, figures, deepManifest, assetBase, quali
       // A 1 x 1 stand-in map from the start, so the shader is compiled with its map once, at creation, and not again when the drawing arrives.
       const artMaterial = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, color: palette.art, depthWrite: false, map: placeholderTexture });
       // hidden until its texture arrives: without a map the plane would paint as a flat grey card
-      loadTexture(`${assetBase}art/${figure.art.file}`, (t) => { artMaterial.map = t; artMaterial.needsUpdate = true; if (art) art.visible = true; });
+      loadTexture(`${assetBase}art/${figure.art.file}`, (t) => { artMaterial.map = t; artMaterial.needsUpdate = true; if (art) { art.userData.ready = true; art.visible = showDrawings; } });
       art = new THREE.Mesh(new THREE.PlaneGeometry(place.width, place.height), artMaterial);
       art.visible = false;
       art.position.set(place.x, place.y, -2); art.rotation.z = place.rotation; art.renderOrder = 3; group.add(art);
@@ -226,6 +227,12 @@ export function createSkyField({ canvas, figures, deepManifest, assetBase, quali
       dirty = true;
     },
     setFly(next) { fly = !!next; dirty = true; },
+    /** Show or hide the atlas drawings. A hidden plane is skipped by the renderer, so it costs no draw call. */
+    setDrawings(next) {
+      showDrawings = !!next;
+      for (const g of groups) if (g.art) g.art.visible = showDrawings && g.art.userData.ready === true;
+      dirty = true;
+    },
     /**
      * Change the resolution and the shortest gap between renders without rebuilding the scene.
      * `mode` and `level` (the sky mode and the adaptive step) are passed on to the prologue,

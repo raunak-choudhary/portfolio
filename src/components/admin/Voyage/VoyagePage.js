@@ -184,7 +184,7 @@ function VoyageView({ requireSecurityEnrollment }) {
     let field;
     try {
       field = createSkyField({
-        canvas: canvasRef.current, figures, deepManifest: deep, assetBase: SKY_ASSET_BASE, quality, theme: resolvedTheme, smallTextures: window.innerWidth < 768,
+        canvas: canvasRef.current, figures, deepManifest: deep, assetBase: SKY_ASSET_BASE, quality, theme: resolvedTheme, smallTextures: window.innerWidth < 768, drawings: settings.drawings,
         onPictureChange: () => { pictureChangedAt.current = performance.now(); },
       });
     } catch {
@@ -209,6 +209,8 @@ function VoyageView({ requireSecurityEnrollment }) {
     return () => { delete document.documentElement.dataset.voyageMode; };
   }, [mode]);
   useEffect(() => { fieldRef.current?.setFly(effectiveMotion); }, [effectiveMotion, figures]);
+  // The Sky menu's Drawings switch; the glass snapshot is retaken because the picture behind the panels changed.
+  useEffect(() => { fieldRef.current?.setDrawings(settings.drawings); snapshotStale.current = true; }, [settings.drawings, figures]);
 
   // ---- the loop: scroll fraction to camera, stages and rail ----
   useEffect(() => {

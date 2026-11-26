@@ -134,6 +134,33 @@ describe('VoyagePage (2D fallback)', () => {
     document.body.style.removeProperty('transform');
   });
 
+  it('hands the Sky menu\'s Drawings switch to the 3D field, at creation and on every change', async () => {
+    global.__voyageWebglProbe = true;
+    const field = {
+      resize: jest.fn(), setTheme: jest.fn(), setFly: jest.fn(), setDrawings: jest.fn(), setQuality: jest.fn(), dispose: jest.fn(),
+      frame: jest.fn(() => ({ index: 0, f: 0, over: '', rendered: false, settled: true })), snapshot: jest.fn(() => new Promise(() => {})),
+    };
+    createSkyField.mockImplementation(() => field);
+    try {
+      const view = render();
+      await flush();
+      expect(view.container.querySelector('.voyage-field')).not.toBeNull();
+      expect(createSkyField.mock.calls[0][0].drawings).toBe(true);
+      expect(field.setDrawings).toHaveBeenLastCalledWith(true);
+
+      act(() => { view.container.querySelector('.sky-controls__button').dispatchEvent(new MouseEvent('click', { bubbles: true })); });
+      const drawings = [...document.querySelectorAll('.sky-controls__toggle')].find((label) => label.textContent.trim() === 'Drawings').querySelector('input');
+      act(() => { drawings.click(); });
+      expect(field.setDrawings).toHaveBeenLastCalledWith(false);
+      act(() => { drawings.click(); });
+      expect(field.setDrawings).toHaveBeenLastCalledWith(true);
+      view.unmount();
+      expect(field.dispose).toHaveBeenCalledTimes(1);
+    } finally {
+      delete global.__voyageWebglProbe;
+    }
+  });
+
   it('stands on the 2D sky when the WebGL probe passes but the renderer is refused', async () => {
     global.__voyageWebglProbe = true;
     createSkyField.mockImplementation(() => { throw new Error('WebGL context could not be created'); });
