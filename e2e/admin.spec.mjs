@@ -141,6 +141,39 @@ test.describe('travelling', () => {
   }
 });
 
+test.describe('sky menu', () => {
+  for (const width of [390, 1440]) {
+    test(`lists only switches that act on the voyage sky, and remembers Drawings, at ${width}px`, async ({ browser }) => {
+      const { page, context, net, errors } = await openAdmin(browser, { width });
+      try {
+        await waitForDashboard(page);
+        await page.getByTitle('Sky and glass settings').click();
+        const panel = page.getByRole('dialog', { name: 'Sky settings' });
+        await expect(panel).toBeVisible();
+        // Clouds was removed: it only reached the flat stand-in sky, never the 3D voyage.
+        await expect(panel.locator('.sky-controls__toggle')).toHaveText(['Drawings', 'Motion', 'Panels']);
+        expect(await hasHorizontalOverflow(page), 'with the menu open').toBe(false);
+
+        const saved = () => page.evaluate(() => JSON.parse(window.localStorage.getItem('rc-admin-sky') || '{}'));
+        const drawings = panel.getByRole('switch', { name: 'Drawings' });
+        await expect(drawings).toBeChecked();
+        await panel.locator('.sky-controls__toggle', { hasText: 'Drawings' }).click();
+        await expect(drawings).not.toBeChecked();
+        expect((await saved()).drawings).toBe(false);
+        expect(await saved()).not.toHaveProperty('clouds');
+        await panel.locator('.sky-controls__toggle', { hasText: 'Drawings' }).click();
+        await expect(drawings).toBeChecked();
+
+        expect(errors, 'no console errors or failed requests').toEqual([]);
+        await expectOffline(net);
+        expect(net.writes, 'the sky menu writes nothing to the database').toEqual([]);
+      } finally {
+        await context.close();
+      }
+    });
+  }
+});
+
 /** Opens a project card's read view. */
 async function openProject(page, title) {
   await goToChapter(page, 'projects');
