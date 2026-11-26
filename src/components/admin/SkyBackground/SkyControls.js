@@ -1,8 +1,9 @@
 // src/components/admin/SkyBackground/SkyControls.js
 //
 // The "Sky" button in the dashboard header and the small panel it opens:
-// theme (auto, night, day), the drawings, clouds, motion and panel toggles,
-// and the glass and blur sliders. Everything a demo needs, one click away,
+// theme (auto, night, day), the drawings, motion and panel toggles, and the
+// glass and blur sliders. Every switch acts on the 3D voyage sky as well as
+// on the flat sky that stands in for it without WebGL. Everything a demo needs, one click away,
 // and out of the way the rest of the time.
 
 import React, { useEffect, useId, useRef, useState } from 'react';
@@ -20,7 +21,6 @@ const THEME_MODES = [
 
 const TOGGLES = [
   { key: 'drawings', label: 'Drawings', hint: 'The 1824 atlas figures behind the stars' },
-  { key: 'clouds', label: 'Clouds', hint: 'Drifting cumulus' },
   { key: 'motion', label: 'Motion', hint: 'Figures drawing themselves, twinkle, the living Sun' },
   { key: 'panels', label: 'Panels', hint: 'Hide the panels to see the whole sky' },
 ];

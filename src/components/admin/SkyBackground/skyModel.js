@@ -27,7 +27,6 @@ export const DAYLIGHT_ALTITUDE = -3;
 export const DEFAULT_SETTINGS = Object.freeze({
   themeMode: 'auto',   // 'auto' follows the New York clock; 'dark' or 'light' pin the theme
   drawings: true,      // the 1824 atlas drawings behind the star patterns
-  clouds: true,
   motion: true,        // figures drawing themselves, twinkle, drifting clouds, the living Sun
   panels: true,        // false hides the dashboard body so the whole sky can be seen
   glass: 0.10,         // panel opacity
@@ -61,7 +60,7 @@ export function mergeSettings(base, patch) {
   const out = { ...base };
   if (!patch || typeof patch !== 'object') return out;
   if (['auto', 'dark', 'light'].includes(patch.themeMode)) out.themeMode = patch.themeMode;
-  for (const key of ['drawings', 'clouds', 'motion', 'panels']) if (typeof patch[key] === 'boolean') out[key] = patch[key];
+  for (const key of ['drawings', 'motion', 'panels']) if (typeof patch[key] === 'boolean') out[key] = patch[key];
   if (Number.isFinite(patch.glass)) out.glass = clamp(patch.glass, GLASS_RANGE.min, GLASS_RANGE.max);
   if (Number.isFinite(patch.blur)) out.blur = Math.round(clamp(patch.blur, BLUR_RANGE.min, BLUR_RANGE.max));
   return out;
