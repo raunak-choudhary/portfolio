@@ -32,7 +32,7 @@ const fetchJson = (url, fallback) => fetch(url).then((r) => (r.ok ? r.json() : f
  * @param {{current: (null|(() => void))}} [props.releaseRef] receives a function that disposes the field now.
  */
 export default function ExitVoyageSky({ position, shouldPaint, releaseRef }) {
-  const { resolvedTheme, effectiveMotion } = useSkySettings();
+  const { settings, resolvedTheme, effectiveMotion } = useSkySettings();
   const [webgl] = useState(() => webglAvailable());
   const [failed, setFailed] = useState(false);
   const [assets, setAssets] = useState(null);
@@ -77,7 +77,7 @@ export default function ExitVoyageSky({ position, shouldPaint, releaseRef }) {
       if (cancelled || released || !canvasRef.current) return;
       const quality = qualityFor({ width: window.innerWidth, devicePixelRatio: window.devicePixelRatio || 1, reducedMotion: !effectiveMotion, webgl: true });
       try {
-        field = createSkyField({ canvas: canvasRef.current, figures: assets.figures, deepManifest: assets.deep, assetBase: SKY_ASSET_BASE, quality, theme: themeRef.current, smallTextures: window.innerWidth < 768 });
+        field = createSkyField({ canvas: canvasRef.current, figures: assets.figures, deepManifest: assets.deep, assetBase: SKY_ASSET_BASE, quality, theme: themeRef.current, smallTextures: window.innerWidth < 768, drawings: settings.drawings });
       } catch {
         released = true;
         setFailed(true);   // the GPU refused a context: the flat sky takes over

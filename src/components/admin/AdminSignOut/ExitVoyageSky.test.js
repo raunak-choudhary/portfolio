@@ -50,7 +50,7 @@ describe('ExitVoyageSky', () => {
     expect(el).not.toBeNull();
     expect(el.dataset.chapter).toBe('projects');
     expect(createSkyField).toHaveBeenCalledTimes(1);
-    expect(createSkyField.mock.calls[0][0]).toEqual(expect.objectContaining({ canvas: el, theme: 'light', assetBase: '/admin/sky/' }));
+    expect(createSkyField.mock.calls[0][0]).toEqual(expect.objectContaining({ canvas: el, theme: 'light', assetBase: '/admin/sky/', drawings: true }));
     expect(field.frame).toHaveBeenCalledTimes(1);
     expect(field.frame.mock.calls[0][0]).toBeCloseTo(f / (CHAPTERS.length - 1));
     expect(field.frame.mock.calls[0][2]).toEqual({ snap: true });
