@@ -70,10 +70,13 @@ describe('SkyControls', () => {
     expect(segments.find((b) => b.textContent === 'Day').getAttribute('aria-pressed')).toBe('true');
 
     const switches = [...panel(view.container).querySelectorAll('input[type="checkbox"]')];
-    expect(switches).toHaveLength(4);
+    // Drawings, Motion and Panels: each one acts on the voyage sky. The old Clouds switch only reached the flat sky and is gone.
+    expect(switches).toHaveLength(3);
+    expect([...panel(view.container).querySelectorAll('.sky-controls__toggle')].map((l) => l.textContent.trim())).toEqual(['Drawings', 'Motion', 'Panels']);
     setInputValue(switches[0], false);   // drawings
-    setInputValue(switches[3], false);   // panels
-    expect(state(view.container)).toMatchObject({ drawings: false, panels: false, clouds: true });
+    setInputValue(switches[2], false);   // panels
+    expect(state(view.container)).toMatchObject({ drawings: false, motion: true, panels: false });
+    expect(state(view.container)).not.toHaveProperty('clouds');
 
     const [glass, blur] = panel(view.container).querySelectorAll('input[type="range"]');
     setInputValue(glass, '0.42');

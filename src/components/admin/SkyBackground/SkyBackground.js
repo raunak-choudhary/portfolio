@@ -50,7 +50,7 @@ export default function SkyBackground({ assetBase = SKY_ASSET_BASE, liveSun = tr
     const resize = () => renderer.resize(window.innerWidth, window.innerHeight, Math.min(window.devicePixelRatio || 1, 2));
     resize();
     renderer.setTheme(resolvedTheme);
-    renderer.setSettings({ drawings: settings.drawings, clouds: settings.clouds, motion: effectiveMotion });
+    renderer.setSettings({ drawings: settings.drawings, motion: effectiveMotion });
     window.addEventListener('resize', resize);
     const unwatchRatio = watchPixelRatio(resize);   // another screen's pixel density fires no resize
     return () => { window.removeEventListener('resize', resize); unwatchRatio(); renderer.destroy(); rendererRef.current = null; };
@@ -60,8 +60,8 @@ export default function SkyBackground({ assetBase = SKY_ASSET_BASE, liveSun = tr
 
   useEffect(() => { rendererRef.current?.setTheme(resolvedTheme); }, [resolvedTheme, figures]);
   useEffect(() => {
-    rendererRef.current?.setSettings({ drawings: settings.drawings, clouds: settings.clouds, motion: effectiveMotion });
-  }, [settings.drawings, settings.clouds, effectiveMotion, figures]);
+    rendererRef.current?.setSettings({ drawings: settings.drawings, motion: effectiveMotion });
+  }, [settings.drawings, effectiveMotion, figures]);
 
   // Frame loop: animation frames while motion is on and the tab is visible; otherwise a still frame now and then.
   useEffect(() => {
@@ -80,7 +80,7 @@ export default function SkyBackground({ assetBase = SKY_ASSET_BASE, liveSun = tr
     startLoop();
     document.addEventListener('visibilitychange', onVisibility);
     return () => { stopped = true; stopLoop(); document.removeEventListener('visibilitychange', onVisibility); };
-  }, [figures, effectiveMotion, resolvedTheme, settings.drawings, settings.clouds]);
+  }, [figures, effectiveMotion, resolvedTheme, settings.drawings]);
 
   return (
     <div className={`sky-background${loadFailed ? ' sky-background--plain' : ''}`} aria-hidden="true" data-testid="sky-background">

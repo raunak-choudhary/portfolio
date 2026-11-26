@@ -96,7 +96,7 @@ function makeCloudSprite(doc, seed, kind) {
 export function createSkyRenderer({ skyCanvas, liveCanvas, figures, assetBase, doc = document, liveSun = true }) {
   const skyCtx = skyCanvas.getContext('2d'), ctx = liveCanvas.getContext('2d');
   let W = 0, H = 0, dpr = 1, theme = 'dark';
-  let settings = { drawings: true, clouds: true, motion: true };
+  let settings = { drawings: true, motion: true };
   let tiles = [], clouds = [], bgStars = [];
   const start = Date.now();
   let liveSunImage = null, liveSunStamp = 0, liveSunTimer = null;
@@ -351,7 +351,7 @@ export function createSkyRenderer({ skyCanvas, liveCanvas, figures, assetBase, d
     setTheme(next) { if (next !== theme) { theme = next; paintSky(); } },
     setSettings(next) {
       const relayoutNeeded = next.drawings !== settings.drawings;
-      settings = { drawings: next.drawings, clouds: next.clouds, motion: next.motion };
+      settings = { drawings: next.drawings, motion: next.motion };
       if (relayoutNeeded) relayout();
     },
     /** Paint one frame of the live layer. `now` is the animation clock in ms. */
@@ -363,7 +363,7 @@ export function createSkyRenderer({ skyCanvas, liveCanvas, figures, assetBase, d
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
       const { cx, cy, R } = lampPosition(W);
       if (theme === 'light') drawSun(cx, cy, R, now); else drawMoon(cx, cy, R, now);
-      if (settings.clouds) drawClouds(now);
+      drawClouds(now);   // always part of the flat sky; only their drift follows the motion setting
       drawFigures(now, Date.now() - start);
     },
     /** Facts shown in the Sky menu. */

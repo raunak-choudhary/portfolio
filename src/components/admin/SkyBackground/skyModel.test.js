@@ -19,9 +19,14 @@ describe('settings', () => {
   });
 
   it('keeps valid values and clamps the sliders', () => {
-    const out = sanitizeSettings({ themeMode: 'light', drawings: false, clouds: false, motion: false, panels: false, glass: 5, blur: -3 });
-    expect(out).toEqual({ themeMode: 'light', drawings: false, clouds: false, motion: false, panels: false, glass: GLASS_RANGE.max, blur: BLUR_RANGE.min });
+    const out = sanitizeSettings({ themeMode: 'light', drawings: false, motion: false, panels: false, glass: 5, blur: -3 });
+    expect(out).toEqual({ themeMode: 'light', drawings: false, motion: false, panels: false, glass: GLASS_RANGE.max, blur: BLUR_RANGE.min });
     expect(sanitizeSettings({ glass: 0.333, blur: 7.6 })).toMatchObject({ glass: 0.333, blur: 8 });
+  });
+
+  it('drops the retired clouds switch from settings saved by an older build', () => {
+    expect(DEFAULT_SETTINGS).not.toHaveProperty('clouds');
+    expect(sanitizeSettings({ clouds: false, drawings: false })).toEqual({ ...DEFAULT_SETTINGS, drawings: false });
   });
 });
 

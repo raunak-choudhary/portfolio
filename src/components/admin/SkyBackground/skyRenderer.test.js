@@ -26,7 +26,7 @@ describe('createSkyRenderer', () => {
     const calls = [];
     const renderer = createSkyRenderer({ skyCanvas: fakeCanvas(calls), liveCanvas: fakeCanvas(calls), figures: shipped, assetBase: '/admin/sky/', doc: fakeDocument(calls), liveSun: false });
     renderer.resize(1460, 702, 2);
-    renderer.setSettings({ drawings: true, clouds: true, motion: true });
+    renderer.setSettings({ drawings: true, motion: true });
     for (const theme of ['light', 'dark']) {
       renderer.setTheme(theme);
       for (let now = 61234.5; now < 61234.5 + 120000; now += 137) renderer.frame(now);
@@ -41,7 +41,7 @@ describe('createSkyRenderer', () => {
     const renderer = build([]);
     renderer.resize(1460, 702, 2);
     renderer.setTheme('light');
-    renderer.setSettings({ drawings: true, clouds: true, motion: true });
+    renderer.setSettings({ drawings: true, motion: true });
     renderer.frame(5000.8);
     expect(() => renderer.frame(4998.2)).not.toThrow();
     expect(() => renderer.frame(Number.NaN)).not.toThrow();
@@ -52,7 +52,7 @@ describe('createSkyRenderer', () => {
     const calls = [];
     const renderer = build(calls);
     renderer.resize(1440, 900, 1);
-    renderer.setSettings({ drawings: true, clouds: true, motion: true });
+    renderer.setSettings({ drawings: true, motion: true });
     renderer.frame(20000);
     renderer.setTheme('light');
     renderer.frame(21000);
@@ -62,14 +62,15 @@ describe('createSkyRenderer', () => {
     renderer.destroy();
   });
 
-  it('still paints with motion, clouds and drawings off', () => {
+  it('still paints with motion and drawings off, and keeps the clouds', () => {
     const calls = [];
     const renderer = build(calls);
     renderer.resize(375, 812, 2);
-    renderer.setSettings({ drawings: false, clouds: false, motion: false });
+    renderer.setSettings({ drawings: false, motion: false });
     expect(() => renderer.frame(0)).not.toThrow();
-    // no cloud sprites drawn: drawImage is only used for clouds, drawings, Sun and Moon images (none loaded here)
-    expect(calls.some(([fn]) => fn === 'drawImage')).toBe(false);
+    // drawImage is only used for clouds, drawings, Sun and Moon images; none of the images are loaded
+    // here, so every call is a cloud: the seven a phone gets, with no switch that can turn them off.
+    expect(calls.filter(([fn]) => fn === 'drawImage')).toHaveLength(7);
     renderer.destroy();
   });
 
